@@ -44,43 +44,32 @@ abstract class Markup derives CanEqual:
     siteUrl: String
   ): Xml.Element =
     val xmlRaw: Xml.Element = parse(content, errorReporter)
-    preProcess(
-      xml = xmlRaw,
-      errorReporter = errorReporter,
-      siteUrl = siteUrl,
-      idGenerator = IdGenerator()
+    val idGenerator: IdGenerator = IdGenerator()
+    Xml.transform(xmlRaw, stop(Xml), element =>
+      var result: Xml.Element = element
+
+      if isSectionElement(result) then
+        result = setSectionId(result, errorReporter)
+
+      if recognizeBlocks then
+        result = setBlockId(result, errorReporter)
+
+      result = convertLinks(result)
+
+      if recognizeWikiLinks && !Xml.A.is(result) then
+        result = Xml.setChildren(result, Xml.children(result).flatMap(xml =>
+          Xml.asText(xml).fold(Seq(xml))(convertWikiLinks(Seq.empty, _))
+        ))
+
+      if Xml.A.is(result) then
+        if Xml.Id.get(result).isEmpty then
+          result = Xml.Id.set(result, idGenerator.generate())
+
+        if isInternalLink(result, errorReporter, siteUrl) then
+          result = Markup.InternalLinkClass.add(result)
+
+      result
     )
-  
-  private def preProcess(
-    xml: Xml.Element,
-    errorReporter: PageError.Reporter,
-    siteUrl: String,
-    idGenerator: IdGenerator
-  ): Xml.Element = Xml.transform(xml, stop(Xml), element =>
-    var result: Xml.Element = element
-
-    if isSectionElement(result) then
-      result = setSectionId(result, errorReporter)
-
-    if recognizeBlocks then
-      result = setBlockId(result, errorReporter)
-
-    result = convertLinks(result)
-
-    if recognizeWikiLinks && !Xml.A.is(result) then
-      result = Xml.setChildren(result, Xml.children(result).flatMap(xml =>
-        Xml.asText(xml).fold(Seq(xml))(convertWikiLinks(Seq.empty, _))
-      ))
-
-    if Xml.A.is(result) then
-      if Xml.Id.get(result).isEmpty then
-        result = Xml.Id.set(result, idGenerator.generate())
-
-      if isInternalLink(result, errorReporter, siteUrl) then
-        result = Markup.InternalLinkClass.add(result)
-        
-    result
-  )
 
   final def toc(
     xml: Xml.Element,
@@ -118,7 +107,7 @@ abstract class Markup derives CanEqual:
       if Xml.A.is(result) then
         if Markup.InternalLinkClass.has(element) then
           result = resolveInternalLinks(result, page, errorReporter)
-          
+
         result = embed(result)
 
       result
@@ -213,7 +202,7 @@ abstract class Markup derives CanEqual:
       then errorReporter.error(PageError.SelfLink, ref, None)
       uri.getScheme == null
     catch case e: URISyntaxException => true
-  
+
   private def resolveInternalLinks(element: Xml.Element, page: Page, errorReporter: PageError.Reporter): Xml.Element =
     Xml.Href.get(element).fold(element): ref =>
       Link.resolve(ref, page) match
@@ -226,7 +215,7 @@ abstract class Markup derives CanEqual:
           val transclude: Boolean = Markup.TranscludeClass.has(element)
           // TODO transclude
           var result: Xml.Element = Xml.Href.set(element, linkTo.url)
-          
+
           def linkText(text: String): String =
             if !isWikiLink then text else Markup.WikiLink.text(transclude, text)
 

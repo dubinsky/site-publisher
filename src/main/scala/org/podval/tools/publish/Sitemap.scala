@@ -2,25 +2,23 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.{Asset, Path, Site}
 import org.podval.xml.Xml
+import zio.blocks.chunk.Chunk
 
 object Sitemap:
   val path: Path = Path("sitemap").withExtension("xml")
-  
-// TODO site first
+
+// TODO <?xml version='1.0' encoding='UTF-8'?>
 final class Sitemap(site: Site) extends Asset.SyntheticXmlAsset(site, Sitemap.path):
   override def xmlContent: Xml.Element =
     var result: Xml.Element = Xml.element("urlset")
     result = Xml.setAttribute(result, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
     result = Xml.setAttribute(result, "xsi:schemaLocation", "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd")
+    result = Xml.setAttribute(result, "xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
+    result = Xml.setChildren(result, Chunk.from(urls))
     result
 
-// TODO unordered, for each file; lastmod only if date (lastModified?) is present;
-//    .children(
-//      // directories are included, even the top level;
-//      // only HTML files are included, not the CSS
-//      //<url>
-//      //<loc>http://dub.podval.org/2009/08/07/sale-of-hometz.html</loc>
-//      //<lastmod>2009-08-07T14:30:00-04:00</lastmod>
-//      //</url>
-//    )
-
+  private def urls: List[Xml.Element] = site.markupPages.map: page =>
+    val loc = Xml.setText(Xml.element("loc"), s"${site.url}${page.path}")
+    // TODO date format: 2009-08-07T14:30:00-04:00
+    val lastmod: Option[Xml.Element] = page.dateModified.map(date => Xml.setText(Xml.element("lastmod"), date.toString))
+    Xml.setChildren(Xml.element("url"), Chunk.from(Seq(loc) ++ lastmod.toSeq))

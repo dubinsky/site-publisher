@@ -19,11 +19,23 @@ final class Config(
   val exclude: List[String] = List.empty,
 ):
   // Set via method to avoid confusing the codec.
-  private var externalOpt: Option[Config.External] = None
-  def setExternal(external: Config.External): Unit = this.externalOpt = Some(external)
-  def sourceDirectory: File = externalOpt.get.sourceDirectory
-  def targetDirectory: File = externalOpt.get.targetDirectory
-  private def includeDrafts: Boolean = externalOpt.get.includeDrafts
+  private var sourceDirectoryVar: Option[File] = None
+  def sourceDirectory: File = sourceDirectoryVar.get
+
+  private var targetDirectoryVar: Option[File] = None
+  def targetDirectory: File = targetDirectoryVar.get
+  
+  private var includeDraftsVar: Option[Boolean] = None
+  private def includeDrafts: Boolean = includeDraftsVar.get
+  
+  def setExternal(
+    sourceDirectory: File, 
+    targetDirectory: File,
+    includeDrafts: Boolean
+  ): Unit =
+    sourceDirectoryVar = Some(sourceDirectory)
+    targetDirectoryVar = Some(targetDirectory)
+    includeDraftsVar = Some(includeDrafts)
 
   private lazy val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
 
@@ -98,12 +110,6 @@ object Config:
 
   val fileName: String = "_site_config.yml"
 
-  final class External(
-    val sourceDirectory: File,
-    val targetDirectory: File,
-    val includeDrafts: Boolean
-  )
-
   def apply(
     sourceDirectoryPath: String,
     targetDirectoryName: String,
@@ -135,10 +141,10 @@ object Config:
     codec.decode(Files.read(configFile)) match
       case Left(error) => throw IllegalArgumentException("Malformed Config", error)
       case Right(result) =>
-        result.setExternal(External(
-          sourceDirectory,
-          targetDirectory,
-          includeDrafts
-        ))
+        result.setExternal(
+          sourceDirectory = sourceDirectory,
+          targetDirectory = targetDirectory,
+          includeDrafts = includeDrafts
+        )
         log.debug(s"Config:\n" + codec.encodeToString(result))
         result

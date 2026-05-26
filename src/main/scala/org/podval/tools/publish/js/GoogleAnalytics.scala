@@ -1,12 +1,11 @@
 package org.podval.tools.publish.js
 
-import org.podval.xml.Html
 import zio.blocks.html.*
 
+// https://support.google.com/tagmanager/answer/14842164
+// https://support.google.com/analytics/answer/14171598?hl=en
 final class GoogleAnalytics(id: String) extends JSLibrary:
-  override def body: List[Html.Element] = List.empty
-
-  override def head: List[Html.Element] = List(
+  override def scripts: List[Dom.Element.Script] = List(
     script().externalJs(s"https://www.googletagmanager.com/gtag/js?id=$id"),
     script().inlineJs(
       js"""window.dataLayer = window.dataLayer || [];

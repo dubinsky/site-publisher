@@ -86,10 +86,9 @@ object Html extends XmlAst:
     }
   )
 
-  def stylesheet(ref: String, idOpt: Option[String] = None): Element =
+  def stylesheet(ref: String): Element =
     import zio.blocks.html.*
     link(
       rel := "stylesheet",
-      href := ref,
-      idOpt.map(id := _)
+      href := ref
     )

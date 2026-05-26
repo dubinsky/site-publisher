@@ -15,4 +15,3 @@ final class ObsidianConfig(directory: File):
         case Right(json) => json.get("folder").one match
           case Left(error) => None
           case Right(value) => value.unwrap(JsonType.String)
-

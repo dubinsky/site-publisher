@@ -34,7 +34,7 @@ body {
  * Set `margin-bottom` to maintain vertical rhythm
  */
 h1, h2, h3, h4, h5, h6, p, blockquote, ul, ol, dl, figure {
-    margin-bottom: calc(var(--spacing-unit) * 0.5);
+    margin-bottom: var(--spacing-unit-half);
 }
 
 hr {
@@ -128,8 +128,7 @@ a {
 blockquote {
     color: var(--brand-color);
     border-left: 4px solid var(--border-color-01);
-    padding-left: calc(var(--spacing-unit) * 0.5);
-    /*@include relative-font-size(1.05);*/
+    padding-left: var(--spacing-unit-half);
     font-size: 1.05rem;
     font-style: italic;
 
@@ -163,38 +162,29 @@ pre {
     overflow-x: auto;
 }
 
+pre code {
+    display: block;
+    overflow-x: auto;
+    padding: 1em;
+}
+
 code {
     font-family: var(--code-font-family);
     background-color: var(--code-background-color);
+    /*padding: 3px 5px;*/
     /*border: 1px solid var(--brand-color-light);*/
     /*border-radius: 3px;*/
 }
 
 /* LMD I do not have this; Jekyll's Rouge wrapped ... */
 div.highlight, figure.highlight {
-    margin-bottom: calc(var(--spacing-unit) * 0.5);
+    margin-bottom: var(--spacing-unit-half);
 }
-
-/* from Highlights.js stylesheet: */
-/*pre code.hljs {*/
-/*    display: block;*/
-/*    overflow-x: auto;*/
-/*    padding: 1em*/
-/*}*/
-/**/
-/*code.hljs {*/
-/*    padding: 3px 5px*/
-/*}*/
-/**/
-/*.hljs {*/
-/*    background: #f3f3f3;*/
-/*    color: #444*/
-/*}*/
 
 .hljs {
     background-color: var(--code-background-color);
+    /*TODO foreground to override Highlight's?*/
 }
-
 
 /* Counter-act Highlights.js styling ;) */
 pre code.hljs {
@@ -213,8 +203,8 @@ pre code.hljs {
     padding: 0 var(--spacing-unit);
 
     @media screen and (max-width: var(--on-medium)) {
-        padding-right: calc(var(--spacing-unit) * 0.6);
-        padding-left: calc(var(--spacing-unit) * 0.6);
+        padding-right: var(--spacing-unit-two-thirds);
+        padding-left: var(--spacing-unit-two-thirds);
     }
 }
 
@@ -261,7 +251,7 @@ table {
         }
     }
     th, td {
-        padding: calc(var(--spacing-unit) * 33.3333333333 * .01) calc(var(--spacing-unit) * .5);
+        padding: var(--spacing-unit-third) var(--spacing-unit-half);
     }
     th {
         background-color: var(--table-header-bg-color);

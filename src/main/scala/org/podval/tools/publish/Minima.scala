@@ -49,7 +49,7 @@ object Minima:
           ),
         ),
         footerHtml(page.site),
-        libraries.flatMap(_.body)
+        libraries.flatMap(_.scripts)
       )
     )
 
@@ -101,7 +101,6 @@ object Minima:
   ): Option[Html.Element] =
     if isBaseLayout || backLinks.isEmpty then None else Some:
       div(className := "backlinks",
-        hr,
         h3("Backlinks"),
         ul(backLinks.map((from, links) =>
           li(
@@ -135,10 +134,11 @@ object Minima:
       meta(charset := "utf-8"),
       meta(httpEquiv := "X-UA-Compatible", content := "IE=edge"),
       meta(name := "viewport", content := "width=device-width, initial-scale=1"),
+      link(rel := "sitemap", `type` := "application/xml", titleAttr := "Sitemap", href := "/sitemap.xml"),
       // TODO {%- seo -%}: https://github.com/jekyll/jekyll-seo-tag
       title(page.title),
-      libraries.flatMap(_.head),
-      Html.stylesheet(Asset.mainStyleSheet, idOpt = Some("main-stylesheet")),
+      libraries.flatMap(_.stylesheet).map(Html.stylesheet),
+      Html.stylesheet(Asset.mainStyleSheet),
       // TODO {%- feed_meta -%}: https://github.com/jekyll/jekyll-feed
     )
 

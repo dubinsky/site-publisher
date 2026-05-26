@@ -71,11 +71,6 @@ final class Site(
     // Write embedded resources
     Asset.embeddedAssets(this).foreach(_.write())
 
-    // Write synthetic assets
-    Sitemap(this).write()
-    Robots(this).write()
-    Feed(this).write()
-
     // Scan the directories and add all source pages
     scanDirectory(Seq.empty, sourceDirectory)
 
@@ -98,6 +93,11 @@ final class Site(
 
     // Write pages
     pages.foreach(_.write())
+
+    // Write synthetic assets
+    Sitemap(this).write()
+    Robots(this).write()
+    Feed(this).write()
 
     // Done
     log.info("Done!")

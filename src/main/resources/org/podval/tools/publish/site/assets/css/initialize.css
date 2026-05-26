@@ -11,6 +11,9 @@
     --small-font-size: calc(var(--base-font-size) * 0.875);
     --base-line-height: 1.5;
     --spacing-unit: 30px;
+    --spacing-unit-half: calc(var(--spacing-unit) * 0.5);
+    --spacing-unit-third: calc(var(--spacing-unit) * 0.3);
+    --spacing-unit-two-thirds: calc(var(--spacing-unit) * 0.6);
 
     --table-text-align: left;
 

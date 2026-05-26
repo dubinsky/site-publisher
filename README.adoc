@@ -4,7 +4,7 @@
 :toc: preamble
 :icons: font
 
-Generate, serve and publish websites.
+Generate and publish websites.
 
 [#summary]
 == Summary
@@ -12,7 +12,12 @@ Generate, serve and publish websites.
 [#features]
 == Features
 
-TODO table of Markdown features with FlexMark extensions and Obsidian plugins.
+=== Markdown extensions
+Site generator supports Markdown tables via FlexMark Tables Extension;
+Obsidian supports them natively.
+
+Site generator supports Markdown task lists via FlexMark Task List Extension;
+Obsidian supports them natively.
 
 == Farewell, Jekyll
 
@@ -68,14 +73,14 @@ Match pages by explicit titles too.
 For documents that have titles in the body and not in front matter (like in TEI), transplant them into the layout-appropriate place.
 
 === Pages
+- handle permalinks and multi-name redirects
 - file named after a directory is its index!
 - handle categories; they can be wiki links?!
 - auto-create category pages
 - auto-create tag pages
-- handle permalinks and multi-name redirects
 
 === Transclusion
-Sort the pages in transclusion order, extract the sections and block,  transclude, and style the transclusions
+Sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
 
 === Chunking and Paging
 - implement splitting of HTML by section when front matter has `chunk: true`
@@ -207,174 +212,12 @@ it is going to be opinionated:
 
 TODO expound
 
-[#implementation]
-== Implementation
-
-At exactly the same time I became aware of the ZIO Blocks project,
-which just added support for a few data formats that I need.
-
-=== JSON
-I use ZIO Blocks JSON support to read Obsidian configuration files.
-
-=== Yaml
-- pester ZIO Blocks people to fix the hard-coded kebab-case bug (https://github.com/dubinsky/site-publisher/issues/6)
-- report to ZIO Blocks people enumeration handling bug (https://github.com/dubinsky/site-publisher/issues/7)
-- my stashed extra keys will not survive round trip once FrontMatter becomes a case class and `.copy()` is used!
-- besides, I stash keys other than the ones in the schema of the `Config`
-class, but the codec changes the names: currently - because of the kebab bug, but even once it is fixed, a name mapper could be in effect...
-
-=== Markdown
-
-Pipeline:
-
-- Markdown text
-- Markdown AST
-- HTML text
-- HTML AST
-
-I need HTML AST for post-processing like calculating page structure, resolving links to sections and blocks, transclusion, chunking, adding TOC,
-and prefer to use it for all post-processing
-like HTML layout for the browser and PDF generation.
-
-Converting ZIO Blocks Markdown AST to XML AST proved inconvenient
-(e.g., for reasons unknown, there are two flavours of each `Inline` subclass); it also turned out to be impossible, since
-Markdown allows embedding HTML,
-and since opening and closing tags of the same HTML element
-may end up in different Markdown AST nodes,
-I can not go directly from Markdown AST to HTML AST -
-I have to go through HTML text.
-
-Parsing Markdown with ZIO Blocks parser and writing it to XML text
-turned out to be inconvenient: ZIO Blocks Markdown writer
-produces unclosed tags like `br` and `hr`,
-which are not valid XML and thus can not be parsed into XML AST.
-I had to write my own writer for ZIO Blocks Markdown AST.
-
-Converting Markdown text to XML AST using ZIO Blocks Markdown parser
-still turned out impossible, since it parses nested lists incorrectly - see https://github.com/zio/zio-blocks/issues/1377.
-
-FlexMark WikiLink extension is useless to me:
-- it sets the content of the rendered HTML 'a' element when there is no | in the link;
-- it prefixes the href with the dashes corresponding in number to the spaces after the |...
-
-Unlike ZIO Blocks Markdown HTML renderer,
-which I had to fork to ensure that resulting HTML is valid XML
-(no unclosed tags like 'br', 'hr', 'input' and 'img'; attributes have values etc.),
-FlexMark renders valid XML out of the box.
-I may need to add some extensions to handle GitHub task lists and such...
-
-I had to switch to the industry-standard FlexMark parser.
-
-It can be configured to
-pair some - but not all - of the tags,
-so direct Markdown AST to HTML AST is not possible with FlexMark either.
-
-Since I insist on the end result being HTML AST,
-invalid XML (e.g., unclosed 'br' elements)
-embedded in the Markdown text is not supported.
-
-I process wiki links and Kramdown TOC marker in post-processing.
-
-On May 12, 2026 I found out that ZIO Blocks XML parser
-`zio.blocks.schema.xml.XmlReader`
-is *useless*: it chokes on entities other than `amp`, `lt`, `gt`, `quot` and `apos`! Fucking amateur hour! I have to switch to something standard and convert the result to ZIO Blocks XML AST; SAX or StAX?
-
-=== XML
-
-As a part of the OpenTorah project, I developed a custom
-XML pretty-printer for the Scala XML AST;
-I need to write one for the ZIO Blocks XML AST,
-since the XML writer provided by ZIO Blocks is broken:
-when used with "pretty", it
-
-- inserts spaces between book titles and quotes around them;
-- destroys the formatting of the code blocks;
-
-when used with "default", in addition to producing
-non-human-readable text, it:
-
-- does not insert spaces between text and elements;
-- mangles the formatting of the code blocks if there are spaces at the beginning of the lines after the first one.
-
-With my own XML writer, I can also ensure that the empty elements
-that cause problems with the browsers when they are self-closed
-(script, data, span) are not -
-without inserting comments into them, which is ugly.
-
-- I think I should not have to cling quotes and friends to the sibling elements unless either FlexMark writer or XML parser introduce spurious whitespace; if it is the XML parser, and if it really shouldn't, integrate with the industry-standard parser...
-
-See that the following renders as is:
-
-[source,markdown]
-----
-val escaped = userInput.replace("<", "&lt;").replace(">", "&gt;")
-----
-
-On May 12, 2026, while attempting to add FlexMark extensions "Footnotes" and "GFM Task List", I discovered that ZIO Blocks XML
-parser chokes on HTML entities like  `&nbsp;`, which the Task List extension
-outputs, and alone `&#8617;` ("right arrow curling left emoji")
-which the Footnote extension does.
-There is no way to turn off entity parsing in the ZIO Blocks XML parser.
-
-I wrote an adaptor that uses StAX XML parse built into the JDK
-and produces ZIO Block XML AST. It takes less than a 100 lines
-of code.
-TODO share with the ZIO Blocks people.
-
-StAX XML parser, just like the ZIO Blocks XML parser,
-does not recognize HTML entities - but it can be configured
-to not expand the entities, and instead deliver them via StAX:
-
-[source, scala]
-----
-val factory: XMLInputFactory = XMLInputFactory.newInstance
-factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false)
-----
-... except the entities get delivered through a dedicated event,
-`EntityReference`, not as `Characters`...
-
-With the real XML parser my fenced code blocks get mangled;
-setting another property took care of that:
-
-[source, scala]
-----
-factory.setProperty(XMLInputFactory.IS_COALESCING, true)
-----
-
-... but counter-acted the one that parses the entities!
-
-So, I need to coalesce the characters myself,
-and incorporate entities into the result!
-
-
-Using the real XML parser, I discovered that the custom `404.html` file that I used on my personal website for the last two
-years, and which I found when originally setting up Jekyll,
-was not valid XML/HTML:
-it has two root elements (`<style>` and `<div>`)!
-It is possible that Jekyll's parser does the right thing,
-but ZIO Blocks XML parser parses the first root element and silently
-ignores the rest, which is _definitely_ not the right thing.
-
-=== HTML
-
-=== Git
-
 [#todo]
 == TODO
 
-=== XML Writer
-
-Rewrite to make sure that text abutting an element does not get separated from it.
-
-Unify `Markup.stop` and `XmlWriter.protected`
-
 === CSS
-- unify approach to producing horizontal lines: `<hr>` or CSS border
-- escape URLs etc.?
-- alias languages unknown to Highlights.js to known ones - or to autodetect
-- style code blocks so that they do not break up into stripes when not recognized by Highlights.js
-- remove unneeded classes
 - unify and clean up the CSS
+- remove unneeded classes
 
 === Embedding
 - do PDF embedding - with `<object>`, `<iframe>` or?
@@ -382,31 +225,17 @@ Unify `Markup.stop` and `XmlWriter.protected`
 - recognize more audio/image types; is there some registry available?
 - treat `<img>` as a link element also?
 
-=== JS Libraries
-- unify the CDNs used
-- unify the approach to what goes into the head and what - into the body
-- do I need `defer` and/or `async` attributes on my `script` tags?
+=== Git Integration
+- exclude files excluded by `.gitignore`
+- retrieve Git creation/modification dates using JGit
 
 === Errors
-- introduce a notion of warning
 - generate error report page(s):
 * broken links
 * inconsistent titles
 
-=== HTML and XML
-- verify that I use `BooleanAttribute` and `BooleanValue` correctly
-- if I need prefixed names like `tei:p`, ask ZIO Blocks people to allow them in HTML
-- mention ZIO Blocks HTML optional attributes in its documentation.
-
-=== Git Integration
-- exclude files excluded by `.gitignore`
-- retrieve Git creation/modification dates using JGit
-- ask Obsidian developers to make file moves visible to Git if the vault is a Git repository
-
 === Sitemap and Feed
 - generate RSS feed
-- add whatever is needed for the feed to the `<head>`
-- generate sitemap
 - add whatever is needed for the feed to the `<head>`
 - implement SEO - or is just the page title in the `<head>` all I need?
 - whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list

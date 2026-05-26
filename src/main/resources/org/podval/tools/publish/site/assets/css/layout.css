@@ -40,14 +40,14 @@
     .nav-item {
         color: var(--text-color);
         &:not(:last-child) {
-            margin-right: calc(var(--spacing-unit) * 0.5);
+            margin-right: var(--spacing-unit-half);
         }
     }
 
     @media screen and (max-width: var(--on-medium)) {
         position: absolute;
         top: 9px;
-        right: calc(var(--spacing-unit) * 0.6);
+        right: var(--spacing-unit-two-thirds);
         background-color: var(--background-color);
         border: 1px solid var(--border-color-01);
         border-radius: 5px;
@@ -110,7 +110,7 @@
 
         .nav-item {
             display: block;
-            margin-right: calc(var(--spacing-unit) * 0.5);
+            margin-right: var(--spacing-unit-half);
             padding: 5px 0;
             color: var(--text-color);
             line-height: var(--base-line-height);
@@ -129,9 +129,8 @@
 }
 
 .footer-heading {
-    /*@include relative-font-size(1.125);*/
     font-size: 1.125rem;
-    margin-bottom: calc(var(--spacing-unit) * .5);
+    margin-bottom: var(--spacing-unit-half);
 }
 
 .feed-subscribe .svg-icon {
@@ -157,34 +156,33 @@
 }
 
 .footer-col {
-    float: left; /* LMD: copied from the old */
-    margin-bottom: calc(var(--spacing-unit) * .5);
+    float: left;
+    margin-bottom: var(--spacing-unit-half);
 }
 
-/* LMD adjusted column widths */
 .footer-col-1 {
-    width: calc(35% - (var(--spacing-unit) / 2));
+    width: calc(35% - var(--spacing-unit-half));
 }
 
 .footer-col-2 {
-    width: calc(30% - (var(--spacing-unit) / 2));
+    width: calc(30% - var(--spacing-unit-half));
 }
 
 .footer-col-3 {
-    width: calc(35% - (var(--spacing-unit) / 2));
+    width: calc(35% - var(--spacing-unit-half));
 }
 
 @media screen and (min-width: var(--on-large)) {
     .footer-col-1 {
-        width: calc(35% - (var(--spacing-unit) / 2));
+        width: calc(35% - var(--spacing-unit-half));
     }
 
     .footer-col-2 {
-        width: calc(20% - (var(--spacing-unit) / 2));
+        width: calc(20% - var(--spacing-unit-half));
     }
 
     .footer-col-3 {
-        width: calc(45% - (var(--spacing-unit) / 2));
+        width: calc(45% - var(--spacing-unit-half));
     }
 }
 
@@ -194,17 +192,17 @@
     }
 
     .footer-col {
-        width: calc(100% - (var(--spacing-unit) / 2));
-        padding: 0 calc(var(--spacing-unit) * .5);
+        width: calc(100% - var(--spacing-unit-half));
+        padding: 0 var(--spacing-unit-half);
 
         &:first-child {
-            padding-right: calc(var(--spacing-unit) * .5);
+            padding-right: var(--spacing-unit-half);
             padding-left: 0;
         }
 
         &:last-child {
             padding-right: 0;
-            padding-left: calc(var(--spacing-unit) * .5);
+            padding-left: var(--spacing-unit-half);
         }
     }
 }
@@ -253,7 +251,6 @@
 .post-header {
     margin-bottom: var(--spacing-unit);
     padding-bottom: 18px;
-    /* TODO I do not think I want this: text-align: center;*/
     border-bottom: 1px solid var(--border-color-01);
 }
 
@@ -335,14 +332,14 @@
 
 .task-list {
     margin-left: 0;
-    padding-left: calc(var(--spacing-unit) * 0.6);
+    padding-left: var(--spacing-unit-two-thirds);
 }
 
 .task-list-item {
     list-style-type: none;
     &-checkbox {
         position: relative;
-        margin-right: calc(var(--spacing-unit) * 0.3);
+        margin-right: var(--spacing-unit-third);
         margin-left: calc(var(--spacing-unit) * -0.5);
         appearance: none;
         border: 8px solid var(--border-color-01);
@@ -369,7 +366,7 @@
  */
 @media screen and (min-width: var(--on-large)) {
     .one-half {
-        width: calc(50% - (var(--spacing-unit) / 2));
+        width: calc(50% - var(--spacing-unit-half));
     }
 }
 
@@ -419,6 +416,7 @@ ul.page-list {
 }
 
 .backlinks {
+    border-top: 1px solid var(--border-color-01);
     > ul {
         list-style-type: none;
 

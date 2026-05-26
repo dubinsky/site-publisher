@@ -1,8 +1,11 @@
 package org.podval.tools.publish.js
 
-import org.podval.xml.Html
+import zio.blocks.html.Dom
 
 abstract class JSLibrary:
-  def head: List[Html.Element]
-  def body: List[Html.Element]
+  def stylesheet: Option[String] = None
+  def scripts: List[Dom.Element.Script] = List.empty
 
+object JSLibrary:
+  val jsDelivr: String = "https://cdn.jsdelivr.net/npm/"
+  val cloudFlare: String = "https://cdnjs.cloudflare.com/ajax/libs/"
