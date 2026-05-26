@@ -5,7 +5,7 @@ import org.podval.xml.Xml
 
 sealed abstract class Asset(site: Site, path: Path) extends Page(site: Site, path: Path):
   final override def isDirectory: Boolean = false
-  final override protected def source: Option[MarkupSource] = None
+  final override def source: Option[MarkupPage.Source] = None
   final override protected def titleDefault: String = path.fileName + path.extensionString
   final override protected def iconDefault: Icon = Media.icon(path.extension).getOrElse(Icon.file)
 

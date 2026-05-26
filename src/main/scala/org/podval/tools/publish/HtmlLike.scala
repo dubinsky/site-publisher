@@ -11,11 +11,11 @@ import Fragment.Section
 abstract class HtmlLike extends Markup:
   final override protected def recognizeWikiLinks: Boolean = true
 
-  final override def recognizeBlocks: Boolean = true
+  final override protected def recognizeBlocks: Boolean = true
 
-  final override def stop(xml: XmlAst)(element: xml.Element): Boolean = xml.Code.is(element)
+  final override protected def stop(xml: XmlAst)(element: xml.Element): Boolean = xml.Code.is(element)
 
-  final override def convertLinks(element: Xml.Element): Xml.Element = element
+  final override protected def convertLinks(element: Xml.Element): Xml.Element = element
 
   final override protected def isSectionElement(element: Xml.Element): Boolean = headerLevel(element).isDefined
 
@@ -29,7 +29,7 @@ abstract class HtmlLike extends Markup:
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.
-  final override def sections(element: Xml.Element, errorReporter: PageError.Reporter): Seq[Section] =
+  final override protected def sections(element: Xml.Element, errorReporter: PageError.Reporter): Seq[Section] =
     val sectionElements: Chunk[HtmlLike.Section] = Xml
       .children(element)
       .flatMap(node => Xml.asElement(node))
@@ -83,7 +83,17 @@ object HtmlLike:
     override val extension: String = "html"
     override val additionalExtensions: Set[String] = Set.empty
 
-    override def parse(sourcePath: Path, content: String): Either[PageError, Xml.Element] =
-      XmlParser.parse(content) match
-        case Right(xml) => Right(Xml.asElement(xml).get)
-        case Left(e) => Left(PageError(PageError.Parsing, sourcePath, "HTML parsing error", Some(e)))
+    override def parse(
+      content: String,
+      errorReporter: PageError.Reporter
+    ): Xml.Element = XmlParser.parse(content) match
+      case Right(xml) => Xml.asElement(xml).get
+      case Left(error) =>
+        errorReporter.error(PageError.Parsing, "HTML parsing error", Some(error))
+        malformedXml(error)
+
+    private def malformedXml(error: Throwable): Xml.Element =
+      var result = Xml.element("div")
+      result = Xml.ClassName.add(result, "malformed-xml")
+      result = Xml.setText(result, s"Malformed XML: $error")
+      result

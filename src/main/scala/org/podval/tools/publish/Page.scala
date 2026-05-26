@@ -32,18 +32,9 @@ abstract class Page(
   
   def isDirectory: Boolean
 
-  protected def source: Option[MarkupSource]
+  def source: Option[MarkupPage.Source]
 
   def sourcePath: Option[Path]
-
-  final def resolveBlock(id: String): Option[Link.ToBlock] =
-    source.flatMap(_.cached.blocks.find(_.id == id).map(Link.ToBlock(_)))
-
-  final def resolveSection(names: Seq[String]): Option[Link.ToSection] =
-    source.flatMap(_.cached.toc.resolve(names).map(Link.ToSection(_)))
-
-  final def resolveId(id: String): Option[Link.ToId] =
-    source.flatMap(_.cached.ids.find(_ == id).map(Link.ToId(_)))
 
   private def frontMatter: FrontMatter =
     source.map(_.cached.frontMatter).getOrElse(FrontMatter.absent)

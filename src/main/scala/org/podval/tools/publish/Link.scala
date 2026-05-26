@@ -54,10 +54,11 @@ object Link:
       intrapage = from == to,
       alias = alias,
       fragment = fragment.flatMap: fragment =>
+        val toc: Option[Toc] = to.source.map(_.cached.toc)
         if fragment.startsWith("^")
-        then to.resolveBlock(id = fragment.substring(1).trim)
-        else to.resolveSection(names = fragment.split('#').map(_.trim).toSeq).orElse(
-          to.resolveId(fragment)
+        then toc.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
+        else toc.flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
+          toc.flatMap(_.resolveId(fragment))
         )
     ))
 

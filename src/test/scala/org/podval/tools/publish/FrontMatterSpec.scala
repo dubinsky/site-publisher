@@ -1,7 +1,6 @@
 package org.podval.tools.publish
 
 import zio.Scope
-import zio.blocks.schema.SchemaError
 import zio.test.*
 import java.time.LocalDate
 
@@ -9,24 +8,22 @@ object FrontMatterSpec extends ZIOSpecDefault:
   private given CanEqual[LocalDate, LocalDate] = CanEqual.derived
 
   def roundTrip(input: String): TestResult =
-    val (parsed: Either[SchemaError, FrontMatter], _) = FrontMatter.parse(input)
-    assertTrue(parsed.isRight) && {
-      def render(parsed: Either[SchemaError, FrontMatter]): String = parsed.toOption.get.write
-      val rendered: String = render(parsed)
-      val (reparsed: Either[SchemaError, FrontMatter], _) = FrontMatter.parse(rendered)
-      assertTrue(
-        reparsed.isRight,
-        rendered == render(reparsed)
-      )
-    }
+    val (parsed: FrontMatter, _) = FrontMatter.parse(input, TestErrorReporter())
+    val rendered: String = parsed.write
+    val (reparsed: FrontMatter, _) = FrontMatter.parse(rendered, TestErrorReporter())
+    assertTrue(
+      rendered == reparsed.write
+    )
+    
 
   def parse(input: String, verify: (FrontMatter, String) => TestResult): TestResult =
-    val (parsed: Either[SchemaError, FrontMatter], content: String) = FrontMatter.parse(input)
-    assertTrue(parsed.isRight) && verify(parsed.toOption.get, content)
+    val (parsed: FrontMatter, content: String) = FrontMatter.parse(input, TestErrorReporter())
+    verify(parsed, content)
 
-  def error(input: String, verify: SchemaError => TestResult): TestResult =
-    val (parsed: Either[SchemaError, FrontMatter], _) = FrontMatter.parse(input)
-    assertTrue(parsed.isLeft) && verify(parsed.swap.toOption.get)
+  def error(input: String, verify: TestErrorReporter => TestResult): TestResult =
+    val errorReporter = TestErrorReporter()
+    val (parsed: FrontMatter, _) = FrontMatter.parse(input, errorReporter)
+    assertTrue(!errorReporter.empty) && verify(errorReporter)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("FrontMatter")(
     test("empty FrontMatter") {
@@ -70,7 +67,7 @@ object FrontMatterSpec extends ZIOSpecDefault:
           |---
           |# Hello
           |""".stripMargin,
-        error => assertTrue(error.getMessage.contains("Expected mapping for record"))
+        errorReporter => assertTrue(errorReporter.cause.get.getMessage.contains("Expected mapping for record"))
       )
     },
     test("round-trip without FrontMatter") {

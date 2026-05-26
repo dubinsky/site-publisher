@@ -54,5 +54,10 @@ object Markdown extends HtmlLike:
   def parseAndRender(content: String): String = renderer.render(parse(content))
 
   // Wrap Markdown rendered as HTML in a 'div' and parse.
-  override def parse(sourcePath: Path, content: String): Either[PageError, Xml.Element] =
-    HtmlLike.Html.parse(sourcePath, s"<div>${parseAndRender(content)}</div>")
+  override def parse(
+    content: String,
+    errorReporter: PageError.Reporter
+  ): Xml.Element = HtmlLike.Html.parse(
+    s"<div>${parseAndRender(content)}</div>",
+    errorReporter
+  )

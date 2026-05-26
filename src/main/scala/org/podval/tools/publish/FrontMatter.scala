@@ -56,27 +56,24 @@ object FrontMatter:
     .instance(TypeId.of[Icon.Style], Icon.Style.codec)
     .derive
 
-  def parse(sourcePath: Path, input: String): (Either[PageError, FrontMatter], String) = parse(input) match
-    case (Right(frontMatter), content) =>
-      (Right(frontMatter), content)
-    case (Left(yamlError), content) =>
-      (Left(PageError(PageError.Parsing, sourcePath, s"Malformed FrontMatter: [$input]", Some(yamlError))), content)
-      
-  def parse(input: String): (Either[SchemaError, FrontMatter], String) =
+  def parse(
+    input: String,
+    errorReporter: PageError.Reporter
+  ): (FrontMatter, String) =
     val frontMatterEnd: Int = if !input.startsWith("---\n") then -1 else input.indexOf("\n---\n", 3)
-    if frontMatterEnd == -1 then (Right(absent), input) else
+    if frontMatterEnd == -1 then (absent, input) else
       val frontMatterInput: String = input.substring(3, frontMatterEnd)
-      val frontMatter: Either[SchemaError, FrontMatter] =
-        if frontMatterInput.isEmpty
-        then Right(empty)
-        else decode(frontMatterInput)
+      val frontMatter: FrontMatter = if frontMatterInput.isEmpty then empty else decode(frontMatterInput) match
+        case Right(frontMatter) => frontMatter
+        case Left(error) =>
+          errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$input]", Some(error))
+          FrontMatter.empty 
       val frontMatterLines: Int = frontMatterInput.count(_ == '\n') + 2
       val content: String =
         "\n"*frontMatterLines +
         input.substring(frontMatterEnd + 5)
       (frontMatter, content)
-
-
+  
   private def decode(input: String): Either[SchemaError, FrontMatter] =
     try
       val yaml: Yaml = YamlReader.read(input)

@@ -11,11 +11,19 @@ final class PageError(
 )
 
 object PageError:
-  final class Reporter(
+  trait Reporter:
+    def error[R](
+      kind: PageError.Kind,
+      message: String,
+      result: R,
+      cause: Option[Throwable] = None
+    ): R
+  
+  final class SiteReporter(
     sourcePath: Path,
     site: Site
-  ):
-    def error[R](
+  ) extends Reporter:
+    override def error[R](
       kind: PageError.Kind,
       message: String,
       result: R,

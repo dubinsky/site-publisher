@@ -54,12 +54,12 @@ object Xml extends XmlAst:
 
   def main(args: Array[String]): Unit =
     val string =
-      """<p>"<a>Clinged</a>"</p>
+      """I am running <a href="ProxMox">ProxMox</a>, so
         |""".stripMargin
 
     //    println(Markdown.parseAndRender(string))
-    //    println(XmlParser.parse(Markdown.parseAndRender(string)).toOption.get)
+    val xmlString = org.podval.tools.publish.Markdown.parseAndRender(string)
 //    println(XmlParser.parse(string).toOption.get)
-    XmlParser.parse(string) match
+    XmlParser.parse(xmlString) match
       case Left(error) => println(error)
       case Right(xml) => println(writer.render(xml))

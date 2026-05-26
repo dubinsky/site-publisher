@@ -41,7 +41,7 @@ final class Posts(
     if !isPost && !isDaily then None else
       val fileName: String = sourcePath.fileName
 
-      val errorReporter: PageError.Reporter = PageError.Reporter(sourcePath, site)
+      val errorReporter: PageError.Reporter = PageError.SiteReporter(sourcePath, site)
 
       for
         date: LocalDate <-

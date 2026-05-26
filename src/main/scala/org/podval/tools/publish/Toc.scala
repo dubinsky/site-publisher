@@ -4,13 +4,21 @@ import org.podval.xml.Html
 import zio.blocks.html.*
 import Fragment.Section
 
-final class Toc(sections: Seq[Section]):
-  def resolve(names: Seq[String]): Option[Seq[Section]] = Toc.resolve(
+final class Toc(
+  sections: Seq[Section],
+  blocks: Seq[Fragment.Block],
+  ids: Seq[String],
+):
+  def resolveId(id: String): Option[Link.ToId] = ids.find(_ == id).map(Link.ToId(_))
+
+  def resolveBlock(id: String): Option[Link.ToBlock] = blocks.find(_.id == id).map(Link.ToBlock(_))
+
+  def resolveSection(names: Seq[String]): Option[Link.ToSection] = Toc.resolve(
     result = Seq.empty,
     sections = sections,
     names = names,
     includeNested = true
-  )
+  ).map(Link.ToSection(_))
   
   def html: Html.Element =
     div(className := "toc",

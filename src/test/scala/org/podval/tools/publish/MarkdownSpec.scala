@@ -1,13 +1,13 @@
 package org.podval.tools.publish
 
-import org.podval.xml.{Xml, XmlWriter}
+import org.podval.xml.Xml
 import zio.Scope
 import zio.test.*
 
 object MarkdownSpec extends ZIOSpecDefault:
   def parse(input: String, verify: Xml.Element => TestResult): TestResult =
-    val parsed = Markdown.parse(Path.root, input)
-    assertTrue(parsed.isRight) && verify(parsed.toOption.get)
+    val parsed = Markdown.parse(input, TestErrorReporter())
+    verify(parsed)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Markdown")(
     test("nested lists") {
