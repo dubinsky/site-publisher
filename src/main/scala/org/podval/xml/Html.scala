@@ -85,10 +85,3 @@ object Html extends XmlAst:
       case element: From.Element => Some(fromXml(element))
     }
   )
-
-  def stylesheet(ref: String): Element =
-    import zio.blocks.html.*
-    link(
-      rel := "stylesheet",
-      href := ref
-    )

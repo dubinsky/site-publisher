@@ -4,13 +4,13 @@ import org.podval.tools.publish.util.{Files, Icon}
 import org.podval.xml.{Html, Xml}
 import scala.ref.SoftReference
 
-abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with Page.WithContent:
-  override protected def titleDefault: String = path.fileName
+abstract class MarkupPage(site: Site, path: Path) extends Page.Real(site, path) with Page.WithContent:
+  override def titleDefault: String = path.fileName
 
   private var sourceVar: Option[MarkupPage.Source] = None
   final override def source: Option[MarkupPage.Source] = sourceVar
   
-  def withSource(
+  def setSource(
     markup: Markup,
     sourcePath: Path
   ): Unit = this.sourceVar = Some(MarkupPage.Source(
@@ -50,9 +50,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   protected def syntheticContentOpt: Option[Html.Element]
 
 object MarkupPage:
-  final class Simple(site: Site, path: Path) extends MarkupPage(site, path):
+  final class Simple(site: Site, path: Path) extends MarkupPage(site, path) with Page.NonDirectory:
     override protected def iconDefault: Icon = if isPost then Icon.envelope else Icon.note
-    override def isDirectory: Boolean = false
     override def hasSyntheticContent: Boolean = false
     override protected def syntheticContentOpt: Option[Html.Element] = None
 

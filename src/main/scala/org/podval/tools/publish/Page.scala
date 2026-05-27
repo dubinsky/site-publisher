@@ -29,7 +29,11 @@ abstract class Page(
   final protected def targetFile: File = path.file(site.targetDirectory)
 
   final lazy val parent: Option[Directory] = Directory.parent(site, this)
-  
+
+  def isAlias: Boolean
+
+  def real: Page.Real
+
   def isDirectory: Boolean
 
   def source: Option[MarkupPage.Source]
@@ -39,10 +43,13 @@ abstract class Page(
   private def frontMatter: FrontMatter =
     source.map(_.cached.frontMatter).getOrElse(FrontMatter.absent)
 
+  // TODO permalink must be absolute
+  final def permalink: Option[String] = frontMatter.permalink
   final def aliases: List[String] = frontMatter.aliases
+  final def post: Boolean = frontMatter.post
   final def tags: List[String] = frontMatter.tags
   final def author: String = frontMatter.author.getOrElse(site.author)
-  final def math: Boolean = frontMatter.math
+  final def math: Boolean = site.math || frontMatter.math
 
   final protected lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined
@@ -50,7 +57,8 @@ abstract class Page(
   final def dateModified: Option[Date] = frontMatter.modified_time
 
   final def title: String = frontMatter.title.getOrElse(titleDefault)
-  protected def titleDefault: String
+  def titleDefault: String = titleFromPath
+  def titleFromPath: String
 
   final def description: Option[String] = frontMatter.description.orElse(descriptionDefault)
   protected def descriptionDefault: Option[String] = None
@@ -85,14 +93,44 @@ abstract class Page(
 //      className := "page-ref",
 //      cls.map(cls => className += cls),
       href := pageLink.url,
-      Option.when(withIcon)(icon.getOrElse(this.icon).htmlSpan),
-      Option.when(withTitle)(pageLink.title)
+      Option.when(withIcon)(icon.getOrElse(this.icon).html),
+      Option.when(withTitle)(pageLink.titleReal)
     )
 
 object Page:
   trait WithContent extends Page:
     final override def write(): Unit = Files.write(targetFile, content)
     def content: String
+
+  trait NonDirectory extends Page:
+    final override def isDirectory: Boolean = false
+    final override def titleFromPath: String = path.fileName
+    
+  abstract class Real(
+    site: Site,
+    path: Path
+  ) extends Page(
+    site,
+    path
+  ):
+    final override def isAlias: Boolean = false
+    final override def real: Real = this
+
+  final class Alias(
+    site: Site,
+    val page: Page,
+    val alias: String
+  ) extends Page(
+    site,
+    path = page.path.relativize(alias).html
+  ) with NonDirectory with WithContent:
+    override def isAlias: Boolean = true
+    override def real: Real = page.real
+    override def source: Option[MarkupPage.Source] = None
+    override def titleDefault: String = path.fileName
+    override protected def iconDefault: Icon = Icon("link", Icon.Solid)
+    override def sourcePath: Option[Path] = None
+    override def content: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""
 
   def pageList(pages: Seq[Page], cls: Option[String] = None): Html.Element = ul(
     className := "page-list",

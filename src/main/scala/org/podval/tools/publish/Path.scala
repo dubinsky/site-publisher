@@ -23,6 +23,11 @@ final case class Path(
     then this
     else this.copy(extension = Some(extension))
 
+  def withoutHtml: Path =
+    if this.extension.contains(HtmlLike.Html.extension)
+    then this.copy(extension = None)
+    else this
+    
   def html: Path = withExtension(HtmlLike.Html.extension)
 
   def file(directory: File): File = file(directory, path)
@@ -32,6 +37,15 @@ final case class Path(
     if path.isEmpty then directory
     else if path.length == 1 then File(directory, path.head + extensionString)
     else file(File(directory, path.head), path.tail)
+
+  def relativize(alias: String): Path =
+    // TODO handle '.' and '..'
+    val segments: Seq[String] = alias.split("/").toSeq.filterNot(_.isEmpty)
+    val pathSegments =
+      if alias.startsWith("/") then segments
+      else path.init ++ segments
+
+    Path(pathSegments *)
 
 object Path:
   val root: Path = new Path(Seq.empty, None)

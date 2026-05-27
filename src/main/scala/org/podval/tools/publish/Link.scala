@@ -5,11 +5,11 @@ import org.podval.tools.publish.util.{Files, Strings}
 final class Link(
   val page: Page,
   fragment: Option[Link.ToFragment],
-  intrapage: Boolean,
-  alias: Option[String] = None
+  intrapage: Boolean
 ):
-  def url: String = withFragment(page.path.toString, _.id)
-  def title: String = withFragment(alias.getOrElse(page.title), _.title)
+  def url: String = withFragment(page.real.path.toString, _.id)
+  def title: String = withFragment(page.title, _.title)
+  def titleReal: String = withFragment(page.real.title, _.title)
 
   private def withFragment(
     fromPage: String,
@@ -39,8 +39,9 @@ object Link:
   def resolve(ref: String, from: Page): Option[Link] =
     val (pathString: String, fragment: Option[String]) = Strings.split(ref, '#')
 
-    val to: Option[(Page, Option[String])] =
-      if pathString.trim.isEmpty then Some(from, None) else
+    val to: Option[Page] =
+      if pathString.trim.isEmpty then Some(from) else
+        // TODO unify with Path.relativize()
         val isAbsolute: Boolean = pathString.trim.startsWith("/")
         val pathSegments: Seq[String] = pathString.trim.split('/').toSeq.filterNot(_.isEmpty).map(_.trim)
         val path: Path = if pathSegments.isEmpty then Path.root else
@@ -49,12 +50,11 @@ object Link:
 
         from.site.pages.flatMap(page => is(page, path, isAbsolute)).headOption
 
-    to.map((to, alias) => Link(
+    to.map(to => Link(
       page = to,
       intrapage = from == to,
-      alias = alias,
       fragment = fragment.flatMap: fragment =>
-        val toc: Option[Toc] = to.source.map(_.cached.toc)
+        val toc: Option[Toc] = to.real.source.map(_.cached.toc)
         if fragment.startsWith("^")
         then toc.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
         else toc.flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
@@ -62,23 +62,17 @@ object Link:
         )
     ))
 
-  private def is(page: Page, path: Path, isAbsolute: Boolean): Option[(Page, Option[String])] =
+  private def is(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
     isPath(page, path, isAbsolute).orElse(
-      Option.when(page.sourcePath.exists(isSourcePath(_, path, isAbsolute)))((page, None))
+      Option.when(page.sourcePath.exists(isSourcePath(_, path, isAbsolute)))(page)
     )
 
-  private def isPath(page: Page, path: Path, isAbsolute: Boolean): Option[(Page, Option[String])] =
-    def loop(current: Page, names: Seq[String]): Option[(Page, Option[String])] =
+  private def isPath(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
+    def loop(current: Page, names: Seq[String]): Option[Page] =
       val name: String = names.head
-      val to: Option[(Page, Option[String])] =
-        if current.path.fileName == name then Some(page, None)
-        else if current.title == name then Some(page, None)
-        else if current.aliases.contains(name) then Some(page, Some(name))
-        else None
-
       val tail: Seq[String] = names.tail
       val done: Boolean = tail.isEmpty
-      to.flatMap: (to: (Page, Option[String])) =>
+      Option.when(current.title == name || current.titleFromPath == name)(page).flatMap: (to: Page) =>
         current.parent match
           case None =>
             Option.when(done)(to)
@@ -87,7 +81,7 @@ object Link:
             then Option.when(!isAbsolute)(to)
             else loop(parent, tail)
 
-    if !isExtension(page.path, path) then None else loop(page, path.path)
+    if path.extension.isEmpty || isExtension(page.path, path) then loop(page, path.path) else None
 
   private def isSourcePath(sourcePath: Path, path: Path, isAbsolute: Boolean): Boolean =
     isExtension(sourcePath, path) && (

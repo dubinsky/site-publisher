@@ -6,7 +6,7 @@ import zio.blocks.schema.yaml.{Yaml, YamlCodec}
 
 final class Icon(val name: String, val style: Icon.Style):
   /* TODO! that did not work: className += s"fa-$name"*/
-  def htmlSpan: Html.Element = span(className := s"icon-span ${style.classNames} fa-$name")
+  def html: Html.Element = span(className := s"icon-span ${style.classNames} fa-$name")
 
 object Icon:
   val file = Icon("file", Regular)
@@ -22,6 +22,7 @@ object Icon:
   val arrowUp = Icon("arrow-up", Solid)
   val arrowLeft = Icon("arrow-left", Solid)
   val arrowRight = Icon("arrow-right", Solid)
+  val arrowRightLong = Icon("arrow-right-long", Solid)
   val rss = Icon("rss", Solid)
   def brand(name: String) = Icon(name, Brands)
 

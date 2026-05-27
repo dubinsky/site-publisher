@@ -12,12 +12,14 @@ final class Directory(site: Site, path: Path) extends MarkupPage.WithSyntheticCo
 
   override protected def iconDefault: Icon = if isPost then Icon.calendar else Icon.folder
 
-  override protected def titleDefault: String = postDate match
+  override def titleDefault: String = postDate match
     case Some(postDate) => postDate.toString // daily note
-    case None =>
-      if path.path.length > 1
-      then path.path.init.last
-      else path.fileName // "index"
+    case None => titleFromPath
+
+  override def titleFromPath: String =
+    if path.path.length > 1
+    then path.path.init.last
+    else path.fileName // "index"
 
   def prev(page: Page): Option[Page] = listFor(page).takeWhile(_ != page).reverse.headOption
   def next(page: Page): Option[Page] = listFor(page).dropWhile(_ != page).dropWhile(_ == page).headOption
@@ -38,7 +40,7 @@ final class Directory(site: Site, path: Path) extends MarkupPage.WithSyntheticCo
     .pages
     .filterNot(_.isDirectory)
     .filter(_.path.path.init == path.path.init)
-    .sortBy(_.title)
+    .sortBy(_.title.toLowerCase)
 
 object Directory:
   val fileName: String = "index"

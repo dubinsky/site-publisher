@@ -1,5 +1,7 @@
 package org.podval.tools.publish
 
+import org.podval.xml.Html
+import zio.blocks.html.*
 import BackLinks.BackLink
 
 final class BackLinks:
@@ -13,6 +15,34 @@ final class BackLinks:
     .groupBy(_.from)
     .toSeq
     .sortBy(_._1.title)
+
+  def html(page: MarkupPage): Option[Html.Element] =
+    val backLinks: Seq[(MarkupPage, List[BackLinks.BackLink])] = this.backLinks(page)
+    if page.hasSyntheticContent && !page.isDirectory || backLinks.isEmpty then None else Some:
+      div(className := "backlinks",
+        h3("Backlinks"),
+        ul(backLinks.map((from, links) =>
+          li(
+            details(
+              summary(
+                from.ref(),
+                span(className := "backlinks-count", links.length)
+              ),
+              ul(className := "backlinks-list", links.map(link =>
+                val context = link.context
+                li(
+                  a(
+                    href := context.url,
+                    context.before,
+                    span(className := "backlink", context.element),
+                    context.after
+                  )
+                )
+              ))
+            )
+          )
+        ))
+      )
 
 object BackLinks:
   final class Context(

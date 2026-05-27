@@ -45,12 +45,15 @@ abstract class Markup derives CanEqual:
   ): Xml.Element =
     val xmlRaw: Xml.Element = parse(content, errorReporter)
     val idGenerator: IdGenerator = IdGenerator()
+    
     Xml.transform(xmlRaw, stop(Xml), element =>
       var result: Xml.Element = element
 
-      if isSectionElement(result) then
-        result = setSectionId(result, errorReporter)
-
+      // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
+      // but I do it manually and uniformly for HTML, TEI etc.
+      if isSectionElement(result) && Xml.Id.get(result).isEmpty then
+        result = Xml.Id.set(result, sectionTitle(result).fold(idGenerator.generate())(Xml.Id.toId))
+      
       if recognizeBlocks then
         result = setBlockId(result, errorReporter)
 
@@ -135,14 +138,7 @@ abstract class Markup derives CanEqual:
 
   // This is where TEI link elements like `persName` get converted into HTML `a` elements
   protected def convertLinks(element: Xml.Element): Xml.Element
-
-  // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
-  // but I do it manually and uniformly for HTML, TEI etc.
-  private def setSectionId(element: Xml.Element, errorReporter: PageError.Reporter): Xml.Element =
-    if Xml.Id.get(element).isDefined then element else sectionTitle(element) match
-      case None => errorReporter.error(PageError.NoId, s"No id nor title on $element", element)
-      case Some(title) => Xml.Id.set(element, Xml.Id.toId(title))
-
+  
   // TODO according to the Obsidian documentation, block anchor can be added to a "structured block"
   // (e.g., a list) by putting it after the block, with empty lines before and after;
   // I'll deal with this later...

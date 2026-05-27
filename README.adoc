@@ -9,8 +9,54 @@ Generate and publish websites.
 [#summary]
 == Summary
 
+== Opinionated
+
+Since I am writing this site generator for my own use,
+it is going to be opinionated:
+
+- everything is written in Scala
+- no plugins
+- no SCSS
+- no template languages
+- no layouts
+
+TODO expound
+
 [#features]
 == Features
+
+=== Titles and File Names
+Jekyll relies on page titles being given explicitly in the front matter
+and ignores the file names; I had to use a TODO Obsidian plugin to set the
+titles from the file names to communicate them to Jekyll;
+as a result, pages where the title is different from the file name
+(e.g., `index` pages)
+had to be marked with TODO in their front matter to disable this plugin
+from setting the front matter title.
+
+My plugin uses both the front matter title and the file name for
+link resolution, so I can remove this Obsidian plugin and
+redundant front matter titles which are the same as the file name,
+and set the title in the front matter only when it is different from the file name.
+
+Obsidian uses file names exclusively and ignores the front matter title;
+for link resolution to use front matter titles also,
+TODO Obsidian plugin needs to be installed.
+
+Wiki links in Obsidian:
+
+- are they case-sensitive?
+- do they take into account file name, title property, document title?
+- how do they look in the file if name reference is ambiguous?
+- can they be split between the lines?
+- do they support any kind of agglutination?
+
+=== Notes and Posts
+
+- home page: directory
+- directory structure
+- auto-post (same file name)
+- permalink (any file name)
 
 === Markdown extensions
 Site generator supports Markdown tables via FlexMark Tables Extension;
@@ -66,35 +112,41 @@ Write about all the plugins I used:
 [#future]
 == Future
 
-=== Title
+=== TEI
 
-Match pages by explicit titles too.
-
-For documents that have titles in the body and not in front matter (like in TEI), transplant them into the layout-appropriate place.
+- metadata (including title) from the document itself
+- footnotes
+- facsimiles
+- raw TEI
 
 === Pages
-- handle permalinks and multi-name redirects
+- do PDF embedding - with `<object>`, `<iframe>` or?
+- do video embedding?
+- recognize more audio/image types;
+- treat `<img>` as a link element also?
+- retrieve Git creation/modification dates using JGit
+- sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
 - file named after a directory is its index!
+- generate RSS feed
+- add whatever is needed for the feed to the `<head>`
+- implement SEO - or is just the page title in the `<head>` all I need?
+- whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list
+- generate error report page(s):
+* broken links
+* inconsistent titles
 - handle categories; they can be wiki links?!
 - auto-create category pages
 - auto-create tag pages
 
-=== Transclusion
-Sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
-
 === Chunking and Paging
 - implement splitting of HTML by section when front matter has `chunk: true`
 - implement paging of the long lists (e.g., list of posts)
-
-=== PDF
-Generate PDF when front-matter says `pdf: true`
-
-- danfickle/openhtmltopdf: An HTML to PDF library for the JVM. Based on Flying Saucer and Apache PDF-BOX 2. With SVG image support. Now also with accessible PDF support (WCAG, Section 508, PDF/UA)! · GitHub[https://share.google/UiGeZVUcInZur8zNF](https://share.google/UiGeZVUcInZur8zNF)
-- [https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd](https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd)
+- generate PDF when front-matter says `pdf: true`
+* danfickle/openhtmltopdf: An HTML to PDF library for the JVM. Based on Flying Saucer and Apache PDF-BOX 2. With SVG image support. Now also with accessible PDF support (WCAG, Section 508, PDF/UA)! · GitHub[https://share.google/UiGeZVUcInZur8zNF](https://share.google/UiGeZVUcInZur8zNF)
+* [https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd](https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd)
 
 === More Markup Languages
 
-- TEI (including facsimiles and raw TEI)
 - AsciiDoc
 
 - DocBook??
@@ -105,25 +157,16 @@ Generate PDF when front-matter says `pdf: true`
 - serve with filesystem watch
 - publish site into a bucket
 
-=== Autoposting
-- add FrontMatter "post: true" to control publishing arbitrary notes as posts
-- add publishing and updating a page to X once X API supports Articles
-
 === Further Research
 
-Add admonitions/asides/callouts support in a way that works for both FlexMark and Obsidian.
-
-Look at https://stephango.com/vault
-
-Look at https://squidfunk.github.io/mkdocs-material/
-
-Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
-
-Think about serializing the full list of back-links out of the memory
-
-Maybe use FlexMark to convert wiki-links without resolving them (and lose support for wiki links in TEI)
-
-Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
+- add publishing and updating a page to X once X API supports Articles
+- add admonitions/asides/callouts support in a way that works for both FlexMark and Obsidian.
+- Look at https://stephango.com/vault
+- Look at https://squidfunk.github.io/mkdocs-material/
+- Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
+- Think about serializing the full list of back-links out of the memory
+- Maybe use FlexMark to convert wiki-links without resolving them (and lose support for wiki links in TEI)
+- Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
 
 [#motivation]
 == Motivation
@@ -152,32 +195,6 @@ that he considers Jekyll to be a legacy system
 At this point, I looked at a few of the modern static site generators
 like 11ty TODO link - and decided to write my own ;)
 
-=== Titles and File Names
-Jekyll relies on page titles being given explicitly in the front matter
-and ignores the file names; I had to use a TODO Obsidian plugin to set the
-titles from the file names to communicate them to Jekyll;
-as a result, pages where the title is different from the file name
-(e.g., `index` pages)
-had to be marked with TODO in their front matter to disable this plugin
-from setting the front matter title.
-
-My plugin uses both the front matter title and the file name for
-link resolution, so I can remove this Obsidian plugin and
-redundant front matter titles which are the same as the file name,
-and set the title in the front matter only when it is different from the file name.
-
-Obsidian uses file names exclusively and ignores the front matter title;
-for link resolution to use front matter titles also,
-TODO Obsidian plugin needs to be installed.
-
-Wiki links in Obsidian:
-
-- are they case-sensitive?
-- do they take into account file name, title property, document title?
-- how do they look in the file if name reference is ambiguous?
-- can they be split between the lines?
-- do they support any kind of agglutination?
-
 === New Possibilities
 
 It occurred to me that if I write my own site generator,
@@ -198,44 +215,3 @@ if I add support for TEI to my generator:
 It also occurred to me that I can add publishing to X Articles -
 if X ever makes an API for that. This would allow me
 to own my blog - and at the same time use X ;)
-
-=== Opinionated
-
-Since I am writing this site generator for my own use,
-it is going to be opinionated:
-
-- everything is written in Scala
-- no plugins
-- no SCSS
-- no template languages
-- no layouts
-
-TODO expound
-
-[#todo]
-== TODO
-
-=== CSS
-- unify and clean up the CSS
-- remove unneeded classes
-
-=== Embedding
-- do PDF embedding - with `<object>`, `<iframe>` or?
-- do video embedding?
-- recognize more audio/image types; is there some registry available?
-- treat `<img>` as a link element also?
-
-=== Git Integration
-- exclude files excluded by `.gitignore`
-- retrieve Git creation/modification dates using JGit
-
-=== Errors
-- generate error report page(s):
-* broken links
-* inconsistent titles
-
-=== Sitemap and Feed
-- generate RSS feed
-- add whatever is needed for the feed to the `<head>`
-- implement SEO - or is just the page title in the `<head>` all I need?
-- whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list

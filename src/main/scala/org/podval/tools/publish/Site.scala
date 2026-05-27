@@ -1,5 +1,6 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.util.{Files, Logging}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
@@ -12,7 +13,7 @@ final class Site(
   includeDrafts: Boolean,
   val treatErrorsAsWarnings: Boolean,
   logLevel: Level = Level.INFO
-):
+) extends JSLibrary:
   private given CanEqual[File, File] = CanEqual.derived
 
   Logging.configureLogBack(level = logLevel, useLogStash = false)
@@ -24,6 +25,9 @@ final class Site(
     includeDrafts
   )
 
+  override def cdn: String = ""
+  override def stylesheet: Some[String] = Some(Asset.mainStyleSheet)
+
   def sourceDirectory: File = config.sourceDirectory
   def targetDirectory: File = config.targetDirectory
 
@@ -33,6 +37,7 @@ final class Site(
   def author: String = config.author
   def email: String = config.email
   def lang: String = config.lang.getOrElse("en")
+  def math: Boolean = config.math
   def googleAnalytics: Option[String] = Option.when(production)(config.googleAnalytics).flatten
   val socialLinks: Seq[SocialLink] = config.socialLinks
 
@@ -41,7 +46,23 @@ final class Site(
 
   def addPage[P <: Page](page: P): P =
     pagesVar = pagesVar.appended(page)
+    // Add alias pages
+    def addAlias(alias: String): Unit = addPage(Page.Alias(page.site, page, alias))
+    page.permalink.foreach(addAlias)
+    page.aliases.foreach(addAlias)
+    // Add automatic post
+    if page.post then page.date match
+      case None => errors.error(PageError(PageError.NoDate, page.path, s"No date for an automatic blog post"))
+      case Some(date) => addAlias(Posts.path(date.localDate, page.path.fileName).html.withoutHtml.toString)
     page
+
+  // Add embedded resources
+  Asset.embeddedAssets(this).foreach(addPage)
+
+  // Add synthetic assets
+  addPage(Sitemap(this))
+  addPage(Robots(this))
+  addPage(Feed(this))
 
   // Add automatic pages
   val errors: Errors = addPage(Errors(this))
@@ -58,8 +79,7 @@ final class Site(
   def find(path: Path): Option[MarkupPage] = markupPages.find(_.path == path)
 
   // Back-links
-  private val backLinks: BackLinks = BackLinks()
-  def backLinks(page: Page): Seq[(MarkupPage, List[BackLinks.BackLink])] = backLinks.backLinks(page)
+  val backLinks: BackLinks = BackLinks()
 
   // Header pages
   lazy val headerPages: List[HeaderPage] = markupPages.flatMap(_.headerPage).sortBy(_.priority)
@@ -67,9 +87,6 @@ final class Site(
   def generate(): Unit =
     // Wipe out output directory
     Files.deleteDirectory(targetDirectory)
-
-    // Write embedded resources
-    Asset.embeddedAssets(this).foreach(_.write())
 
     // Scan the directories and add all source pages
     scanDirectory(Seq.empty, sourceDirectory)
@@ -94,11 +111,6 @@ final class Site(
     // Write pages
     pages.foreach(_.write())
 
-    // Write synthetic assets
-    Sitemap(this).write()
-    Robots(this).write()
-    Feed(this).write()
-
     // Done
     log.info("Done!")
 
@@ -121,19 +133,17 @@ final class Site(
     val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
     val sourcePath: Path = Path(directoryPath :+ name, extension)
     extension.flatMap(extension => Markup.all.find(_.isExtension(extension))) match
-      case None =>
-        addPage(Asset.AssetWithSource(this, sourcePath))
-
-      case Some(markup) =>
-        val page: MarkupPage = find(sourcePath.html).getOrElse:
+      case None => addPage(Asset.AssetWithSource(this, sourcePath))
+      case Some(markup) => find(sourcePath.html) match
+        case Some(page) => page.setSource(markup, sourcePath)
+        case None =>
           val path: Path = posts.path(sourcePath).getOrElse(sourcePath).html
-          addPage(
+          val page: MarkupPage =
             if path.fileName == Directory.fileName
             then Directory(this, path)
             else MarkupPage.Simple(this, path)
-          )
-
-        page.withSource(markup, sourcePath)
+          page.setSource(markup, sourcePath)
+          addPage(page)
 
 object Site:
   def main(args: Array[String]): Unit = Cli.main(Array(

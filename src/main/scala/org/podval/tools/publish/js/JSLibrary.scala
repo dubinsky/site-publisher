@@ -1,10 +1,17 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.Dom
+import zio.blocks.html.Js
 
 abstract class JSLibrary:
+  def cdn: String
+  
   def stylesheet: Option[String] = None
-  def scripts: List[Dom.Element.Script] = List.empty
+  
+  def imports: List[String] = List.empty
+  
+  def inlineJs: Option[Js] = None
+  
+  def isModule: Boolean = false
 
 object JSLibrary:
   val jsDelivr: String = "https://cdn.jsdelivr.net/npm/"

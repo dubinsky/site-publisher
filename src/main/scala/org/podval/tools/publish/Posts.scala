@@ -11,19 +11,25 @@ final class Posts(
   postsDirectoryName: String,
   draftsDirectoryName: Option[String],
   dailyNotesDirectoryName: Option[String]
-) extends MarkupPage.WithSyntheticContent(site, Path("posts").html):
-  override def isDirectory: Boolean = false
-  override protected def titleDefault: String = "Posts"
+) extends MarkupPage.WithSyntheticContent(site, Path("posts").html) with Page.NonDirectory:
+  override def titleDefault: String = "Posts"
   override protected def descriptionDefault: Option[String] = Some("All posts")
   override protected def iconDefault: Icon = Icon.envelope
   override protected def headerPagePriorityDefault: Int = 1
   override protected def langDefault: Option[String] = Some("en")
 
+  def posts: List[Page] = site
+    .pages
+    .filter(_.isPost)
+    .filterNot(page => page.isDirectory && page.source.isEmpty)
+    .sortBy(_.date)
+    .reverse
+
   override protected def syntheticContent: Html.Element =
     div(className := "home",
       //      h1(className := "page-heading", page.title)
       h2(className := "post-list-heading", "Posts"),
-      ul(className := "post-list", site.markupPages.filter(_.isPost).sortBy(_.date).reverse.map(post =>
+      ul(className := "post-list", posts.map(post =>
         li(
           span(className := "post-meta", post.date.map(_.toShortString).getOrElse("")),
           h3(className := "post-link", post.ref())
@@ -40,7 +46,6 @@ final class Posts(
 
     if !isPost && !isDaily then None else
       val fileName: String = sourcePath.fileName
-
       val errorReporter: PageError.Reporter = PageError.SiteReporter(sourcePath, site)
 
       for
@@ -61,16 +66,17 @@ final class Posts(
           then errorReporter.error(PageError.FileName, s"Daily note can not have title: $fileName", None)
           else Some(title)
       yield
-        Path(
-          f"${date.getYear}%04d",
-          f"${date.getMonthValue}%02d",
-          f"${date.getDayOfMonth}%02d",
-          title
-        )
+        Posts.path(date, title)
 
 object Posts:
-  def date(path: Path): Option[LocalDate] =
-    if path.path.length != 4 then None else
-      val dateString = s"${path.path(0)}-${path.path(1)}-${path.path(2)}"
-      try Some(LocalDate.parse(dateString))
-      catch case e: DateTimeParseException => None
+  def path(date: LocalDate, title: String): Path = Path(
+    f"${date.getYear}%04d",
+    f"${date.getMonthValue}%02d",
+    f"${date.getDayOfMonth}%02d",
+    title
+  )
+
+  def date(path: Path): Option[LocalDate] = if path.path.length != 4 then None else
+    val dateString = s"${path.path(0)}-${path.path(1)}-${path.path(2)}"
+    try Some(LocalDate.parse(dateString))
+    catch case e: DateTimeParseException => None

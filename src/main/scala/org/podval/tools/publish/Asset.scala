@@ -3,11 +3,11 @@ package org.podval.tools.publish
 import org.podval.tools.publish.util.{Files, Icon, Media}
 import org.podval.xml.Xml
 
-sealed abstract class Asset(site: Site, path: Path) extends Page(site: Site, path: Path):
+sealed abstract class Asset(site: Site, path: Path) extends Page.Real(site: Site, path: Path):
   final override def isDirectory: Boolean = false
   final override def source: Option[MarkupPage.Source] = None
-  final override protected def titleDefault: String = path.fileName + path.extensionString
-  final override protected def iconDefault: Icon = Media.icon(path.extension).getOrElse(Icon.file)
+  final override def titleFromPath: String = path.fileName + path.extensionString
+  override protected def iconDefault: Icon = Media.icon(path.extension).getOrElse(Icon.file)
 
 object Asset:
   final class AssetWithSource(site: Site, path: Path) extends Asset(site, path):
@@ -17,7 +17,7 @@ object Asset:
   abstract class SyntheticAsset(site: Site, path: Path) extends Asset(site, path) with Page.WithContent:
     final override def sourcePath: Option[Path] = None
 
-  abstract class SyntheticXmlAsset(site: Site, path: Path) extends SyntheticAsset(site, path) with Page.WithContent:
+  abstract class SyntheticXmlAsset(site: Site, path: Path) extends SyntheticAsset(site, path):
     final override def content: String = Xml.writer.render(xmlContent)
     def xmlContent: Xml.Element
   

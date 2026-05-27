@@ -14,6 +14,7 @@ final class Config(
   val email: String,
   val timezone: Option[String] = None,
   val lang: Option[String] = None,
+  val math: Boolean = false,
   val googleAnalytics: Option[String] = None,
   val social: Config.Social = Config.Social(),
   val exclude: List[String] = List.empty,

@@ -44,8 +44,8 @@ object PageError:
   case object FileName extends Kind("file name")
   case object FileKind extends Kind("file kind")
   case object Duplicate extends Kind("duplicate")
-  case object Unmakable extends Kind("unmakable")
   case object NoId extends Kind("no id")
+  case object NoDate extends Kind("no date")
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
 

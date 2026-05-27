@@ -1,21 +1,16 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.*
-
-object Highlights:
-  val version = "11.11.1"
-  val cdn: String = s"${JSLibrary.jsDelivr}/highlights@$version/lib"
+import zio.blocks.html.{Js, js}
 
 final class Highlights(languages: Set[String]) extends JSLibrary:
-  import Highlights.cdn
+  val version = "11.11.1"
 
-  override val stylesheet: Some[String] = Some(s"$cdn/styles/default.min.css")
+  override def cdn: String = s"${JSLibrary.jsDelivr}/highlights@$version/lib"
 
-  override val scripts: List[Dom.Element.Script] =
-    List(script().externalJs(s"$cdn/highlight.min.js")) ++
-    languages.map(language => script().externalJs(languageModule(language))) ++
-    List(script().inlineJs(js"hljs.highlightAll();"))
+  override val stylesheet: Some[String] = Some("/styles/default.min.css")
 
-  private def languageModule(language: String): String =
-    // NOT SUPPORTED   if language.toLowerCase == "liquid" then "https://unpkg.com/highlightjs-liquid@0.9.1/dist/liquid.min.js" else
-    s"$cdn/languages/$language.min.js"
+  override def imports: List[String] =
+    List("/highlight.min.js") ++
+    languages.map(language => s"/languages/$language.min.js")
+
+  override val inlineJs: Some[Js] = Some(js"hljs.highlightAll();")

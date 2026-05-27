@@ -12,5 +12,6 @@ object Media:
     "pgp" -> Icon.key,
     "gpg" -> Icon.key,
     "pub" -> Icon.key,
+    "css" -> Icon("css", Icon.Brands)
   )
 

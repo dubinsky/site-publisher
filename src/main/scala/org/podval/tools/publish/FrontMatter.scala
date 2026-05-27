@@ -17,6 +17,7 @@ final case class FrontMatter(
   categories: List[String] = List.empty,
   aliases: List[String] = List.empty,
   permalink: Option[String] = None,
+  post: Boolean = false,
   date: Option[Date] = None,
   icon: Option[Icon] = None,
   modified_time: Option[Date] = None,

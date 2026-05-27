@@ -1,11 +1,11 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.*
+import zio.blocks.html.{Js, js}
 
 object MathJax extends JSLibrary:
-  override val scripts: List[Dom.Element.Script] = List(
-    // Note: `defer` here is crucial; without it, some math renders incorrectly, with `$`s visible...
-    script(defer := true).externalJs(s"${JSLibrary.jsDelivr}/mathjax@4/tex-mml-chtml.js"),
-    script(defer := true).inlineJs(js"MathJax = { tex: { inlineMath: {'[+]': [['$$', '$$']]} } };")
-  )
+  override def cdn: String = s"${JSLibrary.jsDelivr}/mathjax@4"
+
+  override def imports: List[String] = List(s"/tex-mml-chtml.js")
+
+  override val inlineJs: Some[Js] = Some(js"MathJax = { tex: { inlineMath: {'[+]': [['$$', '$$']]} } };")
   
