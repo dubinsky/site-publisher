@@ -13,7 +13,9 @@ object Xml extends XmlAst:
     case element: XML.Element => Some(element)
     case _ => None
 
-  override def qName(element: Element): String = element.name.qualifiedName
+  override def name(element: Element): String = element.name.qualifiedName
+
+  override def rename(element: Element, name: String): Element = element.copy(name = XmlName(name))
 
   override def element(name: String): Element = XmlBuilder.element(name).build
 
@@ -22,6 +24,9 @@ object Xml extends XmlAst:
 
   override def attributes(element: Element): Chunk[(String, String)] =
     element.attributes.map((xmlName, value) => (xmlName.qualifiedName, value))
+
+  override def setAttributes(element: Element, attributes: Chunk[(String, String)]): Element =
+    element.copy(attributes = attributes.map((name, value) => (XmlName(name), value)))
 
   override def setAttribute(element: Element, name: String, value: String): Element =
     element.copy(attributes = element.attributes

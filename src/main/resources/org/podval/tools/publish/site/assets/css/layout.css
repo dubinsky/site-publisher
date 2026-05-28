@@ -272,7 +272,9 @@
 }
 
 .post-title,
-.post-content h1 {
+.post-content h1,
+.store-header > tei-head /* TODO store-header is from collector... */
+{
     margin-bottom: 10px;
     font-size: 2.625rem;
     font-weight: var(--base-font-weight);
@@ -293,7 +295,7 @@
         margin-top: 0; /* TODO LMD */
     }
 
-    h2 {
+    h2, tei-div > tei-head {
         font-size: 1.75rem;
 
         @media screen and (min-width: var(--on-large)) {
@@ -301,7 +303,7 @@
         }
     }
 
-    h3 {
+    h3, tei-div > tei-div > tei-head {
         font-size: 1.375rem;
 
         @media screen and (min-width: var(--on-large)) {
@@ -309,7 +311,7 @@
         }
     }
 
-    h4 {
+    h4, tei-div > tei-div > tei-div > tei-head {
         font-size: 1.25rem;
     }
 

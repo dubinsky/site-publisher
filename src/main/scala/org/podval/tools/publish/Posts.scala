@@ -20,7 +20,7 @@ final class Posts(
 
   def posts: List[Page] = site
     .pages
-    .filter(_.isPost)
+    .filter(_.postDate.isDefined)
     .filterNot(page => page.isDirectory && page.source.isEmpty)
     .sortBy(_.date)
     .reverse

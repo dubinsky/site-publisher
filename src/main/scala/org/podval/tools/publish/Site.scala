@@ -53,7 +53,9 @@ final class Site(
     // Add automatic post
     if page.post then page.date match
       case None => errors.error(PageError(PageError.NoDate, page.path, s"No date for an automatic blog post"))
-      case Some(date) => addAlias(Posts.path(date.localDate, page.path.fileName).html.withoutHtml.toString)
+      case Some(date) =>
+        val title: String = page.postTitle.getOrElse(page.path.fileName) // TODO titleFromPath?
+        addAlias(Posts.path(date.localDate, title ).html.withoutHtml.toString)
     page
 
   // Add embedded resources
@@ -151,6 +153,6 @@ final class Site(
 object Site:
   def main(args: Array[String]): Unit = Cli.main(Array(
     "--log-level=INFO",
-//    "--treat-errors-as-warnings=true",
+    "--treat-errors-as-warnings=true",
     "/home/dub/Podval/dub.podval.org"
   ))

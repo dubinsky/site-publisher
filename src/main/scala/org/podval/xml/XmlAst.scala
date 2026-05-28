@@ -18,7 +18,8 @@ abstract class XmlAst:
   final def toString(xml: Chunk[Xml]): String = xml.map(toString).mkString(" ")
   
   def asElement(xml: Xml): Option[Element]
-  def qName(element: Element): String
+  def name(element: Element): String
+  def rename(element: Element, name: String): Element
   def element(name: String): Element
 
   // TODO deal with the namespaces - and defaults?!
@@ -27,13 +28,13 @@ abstract class XmlAst:
   //    Attribute.get(element).filterNot(_.value.isEmpty)
   def attributes(element: Element, parent: Option[Element]): Chunk[(String, String)]
   def attributes(element: Element): Chunk[(String, String)]
-
+  def setAttributes(element: Element, attributes: Chunk[(String, String)]): Element
+  final def getAttribute(element: Element, name: String): Option[String] = attributes(element).find(_._1 == name).map(_._2)
   def setAttribute(element: Element, name: String, value: String): Element
+  
   def children(element: Element): Chunk[Xml]
-
-  final def setText(element: Element, text: String): Element = setChildren(element, Chunk(mkText(text)))
-
   def setChildren(element: Element, children: Chunk[Xml]): Element
+  final def setText(element: Element, text: String): Element = setChildren(element, Chunk(mkText(text)))
 
   def mkText(text: String): Xml
   def asAtom(xml: Xml): Option[String]
@@ -85,14 +86,14 @@ abstract class XmlAst:
     .flatMap(element => f(element))
 
   sealed abstract class Elem(val elementName: String):
-    def is(element: Element): Boolean = qName(element) == elementName
+    def is(element: Element): Boolean = name(element) == elementName
 
   object A extends Elem("a")
 
   object Code extends Elem("code")
 
-  sealed abstract class Attribute(val attributeName: String):
-    final def get(element: Element): Option[String] = attributes(element).find(_._1 == attributeName).map(_._2)
+  abstract class Attribute(val attributeName: String):
+    final def get(element: Element): Option[String] = getAttribute(element, attributeName)
     final def set(element: Element, value: String): Element = setAttribute(element, attributeName, value)
 
   object Id extends Attribute("id"):

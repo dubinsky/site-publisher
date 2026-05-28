@@ -9,20 +9,22 @@ import Fragment.Section
 // HTML itself, Markdown, and likely Re-Structured text and AsciiDoc;
 // pure XML markup formats like TEI and DocBook are different.
 abstract class HtmlLike extends Markup:
+  final override protected def toHtml(element: Xml.Element): Xml.Element = element
+  
   final override protected def recognizeWikiLinks: Boolean = true
 
   final override protected def recognizeBlocks: Boolean = true
 
   final override protected def stop(xml: XmlAst)(element: xml.Element): Boolean = xml.Code.is(element)
-
-  final override protected def convertLinks(element: Xml.Element): Xml.Element = element
-
+  
   final override protected def isSectionElement(element: Xml.Element): Boolean = headerLevel(element).isDefined
-
+  
   final override protected def sectionTitle(element: Xml.Element): Option[String] = Xml.toStringOpt(element)
 
+  final override protected def linkKind(element: Xml.Element): Option[Link.Kind] = None
+  
   private def headerLevel(element: Xml.Element): Option[Int] =
-    val qName: String = Xml.qName(element)
+    val qName: String = Xml.name(element)
     if !qName.startsWith("h") then None else
       try Some(qName.substring(1).toInt)
       catch case _: NumberFormatException => None

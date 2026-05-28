@@ -56,6 +56,6 @@ object BackLinks:
     val to: Link,
     val from: MarkupPage,
     val transclude: Boolean,
-    val kind: Option[String],
+    val kind: Option[Link.Kind],
     val context: Context
   )

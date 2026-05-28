@@ -14,8 +14,13 @@ object Html extends XmlAst:
     case element: XML.Element => Some(element)
     case _ => None
 
-  // TODO rename name
-  override def qName(element: Element): String = element.tag
+  override def name(element: Element): String = element.tag
+
+  override def rename(element: Element, name: String): Element = XML.Element.Generic(
+    tag = name,
+    attributes = element.attributes,
+    children = element.children
+  )
 
   override def element(name: String): Element = XML.Element.Generic(
     tag = name,
@@ -43,7 +48,13 @@ object Html extends XmlAst:
     case XML.Attribute.KeyValue(name, _) => name
     case XML.Attribute.BooleanAttribute(name, _) => name
     case XML.Attribute.AppendValue(name, _, _) => name
-      
+
+  override def setAttributes(element: Element, attributes: Chunk[(String, String)]): Element = XML.Element.Generic(
+    tag = element.tag,
+    children = element.children,
+    attributes = attributes.map((name, value) => mkAttribute(name, value))
+  )
+
   override def setAttribute(element: Element, name: String, value: String): Element = XML.Element.Generic(
     tag = element.tag,
     children = element.children,

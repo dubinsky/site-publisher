@@ -19,6 +19,9 @@ final class Link(
     fragment.fold("")(fragment => s"#${get(fragment)}")
 
 object Link:
+  enum Kind:
+    case Person, Place, Organization // Tag, Category
+
   sealed abstract class ToFragment:
     def title: String
     def id: String
@@ -36,7 +39,7 @@ object Link:
 
   // path could be `name`, `path/name`(?) - or empty, for intrapage links.
   // fragment could be `#section`, `#section#subsection`, `#^block`, or #id.
-  def resolve(ref: String, from: Page): Option[Link] =
+  def resolve(ref: String, kind: Option[Kind], from: Page): Option[Link] =
     val (pathString: String, fragment: Option[String]) = Strings.split(ref, '#')
 
     val to: Option[Page] =
@@ -48,6 +51,7 @@ object Link:
           val (lastSegment, extension) = Files.nameAndExtension(pathSegments.last)
           Path(pathSegments.init :+ lastSegment.trim, extension)
 
+        // TODO search only pages corresponding to the 'kind'
         from.site.pages.flatMap(page => is(page, path, isAbsolute)).headOption
 
     to.map(to => Link(

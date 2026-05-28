@@ -36,4 +36,5 @@ object Asset:
     Path("assets", "css", "layout").withExtension("css"),
     Path("assets", "css", "skin").withExtension("css"),
     Path("assets", "css", "style").withExtension("css"),
+    Path("assets", "css", "tei").withExtension("css"),
   )

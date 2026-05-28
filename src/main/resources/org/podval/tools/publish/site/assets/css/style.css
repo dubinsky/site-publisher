@@ -4,5 +4,6 @@
 @import "initialize.css";
 /*@import "custom-variables"; // Hook to override predefined variables.*/
 @import "base.css";             /* Defines element resets. */
+@import "tei.css";
 @import "layout.css";           /* Defines structure and style based on CSS selectors. */
 /*@import "custom-styles.css";    // Hook to override existing styles.*/

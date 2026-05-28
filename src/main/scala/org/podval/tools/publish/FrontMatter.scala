@@ -18,12 +18,21 @@ final case class FrontMatter(
   aliases: List[String] = List.empty,
   permalink: Option[String] = None,
   post: Boolean = false,
+  postTitle: Option[String] = None,
   date: Option[Date] = None,
   icon: Option[Icon] = None,
-  modified_time: Option[Date] = None,
+//  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
   headerPage: Option[FrontMatter.HeaderPage] = None
 ):
   private var extraKeys: Chunk[(Yaml, Yaml)] = Chunk.empty
+  private def findExtraKey(name: String): Option[Yaml] = extraKeys
+    .find((key, _) => key match
+      case Yaml.Scalar(key, _) => key == name
+      case _ => false
+    )
+    .map(_._2)
+
+  def modifiedTime: Option[Date] = findExtraKey("modified_time").map(Date.codec.decodeValue)
 
   private var absent: Boolean = false
 

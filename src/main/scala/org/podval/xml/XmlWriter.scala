@@ -55,22 +55,22 @@ final class XmlWriter[X <: XmlAst](val xml: X)(
         chunks.tail.init.map(chunk => fromChunk(chunk, Some(element), canBreakLeft = true, canBreakRight = true)) :+
         fromChunk(chunks.last, Some(element), canBreakLeft = true, canBreakRight = canBreakRight1)
 
-    val qName: String = xml.qName(element)
+    val name: String = xml.name(element)
 
     if children.isEmpty then
-      Doc.text(s"<$qName") + attributes + Doc.lineOrEmpty + (
-        if config.selfClose(qName)
+      Doc.text(s"<$name") + attributes + Doc.lineOrEmpty + (
+        if config.selfClose(name)
         then Doc.text("/>")
-        else Doc.text(s"></$qName>")
+        else Doc.text(s"></$name>")
       )
     else
-      val start: Doc = Doc.text(s"<$qName") + attributes + Doc.lineOrEmpty + Doc.text(">")
-      val end: Doc = Doc.text(s"</$qName>")
+      val start: Doc = Doc.text(s"<$name") + attributes + Doc.lineOrEmpty + Doc.text(">")
+      val end: Doc = Doc.text(s"</$name>")
 
       val stack: Boolean =
         noText &&
-        !config.unStack(qName) &&
-        ((children.length >= 2) || ((children.length == 1) && config.stack(qName)))
+        !config.unStack(name) &&
+        ((children.length >= 2) || ((children.length == 1) && config.stack(name)))
 
       if stack then
         // If this is clearly a bunch of elements - stack 'em with an indent:
@@ -80,7 +80,7 @@ final class XmlWriter[X <: XmlAst](val xml: X)(
           Doc.hardLine,
           end
         ))
-      else if config.nest(qName) then
+      else if config.nest(name) then
         // If this is forced-nested element - nest it:
         Doc.intercalate(Doc.lineOrSpace, children).tightBracketBy(left = start, right = end, indent)
       else
@@ -148,7 +148,7 @@ final class XmlWriter[X <: XmlAst](val xml: X)(
               val cling: Boolean =
                 xml.asElement(c).isEmpty ||
                 xml.asElement(c).nonEmpty && xml.asElement(node).isEmpty && !isWhitespace(node) ||
-                xml.asElement(node).isDefined && config.cling(xml.qName(xml.asElement(node).get))
+                xml.asElement(node).isDefined && config.cling(xml.name(xml.asElement(node).get))
               if cling
               then chunkify(result, node :: current, tail, flush = false)
               else chunkify(result, current, nodes, flush = true)
@@ -175,13 +175,13 @@ final class XmlWriter[X <: XmlAst](val xml: X)(
     canBreakRight: Boolean
   ): Doc =
     xml.asElement(node).map: (element: xml.Element) =>
-      val qName: String = xml.qName(element)
-      if config.preformat(qName) then
+      val name: String = xml.name(element)
+      if config.preformat(name) then
         Doc.text(preformatElement(element, parent).mkString(XmlWriter.hiddenNewline))
       else
         val result: Doc = fromElement(element, parent, canBreakLeft, canBreakRight)
         // Note: suppressing extra hardLine when lb is in a stack is non-trivial - and not worth it :)
-        if canBreakRight && config.break(qName) then result + Doc.hardLine else result
+        if canBreakRight && config.break(name) then result + Doc.hardLine else result
     .orElse(xml.asAtom(node).map(text => Doc.text(encodeXmlSpecials(text))))
     .getOrElse(Doc.paragraph(toString(node)))
 
@@ -194,10 +194,10 @@ final class XmlWriter[X <: XmlAst](val xml: X)(
     val children: Seq[String] =
       xml.children(element).flatMap(node => preformat(node, Some(element)))
 
-    val qName: String = xml.qName(element)
-    if children.isEmpty then Seq(s"<$qName$attributes/>")
-    else if children.length == 1 then Seq(s"<$qName$attributes>${children.head}</$qName>")
-    else Seq(s"<$qName$attributes>" + children.head) ++ children.tail.init ++ Seq(children.last + s"</$qName>")
+    val name: String = xml.name(element)
+    if children.isEmpty then Seq(s"<$name$attributes/>")
+    else if children.length == 1 then Seq(s"<$name$attributes>${children.head}</$name>")
+    else Seq(s"<$name$attributes>" + children.head) ++ children.tail.init ++ Seq(children.last + s"</$name>")
 
   private def preformat(node: xml.Xml, parent: Option[xml.Element]): Seq[String] =
     xml.asElement(node).map(preformatElement(_, parent))

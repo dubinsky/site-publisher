@@ -47,14 +47,15 @@ abstract class Page(
   final def permalink: Option[String] = frontMatter.permalink
   final def aliases: List[String] = frontMatter.aliases
   final def post: Boolean = frontMatter.post
+  final def postTitle: Option[String] = frontMatter.postTitle
   final def tags: List[String] = frontMatter.tags
   final def author: String = frontMatter.author.getOrElse(site.author)
   final def math: Boolean = site.math || frontMatter.math
 
-  final protected lazy val postDate: Option[LocalDate] = Posts.date(path)
-  final def isPost: Boolean = postDate.isDefined
+  final lazy val postDate: Option[LocalDate] = Posts.date(path)
+  final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
   final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(frontMatter.date)
-  final def dateModified: Option[Date] = frontMatter.modified_time
+  final def dateModified: Option[Date] = frontMatter.modifiedTime
 
   final def title: String = frontMatter.title.getOrElse(titleDefault)
   def titleDefault: String = titleFromPath
@@ -105,7 +106,7 @@ object Page:
   trait NonDirectory extends Page:
     final override def isDirectory: Boolean = false
     final override def titleFromPath: String = path.fileName
-    
+
   abstract class Real(
     site: Site,
     path: Path
