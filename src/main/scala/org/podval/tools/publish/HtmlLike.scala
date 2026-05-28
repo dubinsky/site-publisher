@@ -90,10 +90,10 @@ object HtmlLike:
       case Right(xml) => Xml.asElement(xml).get
       case Left(error) =>
         errorReporter.error(PageError.Parsing, "HTML parsing error", Some(error))
-        malformedXml(error)
+        malformedHtml(error)
 
-    private def malformedXml(error: Throwable): Xml.Element =
+    private def malformedHtml(error: Throwable): Xml.Element =
       var result = Xml.element("div")
       result = Xml.ClassName.add(result, "malformed-xml")
-      result = Xml.setText(result, s"Malformed XML: $error")
+      result = Xml.setText(result, s"Malformed HTML: $error")
       result

@@ -9,7 +9,8 @@ import scala.annotation.tailrec
 object Markup:
   val all: List[Markup] = List(
     Markdown,
-    HtmlLike.Html
+    HtmlLike.Html,
+    Tei
   )
 
   // TEI org/person/place, facsimile, etc.
@@ -45,7 +46,7 @@ abstract class Markup derives CanEqual:
   ): Xml.Element =
     val xmlRaw: Xml.Element = parse(content, errorReporter)
     val idGenerator: IdGenerator = IdGenerator()
-    
+
     Xml.transform(xmlRaw, stop(Xml), element =>
       var result: Xml.Element = element
 
@@ -53,7 +54,7 @@ abstract class Markup derives CanEqual:
       // but I do it manually and uniformly for HTML, TEI etc.
       if isSectionElement(result) && Xml.Id.get(result).isEmpty then
         result = Xml.Id.set(result, sectionTitle(result).fold(idGenerator.generate())(Xml.Id.toId))
-      
+
       if recognizeBlocks then
         result = setBlockId(result, errorReporter)
 
@@ -138,7 +139,7 @@ abstract class Markup derives CanEqual:
 
   // This is where TEI link elements like `persName` get converted into HTML `a` elements
   protected def convertLinks(element: Xml.Element): Xml.Element
-  
+
   // TODO according to the Obsidian documentation, block anchor can be added to a "structured block"
   // (e.g., a list) by putting it after the block, with empty lines before and after;
   // I'll deal with this later...

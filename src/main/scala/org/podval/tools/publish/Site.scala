@@ -132,7 +132,7 @@ final class Site(
     Files.requireFile(file)
     val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
     val sourcePath: Path = Path(directoryPath :+ name, extension)
-    extension.flatMap(extension => Markup.all.find(_.isExtension(extension))) match
+    markup(sourcePath) match
       case None => addPage(Asset.AssetWithSource(this, sourcePath))
       case Some(markup) => find(sourcePath.html) match
         case Some(page) => page.setSource(markup, sourcePath)
@@ -144,6 +144,9 @@ final class Site(
             else MarkupPage.Simple(this, path)
           page.setSource(markup, sourcePath)
           addPage(page)
+
+  private def markup(sourcePath: Path): Option[Markup] = sourcePath.extension.flatMap: extension =>
+    Markup.all.find(_.isExtension(extension))
 
 object Site:
   def main(args: Array[String]): Unit = Cli.main(Array(
