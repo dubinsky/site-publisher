@@ -86,6 +86,7 @@ abstract class XmlAst:
     .flatMap(element => f(element))
 
   sealed abstract class Elem(val elementName: String):
+    def mk: Element = element(elementName)
     def is(element: Element): Boolean = name(element) == elementName
 
   object A extends Elem("a")

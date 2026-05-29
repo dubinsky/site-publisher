@@ -1,8 +1,8 @@
 package org.podval.tools.publish.util
  
-final class IdGenerator:
-  private var generatedId: Int = 0
+final class IdGenerator(prefix: String):
+  private var number: Int = 0
 
   def generate(): String =
-    generatedId = generatedId + 1
-    s"_generated_id$generatedId"
+    number = number + 1
+    s"$prefix$number"

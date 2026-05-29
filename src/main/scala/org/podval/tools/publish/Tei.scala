@@ -1,5 +1,6 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, XmlAst, XmlParser, XmlWriter}
 
 /*
@@ -23,8 +24,9 @@ it needs to not be an HTML <p> (and of course, namespace is ignored...)
 object Tei extends Markup:
   override val extension: String = "xml"
   override val additionalExtensions: Set[String] = Set.empty
-  override protected def recognizeWikiLinks: Boolean = false
-  override protected def recognizeBlocks: Boolean = false
+  override protected def recognizeMarkdownWikiLinks: Boolean = false
+  override protected def recognizeMarkdownFootnotes: Boolean = false
+  override protected def recognizeMarkdownBlocks: Boolean = false
   override protected def stop(xml: XmlAst)(element: xml.Element): Boolean = false
 
   private object Cols extends Xml.Attribute("cols")
@@ -69,6 +71,8 @@ object Tei extends Markup:
       case "pb" =>
         renameElement("a", Xml.setText(result, facsimileSymbol))
 
+      // TODO tooltips on dates and gaps
+
       case _ => element
 
   private val facsimileSymbol: String = "⎙"
@@ -105,6 +109,31 @@ object Tei extends Markup:
     element: Xml.Element,
     errorReporter: PageError.Reporter
   ): Seq[Fragment.Section] = Seq.empty // TODO
+
+  override protected def isFootnotesContainer(element: Xml.Element): Boolean =
+    Xml.name(element) == "text"
+
+  override protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes) =
+    val correlationIds: IdGenerator = IdGenerator("")
+
+    // Assign correlation ids
+    var xml: Xml.Element = Xml.transform(element, stop(Xml), element =>
+      if Xml.name(element) == "note" && Xml.getAttribute(element, "place").contains("end")
+      then Footnotes.CorrelationId.set(element, correlationIds.generate())
+      else element
+    )
+
+    // Retrieve footnote bodies
+    val footnotes: Footnotes = Footnotes(Xml.gather(xml, stop(Xml), element =>
+      Footnotes.CorrelationId.get(element).map(_ -> Xml.children(element))
+    ).toMap)
+
+    // Replace footnotes with links
+    xml = Xml.transform(xml, stop(Xml), element =>
+      Footnotes.CorrelationId.get(element).fold(element)(Footnotes.linkStub)
+    )
+
+    (xml, footnotes)
 
   override def parse(
     content: String,

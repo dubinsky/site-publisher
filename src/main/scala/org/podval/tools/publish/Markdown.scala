@@ -7,7 +7,7 @@ import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
-import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
+//import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughSubscriptExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
@@ -21,7 +21,7 @@ object Markdown extends HtmlLike:
   override val additionalExtensions: Set[String] = Set.empty
 
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
-    FootnoteExtension.create,
+//    FootnoteExtension.create,
     StrikethroughSubscriptExtension.create,
     TablesExtension.create,
     TaskListExtension.create
@@ -75,8 +75,9 @@ object Markdown extends HtmlLike:
   object WikiBlockClass extends Xml.ClassName("wiki-block")
 
   // see https://obsidian.md/help/links
+  def convertWikiLinks(text: String): Seq[Xml.Xml] = convertWikiLinks(Seq.empty, text)
   @tailrec
-  def convertWikiLinks(result: Seq[Xml.Xml], text: String): Seq[Xml.Xml] =
+  private def convertWikiLinks(result: Seq[Xml.Xml], text: String): Seq[Xml.Xml] =
     if text.isEmpty then result else
       val startTransclusion: Int = text.indexOf(WikiLink.startTransclusion)
       val startLink: Int = text.indexOf(WikiLink.startLink)
@@ -101,6 +102,36 @@ object Markdown extends HtmlLike:
 
         convertWikiLinks(
           result ++ Option.when(before.nonEmpty)(Xml.mkText(before)).toSeq ++ Seq(wikiLink),
+          after
+        )
+
+  private object Footnote:
+    val start: String = "[^"
+    val end: String = "]"
+    val bodyStart: String = ":"
+
+  def convertFootnotes(text: String): Seq[Xml.Xml] = convertFootnotes(Seq.empty, text)
+  @tailrec
+  // TODO this loop has commonality with the convertWikiLinks() loop...
+  private def convertFootnotes(result: Seq[Xml.Xml], text: String): Seq[Xml.Xml] =
+    if text.isEmpty then result else
+      val start: Int = text.indexOf(Footnote.start)
+      val end: Int = if start == -1 then -1 else text.indexOf(Footnote.end, start)
+      if end == -1 then result ++ Seq(Xml.mkText(text)) else
+        val before: String = text.substring(0, start)
+        val correlationId: String = text.substring(start + Footnote.start.length, end).trim
+        val afterRaw: String = text.substring(end + Footnote.end.length)
+
+        val (footnote: Xml.Element, after: String) =
+          if !afterRaw.startsWith(Footnote.bodyStart)
+          then (Footnotes.linkStub(correlationId), afterRaw)
+          // TODO be more precise:
+          // - only indented content counts
+          // - there may be markup in the footnote body
+          else (Footnotes.bodyStub(correlationId, Chunk(Xml.mkText(afterRaw.substring(Footnote.bodyStart.length).trim))), "")
+
+        convertFootnotes(
+          result ++ Option.when(before.nonEmpty)(Xml.mkText(before)).toSeq ++ Seq(footnote),
           after
         )
 

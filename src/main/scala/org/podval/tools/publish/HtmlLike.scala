@@ -10,19 +10,21 @@ import Fragment.Section
 // pure XML markup formats like TEI and DocBook are different.
 abstract class HtmlLike extends Markup:
   final override protected def toHtml(element: Xml.Element): Xml.Element = element
-  
-  final override protected def recognizeWikiLinks: Boolean = true
 
-  final override protected def recognizeBlocks: Boolean = true
+  final override protected def recognizeMarkdownWikiLinks: Boolean = true
+
+  final override protected def recognizeMarkdownFootnotes: Boolean = true
+
+  final override protected def recognizeMarkdownBlocks: Boolean = true
 
   final override protected def stop(xml: XmlAst)(element: xml.Element): Boolean = xml.Code.is(element)
-  
+
   final override protected def isSectionElement(element: Xml.Element): Boolean = headerLevel(element).isDefined
-  
+
   final override protected def sectionTitle(element: Xml.Element): Option[String] = Xml.toStringOpt(element)
 
   final override protected def linkKind(element: Xml.Element): Option[Link.Kind] = None
-  
+
   private def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = Xml.name(element)
     if !qName.startsWith("h") then None else
@@ -73,6 +75,25 @@ abstract class HtmlLike extends Markup:
         level,
         tail
       )
+
+  final override protected def isFootnotesContainer(element: Xml.Element): Boolean =
+    Xml.name(element) == "div"
+
+  final override protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes) =
+    // Retrieve footnote bodies
+    val footnotes: Footnotes = Footnotes(Xml.gather(element, stop(Xml), element =>
+      if !Footnotes.BodyClass.has(element) then None else
+        Footnotes.CorrelationId.get(element).map(_ -> Xml.children(element))
+    ).toMap)
+
+    // Remove body stubs
+    val xml = Xml.transform(element, stop(Xml), element =>
+      Xml.setChildren(element, Xml.children(element)
+        .filterNot(Xml.asElement(_).fold(false)(Footnotes.BodyClass.has))
+      )
+    )
+
+    (xml, footnotes)
 
 object HtmlLike:
   private final class Section(

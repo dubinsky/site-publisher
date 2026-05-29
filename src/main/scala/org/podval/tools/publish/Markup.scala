@@ -31,9 +31,11 @@ abstract class Markup derives CanEqual:
   // TODO XmlWriter should stop at the same elements!
   protected def stop(xml: XmlAst)(element: xml.Element): Boolean
 
-  protected def recognizeWikiLinks: Boolean
+  protected def recognizeMarkdownWikiLinks: Boolean
 
-  protected def recognizeBlocks: Boolean
+  protected def recognizeMarkdownFootnotes: Boolean
+
+  protected def recognizeMarkdownBlocks: Boolean
 
   protected def isSectionElement(element: Xml.Element): Boolean
 
@@ -45,33 +47,39 @@ abstract class Markup derives CanEqual:
 
   protected def toHtml(element: Xml.Element): Xml.Element
 
+  protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes)
+
+  protected def isFootnotesContainer(element: Xml.Element): Boolean
+  
   final def parseAndPreProcess(
     content: String,
     errorReporter: PageError.Reporter,
     siteUrl: String
   ): Xml.Element =
-    val xmlRaw: Xml.Element = parse(content, errorReporter)
-    val idGenerator: IdGenerator = IdGenerator()
+    val ids: IdGenerator = IdGenerator("_generated_id")
 
-    Xml.transform(xmlRaw, stop(Xml), element =>
+    var xml: Xml.Element = parse(content, errorReporter)
+
+    xml = Xml.transform(xml, stop(Xml), element =>
       var result: Xml.Element = toHtml(element)
 
       // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
       // but I do it manually and uniformly for HTML, TEI etc.
       if isSectionElement(result) && Xml.Id.get(result).isEmpty then
-        result = Xml.Id.set(result, sectionTitle(result).fold(idGenerator.generate())(Xml.Id.toId))
+        result = Xml.Id.set(result, sectionTitle(result).fold(ids.generate())(Xml.Id.toId))
 
-      if recognizeBlocks then
+      if recognizeMarkdownBlocks then
         result = Markdown.setBlockId(result, errorReporter)
 
-      if recognizeWikiLinks && !Xml.A.is(result) then
-        result = Xml.setChildren(result, Xml.children(result).flatMap(xml =>
-          Xml.asText(xml).fold(Seq(xml))(Markdown.convertWikiLinks(Seq.empty, _))
-        ))
+      if !Xml.A.is(result) then
+        if recognizeMarkdownWikiLinks then
+          result = convertText(result, Markdown.convertWikiLinks)
+        if recognizeMarkdownFootnotes then
+          result = convertText(result, Markdown.convertFootnotes)
 
       if Xml.A.is(result) then
         if Xml.Id.get(result).isEmpty then
-          result = Xml.Id.set(result, idGenerator.generate())
+          result = Xml.Id.set(result, ids.generate())
 
         Xml.Href.get(result).foreach: href =>
           // TODO verify that external link is not broken if the Site is so configured
@@ -88,20 +96,51 @@ abstract class Markup derives CanEqual:
       result
     )
 
+    // Footnotes
+    val (xmlWithoutFootnotes, footnotes) = processFootnotes(xml)
+    xml = xmlWithoutFootnotes
+
+    val footnoteNumbers: IdGenerator = IdGenerator("")
+    var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
+
+    xml = Xml.transform(xml, stop(Xml), element => Footnotes.CorrelationId.get(element).fold(element): correlationId =>
+      val footnoteNumber: String = footnoteNumbers.generate()
+      footnotesToAdd = footnotesToAdd.appended(footnotes.body(footnoteNumber, correlationId))
+      Footnotes.link(footnoteNumber)
+    )
+
+    var footnotesAdded: Boolean = false
+    xml = Xml.transform(xml, stop(Xml), element =>
+      if footnotesAdded || !isFootnotesContainer(element) then element else
+        footnotesAdded = true
+        var footnotesDiv: Xml.Element = Xml.element("div")
+        footnotesDiv = Xml.ClassName.add(footnotesDiv, "footnotes")
+        footnotesDiv = Xml.setChildren(footnotesDiv, footnotesToAdd)
+        Xml.setChildren(element, element.children :+ footnotesDiv)
+    )
+    
+    xml
+
+  private def convertText(
+    element: Xml.Element,
+    converter: String => Seq[Xml.Xml]
+  ): Xml.Element =
+    Xml.setChildren(element, Xml.children(element).flatMap(xml => Xml.asText(xml).fold(Seq(xml))(converter)))
+
   final def toc(
     xml: Xml.Element,
     errorReporter: PageError.Reporter
   ): Toc = Toc(
     sections = sections(xml, errorReporter),
     ids = Xml.gather(xml, stop(Xml), Xml.Id.get),
-    blocks = if !recognizeBlocks then Seq.empty else
+    blocks = if !recognizeMarkdownBlocks then Seq.empty else
       Xml.gather(xml, stop(Xml), element =>
         if !Markdown.WikiBlockClass.has(element) then None else Xml.Id.get(element) match
           case None => errorReporter.error(PageError.NoId, s"Defect: No id on block $element", None)
           case Some(id) => Some(Fragment.Block(id))
       )
   )
-  
+
   final def htmlContent(
     xml: Xml.Element,
     toc: Toc,
@@ -127,7 +166,7 @@ abstract class Markup derives CanEqual:
     Html.transform(Html.fromXml(xmlResult), stop(Html), element =>
       if !Toc.isKramdownTocMarker(element) then element else toc.html
     )
-  
+
   private def resolveInternalLinks(
     element: Xml.Element,
     ref: String,
