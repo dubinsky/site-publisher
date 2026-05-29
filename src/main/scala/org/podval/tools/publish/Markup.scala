@@ -117,7 +117,8 @@ abstract class Markup derives CanEqual:
           result = resolveInternalLinks(result, href, page, errorReporter)
 
         if Markup.TranscludeClass.has(result) then
-          result = Markdown.embed(result, href)
+          Markdown.embed(result, href).foreach: embedded =>
+            result = embedded
 
       result
     )

@@ -40,18 +40,27 @@ abstract class Page(
 
   def sourcePath: Option[Path]
 
-  private def frontMatter: FrontMatter =
-    source.map(_.cached.frontMatter).getOrElse(FrontMatter.absent)
+  private def frontMatter: FrontMatter = source.map(_.cached.frontMatter).getOrElse(FrontMatter.absent)
 
   // TODO permalink must be absolute
-  final def permalink: Option[String] = frontMatter.permalink
-  final def aliases: List[String] = frontMatter.aliases
-  final def post: Boolean = frontMatter.post
-  final def postTitle: Option[String] = frontMatter.postTitle
+  final def aliases: Seq[Page.Alias] = (
+    postPath.toSeq ++
+    frontMatter.permalink.toSeq ++
+    frontMatter.aliases
+  ).map(Page.Alias(site, this, _))
+
+  private def postPath: Option[String] = if !frontMatter.post then None else date match
+    case None =>
+      site.errors.error(PageError(PageError.NoDate, path, s"No date for an automatic blog post"))
+      None
+    case Some(date) =>
+      val title: String = frontMatter.postTitle.getOrElse(path.fileName) // TODO titleFromPath?
+      Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
+  
   final def tags: List[String] = frontMatter.tags
   final def author: String = frontMatter.author.getOrElse(site.author)
   final def math: Boolean = site.math || frontMatter.math
-
+  
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
   final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(frontMatter.date)

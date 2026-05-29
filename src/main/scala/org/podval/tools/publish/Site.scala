@@ -47,15 +47,7 @@ final class Site(
   def addPage[P <: Page](page: P): P =
     pagesVar = pagesVar.appended(page)
     // Add alias pages
-    def addAlias(alias: String): Unit = addPage(Page.Alias(page.site, page, alias))
-    page.permalink.foreach(addAlias)
-    page.aliases.foreach(addAlias)
-    // Add automatic post
-    if page.post then page.date match
-      case None => errors.error(PageError(PageError.NoDate, page.path, s"No date for an automatic blog post"))
-      case Some(date) =>
-        val title: String = page.postTitle.getOrElse(page.path.fileName) // TODO titleFromPath?
-        addAlias(Posts.path(date.localDate, title ).html.withoutHtml.toString)
+    page.aliases.foreach(addPage)
     page
 
   // Add embedded resources

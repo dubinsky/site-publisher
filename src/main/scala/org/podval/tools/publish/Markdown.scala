@@ -123,8 +123,8 @@ object Markdown extends HtmlLike:
 
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
-  def embed(element: Xml.Element, ref: String): Xml.Element =
-    val embedded: Option[Xml.Element] = Files.nameAndExtension(ref)._2.fold(None): extension =>
+  def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
+    Files.nameAndExtension(ref)._2.fold(None): extension =>
       if Media.isImage(extension) then
         val (width: Option[Int], height: Option[Int]) =
           // TODO Embed image, potentially with sizes WIDTHxHEIGHT or just WIDTH or nothing in the text
@@ -146,7 +146,3 @@ object Markdown extends HtmlLike:
         None
       else
         None
-
-    embedded.getOrElse:
-      // TODO! can not transclude external links
-      element
