@@ -69,8 +69,35 @@ final class Site(
     // Add alias pages
     page.aliases.foreach(addPage)
 
-  // TODO make a lazy val - or dissolve
-  def markupPages: List[MarkupPage] = pages.collect { case page: MarkupPage => page }
+  def addPage(
+    sourcePath: Option[Path],
+    path: Path
+  ): Page =
+    def setSource(page: Page.Real): Unit = page match
+      case markupPage: MarkupPage =>
+        for
+          sourcePath <- sourcePath
+          markup <- Markup.of(sourcePath)
+        do
+          markupPage.setSource(markup, sourcePath)
+      case _ => ()
+
+    pages.find(_.path == path.html) match
+      case Some(page) => page match
+        case markupPage: MarkupPage => setSource(markupPage)
+        case _ => ()
+        page
+
+      case None =>
+        val page: Page.Real =
+          if path.fileName == Directory.fileName
+          then Directory(this, path.html)
+          else sourcePath.flatMap(Markup.of) match
+            case None => Asset.AssetWithSource(this, sourcePath.get, path)
+            case Some(markup) => MarkupPage.Simple(this, path.html)
+        setSource(page)
+        addPage(page)
+        page
 
   // Header pages
   lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
@@ -117,7 +144,7 @@ final class Site(
       )))
 
     // Gather back-links
-    markupPages.foreach(page => backLinks.addBackLinks(page.backLinks))
+    pages.foreach(page => backLinks.addBackLinks(page.backLinks))
 
     // TODO sort pages topologically based on transclusions
 

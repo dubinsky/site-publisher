@@ -28,7 +28,18 @@ abstract class Page(
 
   final protected def targetFile: File = path.file(site.targetDirectory)
 
-  final lazy val parent: Option[Directory] = Directory.parent(site, this)
+  final lazy val parent: Option[Directory] =
+    val parentDirectory: Option[Seq[String]] =
+      if isDirectory && path.path.length > 1 then Some(path.path.init.init)
+      else if !isDirectory && path.path.nonEmpty then Some(path.path.init)
+      else None
+
+    parentDirectory
+      .map(parentDirectory => site.addPage(None, Path(parentDirectory :+ Directory.fileName *).html))
+      .map {
+        case directory: Directory => directory
+        case _ => throw IllegalArgumentException(s"Not a Directory")
+      }
 
   def isAlias: Boolean
 
@@ -79,6 +90,8 @@ abstract class Page(
   final def lang: String = frontMatter.lang.orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
+
+  def backLinks: Seq[BackLinks.BackLink]
   
   final lazy val headerPage: Option[HeaderPage] = frontMatter
     .headerPage
@@ -141,6 +154,7 @@ object Page:
     override def titleDefault: String = path.fileName
     override protected def iconDefault: Icon = Icon("link", Icon.Solid)
     override def sourcePath: Option[Path] = None
+    override def backLinks: Seq[BackLinks.BackLink] = Seq.empty
     override def content: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""
 
   def pageList(pages: Seq[Page], cls: Option[String] = None): Html.Element = ul(

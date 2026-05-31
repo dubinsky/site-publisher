@@ -21,7 +21,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page.Real(site, path) 
 
   final override def sourcePath: Option[Path] = source.map(_.sourcePath)
 
-  final def backLinks: Seq[BackLinks.BackLink] = source.fold(Seq.empty): source =>
+  final override def backLinks: Seq[BackLinks.BackLink] = source.fold(Seq.empty): source =>
     val cached = source.cached
     source.markup.backLinks(
       cached.xml,
