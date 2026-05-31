@@ -10,8 +10,8 @@ sealed abstract class Asset(site: Site, path: Path) extends Page.Real(site: Site
   override protected def iconDefault: Icon = Media.icon(path.extension).getOrElse(Icon.file)
 
 object Asset:
-  final class AssetWithSource(site: Site, path: Path) extends Asset(site, path):
-    override def sourcePath: Option[Path] = Some(path)
+  final class AssetWithSource(site: Site, source: Path, path: Path) extends Asset(site, path):
+    override def sourcePath: Option[Path] = Some(source)
     override def write(): Unit = Files.copy(fromFile = path.file(site.sourceDirectory), toFile = targetFile)
 
   abstract class SyntheticAsset(site: Site, path: Path) extends Asset(site, path) with Page.WithContent:

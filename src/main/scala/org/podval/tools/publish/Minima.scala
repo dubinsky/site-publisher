@@ -157,13 +157,14 @@ object Minima:
             timeHtml(Some("Updated:"), page.dateModified, "dt-modified", "dateModified")
           ),
           "•",
-          Seq(
-            span(className := "post-authors",
-              span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
-                span(className := "p-author h-card", itemProp := "name", page.author)
+          page.author.fold(Seq.empty): author =>
+            Seq(
+              span(className := "post-authors",
+                span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
+                  span(className := "p-author h-card", itemProp := "name", author)
+                )
               )
             )
-          )
         ),
         "|",
         page.tags.map(page.site.tags.tagRef)

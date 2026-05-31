@@ -58,7 +58,7 @@ abstract class Page(
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
   
   final def tags: List[String] = frontMatter.tags
-  final def author: String = frontMatter.author.getOrElse(site.author)
+  final def author: Option[String] = frontMatter.author
   final def math: Boolean = site.math || frontMatter.math
   
   final lazy val postDate: Option[LocalDate] = Posts.date(path)

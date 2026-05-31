@@ -6,6 +6,19 @@ import zio.blocks.html.*
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
+object Posts:
+  def path(date: LocalDate, title: String): Path = Path(
+    f"${date.getYear}%04d",
+    f"${date.getMonthValue}%02d",
+    f"${date.getDayOfMonth}%02d",
+    title
+  )
+
+  def date(path: Path): Option[LocalDate] = if path.path.length != 4 then None else
+    val dateString = s"${path.path(0)}-${path.path(1)}-${path.path(2)}"
+    try Some(LocalDate.parse(dateString))
+    catch case e: DateTimeParseException => None
+
 final class Posts(
   site: Site,
   postsDirectoryName: String,
@@ -38,6 +51,13 @@ final class Posts(
       ))
     )
 
+  def isDirectoryEmptiedOut(directoryPath: Seq[String]): Boolean = directoryPath.length == 1 && {
+    val name: String = directoryPath.head
+    postsDirectoryName == name ||
+    draftsDirectoryName.contains(name) ||
+    dailyNotesDirectoryName.contains(name)
+  }
+
   def path(sourcePath: Path): Option[Path] =
     def inDirectory(name: String): Boolean = sourcePath.path.head == name
 
@@ -51,6 +71,7 @@ final class Posts(
       for
         date: LocalDate <-
           try
+            // TODO record error, do not throw|!
             if fileName.length < 10 then throw DateTimeParseException("Date is too short", fileName, 0)
             Some(LocalDate.parse(fileName.substring(0, 10)))
           catch case e: DateTimeParseException =>
@@ -67,16 +88,3 @@ final class Posts(
           else Some(title)
       yield
         Posts.path(date, title)
-
-object Posts:
-  def path(date: LocalDate, title: String): Path = Path(
-    f"${date.getYear}%04d",
-    f"${date.getMonthValue}%02d",
-    f"${date.getDayOfMonth}%02d",
-    title
-  )
-
-  def date(path: Path): Option[LocalDate] = if path.path.length != 4 then None else
-    val dateString = s"${path.path(0)}-${path.path(1)}-${path.path(2)}"
-    try Some(LocalDate.parse(dateString))
-    catch case e: DateTimeParseException => None
