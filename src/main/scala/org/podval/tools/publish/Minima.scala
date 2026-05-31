@@ -30,7 +30,7 @@ object Minima:
       Option.when(page.math)(js.MathJax),
       Some(js.FontAwesome),
       Option.when(languages.contains("mermaid"))(js.Mermaid),
-      site.googleAnalytics.map(js.GoogleAnalytics(_)),
+      if !site.production then None else site.config.googleAnalytics.map(js.GoogleAnalytics(_)),
       Some(site)
     ).flatten
 
@@ -50,7 +50,7 @@ object Minima:
       body(
         header(className := "site-header",
           div(className := "wrapper",
-            a(className := "site-title", href := "/", rel := "author", site.title),
+            a(className := "site-title", href := "/", rel := "author", site.config.title),
             nav(className := "site-nav",
               input(`type` := "checkbox", id := "nav-trigger"),
               label(`for` := "nav-trigger",
@@ -86,12 +86,12 @@ object Minima:
         footer(className  := "site-footer h-card",
           data(className := "u-url", href := "/"),
           div(className := "wrapper",
-            h2(className := "footer-heading", site.title),
+            h2(className := "footer-heading", site.config.title),
             div(className := "footer-col-wrapper",
               div(className := "footer-col footer-col-1",
                 ul(className := "contact-list",
-                  li(className := "p-name", site.author),
-                  li(a(className := "u-email", href := s"mailto:${site.email}", site.email))
+                  li(className := "p-name", site.config.author),
+                  li(a(className := "u-email", href := s"mailto:${site.config.email}", site.config.email))
                 )
               ),
               div(className := "footer-col footer-col-2",
@@ -111,7 +111,7 @@ object Minima:
                 )
               ),
               div(className := "footer-col footer-col-3",
-                p(site.description),
+                p(site.config.description),
                 p(
                   a(
                     href := Feed.path.toString,

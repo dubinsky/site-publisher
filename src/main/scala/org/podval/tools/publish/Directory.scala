@@ -46,6 +46,8 @@ final class Directory(site: Site, path: Path) extends MarkupPage.WithSyntheticCo
 object Directory:
   val fileName: String = "index"
 
+  def find(site: Site, path: Path): Option[MarkupPage] = site.markupPages.find(_.path == path)
+
   def parent(site: Site, page: Page): Option[Directory] =
     val parentDirectory: Option[Seq[String]] =
       if page.isDirectory && page.path.path.length > 1 then Some(page.path.path.init.init)
@@ -54,8 +56,8 @@ object Directory:
 
     parentDirectory.map: parentDirectory =>
       val parentPath: Path = Path(parentDirectory.appended(Directory.fileName) *).html
-      site
-        .find(parentPath)
+      this
+        .find(site, parentPath)
         .map {
           case page: Directory => page
           case _ => throw IllegalArgumentException(s"Not a Directory")
@@ -64,10 +66,7 @@ object Directory:
           val parent: Directory = Directory(site, parentPath)
           site.addPage(parent)
           parent
-
-  private def markup(sourcePath: Path): Option[Markup] = sourcePath.extension.flatMap: extension =>
-    Markup.all.find(_.isExtension(extension))
-
+  
   def scan(
     site: Site,
     directoryPath: Seq[String],
@@ -80,7 +79,7 @@ object Directory:
 
       for
         sourcePath <- indexSourcePath
-        markup <- markup(sourcePath)
+        markup <- Markup.of(sourcePath)
       do
         page.setSource(markup, sourcePath)
 
@@ -88,7 +87,7 @@ object Directory:
 
     val (files: List[File], directories: List[File]) = Files
       .list(directory)
-      .filterNot(isExcluded(site))
+      .filterNot(site.ignore.isIgnored)
       .partition(_.isFile)
 
     val filePaths: List[Path] = files.map: file =>
@@ -105,10 +104,10 @@ object Directory:
       val path: Path = toPath(sourcePath)
       if path.fileName == Directory.fileName
       then addDirectory(Some(sourcePath), path)
-      else markup(sourcePath) match
+      else Markup.of(sourcePath) match
         case None => site.addPage(Asset.AssetWithSource(site, sourcePath, path))
         // TODO search among synthetics only
-        case Some(markup) => site.find(sourcePath.html) match
+        case Some(markup) => find(site, sourcePath.html) match
           case Some(page) =>
             page.setSource(markup, sourcePath)
           case None =>
@@ -124,39 +123,3 @@ object Directory:
         directoryPath :+ directory.getName,
         directory
       )
-
-  private def isExcluded(site: Site)(file: File): Boolean =
-    val name: String = file.getName
-    if site.include.contains(name) then false
-    else if site.exclude.contains(name) then
-      site.log.debug(s"excluded: $name")
-      true
-    else
-      special.contains(name) ||
-      specialStartsWith.exists(name.startsWith)
-
-  private val special: Set[String] = Set(
-    ".jekyll-cache",
-    ".sass-cache",
-    "Gemfile",
-    "Gemfile.lock",
-    "LICENSE",
-    "README.md",
-    "build",
-    "build.gradle",
-    "bundle",
-    "gradle",
-    "gradlew",
-    "gradlew.bat",
-    "node_modules",
-    "settings.gradle",
-    "src",
-    "vendor",
-  )
-
-  private val specialStartsWith: Set[String] = Set(
-    ".",
-    "_",
-    "~",
-    "#"
-  )

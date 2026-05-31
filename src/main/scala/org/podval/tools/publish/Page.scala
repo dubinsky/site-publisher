@@ -56,11 +56,11 @@ abstract class Page(
     case Some(date) =>
       val title: String = frontMatter.postTitle.getOrElse(path.fileName) // TODO titleFromPath?
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
-  
+
   final def tags: List[String] = frontMatter.tags
   final def author: Option[String] = frontMatter.author
-  final def math: Boolean = site.math || frontMatter.math
-  
+  final def math: Boolean = site.config.math || frontMatter.math
+
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
   final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(frontMatter.date)
@@ -76,7 +76,8 @@ abstract class Page(
   final def icon: Icon = frontMatter.icon.getOrElse(iconDefault)
   protected def iconDefault: Icon
   
-  final def lang: String = frontMatter.lang.orElse(langDefault).getOrElse(site.lang)
+  final def lang: String = frontMatter.lang.orElse(langDefault).orElse(site.config.lang).getOrElse("en")
+  // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
   
   final lazy val headerPage: Option[HeaderPage] = frontMatter

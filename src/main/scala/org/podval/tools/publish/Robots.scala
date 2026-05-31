@@ -9,4 +9,4 @@ object Robots:
 final class Robots(site: Site) extends Asset.SyntheticAsset(site, Robots.path):
   override protected def iconDefault: Icon = Icon("robot", Icon.Solid)
 
-  override def content: String = s"Sitemap: ${site.url}${Sitemap.path}"
+  override def content: String = s"Sitemap: ${site.config.url}${Sitemap.path}"

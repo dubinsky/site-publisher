@@ -19,12 +19,7 @@ object Posts:
     try Some(LocalDate.parse(dateString))
     catch case e: DateTimeParseException => None
 
-final class Posts(
-  site: Site,
-  postsDirectoryName: String,
-  draftsDirectoryName: Option[String],
-  dailyNotesDirectoryName: Option[String]
-) extends MarkupPage.WithSyntheticContent(site, Path("posts").html) with Page.NonDirectory:
+final class Posts(site: Site) extends MarkupPage.WithSyntheticContent(site, Path("posts").html) with Page.NonDirectory:
   override def titleDefault: String = "Posts"
   override protected def descriptionDefault: Option[String] = Some("All posts")
   override protected def iconDefault: Icon = Icon.envelope
@@ -51,6 +46,10 @@ final class Posts(
       ))
     )
 
+  private def postsDirectoryName: String = site.postsDirectoryName
+  private def draftsDirectoryName: Option[String] = site.draftsDirectoryName
+  private def dailyNotesDirectoryName: Option[String] = site.dailyNotesDirectoryName
+  
   def isDirectoryEmptiedOut(directoryPath: Seq[String]): Boolean = directoryPath.length == 1 && {
     val name: String = directoryPath.head
     postsDirectoryName == name ||

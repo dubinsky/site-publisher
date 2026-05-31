@@ -90,7 +90,7 @@ object MarkupPage:
       val xml: Xml.Element = markup.parseAndPreProcess(
         markupContent,
         errorReporter,
-        site.url
+        site.config.url
       )
 
       val toc: Toc = markup.toc(xml, errorReporter)

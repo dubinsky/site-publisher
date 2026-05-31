@@ -6,7 +6,11 @@ import zio.blocks.chunk.Chunk
 import java.net.{URI, URISyntaxException}
 
 object Markup:
-  val all: List[Markup] = List(
+  // TODO disambiguate XML: TEI, Entity, Store...
+  def of(sourcePath: Path): Option[Markup] = sourcePath.extension.flatMap: extension =>
+    all.find(_.isExtension(extension))
+
+  private val all: List[Markup] = List(
     Markdown,
     HtmlLike.Html,
     Tei
@@ -50,7 +54,7 @@ abstract class Markup derives CanEqual:
   protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes)
 
   protected def isFootnotesContainer(element: Xml.Element): Boolean
-  
+
   final def parseAndPreProcess(
     content: String,
     errorReporter: PageError.Reporter,
@@ -118,7 +122,7 @@ abstract class Markup derives CanEqual:
         footnotesDiv = Xml.setChildren(footnotesDiv, footnotesToAdd)
         Xml.setChildren(element, element.children :+ footnotesDiv)
     )
-    
+
     xml
 
   private def convertText(
