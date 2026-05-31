@@ -110,30 +110,21 @@ object Tei extends Markup:
     errorReporter: PageError.Reporter
   ): Seq[Fragment.Section] = Seq.empty // TODO
 
-  override protected def isFootnotesContainer(element: Xml.Element): Boolean =
-    Xml.name(element) == "text"
-
-  override protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes) =
+  override protected def setFootnoteCorrelationIds(element: Xml.Element): Xml.Element =
     val correlationIds: IdGenerator = IdGenerator("")
 
-    // Assign correlation ids
-    var xml: Xml.Element = Xml.transform(element, stop(Xml), element =>
-      if Xml.name(element) == "note" && Xml.getAttribute(element, "place").contains("end")
-      then Footnotes.CorrelationId.set(element, correlationIds.generate())
-      else element
+    Xml.transform(element, stop(Xml), element =>
+      var result: Xml.Element = element
+      val isFootnote = Xml.name(element) == "note" && Xml.getAttribute(element, "place").contains("end")
+      if isFootnote then
+        result = Footnotes.CorrelationId.set(element, correlationIds.generate())
+        result = Footnotes.LinkClass.add(result)
+        result = Footnotes.BodyClass.add(result)
+      result
     )
 
-    // Retrieve footnote bodies
-    val footnotes: Footnotes = Footnotes(Xml.gather(xml, stop(Xml), element =>
-      Footnotes.CorrelationId.get(element).map(_ -> Xml.children(element))
-    ).toMap)
-
-    // Replace footnotes with links
-    xml = Xml.transform(xml, stop(Xml), element =>
-      Footnotes.CorrelationId.get(element).fold(element)(Footnotes.linkStub)
-    )
-
-    (xml, footnotes)
+  override protected def isFootnotesContainer(element: Xml.Element): Boolean =
+    Xml.name(element) == "text"
 
   override def parse(
     content: String,

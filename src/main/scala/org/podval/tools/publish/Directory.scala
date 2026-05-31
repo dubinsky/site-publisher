@@ -46,7 +46,7 @@ final class Directory(site: Site, path: Path) extends MarkupPage.WithSyntheticCo
 object Directory:
   val fileName: String = "index"
 
-  def find(site: Site, path: Path): Option[MarkupPage] = site.markupPages.find(_.path == path)
+  private def find(site: Site, path: Path): Option[MarkupPage] = site.markupPages.find(_.path == path)
 
   def parent(site: Site, page: Page): Option[Directory] =
     val parentDirectory: Option[Seq[String]] =
@@ -66,7 +66,7 @@ object Directory:
           val parent: Directory = Directory(site, parentPath)
           site.addPage(parent)
           parent
-  
+
   def scan(
     site: Site,
     directoryPath: Seq[String],
@@ -74,16 +74,29 @@ object Directory:
   ): Unit =
     def toPath(sourcePath: Path): Path = site.posts.path(sourcePath).getOrElse(sourcePath)
 
-    def addDirectory(indexSourcePath: Option[Path], path: Path): Unit =
-      val page: Directory = Directory(site, path)
+    def addPage(
+      path: Path,
+      mk: (Site, Path) => MarkupPage,
+      markup: Markup,
+      sourcePath: Path
+    ): Unit = find(site, path.html) match
+      case Some(page) =>
+        page.setSource(markup, sourcePath)
+      case None =>
+        val page: MarkupPage = mk(site, path)
+        page.setSource(markup, sourcePath)
+        site.addPage(page)
 
+    def addDirectory(indexSourcePath: Option[Path], path: Path): Unit =
       for
         sourcePath <- indexSourcePath
         markup <- Markup.of(sourcePath)
-      do
-        page.setSource(markup, sourcePath)
-
-      site.addPage(page)
+      do addPage(
+        path,
+        Directory.apply,
+        markup,
+        sourcePath
+      )
 
     val (files: List[File], directories: List[File]) = Files
       .list(directory)
@@ -94,11 +107,11 @@ object Directory:
       val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
       Path(directoryPath :+ name, extension)
 
-    val directoryPagePath: Path = toPath(Path(directoryPath :+ fileName))
-    val (indexFilePaths, nonIndexFilePaths) = filePaths.partition(_.path == directoryPagePath.path)
-
-    if !site.posts.isDirectoryEmptiedOut(directoryPath) then
+    val nonIndexFilePaths = if site.posts.isDirectoryEmptiedOut(directoryPath) then filePaths else
+      val directoryPagePath: Path = toPath(Path(directoryPath :+ fileName))
+      val (indexFilePaths, nonIndexFilePaths) = filePaths.partition(_.path == directoryPagePath.path)
       addDirectory(indexFilePaths.headOption, directoryPagePath)
+      nonIndexFilePaths
 
     nonIndexFilePaths.foreach: sourcePath =>
       val path: Path = toPath(sourcePath)
@@ -106,14 +119,12 @@ object Directory:
       then addDirectory(Some(sourcePath), path)
       else Markup.of(sourcePath) match
         case None => site.addPage(Asset.AssetWithSource(site, sourcePath, path))
-        // TODO search among synthetics only
-        case Some(markup) => find(site, sourcePath.html) match
-          case Some(page) =>
-            page.setSource(markup, sourcePath)
-          case None =>
-            val page: MarkupPage = MarkupPage.Simple(site, path.html)
-            page.setSource(markup, sourcePath)
-            site.addPage(page)
+        case Some(markup) => addPage(
+          path.html,
+          MarkupPage.Simple.apply,
+          markup,
+          sourcePath
+        )
 
     // TODO pair external index files with their directories
     // TODO for Store-described directories, do not scan directory listing

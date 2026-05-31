@@ -7,8 +7,8 @@ import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
-//import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
-import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughSubscriptExtension
+import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
+//import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughSubscriptExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -21,8 +21,8 @@ object Markdown extends HtmlLike:
   override val additionalExtensions: Set[String] = Set.empty
 
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
-//    FootnoteExtension.create,
-    StrikethroughSubscriptExtension.create,
+    FootnoteExtension.create,
+//    StrikethroughSubscriptExtension.create,
     TablesExtension.create,
     TaskListExtension.create
   )
@@ -39,7 +39,8 @@ object Markdown extends HtmlLike:
   private val extensionsRenderer: List[HtmlRenderer.HtmlRendererExtension] = extensionsCommon ++ extensionsRendererOnly
 
   private val options: MutableDataSet = new MutableDataSet
-//  options.set(Parser.FENCED_CODE_CONTENT_BLOCK, true)
+  options.set(FootnoteExtension.FOOTNOTE_LINK_REF_CLASS, Footnotes.LinkClass.name)
+  options.set(FootnoteExtension.FOOTNOTE_BACK_LINK_REF_CLASS, Footnotes.BodyClass.name)
 
   private val parser: Parser = Parser
     .builder(options)
@@ -63,6 +64,53 @@ object Markdown extends HtmlLike:
     s"<div>${parseAndRender(content)}</div>",
     errorReporter
   )
+
+  // Note: without FootnotesExtension, FlexMark treats footnotes as links,
+  // and by the time we get to `convertFootnotes()` footnotes are gone,
+  // so to process footnotes in Markdown markup correctly, I have to enable FootnotesExtension.
+  // Here I post-process its output to the form Markup understands.
+  override protected def toHtml(element: Xml.Element): Xml.Element =
+    // FootnotesExtension footnote link:
+    //   <sup id="fnref-$correlationId">
+    //     <a class="${Footnotes.LinkClass.name}" href="#fn-$correlationId">
+    //       correlationId
+    //     </a>
+    //   </sup>
+    (
+      if Xml.name(element) != "sup" then None else Xml
+      .children(element)
+      .flatMap(Xml.asElement)
+      .find(Footnotes.LinkClass.has)
+      .map(Xml.toString)
+      .map(Footnotes.linkStub)
+    )
+    // FootnotesExtension footnote body:
+    //   <li id="fn-$correlationId">
+    //     ...
+    //     <p>...</p>
+    //     ...
+    //     <a class="Footnotes.LinkBody.name" href="fnref-$correlationId">arrow back symbol</a>
+    //     ...
+    //   </li>
+      .orElse:
+        if Xml.name(element) != "li" then None else
+          val correlationId: Option[String] = Xml.Id.get(element).flatMap: id =>
+            Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
+
+          val body: Option[Chunk[Xml.Xml]] = Xml
+            .children(element)
+            .flatMap(Xml.asElement)
+            .find(Footnotes.BodyClass.has)
+            .map(backLink => Xml.children(element).takeWhile(_ ne backLink))
+
+          for
+            correlationId <- correlationId
+            body <- body
+          yield
+            // TODO find the <p> within the body and use its children as body...
+            Footnotes.bodyStub(correlationId, body)
+
+      .getOrElse(element)
 
   object WikiLink:
     val startTransclusion: String = "![["

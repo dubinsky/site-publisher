@@ -51,7 +51,7 @@ abstract class Markup derives CanEqual:
 
   protected def toHtml(element: Xml.Element): Xml.Element
 
-  protected def processFootnotes(element: Xml.Element): (Xml.Element, Footnotes)
+  protected def setFootnoteCorrelationIds(element: Xml.Element): Xml.Element
 
   protected def isFootnotesContainer(element: Xml.Element): Boolean
 
@@ -101,18 +101,45 @@ abstract class Markup derives CanEqual:
     )
 
     // Footnotes
-    val (xmlWithoutFootnotes, footnotes) = processFootnotes(xml)
-    xml = xmlWithoutFootnotes
 
+    // Set footnote correlation ids
+    xml = setFootnoteCorrelationIds(xml)
+
+    // Retrieve footnote bodies
+    val footnoteBodies: Map[String, Chunk[Xml.Xml]] = Xml.gather(xml, stop(Xml), element =>
+      if !Footnotes.BodyClass.has(element) then None else
+        Footnotes.CorrelationId.get(element).map(_ -> Xml.children(element))
+    ).toMap
+
+    // Replace footnotes with link stubs
+    xml = Xml.transform(xml, stop(Xml), element =>
+      Footnotes.CorrelationId.get(element).fold(element)(Footnotes.linkStub)
+    )
+
+    // Remove body stubs
+    xml = Xml.transform(xml, stop(Xml), element =>
+      Xml.setChildren(element, Xml.children(element)
+        .filterNot(Xml.asElement(_).fold(false)(child =>
+          Footnotes.BodyClass.has(child) ||
+          // FlexMark FootnotesExtension footnotes 'div'
+          Xml.name(child) == "div" && Xml.ClassName.has(child, "footnotes")
+        ))
+      )
+    )
+
+    // Number the footnotes
     val footnoteNumbers: IdGenerator = IdGenerator("")
     var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
 
     xml = Xml.transform(xml, stop(Xml), element => Footnotes.CorrelationId.get(element).fold(element): correlationId =>
       val footnoteNumber: String = footnoteNumbers.generate()
-      footnotesToAdd = footnotesToAdd.appended(footnotes.body(footnoteNumber, correlationId))
+      // TODO error when not found:
+      footnoteBodies.get(correlationId).foreach: footnoteBody =>
+        footnotesToAdd = footnotesToAdd.appended(Footnotes.body(footnoteNumber, footnoteBody))
       Footnotes.link(footnoteNumber)
     )
 
+    // Add footnotes 'div'
     var footnotesAdded: Boolean = false
     xml = Xml.transform(xml, stop(Xml), element =>
       if footnotesAdded || !isFootnotesContainer(element) then element else
