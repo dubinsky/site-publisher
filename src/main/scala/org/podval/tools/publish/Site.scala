@@ -43,15 +43,6 @@ final class Site(
 
   private val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
 
-  log.info(s"source directory: $sourceDirectory")
-  log.info(s"target directory: $targetDirectory")
-  log.info(s"config file: $configFile")
-  log.debug(s"Config:\n" + Config.codec.encodeToString(config))
-
-  def postsDirectoryName: String = "_posts"
-  def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
-  def dailyNotesDirectoryName: Option[String] = obsidianConfig.daysFolder
-
   // Components
   val errors: Errors = Errors(this)
   val ignore: Ignore = Ignore(this)
@@ -59,6 +50,16 @@ final class Site(
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
 
+  log.info(s"source directory: $sourceDirectory")
+  log.info(s"target directory: $targetDirectory")
+  log.info(s"configuration file: $configFile")
+  log.debug(s"configuration:\n" + Config.codec.encodeToString(config))
+  log.info(s"ignore rules:\n" + ignore.rules)
+
+  def postsDirectoryName: String = "_posts"
+  def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
+  def dailyNotesDirectoryName: Option[String] = obsidianConfig.daysFolder
+  
   private var pagesVar: List[Page] = List.empty
   def pages: List[Page] = pagesVar
 

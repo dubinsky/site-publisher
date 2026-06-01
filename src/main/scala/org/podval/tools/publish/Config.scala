@@ -13,8 +13,7 @@ final class Config(
   val lang: Option[String] = None,
   val math: Boolean = false,
   val googleAnalytics: Option[String] = None,
-  val social: Config.Social = Config.Social(),
-  val exclude: Set[String] = Set.empty,
+  val social: Config.Social = Config.Social()
 )
 
 object Config:
@@ -23,7 +22,7 @@ object Config:
     val twitter: Option[String] = None,
     val linkedin: Option[String] = None
   )
-  
+
   private val schema: Schema[Config] = Schema.derived
 
   val codec: YamlCodec[Config] = schema

@@ -51,11 +51,14 @@ object Directory:
     directoryPath: Seq[String],
     directory: File
   ): Unit =
+    val directoryPathString: String = directoryPath.mkString("/")
+    val firstSlash: String = if directoryPath.isEmpty then "/" else ""
+
     def toPath(sourcePath: Path): Path = site.posts.path(sourcePath).getOrElse(sourcePath)
 
     val (files: List[File], directories: List[File]) = Files
       .list(directory)
-      .filterNot(site.ignore.isIgnored)
+      .filterNot(file => site.ignore.isIgnored(s"$firstSlash$directoryPathString/${file.getName}", file.isDirectory))
       .partition(_.isFile)
 
     val filePaths: List[Path] = files.map: file =>
