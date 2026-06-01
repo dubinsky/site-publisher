@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.util.{Files, Media, Strings}
-import org.podval.xml.Xml
+import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.SeqHasAsJava
@@ -16,7 +16,7 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
 
-object Markdown extends HtmlLike:
+object MarkdownMarkup extends HtmlLikeMarkup:
   override val extension: String = "md"
   override val additionalExtensions: Set[String] = Set.empty
 
@@ -60,7 +60,7 @@ object Markdown extends HtmlLike:
   override def parse(
     content: String,
     errorReporter: PageError.Reporter
-  ): Xml.Element = HtmlLike.Html.parse(
+  ): Xml.Element = HtmlMarkup.parse(
     s"<div>${parseAndRender(content)}</div>",
     errorReporter
   )
@@ -77,11 +77,11 @@ object Markdown extends HtmlLike:
     //     </a>
     //   </sup>
     (
-      if Xml.name(element) != "sup" then None else Xml
-      .children(element)
-      .flatMap(Xml.asElement)
-      .find(Footnotes.LinkClass.has)
-      .map(Xml.toString)
+      if element.getName != "sup" then None else element
+      .getChildren
+      .flatMap(_.asElement)
+      .find(_.has(Footnotes.LinkClass))
+      .map(_.getText)
       .map(Footnotes.linkStub)
     )
     // FootnotesExtension footnote body:
@@ -93,15 +93,15 @@ object Markdown extends HtmlLike:
     //     ...
     //   </li>
       .orElse:
-        if Xml.name(element) != "li" then None else
-          val correlationId: Option[String] = Xml.Id.get(element).flatMap: id =>
+        if element.getName != "li" then None else
+          val correlationId: Option[String] = element.get(XmlAttribute.Id).flatMap: id =>
             Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
 
-          val body: Option[Chunk[Xml.Xml]] = Xml
-            .children(element)
-            .flatMap(Xml.asElement)
-            .find(Footnotes.BodyClass.has)
-            .map(backLink => Xml.children(element).takeWhile(_ ne backLink))
+          val body: Option[Xml.Nodes] = Xml
+            .getChildren(element)
+            .flatMap(_.asElement)
+            .find(_.has(Footnotes.BodyClass))
+            .map(backLink => element.getChildren.takeWhile(_ ne backLink))
 
           for
             correlationId <- correlationId
@@ -119,13 +119,13 @@ object Markdown extends HtmlLike:
     def start(transclude: Boolean): String = if transclude then startTransclusion else startLink
     def text(transclude: Boolean, text: String) = s"${start(transclude)}$text$end"
 
-  object WikiLinkClass extends Xml.ClassName("wiki-link")
-  object WikiBlockClass extends Xml.ClassName("wiki-block")
+  object WikiLinkClass extends HtmlClass("wiki-link")
+  object WikiBlockClass extends HtmlClass("wiki-block")
 
   // see https://obsidian.md/help/links
-  def convertWikiLinks(text: String): Seq[Xml.Xml] = convertWikiLinks(Seq.empty, text)
+  def convertWikiLinks(text: String): Xml.Nodes = convertWikiLinks(Chunk.empty, text)
   @tailrec
-  private def convertWikiLinks(result: Seq[Xml.Xml], text: String): Seq[Xml.Xml] =
+  private def convertWikiLinks(result: Chunk[Xml.Node], text: String): Xml.Nodes =
     if text.isEmpty then result else
       val startTransclusion: Int = text.indexOf(WikiLink.startTransclusion)
       val startLink: Int = text.indexOf(WikiLink.startLink)
@@ -134,7 +134,7 @@ object Markdown extends HtmlLike:
         then (startLink, false)
         else (startTransclusion, true)
       val end: Int = if start == -1 then -1 else text.indexOf(WikiLink.end, start)
-      if end == -1 then result ++ Seq(Xml.mkText(text)) else
+      if end == -1 then result ++ Chunk(Xml.text(text)) else
         val before: String = text.substring(0, start)
         val body: String = text.substring(start + WikiLink.start(transclude).length, end).trim
         val after: String = text.substring(end + WikiLink.end.length)
@@ -142,14 +142,14 @@ object Markdown extends HtmlLike:
         val ref = refRaw.trim
         val title = titleRaw.map(_.trim).filterNot(_.isEmpty)
 
-        var wikiLink: Xml.Element = Xml.element(Xml.A.elementName)
-        wikiLink = WikiLinkClass.add(wikiLink)
-        if transclude then wikiLink = Markup.TranscludeClass.add(wikiLink)
-        if ref.nonEmpty then wikiLink = Xml.Href.set(wikiLink, ref)
-        wikiLink = Xml.setText(wikiLink, WikiLink.text(transclude, title.getOrElse(ref)))
+        var wikiLink: Xml.Element = Xml.element(HtmlXmlDialect.A)
+        wikiLink = wikiLink.add(WikiLinkClass)
+        if transclude then wikiLink = wikiLink.add(Markup.TranscludeClass)
+        if ref.nonEmpty then wikiLink = wikiLink.set(HtmlXmlDialect.Href, ref)
+        wikiLink = wikiLink.setText(WikiLink.text(transclude, title.getOrElse(ref)))
 
         convertWikiLinks(
-          result ++ Option.when(before.nonEmpty)(Xml.mkText(before)).toSeq ++ Seq(wikiLink),
+          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Chunk(wikiLink),
           after
         )
 
@@ -158,14 +158,14 @@ object Markdown extends HtmlLike:
     val end: String = "]"
     val bodyStart: String = ":"
 
-  def convertFootnotes(text: String): Seq[Xml.Xml] = convertFootnotes(Seq.empty, text)
+  def convertFootnotes(text: String): Xml.Nodes = convertFootnotes(Chunk.empty, text)
   @tailrec
   // TODO this loop has commonality with the convertWikiLinks() loop...
-  private def convertFootnotes(result: Seq[Xml.Xml], text: String): Seq[Xml.Xml] =
+  private def convertFootnotes(result: Xml.Nodes, text: String): Xml.Nodes =
     if text.isEmpty then result else
       val start: Int = text.indexOf(Footnote.start)
       val end: Int = if start == -1 then -1 else text.indexOf(Footnote.end, start)
-      if end == -1 then result ++ Seq(Xml.mkText(text)) else
+      if end == -1 then result ++ Chunk(Xml.text(text)) else
         val before: String = text.substring(0, start)
         val correlationId: String = text.substring(start + Footnote.start.length, end).trim
         val afterRaw: String = text.substring(end + Footnote.end.length)
@@ -176,10 +176,10 @@ object Markdown extends HtmlLike:
           // TODO be more precise:
           // - only indented content counts
           // - there may be markup in the footnote body
-          else (Footnotes.bodyStub(correlationId, Chunk(Xml.mkText(afterRaw.substring(Footnote.bodyStart.length).trim))), "")
+          else (Footnotes.bodyStub(correlationId, Chunk(Xml.text(afterRaw.substring(Footnote.bodyStart.length).trim))), "")
 
         convertFootnotes(
-          result ++ Option.when(before.nonEmpty)(Xml.mkText(before)).toSeq ++ Seq(footnote),
+          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Chunk(footnote),
           after
         )
 
@@ -187,18 +187,19 @@ object Markdown extends HtmlLike:
   // (e.g., a list) by putting it after the block, with empty lines before and after;
   // I'll deal with this later...
   def setBlockId(element: Xml.Element, errorReporter: PageError.Reporter): Xml.Element =
-    val children: Chunk[Xml.Xml] = Xml.children(element)
-    if children.isEmpty then element else Xml.asText(children.last).fold(element): text =>
+    val children: Chunk[Xml.Node] = element.getChildren
+    if children.isEmpty then element else children.last.asText.fold(element): text =>
       val (before: String, id: Option[String]) = Strings.split(text, '^')
       id.fold(element): id =>
         if before.nonEmpty && !Character.isWhitespace(before.last) then element else
-          val result: Xml.Element = Xml.setChildren(element,
-            children.init ++ Option.when(before.nonEmpty)(Xml.mkText(before)).toSeq
+          val result: Xml.Element = element.setChildren(
+            children.init ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq
           )
-          Xml.Id.get(result) match
+          result.get(XmlAttribute.Id) match
             case Some(idExisting) =>
               errorReporter.error(PageError.NoId, s"Block id '$id' conflicts with existing id '$idExisting'", result)
-            case None => WikiBlockClass.add(Xml.Id.set(result, id))
+            case None =>
+              result.set(XmlAttribute.Id, id).add(WikiBlockClass)
 
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
@@ -209,17 +210,18 @@ object Markdown extends HtmlLike:
           // TODO Embed image, potentially with sizes WIDTHxHEIGHT or just WIDTH or nothing in the text
           (None, None)
 
-        var result: Xml.Element = Xml.element("img")
-        result = Xml.setAttribute(result, "src", ref)
-        result = Xml.setAttribute(result, "alt", s"Image: $ref")
-        result = width.fold(result)(width => Xml.setAttribute(result, "width", width.toString))
-        result = height.fold(result)(height => Xml.setAttribute(result, "height", height.toString))
-        Some(result)
-      else if Media.isAudio(extension) then
-        var result: Xml.Element = Xml.element("audio")
-        result = Xml.setAttribute(result, "src", ref)
-        result = Xml.setAttribute(result, "controls", true.toString)
-        Some(result)
+        Some(Xml
+          .element(XmlElement("img"))
+          .set(XmlAttribute("src"), ref)
+          .set(XmlAttribute("alt"), s"Image: $ref")
+          .set(XmlAttribute("width"), width.map(_.toString))
+          .set(XmlAttribute("height"), height.map(_.toString))
+        )
+      else if Media.isAudio(extension) then Some(Xml
+        .element(XmlElement("audio"))
+        .set(XmlAttribute("src"), ref)
+        .set(XmlAttribute("controls"), true.toString)
+      )
       else if extension == "pdf" then
         // TODO Embed PDF viewer, with potentially page=PAGE&height=HEIGHT or one or none in the text
         None

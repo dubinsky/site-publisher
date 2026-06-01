@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.{Files, Icon, Media}
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlDialect}
 
 sealed abstract class Asset(site: Site, path: Path) extends Page.Real(site: Site, path: Path):
   final override def isDirectory: Boolean = false
@@ -19,7 +19,7 @@ object Asset:
     final override def sourcePath: Option[Path] = None
 
   abstract class SyntheticXmlAsset(site: Site, path: Path) extends SyntheticAsset(site, path):
-    final override def content: String = Xml.writer.render(xmlContent)
+    final override def content: String = XmlDialect.Plain.render(xmlContent) 
     def xmlContent: Xml.Element
   
   final class EmbeddedAsset(site: Site, path: Path) extends SyntheticAsset(site, path):

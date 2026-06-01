@@ -57,9 +57,9 @@ object Toc:
           .headOption
 
   def isKramdownTocMarker(element: Html.Element): Boolean =
-    Html.name(element) == "ul" && Html.children(element).exists: node =>
-      Html.asElement(node).fold(false): child =>
-        Html.name(child) == "li" &&
-          Html.children(child).length == 1 &&
-          Html.asText(Html.children(child).head).fold(false): text =>
+    element.getName == "ul" && element.getChildren.exists: node =>
+      node.asElement.fold(false): child =>
+        child.getName == "li" &&
+          child.getChildren.length == 1 &&
+          child.getChildren.head.asText.fold(false): text =>
             text.endsWith("{:toc}")

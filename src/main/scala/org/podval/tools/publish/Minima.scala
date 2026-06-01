@@ -2,23 +2,25 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.xml.Html
+import org.podval.xml.{Html, HtmlXmlDialect}
+import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
-import zio.blocks.html.Dom.Element
+import zio.blocks.html.Dom.Element.Script
 
 // Based on https://github.com/jekyll/minima
 object Minima:
   def render(
     page: MarkupPage,
+    // TODO merge
     markupContent: Option[Html.Element],
     syntheticContent: Option[Html.Element]
   ): Html.Element =
     def site: Site = page.site
     
-    def getLanguages(element: Html.Element): Seq[String] =
-      if Html.Code.is(element)
-      then Html.ClassName.getStartsWith(element, "language")
-      else Html.flatMapChildren(element, getLanguages)
+    def getLanguages(element: Html.Element): Chunk[String] =
+      if element.isElement(HtmlXmlDialect.Code)
+      then element.getPrefixedClasses("language")
+      else element.flatMapElements(getLanguages)
 
     val languages: Set[String] = markupContent.fold(Set.empty)(getLanguages(_).toSet)
     val languagesToHighlight: Set[String] = languages - "mermaid"
@@ -129,7 +131,7 @@ object Minima:
         )),
         libraries.flatMap(library => library.inlineJs.map(js =>
           // Note: `script` does *not* accept optional attributes; TODO bug?
-          val scriptTag: Element.Script =
+          val scriptTag: Script =
             if library.isModule
             then script(`type` := "module")
             else script()

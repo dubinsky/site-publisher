@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml}
+import org.podval.xml.{Html, XmlAttribute}
 import zio.blocks.html.*
 
 final class Tags(site: Site) extends MarkupPage.WithSyntheticContent(site, Path("tags").html) with Page.NonDirectory:
@@ -17,7 +17,7 @@ final class Tags(site: Site) extends MarkupPage.WithSyntheticContent(site, Path(
 
   def tagRef(tag: String): Html.Element = a(
     className := "page-tag",
-    href := s"$path#${Xml.Id.toId(tag)}",
+    href := s"$path#${XmlAttribute.Id.toId(tag)}",
     Icon.tag.html,
     tag
   )
@@ -29,7 +29,7 @@ final class Tags(site: Site) extends MarkupPage.WithSyntheticContent(site, Path(
       h2("Pages by tags"),
       ul(tagsAll.map(tag =>
         li(
-          h3(className := "page-tag", id := Xml.Id.toId(tag), tag),
+          h3(className := "page-tag", id := XmlAttribute.Id.toId(tag), tag),
           Page.pageList(withTag(tag), cls = Some("post-link"))
         )
       ))

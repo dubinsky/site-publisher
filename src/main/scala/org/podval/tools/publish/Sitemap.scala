@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.util.Icon
 import org.podval.tools.publish.{Asset, Path, Site}
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
 
 object Sitemap:
@@ -12,19 +12,21 @@ object Sitemap:
 final class Sitemap(site: Site) extends Asset.SyntheticXmlAsset(site, Sitemap.path):
   override protected def iconDefault: Icon = Icon("map", Icon.Regular)
 
-  override def xmlContent: Xml.Element =
-    var result: Xml.Element = Xml.element("urlset")
-    result = Xml.setAttribute(result, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-    result = Xml.setAttribute(result, "xsi:schemaLocation", "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd")
-    result = Xml.setAttribute(result, "xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")
-    result = Xml.setChildren(result, Chunk.from(urls))
-    result
+  override def xmlContent: Xml.Element =Xml
+    .element(XmlElement("urlset"))
+    .set(XmlAttribute.Xmlns("xsi"), "http://www.w3.org/2001/XMLSchema-instance")
+    .set(XmlAttribute("xsi:schemaLocation"), "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd")
+    .set(XmlAttribute.Xmlns, "http://www.sitemaps.org/schemas/sitemap/0.9")
+    .setChildren(Chunk.from(urls))
 
   private def urls: List[Xml.Element] = site
     .pages
-    .filter(_.path.extension.contains(HtmlLike.Html.extension))
+    .filter(_.path.extension.contains(HtmlMarkup.extension))
     .map: page =>
-      val loc = Xml.setText(Xml.element("loc"), s"${site.config.url}${page.path}")
+      val loc = Xml.element(XmlElement("loc")).setText(s"${site.config.url}${page.path}")
       // Date format: 2009-08-07T14:30:00-04:00
-      val lastmod: Option[Xml.Element] = page.dateModifiedGit.map(date => Xml.setText(Xml.element("lastmod"), date.toString))
-      Xml.setChildren(Xml.element("url"), Chunk.from(Seq(loc) ++ lastmod.toSeq))
+      val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date => 
+        Xml.element(XmlElement("lastmod")).setText(date.toString)
+      Xml
+        .element(XmlElement("url"))
+        .setChildren(Chunk.from(Seq(loc) ++ lastmod.toSeq))

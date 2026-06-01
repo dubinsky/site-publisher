@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
 object Feed:
   val path: Path = Path("feed").withExtension("xml")
@@ -9,10 +9,9 @@ object Feed:
 final class Feed(site: Site) extends Asset.SyntheticXmlAsset(site, Feed.path):
   override protected def iconDefault: Icon = Icon.rss
 
-  override def xmlContent: Xml.Element =
-    var result: Xml.Element = Xml.element("feed")
-    result = Xml.setAttribute(result, "xmlns", "http://www.w3.org/2005/Atom")
-    result
+  override def xmlContent: Xml.Element = Xml
+    .element(XmlElement("feed"))
+    .set(XmlAttribute.Xmlns, "http://www.w3.org/2005/Atom")
 
 //    .children(
 //      //<generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator>

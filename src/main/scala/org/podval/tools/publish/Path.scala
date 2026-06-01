@@ -8,7 +8,7 @@ final case class Path(
 ) derives CanEqual:
   def fileName: String = path.last
 
-  override def equals(obj: Any): Boolean = obj match
+  override def equals(obj: Any): Boolean = obj.asInstanceOf[Matchable] match
     case that: Path => this.path == that.path && this.extension == that.extension
     case _ => false
     
@@ -24,11 +24,11 @@ final case class Path(
     else this.copy(extension = Some(extension))
 
   def withoutHtml: Path =
-    if this.extension.contains(HtmlLike.Html.extension)
+    if this.extension.contains(HtmlMarkup.extension)
     then this.copy(extension = None)
     else this
     
-  def html: Path = withExtension(HtmlLike.Html.extension)
+  def html: Path = withExtension(HtmlMarkup.extension)
 
   def file(directory: File): File = file(directory, path)
   
@@ -48,10 +48,9 @@ final case class Path(
     Path(pathSegments *)
 
 object Path:
+  given Ordering[Path] = (left: Path, right: Path) =>
+    Ordering.Implicits.seqOrdering[Seq, String].compare(left.path, right.path)
+
   val root: Path = new Path(Seq.empty, None)
   
   def apply(path: String*) = new Path(path, None)
-  
-  import scala.math.Ordered.orderingToOrdered
-  given Ordering[Path] = (left: Path, right: Path) => Ordering[Seq[String]].compare(left.path, right.path)
-  

@@ -55,7 +55,7 @@ final class Site(
   log.info(s"target directory: $targetDirectory")
   log.info(s"configuration file: $configFile")
   log.debug(s"configuration:\n" + Config.codec.encodeToString(config))
-  log.info(s"ignore rules:\n" + ignore.rules)
+  log.debug(s"ignore rules:\n" + ignore.rules)
 
   def postsDirectoryName: String = "_posts"
   def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")

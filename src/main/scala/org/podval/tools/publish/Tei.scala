@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, XmlAst, XmlParser, XmlWriter}
+import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement, XmlParser}
 
 /*
 I tried to define CSS namespaces like this:
@@ -27,21 +27,20 @@ object Tei extends Markup:
   override protected def recognizeMarkdownWikiLinks: Boolean = false
   override protected def recognizeMarkdownFootnotes: Boolean = false
   override protected def recognizeMarkdownBlocks: Boolean = false
-  override protected def stop(xml: XmlAst)(element: xml.Element): Boolean = false
 
-  private object Cols extends Xml.Attribute("cols")
-  private object Colspan extends Xml.Attribute("colspan")
-  private object Url extends Xml.Attribute("url")
-  private object Src extends Xml.Attribute("src")
+  private object Cols extends XmlAttribute("cols")
+  private object Colspan extends XmlAttribute("colspan")
+  private object Url extends XmlAttribute("url")
+  private object Src extends XmlAttribute("src")
 
   private def withPrefix(name: String): String = s"tei-$name"
 
   private val reservedAttributes: Set[String] = Set("class", "target", "lang", "frame")
 
   override protected def toHtml(element: Xml.Element): Xml.Element =
-    val name: String = Xml.name(element)
+    val name: String = element.getName
 
-    val result: Xml.Element = Xml.setAttributes(element, Xml.attributes(element).map((name, value) =>
+    val result: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
       val nameNew =
         if !reservedAttributes.contains(name)
         then name
@@ -69,7 +68,7 @@ object Tei extends Markup:
         renameElement("a", copyAttribute("ref", "href", result))
 
       case "pb" =>
-        renameElement("a", Xml.setText(result, facsimileSymbol))
+        renameElement("a", result.setText(facsimileSymbol))
 
       // TODO tooltips on dates and gaps
 
@@ -78,32 +77,33 @@ object Tei extends Markup:
   private val facsimileSymbol: String = "⎙"
 
   override protected def linkKind(element: Xml.Element): Option[Link.Kind] =
-    if Xml.ClassName.has(element, "persName") then Some(Link.Kind.Person) else
-    if Xml.ClassName.has(element, "placeName") then Some(Link.Kind.Place) else
-    if Xml.ClassName.has(element, "orgName") then Some(Link.Kind.Organization) else
+    if element.has(HtmlClass("persName")) then Some(Link.Kind.Person) else
+    if element.has(HtmlClass("placeName")) then Some(Link.Kind.Place) else
+    if element.has(HtmlClass("orgName")) then Some(Link.Kind.Organization) else
       None
 
   private def renameElement(
     name: String,
     element: Xml.Element
-  ): Xml.Element =
-    Xml.rename(Xml.ClassName.add(element, Xml.name(element)), name)
+  ): Xml.Element = element
+    .add(HtmlClass(element.getName))
+    .rename(name)
 
   private def copyAttribute(
     from: String,
     to: String,
     element: Xml.Element
   ): Xml.Element =
-    Xml.getAttribute(element, from).fold(element)(Xml.setAttribute(element, to, _))
+    element.get(XmlAttribute(from)).fold(element)(element.set(XmlAttribute(to), _))
 
   override protected def isSectionElement(element: Xml.Element): Boolean =
-    Xml.name(element) == "div"
+    element.getName == "div"
 
-  override protected def sectionTitle(element: Xml.Element): Option[String] = Xml
-    .children(element)
-    .flatMap(Xml.asElement)
-    .find(element => Xml.name(element) == "head")
-    .flatMap(Xml.toStringOpt)
+  override protected def sectionTitle(element: Xml.Element): Option[String] = element
+    .getChildren
+    .flatMap(_.asElement)
+    .find(element => element.getName == "head")
+    .flatMap(_.getTextOpt)
 
   override protected def sections(
     element: Xml.Element,
@@ -113,39 +113,27 @@ object Tei extends Markup:
   override protected def setFootnoteCorrelationIds(element: Xml.Element): Xml.Element =
     val correlationIds: IdGenerator = IdGenerator("")
 
-    transform(Xml)(element, element =>
-      var result: Xml.Element = element
-      val isFootnote = Xml.name(element) == "note" && Xml.getAttribute(element, "place").contains("end")
-      if isFootnote then
-        result = Footnotes.CorrelationId.set(element, correlationIds.generate())
-        result = Footnotes.LinkClass.add(result)
-        result = Footnotes.BodyClass.add(result)
-      result
+    transform(element, element =>
+      val isFootnote = element.getName == "note" && element.get(XmlAttribute("place")).contains("end")
+      if !isFootnote then element else element
+        .set(Footnotes.CorrelationId, correlationIds.generate())
+        .add(Footnotes.LinkClass)
+        .add(Footnotes.BodyClass)
     )
 
   override protected def isFootnotesContainer(element: Xml.Element): Boolean =
-    Xml.name(element) == "text"
+    element.getName == "text"
 
   override def parse(
     content: String,
     errorReporter: PageError.Reporter
   ): Xml.Element = XmlParser.parse(content) match
-    case Right(xml) => Xml.asElement(xml).get
+    case Right(xml) => xml.asElement.get
     case Left(error) =>
       errorReporter.error(PageError.Parsing, "TEI parsing error", Some(error))
       malformedTei(error)
 
-  private def malformedTei(error: Throwable): Xml.Element =
-    var result = Xml.element("TEI")
-    result = Xml.ClassName.add(result, "malformed-xml")
-    result = Xml.setText(result, s"Malformed TEI: $error")
-    result
-
-  def teiWriterConfig: XmlWriter.Config = new XmlWriter.Config:
-    override def selfClose(name: String): Boolean = false
-    override def stack(name: String): Boolean = false
-    override def unStack(name: String): Boolean = name == "choice"
-    override def nest(name: String): Boolean = Set("p", /*"abstract",*/ "head", "salute", "dateline").contains(name)
-    override def cling(name: String): Boolean = Set("note", "lb", "sic", "corr").contains(name)
-    override def break(name: String): Boolean = false // TODO TEI: lb; HTML: br?!
-    override def preformat(name: String): Boolean = false
+  private def malformedTei(error: Throwable): Xml.Element = Xml
+    .element(XmlElement("TEI"))
+    .add(HtmlClass("malformed-xml"))
+    .setText(s"Malformed TEI: $error")

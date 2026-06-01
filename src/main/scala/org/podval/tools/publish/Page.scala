@@ -11,7 +11,7 @@ abstract class Page(
   val path: Path
 ) derives CanEqual:
 
-  final override def equals(obj: Any): Boolean = obj match
+  final override def equals(obj: Any): Boolean = obj.asInstanceOf[Matchable] match
     case that: Page => this.path == that.path
     case _ => false
 

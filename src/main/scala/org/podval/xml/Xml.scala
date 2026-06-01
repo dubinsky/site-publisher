@@ -4,59 +4,51 @@ import zio.blocks.chunk.Chunk
 import zio.blocks.schema.xml.{XmlBuilder, XmlName, Xml as XML}
 
 // XML AST for ZIO Blocks XML
-object Xml extends XmlAst:
-  override type Xml = XML
-  override type Element = XML.Element
+given Xml: XmlAst[XML.Element]:
+  override type Node = XML
+  
+  override def text(text: String): Node = XML.Text(text)
 
-  val writer: XmlWriter[Xml.type] = XmlWriter(Xml)(XmlWriter.htmlWriterConfig)
+  override def element(elem: XmlElement): Element = XmlBuilder.element(elem.name).build
 
-  override def asElement(xml: Xml): Option[Element] = xml match
-    case element: XML.Element => Some(element)
-    case _ => None
+  extension (node: Node)
+    override def asElement: Option[Element] = node match
+      case element: XML.Element => Some(element)
+      case _ => None
 
-  override def name(element: Element): String = element.name.qualifiedName
+    override def asText: Option[String] = node match
+      case XML.Text(value) => Some(value)
+      case _ => None
 
-  override def rename(element: Element, name: String): Element = element.copy(name = XmlName(name))
+    override def asAtom: Option[String] = node match
+      case XML.Text(value) => Some(value)
+      case XML.CData(value) => Some(value)
+      case _ => None
 
-  override def element(name: String): Element = XmlBuilder.element(name).build
+  extension (element: Element)
+    override def getName: String =
+      element.name.qualifiedName
 
-  override def attributes(element: Element, parent: Option[Element]): Chunk[(String, String)] =
-    attributes(element)
+    override def rename(name: String): Element =
+      element.copy(name = XmlName(name))
 
-  override def attributes(element: Element): Chunk[(String, String)] =
-    element.attributes.map((xmlName, value) => (xmlName.qualifiedName, value))
+    override def getAttributes: Chunk[(String, String)] =
+      element.attributes.map((xmlName, value) => (xmlName.qualifiedName, value))
 
-  override def setAttributes(element: Element, attributes: Chunk[(String, String)]): Element =
-    element.copy(attributes = attributes.map((name, value) => (XmlName(name), value)))
+    override def setAttributes(attributes: Chunk[(String, String)]): Element =
+      element.copy(attributes = attributes.map((name, value) => (XmlName(name), value)))
 
-  override def setAttribute(element: Element, name: String, value: String): Element =
-    element.copy(attributes = element.attributes
-      .filterNot(_._1.qualifiedName == name)
-      .appended(XmlName(name) -> value)
-    )
+    override def getChildren: Nodes =
+      element.children
 
-  override def children(element: Element): Chunk[Xml] = element.children
+    override def setChildren(children: Nodes): Element =
+      element.copy(children = children)
 
-  override def setChildren(element: Element, children: Chunk[Xml]): Element =
-    element.copy(children = children)
-
-  override def mkText(text: String): Xml = XML.Text(text)
-
-  override def asText(xml: Xml): Option[String] = xml match
-    case XML.Text(value) => Some(value)
-    case _ => None
-
-  override def asAtom(xml: Xml): Option[String] = xml match
-    case XML.Text(value) => Some(value)
-    case XML.CData(value) => Some(value)
-    case _ => None
 
   // Was with the ZIO Blocks XML parser
-//  def parse(content: String): Either[Throwable, Xml] =
-//    try Right(XmlReader.read(content))
-//    catch case e: XmlCodecError => Left(e)
-
-  val dummyElementName: String = "idioticDummyElementToForceZioBlocksXmlToNotDiscardAttributes"
+  //  def parse(content: String): Either[Throwable, Xml] =
+  //    try Right(XmlReader.read(content))
+  //    catch case e: XmlCodecError => Left(e)
 
   def main(args: Array[String]): Unit =
     val string =
@@ -64,8 +56,8 @@ object Xml extends XmlAst:
         |""".stripMargin
 
     //    println(Markdown.parseAndRender(string))
-    val xmlString = org.podval.tools.publish.Markdown.parseAndRender(string)
-//    println(XmlParser.parse(string).toOption.get)
+    val xmlString = org.podval.tools.publish.MarkdownMarkup.parseAndRender(string)
+    //    println(XmlParser.parse(string).toOption.get)
     XmlParser.parse(xmlString) match
       case Left(error) => println(error)
-      case Right(xml) => println(writer.render(xml))
+      case Right(xml) => println(HtmlXmlDialect.render(xml))

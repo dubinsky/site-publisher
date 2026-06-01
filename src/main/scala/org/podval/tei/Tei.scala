@@ -3,7 +3,7 @@ package org.podval.tei
 import org.podval.xml.{RawXml, WithRawXml, Xml, XmlParser}
 import zio.blocks.schema.derive.Deriver
 import zio.blocks.schema.{Modifier, Schema}
-import zio.blocks.schema.xml.{WriterConfig, XmlCodec, XmlCodecError, XmlFormat}
+import zio.blocks.schema.xml.{XmlCodec, XmlCodecError, XmlFormat}
 import zio.blocks.typeid.TypeId
 
 // TODO @xmlAttribute("id") and @xmlNamespace() annotations mentioned in the documentation
@@ -133,10 +133,10 @@ object Tei:
   def parse(content: String): Either[Throwable, TEI] = XmlParser.parse(content).flatMap: xml =>
     // TODO working around ZIO Blocks XML bug where attributes are discarded if the element does not have sub-elements;
     // report it!
-    val xmlEffective = Xml.transform(xml, _ => false, element =>
-      if element.attributes.isEmpty || element.children.exists(_.isInstanceOf[Xml.Element])
+    val xmlEffective = TeiXmlDialect.transform(xml, element =>
+      if element.attributes.isEmpty || element.children.exists(_.isInstanceOf[Xml.Element]) // TODO
       then element
-      else element.copy(children = element.children :+ Xml.element(Xml.dummyElementName))
+      else element.copy(children = element.children :+ Xml.element(WithRawXml.dummyElement))
     )
     try Right(codec.decodeValue(xmlEffective))
     catch case error: XmlCodecError => Left(error)

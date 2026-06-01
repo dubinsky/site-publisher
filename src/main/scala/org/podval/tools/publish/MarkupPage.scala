@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.{Files, Icon}
-import org.podval.xml.{Html, Xml}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 import scala.ref.SoftReference
 
 abstract class MarkupPage(site: Site, path: Path) extends Page.Real(site, path) with Page.WithContent:
@@ -43,7 +43,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page.Real(site, path) 
       markupContent = markupContent,
       syntheticContent = syntheticContentOpt
     )
-    Html.writer.render(html)
+    HtmlXmlDialect.render(html)
 
   def hasSyntheticContent: Boolean
 
@@ -86,7 +86,7 @@ object MarkupPage:
 
       val (frontMatterContent: Option[String], markupContent: String) =
         FrontMatter.split(Files.read(sourcePath.file(site.sourceDirectory)))
-        
+
       val frontMatter: FrontMatter =  FrontMatter.parse(frontMatterContent, errorReporter)
 
       val xml: Xml.Element = markup.parseAndPreProcess(

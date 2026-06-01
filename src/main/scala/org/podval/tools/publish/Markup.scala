@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, Xml, XmlAst}
+import org.podval.xml.{Html, HtmlClass, HtmlXmlDialect, Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
 import java.net.{URI, URISyntaxException}
 
@@ -11,13 +11,13 @@ object Markup:
     all.find(_.isExtension(extension))
 
   private val all: List[Markup] = List(
-    Markdown,
-    HtmlLike.Html,
+    MarkdownMarkup,
+    HtmlMarkup,
     Tei
   )
 
-  private object InternalLinkClass extends Xml.ClassName("internal-link")
-  object TranscludeClass extends Xml.ClassName("transclude")
+  private object InternalLinkClass extends HtmlClass("internal-link")
+  object TranscludeClass extends HtmlClass("transclude")
 
 abstract class Markup derives CanEqual:
   def extension: String
@@ -32,16 +32,11 @@ abstract class Markup derives CanEqual:
 
   def parse(content: String, errorReporter: PageError.Reporter): Xml.Element
 
-  // TODO XmlWriter should stop at the same elements!
-  protected def stop(xml: XmlAst)(element: xml.Element): Boolean
-
-  // TODO employ some givens and remove explicit ast parameter
-  final protected def transform[A <: XmlAst](ast: A)(
-    element: ast.Element,
-    transformElement: ast.Element => ast.Element
-  ): ast.Element = ast.transform(
+  final protected def transform[Element: XmlAst](
+    element: Element,
+    transformElement: Element => Element
+  ): Element = HtmlXmlDialect.transform(
     element,
-    stop(ast),
     transformElement
   )
 
@@ -74,28 +69,28 @@ abstract class Markup derives CanEqual:
 
     var xml: Xml.Element = parse(content, errorReporter)
 
-    xml = transform(Xml)(xml, element =>
+    xml = transform(xml, element =>
       var result: Xml.Element = toHtml(element)
 
       // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
       // but I do it manually and uniformly for HTML, TEI etc.
-      if isSectionElement(result) && Xml.Id.get(result).isEmpty then
-        result = Xml.Id.set(result, sectionTitle(result).fold(ids.generate())(Xml.Id.toId))
+      if isSectionElement(result) && result.get(XmlAttribute.Id).isEmpty then
+        result = result.set(XmlAttribute.Id, sectionTitle(result).fold(ids.generate())(XmlAttribute.Id.toId))
 
       if recognizeMarkdownBlocks then
-        result = Markdown.setBlockId(result, errorReporter)
+        result = MarkdownMarkup.setBlockId(result, errorReporter)
 
-      if !Xml.A.is(result) then
+      if !result.isElement(HtmlXmlDialect.A) then
         if recognizeMarkdownWikiLinks then
-          result = convertText(result, Markdown.convertWikiLinks)
+          result = convertText(result, MarkdownMarkup.convertWikiLinks)
         if recognizeMarkdownFootnotes then
-          result = convertText(result, Markdown.convertFootnotes)
+          result = convertText(result, MarkdownMarkup.convertFootnotes)
 
-      if Xml.A.is(result) then
-        if Xml.Id.get(result).isEmpty then
-          result = Xml.Id.set(result, ids.generate())
+      if result.isElement(HtmlXmlDialect.A) then
+        if result.get(XmlAttribute.Id).isEmpty then
+          result = result.set(XmlAttribute.Id, ids.generate())
 
-        Xml.Href.get(result).foreach: href =>
+        result.get(HtmlXmlDialect.Href).foreach: href =>
           // TODO verify that external link is not broken if the Site is so configured
           val isInternal: Boolean =
             try
@@ -105,7 +100,7 @@ abstract class Markup derives CanEqual:
               uri.getScheme == null
             catch case e: URISyntaxException => true
           if isInternal then
-            result = Markup.InternalLinkClass.add(result)
+            result = result.add(Markup.InternalLinkClass)
 
       result
     )
@@ -116,23 +111,24 @@ abstract class Markup derives CanEqual:
     xml = setFootnoteCorrelationIds(xml)
 
     // Retrieve footnote bodies
-    val footnoteBodies: Map[String, Chunk[Xml.Xml]] = Xml.gather(xml, stop(Xml), element =>
-      if !Footnotes.BodyClass.has(element) then None else
-        Footnotes.CorrelationId.get(element).map(_ -> Xml.children(element))
+    val footnoteBodies: Map[String, Chunk[Xml.Node]] = HtmlXmlDialect.gather(xml, element =>
+      if !element.has(Footnotes.BodyClass) then None else
+        element.get(Footnotes.CorrelationId).map(_ -> element.getChildren)
     ).toMap
 
     // Replace footnotes with link stubs
-    xml = transform(Xml)(xml, element =>
-      Footnotes.CorrelationId.get(element).fold(element)(Footnotes.linkStub)
+    xml = transform(xml, element =>
+      element.get(Footnotes.CorrelationId).fold(element)(Footnotes.linkStub)
     )
 
     // Remove body stubs
-    xml = transform(Xml)(xml, element =>
-      Xml.setChildren(element, Xml.children(element)
-        .filterNot(Xml.asElement(_).fold(false)(child =>
-          Footnotes.BodyClass.has(child) ||
+    xml = transform(xml, element =>
+      element.setChildren(element
+        .getChildren
+        .filterNot(_.asElement.fold(false)(child =>
+          child.has(Footnotes.BodyClass) ||
           // FlexMark FootnotesExtension footnotes 'div'
-          Xml.name(child) == "div" && Xml.ClassName.has(child, "footnotes")
+          child.getName == "div" && child.has(HtmlClass("footnotes"))
         ))
       )
     )
@@ -141,7 +137,7 @@ abstract class Markup derives CanEqual:
     val footnoteNumbers: IdGenerator = IdGenerator("")
     var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
 
-    xml = transform(Xml)(xml, element => Footnotes.CorrelationId.get(element).fold(element): correlationId =>
+    xml = transform(xml, element => element.get(Footnotes.CorrelationId).fold(element): correlationId =>
       val footnoteNumber: String = footnoteNumbers.generate()
       // TODO error when not found:
       footnoteBodies.get(correlationId).foreach: footnoteBody =>
@@ -152,32 +148,33 @@ abstract class Markup derives CanEqual:
     // Add footnotes 'div'
     if footnotesToAdd.nonEmpty then
       var footnotesAdded: Boolean = false
-      xml = transform(Xml)(xml, element =>
+      xml = transform(xml, element =>
         if footnotesAdded || !isFootnotesContainer(element) then element else
           footnotesAdded = true
-          var footnotesDiv: Xml.Element = Xml.element("div")
-          footnotesDiv = Xml.ClassName.add(footnotesDiv, "footnotes")
-          footnotesDiv = Xml.setChildren(footnotesDiv, footnotesToAdd)
-          Xml.setChildren(element, element.children :+ footnotesDiv)
+          val footnotesDiv: Xml.Element = Xml
+            .element(XmlElement("div"))
+            .add(HtmlClass("footnotes"))
+            .setChildren(footnotesToAdd)
+          element.setChildren(element.getChildren :+ footnotesDiv)
       )
 
     xml
 
   private def convertText(
     element: Xml.Element,
-    converter: String => Seq[Xml.Xml]
+    converter: String => Seq[Xml.Node]
   ): Xml.Element =
-    Xml.setChildren(element, Xml.children(element).flatMap(xml => Xml.asText(xml).fold(Seq(xml))(converter)))
+    element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(converter)))
 
   final def toc(
     xml: Xml.Element,
     errorReporter: PageError.Reporter
   ): Toc = Toc(
     sections = sections(xml, errorReporter),
-    ids = Xml.gather(xml, stop(Xml), Xml.Id.get),
+    ids = HtmlXmlDialect.gather(xml, _.get(XmlAttribute.Id)),
     blocks = if !recognizeMarkdownBlocks then Seq.empty else
-      Xml.gather(xml, stop(Xml), element =>
-        if !Markdown.WikiBlockClass.has(element) then None else Xml.Id.get(element) match
+      HtmlXmlDialect.gather(xml, element =>
+        if !element.has(MarkdownMarkup.WikiBlockClass) then None else element.get(XmlAttribute.Id) match
           case None => errorReporter.error(PageError.NoId, s"Defect: No id on block $element", None)
           case Some(id) => Some(Fragment.Block(id))
       )
@@ -190,22 +187,22 @@ abstract class Markup derives CanEqual:
     page: MarkupPage
   ): Html.Element =
     // Post-process XML
-    val xmlResult: Xml.Element = transform(Xml)(xml, element =>
+    val xmlResult: Xml.Element = transform(xml, element =>
       var result: Xml.Element = element
 
-      if Xml.A.is(result) then Xml.Href.get(result).foreach: href =>
-        if Markup.InternalLinkClass.has(result) then
+      if result.isElement(HtmlXmlDialect.A) then result.get(HtmlXmlDialect.Href).foreach: href =>
+        if result.has(Markup.InternalLinkClass) then
           result = resolveInternalLinks(result, href, page, errorReporter)
 
-        if Markup.TranscludeClass.has(result) then
-          Markdown.embed(result, href).foreach: embedded =>
+        if result.has(Markup.TranscludeClass) then
+          MarkdownMarkup.embed(result, href).foreach: embedded =>
             result = embedded
 
       result
     )
 
     // Convert to HTML and add TOC
-    transform(Html)(Html.fromXml(xmlResult), element =>
+    transform(Xml2Html.fromXml(xmlResult), element =>
       if !Toc.isKramdownTocMarker(element) then element else toc.html
     )
 
@@ -219,28 +216,26 @@ abstract class Markup derives CanEqual:
     Link.resolve(ref, kind, page) match
       case None =>
         errorReporter.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element", element)
-        val result = Xml.ClassName.add(element, "unresolved-link")
-        result
+        element.add(HtmlClass("unresolved-link"))
       case Some(linkTo) =>
         // TODO transclude
-        var result: Xml.Element = Xml.Href.set(element, linkTo.url)
+        var result: Xml.Element = element.set(HtmlXmlDialect.Href, linkTo.url)
 
         def linkText(text: String): String =
-          if Markdown.WikiLinkClass.has(element)
-          then Markdown.WikiLink.text(Markup.TranscludeClass.has(element), text)
+          if element.has(MarkdownMarkup.WikiLinkClass)
+          then MarkdownMarkup.WikiLink.text(element.has(Markup.TranscludeClass), text)
           else text
 
-        if Xml.toString(result) == linkText(ref) then
-          result = Xml.setText(result, linkText(linkTo.title))
+        if result.getText == linkText(ref) then
+          result = result.setText(linkText(linkTo.title))
 
         result
 
   final def backLinks(
     xml: Xml.Element,
     page: MarkupPage
-  ): Seq[BackLinks.BackLink] = Xml.gatherWithParents(
+  ): Seq[BackLinks.BackLink] = HtmlXmlDialect.gatherWithParents(
     element = xml,
-    stop = stop(Xml),
     gatherElement = backLink(_, _, page)
   )
 
@@ -249,31 +244,31 @@ abstract class Markup derives CanEqual:
   // I am going with just text, so the non-wiki links are not going to be visible...
   // Note: I can widen the context by going after grandparent etc. if it is too short - but Obsidian does not seem to do it...
   private def backLink(element: Xml.Element, parents: Seq[Xml.Element], from: MarkupPage): Option[BackLinks.BackLink] =
-    if !Xml.A.is(element) || !Markup.InternalLinkClass.has(element) then None else
+    if !element.isElement(HtmlXmlDialect.A) || !element.has(Markup.InternalLinkClass) then None else
       for
-        ref <- Xml.Href.get(element)
+        ref <- element.get(HtmlXmlDialect.Href)
         to <- Link.resolve(ref, kind = None, from)
-        id <- Xml.Id.get(element)
+        id <- element.get(XmlAttribute.Id)
       yield
         val toId: Option[Link.ToId] = from.source.flatMap(_.cached.toc.resolveId(id))
         val toFrom: Link = Link(from, fragment = toId, intrapage = false)
         val parent: Xml.Element = parents.head
         // TODO go back to `ne`
-        val (before: Chunk[Xml.Xml], tail) = Xml.children(parent).span(
-          Xml.asElement(_).fold(true)(element => !Xml.Href.get(element).contains(ref))
+        val (before: Xml.Nodes, tail) = parent.getChildren.span(
+          _.asElement.fold(true)(element => !element.get(HtmlXmlDialect.Href).contains(ref))
         )
-        val it: Xml.Element = Xml.asElement(tail.head).get
-        val after: Chunk[Xml.Xml] = tail.tail
+        val it: Xml.Element = tail.head.asElement.get
+        val after: Xml.Nodes = tail.tail
 
         BackLinks.BackLink(
           to = to,
           from = from,
-          transclude = Markup.TranscludeClass.has(element),
+          transclude = element.has(Markup.TranscludeClass),
           kind = linkKind(element),
           context = BackLinks.Context(
             url = toFrom.url,
             before = shortenContext(isBefore  = true, Xml.toString(before)),
-            element = Xml.toString(it),
+            element = it.getText,
             after = shortenContext(isBefore  = false, Xml.toString(after))
           )
         )

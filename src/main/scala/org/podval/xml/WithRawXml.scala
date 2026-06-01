@@ -11,6 +11,8 @@ abstract class WithRawXml:
   var rawChildren: Chunk[Xml] = Chunk.empty
 
 object WithRawXml:
+  object dummyElement extends XmlElement("idioticDummyElementToForceZioBlocksXmlToNotDiscardAttributes")
+
   def codec[A <: WithRawXml](
     schema: Schema[A],
     codecDeriver: Option[Deriver[XmlCodec]] = None
@@ -32,7 +34,7 @@ object WithRawXml:
       )
 
       result.rawChildren = element.children.filterNot {
-        case element: Xml.Element => isParsed(element.name) || element.name.localName == org.podval.xml.Xml.dummyElementName
+        case element: Xml.Element => isParsed(element.name) || element.name.localName == dummyElement.name
         case _ => false
       }
 
