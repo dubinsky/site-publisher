@@ -66,23 +66,30 @@ object FrontMatter:
     .instance(TypeId.of[Icon.Style], Icon.Style.codec)
     .derive
 
+  def split(input: String): (String, String) =
+    val frontMatterEnd: Int = if !input.startsWith("---\n") then -1 else input.indexOf("\n---\n", 3)
+    if frontMatterEnd == -1 then (null, input) else
+      val frontMatterInput: String = input.substring(3, frontMatterEnd)
+      val frontMatterLines: Int = frontMatterInput.count(_ == '\n') + 2
+      val content: String =
+        "\n" * frontMatterLines +
+          input.substring(frontMatterEnd + 5)
+      (frontMatterInput, content)
+
   def parse(
     input: String,
     errorReporter: PageError.Reporter
   ): (FrontMatter, String) =
-    val frontMatterEnd: Int = if !input.startsWith("---\n") then -1 else input.indexOf("\n---\n", 3)
-    if frontMatterEnd == -1 then (absent, input) else
-      val frontMatterInput: String = input.substring(3, frontMatterEnd)
-      val frontMatter: FrontMatter = if frontMatterInput.isEmpty then empty else decode(frontMatterInput) match
+    val (frontMatterInput, content) = split(input)
+    val frontMatter =
+      if frontMatterInput == null then absent
+      else if frontMatterInput.isEmpty then empty else decode(frontMatterInput) match
         case Right(frontMatter) => frontMatter
         case Left(error) =>
-          errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$input]", Some(error))
-          FrontMatter.empty 
-      val frontMatterLines: Int = frontMatterInput.count(_ == '\n') + 2
-      val content: String =
-        "\n"*frontMatterLines +
-        input.substring(frontMatterEnd + 5)
-      (frontMatter, content)
+          errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$frontMatterInput]", Some(error))
+          empty
+
+    (frontMatter, content)
   
   private def decode(input: String): Either[SchemaError, FrontMatter] =
     try

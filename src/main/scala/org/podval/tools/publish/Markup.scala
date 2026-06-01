@@ -140,15 +140,16 @@ abstract class Markup derives CanEqual:
     )
 
     // Add footnotes 'div'
-    var footnotesAdded: Boolean = false
-    xml = Xml.transform(xml, stop(Xml), element =>
-      if footnotesAdded || !isFootnotesContainer(element) then element else
-        footnotesAdded = true
-        var footnotesDiv: Xml.Element = Xml.element("div")
-        footnotesDiv = Xml.ClassName.add(footnotesDiv, "footnotes")
-        footnotesDiv = Xml.setChildren(footnotesDiv, footnotesToAdd)
-        Xml.setChildren(element, element.children :+ footnotesDiv)
-    )
+    if footnotesToAdd.nonEmpty then
+      var footnotesAdded: Boolean = false
+      xml = Xml.transform(xml, stop(Xml), element =>
+        if footnotesAdded || !isFootnotesContainer(element) then element else
+          footnotesAdded = true
+          var footnotesDiv: Xml.Element = Xml.element("div")
+          footnotesDiv = Xml.ClassName.add(footnotesDiv, "footnotes")
+          footnotesDiv = Xml.setChildren(footnotesDiv, footnotesToAdd)
+          Xml.setChildren(element, element.children :+ footnotesDiv)
+      )
 
     xml
 

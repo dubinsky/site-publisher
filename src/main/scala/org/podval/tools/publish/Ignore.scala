@@ -40,25 +40,26 @@ final class Ignore(site: Site):
 
 object Ignore:
   private def internal: String =
-    """# internal ignore rules
+    """
+      |# internal ignore rules
       |
-      |/.jekyll-cache
-      |/.sass-cache
+      |/.jekyll-cache/
+      |/.sass-cache/
       |/Gemfile
       |/Gemfile.lock
       |/LICENSE
       |/README.md
       |/README.adoc
-      |build
+      |build/
       |build.gradle
-      |/bundle
-      |/gradle
+      |/bundle/
+      |/gradle/
       |/gradlew
       |/gradlew.bat
-      |node_modules
+      |node_modules/
       |settings.gradle
-      |src
-      |vendor
+      |src/
+      |vendor/
       |
       |# special files
       |.*

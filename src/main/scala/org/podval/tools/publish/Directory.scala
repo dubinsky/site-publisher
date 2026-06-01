@@ -34,13 +34,13 @@ final class Directory(site: Site, path: Path) extends MarkupPage.WithSyntheticCo
     .pages
     .filter(_.isDirectory)
     .filter(_.path.path.length > 1)
-    .filter(_.path.path.init.init == path.path.init)
+    .filter(_.path.path.init.init == path.path.init) // TODO unify with the Page.parent path calculations
     .sortBy(_.title)
 
   private lazy val pages: List[Page] = site
     .pages
     .filterNot(_.isDirectory)
-    .filter(_.path.path.init == path.path.init)
+    .filter(_.path.path.init == path.path.init)  // TODO unify with the Page.parent path calculations
     .sortBy(_.title.toLowerCase)
 
 object Directory:
@@ -48,36 +48,55 @@ object Directory:
 
   def scan(
     site: Site,
-    directoryPath: Seq[String],
-    directory: File
+    path: Seq[String],
+    directory: File,
+    externalIndex: Option[Path]
   ): Unit =
-    val directoryPathString: String = directoryPath.mkString("/")
-    val firstSlash: String = if directoryPath.isEmpty then "/" else ""
+    val pathString: String = if path.isEmpty then "/" else path.mkString("/", "/", "/")
 
     def toPath(sourcePath: Path): Path = site.posts.path(sourcePath).getOrElse(sourcePath)
 
     val (files: List[File], directories: List[File]) = Files
       .list(directory)
-      .filterNot(file => site.ignore.isIgnored(s"$firstSlash$directoryPathString/${file.getName}", file.isDirectory))
+      .filterNot(file =>
+        val isIgnored: Boolean = site.ignore.isIgnored(s"$pathString${file.getName}", file.isDirectory)
+        if isIgnored then site.log.debug(s"Ignored: $file")
+        isIgnored
+      )
       .partition(_.isFile)
 
-    val filePaths: List[Path] = files.map: file =>
-      val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
-      Path(directoryPath :+ name, extension)
+    var name2file: Map[String, Path] = files
+      .map(file =>
+        val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
+        name -> Path(path :+ name, extension)
+      )
+      .toMap
 
-    val nonIndexFilePaths = if site.posts.isDirectoryEmptiedOut(directoryPath) then filePaths else
-      val directoryPagePath: Path = toPath(Path(directoryPath :+ fileName))
-      val (indexFilePaths, nonIndexFilePaths) = filePaths.partition(_.path == directoryPagePath.path)
-      indexFilePaths.headOption.foreach(sourcePath => site.addPage(Some(sourcePath), directoryPagePath))
-      nonIndexFilePaths
+    def fileByName(name: String): Option[Path] =
+      val result = name2file.get(name)
+      if result.isDefined then name2file = name2file.removed(name)
+      result
 
-    nonIndexFilePaths.foreach(sourcePath => site.addPage(Some(sourcePath), toPath(sourcePath)))
+    val sourcePath: Path = Path(path :+ fileName)
+    val internalIndex: Option[Path] = fileByName(fileName)
 
-    // TODO pair external index files with their directories
+    // TODO error when internalIndex.isDefined && externalIndex.isDefined
+
+    internalIndex.orElse(externalIndex).foreach: index =>
+      if !site.posts.isDirectoryEmptiedOut(path)
+      then site.addPage(Some(index), toPath(sourcePath))
+      else () // TODO error about the indexes
+
+    val directory2index: List[(File, Option[Path])] = directories
+      .map(directory => directory -> fileByName(directory.getName))
+
+    name2file.values.foreach(sourcePath => site.addPage(Some(sourcePath), toPath(sourcePath)))
+
     // TODO for Store-described directories, do not scan directory listing
-    directories.foreach: directory =>
+    directory2index.foreach: (directory, externalIndex) =>
       scan(
         site,
-        directoryPath :+ directory.getName,
-        directory
+        path :+ directory.getName,
+        directory,
+        externalIndex
       )

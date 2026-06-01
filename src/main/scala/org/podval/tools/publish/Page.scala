@@ -4,7 +4,7 @@ import org.podval.tools.publish.util.{Date, Files, Icon}
 import org.podval.xml.Html
 import zio.blocks.html.*
 import java.io.File
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 
 abstract class Page(
   val site: Site,
@@ -76,6 +76,7 @@ abstract class Page(
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
   final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(frontMatter.date)
   final def dateModified: Option[Date] = frontMatter.modifiedTime
+  final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
 
   final def title: String = frontMatter.title.getOrElse(titleDefault)
   def titleDefault: String = titleFromPath
@@ -92,7 +93,7 @@ abstract class Page(
   protected def langDefault: Option[String] = None
 
   def backLinks: Seq[BackLinks.BackLink]
-  
+
   final lazy val headerPage: Option[HeaderPage] = frontMatter
     .headerPage
     .filter(_.include)

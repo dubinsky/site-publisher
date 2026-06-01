@@ -1,7 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.util.{Files, Logging, ObsidianConfig}
+import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
 import java.io.File
@@ -46,6 +46,7 @@ final class Site(
   // Components
   val errors: Errors = Errors(this)
   val ignore: Ignore = Ignore(this)
+  val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
@@ -126,7 +127,7 @@ final class Site(
     (Asset.embeddedAssets(this) ++ special).foreach(addPage)
 
     // Scan the directories and add all source pages
-    Directory.scan(this, Seq.empty, sourceDirectory)
+    Directory.scan(this, Seq.empty, sourceDirectory, None)
 
   def generate(): Unit =
     // Wipe out output directory

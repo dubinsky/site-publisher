@@ -25,6 +25,6 @@ final class Sitemap(site: Site) extends Asset.SyntheticXmlAsset(site, Sitemap.pa
     .filter(_.path.extension.contains(HtmlLike.Html.extension))
     .map: page =>
       val loc = Xml.setText(Xml.element("loc"), s"${site.config.url}${page.path}")
-      // TODO date format: 2009-08-07T14:30:00-04:00
-      val lastmod: Option[Xml.Element] = page.dateModified.map(date => Xml.setText(Xml.element("lastmod"), date.toString))
+      // Date format: 2009-08-07T14:30:00-04:00
+      val lastmod: Option[Xml.Element] = page.dateModifiedGit.map(date => Xml.setText(Xml.element("lastmod"), date.toString))
       Xml.setChildren(Xml.element("url"), Chunk.from(Seq(loc) ++ lastmod.toSeq))
