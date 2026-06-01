@@ -35,6 +35,16 @@ abstract class Markup derives CanEqual:
   // TODO XmlWriter should stop at the same elements!
   protected def stop(xml: XmlAst)(element: xml.Element): Boolean
 
+  // TODO employ some givens and remove explicit ast parameter
+  final protected def transform[A <: XmlAst](ast: A)(
+    element: ast.Element,
+    transformElement: ast.Element => ast.Element
+  ): ast.Element = ast.transform(
+    element,
+    stop(ast),
+    transformElement
+  )
+
   protected def recognizeMarkdownWikiLinks: Boolean
 
   protected def recognizeMarkdownFootnotes: Boolean
@@ -64,7 +74,7 @@ abstract class Markup derives CanEqual:
 
     var xml: Xml.Element = parse(content, errorReporter)
 
-    xml = Xml.transform(xml, stop(Xml), element =>
+    xml = transform(Xml)(xml, element =>
       var result: Xml.Element = toHtml(element)
 
       // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
@@ -112,12 +122,12 @@ abstract class Markup derives CanEqual:
     ).toMap
 
     // Replace footnotes with link stubs
-    xml = Xml.transform(xml, stop(Xml), element =>
+    xml = transform(Xml)(xml, element =>
       Footnotes.CorrelationId.get(element).fold(element)(Footnotes.linkStub)
     )
 
     // Remove body stubs
-    xml = Xml.transform(xml, stop(Xml), element =>
+    xml = transform(Xml)(xml, element =>
       Xml.setChildren(element, Xml.children(element)
         .filterNot(Xml.asElement(_).fold(false)(child =>
           Footnotes.BodyClass.has(child) ||
@@ -131,7 +141,7 @@ abstract class Markup derives CanEqual:
     val footnoteNumbers: IdGenerator = IdGenerator("")
     var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
 
-    xml = Xml.transform(xml, stop(Xml), element => Footnotes.CorrelationId.get(element).fold(element): correlationId =>
+    xml = transform(Xml)(xml, element => Footnotes.CorrelationId.get(element).fold(element): correlationId =>
       val footnoteNumber: String = footnoteNumbers.generate()
       // TODO error when not found:
       footnoteBodies.get(correlationId).foreach: footnoteBody =>
@@ -142,7 +152,7 @@ abstract class Markup derives CanEqual:
     // Add footnotes 'div'
     if footnotesToAdd.nonEmpty then
       var footnotesAdded: Boolean = false
-      xml = Xml.transform(xml, stop(Xml), element =>
+      xml = transform(Xml)(xml, element =>
         if footnotesAdded || !isFootnotesContainer(element) then element else
           footnotesAdded = true
           var footnotesDiv: Xml.Element = Xml.element("div")
@@ -180,7 +190,7 @@ abstract class Markup derives CanEqual:
     page: MarkupPage
   ): Html.Element =
     // Post-process XML
-    val xmlResult: Xml.Element = Xml.transform(xml, stop(Xml), element =>
+    val xmlResult: Xml.Element = transform(Xml)(xml, element =>
       var result: Xml.Element = element
 
       if Xml.A.is(result) then Xml.Href.get(result).foreach: href =>
@@ -195,7 +205,7 @@ abstract class Markup derives CanEqual:
     )
 
     // Convert to HTML and add TOC
-    Html.transform(Html.fromXml(xmlResult), stop(Html), element =>
+    transform(Html)(Html.fromXml(xmlResult), element =>
       if !Toc.isKramdownTocMarker(element) then element else toc.html
     )
 

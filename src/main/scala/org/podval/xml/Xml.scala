@@ -3,6 +3,7 @@ package org.podval.xml
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.xml.{XmlBuilder, XmlName, Xml as XML}
 
+// XML AST for ZIO Blocks XML
 object Xml extends XmlAst:
   override type Xml = XML
   override type Element = XML.Element

@@ -113,7 +113,7 @@ object Tei extends Markup:
   override protected def setFootnoteCorrelationIds(element: Xml.Element): Xml.Element =
     val correlationIds: IdGenerator = IdGenerator("")
 
-    Xml.transform(element, stop(Xml), element =>
+    transform(Xml)(element, element =>
       var result: Xml.Element = element
       val isFootnote = Xml.name(element) == "note" && Xml.getAttribute(element, "place").contains("end")
       if isFootnote then

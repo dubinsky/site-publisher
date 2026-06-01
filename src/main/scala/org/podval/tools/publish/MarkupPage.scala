@@ -84,8 +84,10 @@ object MarkupPage:
     private def parse(message: String): Cached =
       site.log.debug(s"$message MarkupSource: $sourcePath")
 
-      val (frontMatter: FrontMatter, markupContent: String) =
-        FrontMatter.parse(Files.read(sourcePath.file(site.sourceDirectory)), errorReporter)
+      val (frontMatterContent: Option[String], markupContent: String) =
+        FrontMatter.split(Files.read(sourcePath.file(site.sourceDirectory)))
+        
+      val frontMatter: FrontMatter =  FrontMatter.parse(frontMatterContent, errorReporter)
 
       val xml: Xml.Element = markup.parseAndPreProcess(
         markupContent,

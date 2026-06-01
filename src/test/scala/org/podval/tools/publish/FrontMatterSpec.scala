@@ -8,21 +8,22 @@ object FrontMatterSpec extends ZIOSpecDefault:
   private given CanEqual[LocalDate, LocalDate] = CanEqual.derived
 
   def roundTrip(input: String): TestResult =
-    val (parsed: FrontMatter, _) = FrontMatter.parse(input, TestErrorReporter())
+    val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1, TestErrorReporter())
     val rendered: String = parsed.write
-    val (reparsed: FrontMatter, _) = FrontMatter.parse(rendered, TestErrorReporter())
+    val reparsed: FrontMatter = FrontMatter.parse(FrontMatter.split(rendered)._1, TestErrorReporter())
     assertTrue(
       rendered == reparsed.write
     )
     
 
   def parse(input: String, verify: (FrontMatter, String) => TestResult): TestResult =
-    val (parsed: FrontMatter, content: String) = FrontMatter.parse(input, TestErrorReporter())
+    val (frontMatterInput, content) = FrontMatter.split(input)
+    val parsed: FrontMatter = FrontMatter.parse(frontMatterInput, TestErrorReporter())
     verify(parsed, content)
 
   def error(input: String, verify: TestErrorReporter => TestResult): TestResult =
     val errorReporter = TestErrorReporter()
-    val (parsed: FrontMatter, _) = FrontMatter.parse(input, errorReporter)
+    val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1, errorReporter)
     assertTrue(!errorReporter.empty) && verify(errorReporter)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("FrontMatter")(

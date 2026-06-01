@@ -66,31 +66,25 @@ object FrontMatter:
     .instance(TypeId.of[Icon.Style], Icon.Style.codec)
     .derive
 
-  def split(input: String): (String, String) =
+  def split(input: String): (Option[String], String) =
     val frontMatterEnd: Int = if !input.startsWith("---\n") then -1 else input.indexOf("\n---\n", 3)
-    if frontMatterEnd == -1 then (null, input) else
-      val frontMatterInput: String = input.substring(3, frontMatterEnd)
-      val frontMatterLines: Int = frontMatterInput.count(_ == '\n') + 2
-      val content: String =
-        "\n" * frontMatterLines +
-          input.substring(frontMatterEnd + 5)
-      (frontMatterInput, content)
+    if frontMatterEnd == -1 then (None, input) else
+      val frontMatter: String = input.substring(3, frontMatterEnd)
+      val frontMatterLines: Int = frontMatter.count(_ == '\n') + 2
+      val content: String = "\n" * frontMatterLines + input.substring(frontMatterEnd + 5)
+      (Some(frontMatter), content)
 
   def parse(
-    input: String,
+    input: Option[String],
     errorReporter: PageError.Reporter
-  ): (FrontMatter, String) =
-    val (frontMatterInput, content) = split(input)
-    val frontMatter =
-      if frontMatterInput == null then absent
-      else if frontMatterInput.isEmpty then empty else decode(frontMatterInput) match
-        case Right(frontMatter) => frontMatter
-        case Left(error) =>
-          errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$frontMatterInput]", Some(error))
-          empty
+  ): FrontMatter = input.fold(absent): input =>
+    if input.isEmpty then empty else decode(input) match
+      case Right(frontMatter) =>
+        frontMatter
+      case Left(error) =>
+        errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$input]", Some(error))
+        empty
 
-    (frontMatter, content)
-  
   private def decode(input: String): Either[SchemaError, FrontMatter] =
     try
       val yaml: Yaml = YamlReader.read(input)

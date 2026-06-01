@@ -2,6 +2,12 @@ package org.podval.xml
 
 import zio.blocks.chunk.Chunk
 
+// AST that represents XML and provides operations on it;
+// abstracts over the underlying representation:
+// - ZIO Blocks XML
+// - ZIO Blocks HTML
+// - potentially Scala XML
+// - potentially DOM
 abstract class XmlAst:
   type Xml
   

@@ -2,8 +2,8 @@ package org.podval.xml
 
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.Dom as XML
-import zio.blocks.schema.xml.Xml as From
 
+// XML AST for ZIO Blocks HTML
 object Html extends XmlAst:
   override type Xml = XML
   override type Element = XML.Element
@@ -83,6 +83,8 @@ object Html extends XmlAst:
   override def asAtom(xml: Xml): Option[String] = xml match
     case XML.Text(content) => Some(content)
     case _ => None
+
+  import zio.blocks.schema.xml.Xml as From
 
   // Note: I do not see any reason to recognize elements (like 'script') or attributes (like 'hidden')...
   def fromXml(element: From.Element): XML.Element = XML.Element.Generic(
