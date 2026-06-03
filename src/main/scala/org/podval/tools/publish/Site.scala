@@ -1,7 +1,9 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
+import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
+import org.podval.xml.Xml
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
 import java.io.File
@@ -64,6 +66,9 @@ final class Site(
   private var pagesVar: List[Page] = List.empty
   def pages: List[Page] = pagesVar
 
+  def readAndSplit(sourcePath: Path): (Option[String], String) =
+    FrontMatter.split(Files.read(sourcePath.file(sourceDirectory)))
+
   def addPage(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
     // Add implied directories
@@ -79,7 +84,7 @@ final class Site(
       case markupPage: MarkupPage =>
         for
           sourcePath <- sourcePath
-          markup <- Markup.of(sourcePath)
+          markup <- markupOf(sourcePath)
         do
           markupPage.setSource(markup, sourcePath)
       case _ => ()
@@ -94,12 +99,20 @@ final class Site(
         val page: Page.Real =
           if path.fileName == Directory.fileName
           then Directory(this, path.html)
-          else sourcePath.flatMap(Markup.of) match
+          else sourcePath.flatMap(markupOf) match
             case None => Asset.AssetWithSource(this, sourcePath.get, path)
             case Some(markup) => MarkupPage.Simple(this, path.html)
         setSource(page)
         addPage(page)
         page
+
+  private def markupOf(sourcePath: Path): Option[Markup] = sourcePath.extension.flatMap: extension =>
+    if extension != XmlLikeMarkup.extension then Markup.all.find(_.isExtension(extension)) else
+      // Disambiguate XML markup by its XML dialect's root elements:
+      val xmlContent: String = readAndSplit(sourcePath)._2
+      val xml: Xml.Element = XmlMarkup.parse(xmlContent, PageError.SiteReporter(sourcePath, this))
+      val rootElementName: String = xml.getName
+      Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
 
   // Header pages
   lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)

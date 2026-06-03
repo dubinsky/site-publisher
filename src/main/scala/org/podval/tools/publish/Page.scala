@@ -47,7 +47,7 @@ abstract class Page(
 
   def isDirectory: Boolean
 
-  def source: Option[MarkupPage.Source]
+  def source: Option[MarkupSource]
 
   def sourcePath: Option[Path]
 
@@ -92,7 +92,7 @@ abstract class Page(
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
 
-  def backLinks: Seq[BackLinks.BackLink]
+  final def backLinks: Seq[BackLinks.BackLink] = source.fold(Seq.empty)(_.backLinks(this))
 
   final lazy val headerPage: Option[HeaderPage] = frontMatter
     .headerPage
@@ -151,11 +151,10 @@ object Page:
   ) with NonDirectory with WithContent:
     override def isAlias: Boolean = true
     override def real: Real = page.real
-    override def source: Option[MarkupPage.Source] = None
+    override def source: Option[MarkupSource] = None
     override def titleDefault: String = path.fileName
     override protected def iconDefault: Icon = Icon("link", Icon.Solid)
     override def sourcePath: Option[Path] = None
-    override def backLinks: Seq[BackLinks.BackLink] = Seq.empty
     override def content: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""
 
   def pageList(pages: Seq[Page], cls: Option[String] = None): Html.Element = ul(

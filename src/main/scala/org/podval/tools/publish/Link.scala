@@ -1,6 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.util.{Files, Strings}
+import org.podval.xml.{HtmlClass, Xml}
 
 final class Link(
   val page: Page,
@@ -19,8 +20,16 @@ final class Link(
     fragment.fold("")(fragment => s"#${get(fragment)}")
 
 object Link:
-  enum Kind:
-    case Person, Place, Organization // Tag, Category
+  sealed abstract class Kind(val htmlClass: String)
+  
+  // TODO Tag, Category
+  object Kind:
+    case object Person extends Kind("persName")
+    case object Place extends Kind("placeName")
+    case object Organization extends Kind("orgName")
+ 
+    val all: List[Kind] = List(Person, Place, Organization)
+    def of(element: Xml.Element): Option[Kind] = all.find(kind => element.has(HtmlClass(kind.htmlClass)))
 
   sealed abstract class ToFragment:
     def title: String

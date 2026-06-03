@@ -1,5 +1,6 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.markup.MarkdownMarkup
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.Scope
 import zio.test.*

@@ -3,10 +3,15 @@ package org.podval.xml
 import zio.blocks.chunk.Chunk
 
 object XmlDialect:
-  object Plain extends XmlDialect(root = Set.empty)
+  object Plain extends XmlDialect(
+    name = "XML",
+    root = Set.empty
+  )
 
 // Describes an XML dialect.
 open class XmlDialect(
+  val name: String,
+
   // identification
   val root: Set[String],
 
@@ -31,6 +36,7 @@ open class XmlDialect(
   val encodeXmlSpecials: Boolean = false
 ):
   def plus(other: XmlDialect): XmlDialect = XmlDialect(
+    name = name + "+" + other.name,
     root = root ++ other.root,
     stop = stop ++ other.stop,
     preformat = preformat ++ other.preformat,

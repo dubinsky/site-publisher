@@ -89,6 +89,9 @@ trait XmlAst[ELEMENT]:
 
     def has(htmlClass: HtmlClass): Boolean = element.getClasses.contains(htmlClass.name)
 
+    def add(htmlClass: Option[HtmlClass]): Element =
+      htmlClass.fold(element)(element.add)
+      
     def add(htmlClass: HtmlClass): Element =
       val list = element.getClasses
       if list.contains(htmlClass.name)

@@ -1,5 +1,6 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.util.Icon
 import org.podval.tools.publish.{Asset, Path, Site}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
@@ -25,7 +26,7 @@ final class Sitemap(site: Site) extends Asset.SyntheticXmlAsset(site, Sitemap.pa
     .map: page =>
       val loc = Xml.element(XmlElement("loc")).setText(s"${site.config.url}${page.path}")
       // Date format: 2009-08-07T14:30:00-04:00
-      val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date => 
+      val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date =>
         Xml.element(XmlElement("lastmod")).setText(date.toString)
       Xml
         .element(XmlElement("url"))

@@ -1,7 +1,6 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.features
 
-import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlAttribute, XmlElement}
-import zio.blocks.chunk.Chunk
+import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml, XmlAttribute, XmlElement}
 
 // TODO footnotes placed at the end of elements like table, not the overall end?
 // TODO how do multi-level footnotes look?
@@ -16,15 +15,15 @@ object Footnotes:
   private def footnoteBodyId(footnoteNumber: String): String = s"_footnote_$footnoteNumber"
 
   def linkStub(correlationId: String): Xml.Element = Xml
-    .element(HtmlXmlDialect.A)
+    .element(HtmlElement.A)
     .add(LinkClass)
     .set(CorrelationId, correlationId)
-  
+
   def link(footnoteNumber: String): Xml.Element = Xml
-    .element(HtmlXmlDialect.A)
+    .element(HtmlElement.A)
     .add(LinkClass)
     .set(XmlAttribute.Id, footnoteId(footnoteNumber))
-    .set(HtmlXmlDialect.Href, s"#${footnoteBodyId(footnoteNumber)}")
+    .set(HtmlAttribute.Href, s"#${footnoteBodyId(footnoteNumber)}")
     .setText(footnoteNumber)
 
   def bodyStub(correlationId: String, content: Xml.Nodes): Xml.Element = Xml
@@ -41,9 +40,9 @@ object Footnotes:
     .add(BodyClass)
     .set(XmlAttribute.Id, Footnotes.footnoteBodyId(footnoteNumber))
     .setChildren(Footnotes.backLink(footnoteNumber) +: footnoteBody)
-    
+
   private def backLink(footnoteNumber: String): Xml.Element = Xml
-    .element(HtmlXmlDialect.A)
+    .element(HtmlElement.A)
     .add(BackLinkClass)
-    .set(HtmlXmlDialect.Href, s"#${footnoteId(footnoteNumber)}")
+    .set(HtmlAttribute.Href, s"#${footnoteId(footnoteNumber)}")
     .setText(footnoteNumber)

@@ -1,6 +1,7 @@
 package org.podval.xml
 
 object HtmlXmlDialect extends XmlDialect(
+  name = "HTML",
   root = Set("html"),
   stop = Set("code"),
   preformat = Set("pre"),
@@ -10,10 +11,4 @@ object HtmlXmlDialect extends XmlDialect(
   break = Set.empty, // TODO TEI: lb; HTML: br?!
   cling = Set.empty, // TODO Set("span")?
   selfClose = Set("br", "hr", "meta", "link", "img", "input")
-):
-  object A extends XmlElement("a")
-
-  object Code extends XmlElement("code")
-
-  object Href extends XmlAttribute("href")
- 
+)

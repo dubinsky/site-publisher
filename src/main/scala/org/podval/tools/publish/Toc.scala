@@ -55,11 +55,3 @@ object Toc:
         if !includeNested then None else sections
           .flatMap(section => next(section, includeNested = true))
           .headOption
-
-  def isKramdownTocMarker(element: Html.Element): Boolean =
-    element.getName == "ul" && element.getChildren.exists: node =>
-      node.asElement.fold(false): child =>
-        child.getName == "li" &&
-          child.getChildren.length == 1 &&
-          child.getChildren.head.asText.fold(false): text =>
-            text.endsWith("{:toc}")

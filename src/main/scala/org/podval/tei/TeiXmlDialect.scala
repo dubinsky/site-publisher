@@ -3,6 +3,7 @@ package org.podval.tei
 import org.podval.xml.XmlDialect
 
 object TeiXmlDialect extends XmlDialect(
+  name = "TEI",
   root = Set("TEI"),
   stop = Set.empty,
   preformat = Set.empty,

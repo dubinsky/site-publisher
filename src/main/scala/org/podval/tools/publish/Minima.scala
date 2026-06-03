@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.xml.{Html, HtmlXmlDialect}
+import org.podval.xml.{Html, HtmlElement}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 import zio.blocks.html.Dom.Element.Script
@@ -18,7 +18,7 @@ object Minima:
     def site: Site = page.site
     
     def getLanguages(element: Html.Element): Chunk[String] =
-      if element.isElement(HtmlXmlDialect.Code)
+      if element.isElement(HtmlElement.Code)
       then element.getPrefixedClasses("language")
       else element.flatMapElements(getLanguages)
 

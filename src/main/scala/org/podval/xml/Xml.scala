@@ -6,7 +6,7 @@ import zio.blocks.schema.xml.{XmlBuilder, XmlName, Xml as XML}
 // XML AST for ZIO Blocks XML
 given Xml: XmlAst[XML.Element]:
   override type Node = XML
-  
+
   override def text(text: String): Node = XML.Text(text)
 
   override def element(elem: XmlElement): Element = XmlBuilder.element(elem.name).build
@@ -56,7 +56,7 @@ given Xml: XmlAst[XML.Element]:
         |""".stripMargin
 
     //    println(Markdown.parseAndRender(string))
-    val xmlString = org.podval.tools.publish.MarkdownMarkup.parseAndRender(string)
+    val xmlString = org.podval.tools.publish.markup.MarkdownMarkup.parseAndRender(string)
     //    println(XmlParser.parse(string).toOption.get)
     XmlParser.parse(xmlString) match
       case Left(error) => println(error)
