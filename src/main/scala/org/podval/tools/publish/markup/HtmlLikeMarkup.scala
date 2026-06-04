@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.Fragment.Section
+import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlAttribute, XmlDialect}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
@@ -40,7 +40,7 @@ abstract class HtmlLikeMarkup extends Markup:
           level <- HtmlLikeMarkup.headerLevel(element)
           title <- element.getTextOpt
           id <-
-            val id = element.get(XmlAttribute.Id)
+            val id = element.getId
             if id.isEmpty then errorReporter.error(PageError.NoId, s"Defect: No id on section $element", ())
             id
         yield HtmlSection(

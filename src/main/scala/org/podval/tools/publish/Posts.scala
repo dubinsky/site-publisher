@@ -1,8 +1,10 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.page.{DirectoryPage, NonDirectoryPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
+
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -19,7 +21,7 @@ object Posts:
     try Some(LocalDate.parse(dateString))
     catch case e: DateTimeParseException => None
 
-final class Posts(site: Site) extends MarkupPage.WithSyntheticContent(site, Path("posts").html) with Page.NonDirectory:
+final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html) with NonDirectoryPage:
   override def titleDefault: String = "Posts"
   override protected def descriptionDefault: Option[String] = Some("All posts")
   override protected def iconDefault: Icon = Icon.envelope
@@ -78,7 +80,7 @@ final class Posts(site: Site) extends MarkupPage.WithSyntheticContent(site, Path
 
         title: String <-
           val titleString: String = if fileName.length <= 11 then "" else fileName.substring(11).trim
-          val title: String = if titleString.nonEmpty then titleString else Directory.fileName
+          val title: String = if titleString.nonEmpty then titleString else DirectoryPage.fileName
           val dailiesMixedWithPosts: Boolean = dailyNotesDirectoryName.contains(postsDirectoryName)
           if dailiesMixedWithPosts then Some(title) else if isPost && titleString.isEmpty
           then errorReporter.error(PageError.FileName, s"Post must have title: $fileName", None)

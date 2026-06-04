@@ -1,10 +1,11 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.page.{NonDirectoryPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, XmlAttribute}
 import zio.blocks.html.*
 
-final class Tags(site: Site) extends MarkupPage.WithSyntheticContent(site, Path("tags").html) with Page.NonDirectory:
+final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html) with NonDirectoryPage:
   override def titleDefault: String = "Tags"
   override protected def descriptionDefault: Option[String] = Some("Pages by tags")
   override protected def iconDefault: Icon = Icon.tags

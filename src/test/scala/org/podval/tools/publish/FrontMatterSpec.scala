@@ -1,5 +1,6 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.page.FrontMatter
 import zio.Scope
 import zio.test.*
 import java.time.LocalDate

@@ -1,12 +1,13 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
 object Feed:
   val path: Path = Path("feed").withExtension("xml")
   
-final class Feed(site: Site) extends Asset.SyntheticXmlAsset(site, Feed.path):
+final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   override protected def iconDefault: Icon = Icon.rss
 
   override def xmlContent: Xml.Element = Xml

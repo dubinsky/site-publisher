@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.features.*
+import org.podval.tools.publish.feature.*
 
-object HtmlMarkup extends HtmlLikeMarkup with Markup.XmlParsable:
+object HtmlMarkup extends HtmlLikeMarkup with XmlParsableMarkup:
   override def name: String = xmlDialect.name
   override val extension: String = "html"
   override val additionalExtensions: Set[String] = Set.empty

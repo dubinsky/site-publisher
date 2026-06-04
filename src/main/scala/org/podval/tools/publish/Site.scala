@@ -1,7 +1,10 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
+import org.podval.tools.publish.link.BackLinks
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
+import org.podval.tools.publish.page.{AssetWithSource, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
+  RealPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
 import org.podval.xml.Xml
 import org.slf4j.{Logger, LoggerFactory}
@@ -18,7 +21,7 @@ final class Site(
 ) extends JSLibrary:
   // Site itself is a JavaScript library too
   override def cdn: String = ""
-  override def stylesheet: Some[String] = Some(Asset.mainStyleSheet)
+  override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
 
   // Logging
   Logging.configureLogBack(level = logLevel, useLogStash = false)
@@ -80,11 +83,28 @@ final class Site(
     sourcePath: Option[Path],
     path: Path
   ): Page =
-    def setSource(page: Page.Real): Unit = page match
+    val markup: Option[Markup] =
+      for
+        sourcePath <- sourcePath
+        extension <- sourcePath.extension
+        result <-
+          if extension != XmlLikeMarkup.extension
+          then
+            // Determine by the file extension
+            Markup.all.find(_.isExtension(extension))
+          else
+            // Disambiguate XML markup by its XML dialect's root elements:
+            val xmlContent: String = readAndSplit(sourcePath)._2
+            val xml: Xml.Element = XmlMarkup.parse(xmlContent, PageError.SiteReporter(sourcePath, this))
+            val rootElementName: String = xml.getName
+            Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
+      yield result
+
+    def setSource(page: RealPage): Unit = page match
       case markupPage: MarkupPage =>
         for
           sourcePath <- sourcePath
-          markup <- markupOf(sourcePath)
+          markup <- markup
         do
           markupPage.setSource(markup, sourcePath)
       case _ => ()
@@ -96,23 +116,15 @@ final class Site(
         page
 
       case None =>
-        val page: Page.Real =
-          if path.fileName == Directory.fileName
-          then Directory(this, path.html)
-          else sourcePath.flatMap(markupOf) match
-            case None => Asset.AssetWithSource(this, sourcePath.get, path)
-            case Some(markup) => MarkupPage.Simple(this, path.html)
+        val page: RealPage =
+          if path.fileName == DirectoryPage.fileName
+          then DirectoryPage(this, path.html)
+          else markup match
+            case None => AssetWithSource(this, sourcePath.get, path)
+            case Some(markup) => SimpleMarkupPage(this, path.html)
         setSource(page)
         addPage(page)
         page
-
-  private def markupOf(sourcePath: Path): Option[Markup] = sourcePath.extension.flatMap: extension =>
-    if extension != XmlLikeMarkup.extension then Markup.all.find(_.isExtension(extension)) else
-      // Disambiguate XML markup by its XML dialect's root elements:
-      val xmlContent: String = readAndSplit(sourcePath)._2
-      val xml: Xml.Element = XmlMarkup.parse(xmlContent, PageError.SiteReporter(sourcePath, this))
-      val rootElementName: String = xml.getName
-      Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
 
   // Header pages
   lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
@@ -124,7 +136,7 @@ final class Site(
     config.social.linkedin.map(SocialLink.LinkedIn(_))
   ).flatten
 
-  private def addAllPages(): Unit =
+  private def load(): Unit =
     val special: Seq[Page] = Seq(
       // Synthetic assets
       Sitemap(this),
@@ -137,17 +149,11 @@ final class Site(
       posts
     )
 
-    (Asset.embeddedAssets(this) ++ special).foreach(addPage)
+    // Add special pages
+    (EmbeddedAsset.embeddedAssets(this) ++ special).foreach(addPage)
 
     // Scan the directories and add all source pages
-    Directory.scan(this, Seq.empty, sourceDirectory, None)
-
-  def generate(): Unit =
-    // Wipe out output directory
-    Files.deleteDirectory(targetDirectory)
-
-    // Add all pages
-    addAllPages()
+    DirectoryPage.scan(this, Seq.empty, sourceDirectory, None)
 
     // Report conflicting pages
     pages
@@ -162,6 +168,12 @@ final class Site(
     pages.foreach(page => backLinks.addBackLinks(page.backLinks))
 
     // TODO sort pages topologically based on transclusions
+
+  def generate(): Unit =
+    load()
+
+    // Wipe out output directory
+    Files.deleteDirectory(targetDirectory)
 
     // Write pages
     pages.foreach(_.write())

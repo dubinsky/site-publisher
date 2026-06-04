@@ -1,8 +1,9 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.markup.HtmlMarkup
+import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.tools.publish.{Asset, Path, Site}
+import org.podval.tools.publish.{Path, Site}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
 
@@ -10,7 +11,7 @@ object Sitemap:
   val path: Path = Path("sitemap").withExtension("xml")
 
 // TODO <?xml version='1.0' encoding='UTF-8'?>
-final class Sitemap(site: Site) extends Asset.SyntheticXmlAsset(site, Sitemap.path):
+final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
   override protected def iconDefault: Icon = Icon("map", Icon.Regular)
 
   override def xmlContent: Xml.Element =Xml

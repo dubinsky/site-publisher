@@ -1,6 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.js
+import org.podval.tools.publish.page.{MarkupPage, Page}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, HtmlElement}
 import zio.blocks.chunk.Chunk

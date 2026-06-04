@@ -24,8 +24,11 @@ trait XmlAst[ELEMENT]:
   // Conversions
   extension (node: Node)
     def asElement: Option[Element]
+    
     def asAtom: Option[String]
+    
     def asText: Option[String]
+    
     def getText: String = node
       .asAtom
       .orElse(node.asElement.map(_.getChildren).map(toString))
@@ -35,10 +38,12 @@ trait XmlAst[ELEMENT]:
   extension (element: Element)
     def getName: String
 
-    def isElement(elem: XmlElement): Boolean = element.getName == elem.name
-
     def rename(name: String): Element
 
+    def isElement(elem: XmlElement): Boolean = element.getName == elem.name
+    
+    def isA: Boolean = isElement(HtmlElement.A)
+  
   // Children
   extension (element: Element)
     def getChildren: Nodes
@@ -74,6 +79,14 @@ trait XmlAst[ELEMENT]:
 
     def set(attribute: XmlAttribute, value: Option[String]): Element =
       value.fold(element)(element.set(attribute, _))
+      
+    def getId: Option[String] = get(XmlAttribute.Id)
+    
+    def setId(value: String): Element = set(XmlAttribute.Id, value)
+    
+    def getHref: Option[String] = get(HtmlAttribute.Href)
+    
+    def setHref(value: String): Element = set(HtmlAttribute.Href, value)
 
   // HTML 'class' attribute
   extension (element: Element)

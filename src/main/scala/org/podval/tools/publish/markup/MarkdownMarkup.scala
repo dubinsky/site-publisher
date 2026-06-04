@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 
 import org.podval.tools.publish.PageError
-import org.podval.tools.publish.features.*
+import org.podval.tools.publish.feature.*
 import org.podval.xml.Xml
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
