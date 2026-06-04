@@ -4,10 +4,12 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.feature.*
 import org.podval.xml.Xml
+
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
+import org.podval.tools.publish.processor.Features
 //import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughSubscriptExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -20,17 +22,17 @@ object MarkdownMarkup extends HtmlLikeMarkup:
   override val extension: String = "md"
   override val additionalExtensions: Set[String] = Set.empty
 
-  override def features: List[Feature] = List(
-    BlocksFeature,
-    WikiLinksFeature,
-    MarkdownFootnotesFeature,
-    FlexMarkFootnotesFeature,
-    KramdownTocFeature,
-    HtmlSectionIdsFeature,
-    AnchorIdsFeature,
-    InternalLinksFeature,
-    FootnotesFeature
-  )
+  override def features: Features = Features(Seq(
+    BlocksFeature(),
+    WikiLinksFeature(),
+    MarkdownFootnotesFeature(),
+    FlexMarkFootnotesFeature(),
+    KramdownTocFeature(),
+    HtmlSectionIdsFeature(),
+    AnchorIdsFeature(),
+    InternalLinksFeature(),
+    FootnotesFeature()
+  ))
 
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
     FootnoteExtension.create,

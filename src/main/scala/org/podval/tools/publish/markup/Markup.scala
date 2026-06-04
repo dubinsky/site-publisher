@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.feature.Feature
+import org.podval.tools.publish.processor.Features
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.Fragment
 import org.podval.xml.{Xml, XmlDialect}
@@ -24,7 +24,7 @@ abstract class Markup derives CanEqual:
   // and xmlDialect for pretty-printing.
   def xmlDialect: XmlDialect
 
-  def features: List[Feature]
+  def features: Features
 
   def sections(element: Xml.Element, errorReporter: PageError.Reporter): Seq[Fragment.Section]
 

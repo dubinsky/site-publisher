@@ -1,20 +1,30 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.util.{Files, Media, Strings}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.processor.{Converter, Feature, PostConverter, Processor}
+import org.podval.tools.publish.util.{Files, IdGenerator, Media, Strings}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
+
 import scala.annotation.tailrec
 
 // see https://obsidian.md/help/links
-object WikiLinksFeature extends Feature:
+final class WikiLinksFeature extends Feature(
+  converter = Some(WikiLinksFeature.WikiLinksConverter()),
+  postConverter = Some(WikiLinksFeature.WikiLinksPostConverter())
+)
 
-  override def process(
-    element: Xml.Element,
-    context: Feature.ProcessContext
-  ): Xml.Element =
-    if element.isA
-    then element
-    else convertText(element, convertWikiLinks(Chunk.empty, _))
+object WikiLinksFeature:
+  private final class WikiLinksConverter extends Converter:
+    override def convert(
+      element: Xml.Element,
+      pageSource: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Xml.Element =
+      if element.isA
+      then element
+      else convertText(element, convertWikiLinks(Chunk.empty, _))
 
   @tailrec
   private def convertWikiLinks(result: Chunk[Xml.Node], text: String): Xml.Nodes =
@@ -45,13 +55,14 @@ object WikiLinksFeature extends Feature:
           after
         )
 
-  override def postProcess(
-    element: Xml.Element,
-    context: Feature.PostProcessContext
-  ): Xml.Element =
-    if !element.isA || !Links.isTranscluded(element)
-    then element
-    else element.getHref.fold(element)(embed(element, _).getOrElse(element))
+  private final class WikiLinksPostConverter extends PostConverter:
+    override def postConvert(
+      element: Xml.Element,
+      pageSource: PageSource
+    ): Xml.Element =
+      if !element.isA || !Links.isTranscluded(element)
+      then element
+      else element.getHref.fold(element)(embed(element, _).getOrElse(element))
 
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...

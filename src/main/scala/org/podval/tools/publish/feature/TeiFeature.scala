@@ -1,5 +1,8 @@
 package org.podval.tools.publish.feature
 
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.processor.{Converter, Feature}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlClass, Xml, XmlAttribute}
 
 // TODO split so that TEI-style entity references can be processed in non-TEI markup ;)
@@ -21,54 +24,61 @@ depending on the level of nesting of TEI divs.
 Also, HTML disallows tables within paragraphs, so to have a tooltip inside a TEI paragraph,
 it needs to not be an HTML <p> (and of course, namespace is ignored...)
 */
-object TeiFeature extends Feature:
+final class TeiFeature extends Feature(
+  converter = Some(TeiFeature.TeiConverter())
+)
+
+object TeiFeature:
+  private val facsimileSymbol: String = "⎙"
+
   private val reservedAttributes: Set[String] = Set("class", "target", "lang", "frame")
 
   private def withPrefix(name: String): String = s"tei-$name"
 
-  override def process(
-    element: Xml.Element,
-    context: Feature.ProcessContext
-  ): Xml.Element =
-    val name: String = element.getName
-
-    val result: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
-      val nameNew =
-        if !reservedAttributes.contains(name)
-        then name
-        else withPrefix(name)
-      (nameNew, value)
-    ))
-
-    name match
-      case "head" | "body" | "title" | "div" | "p" =>
-        renameElement(withPrefix(name), result)
-
-      case "row" =>
-        renameElement("tr", result)
-
-      case "cell" =>
-        renameElement("td", copyAttribute("cols", "colspan", result))
-
-      case "graphic" =>
-        renameElement("image", copyAttribute("url", "src", result))
-
-      case "ref" | "ptr" =>
-        renameElement("a", copyAttribute("target", "href", result))
-
-      // TODO turn those into As *only* if 'ref' attribute is present!
-      case "persName" | "placeName" | "orgName" =>
-        renameElement("a", copyAttribute("ref", "href", result))
-
-      case "pb" =>
-        renameElement("a", result.setText(facsimileSymbol))
-
-      // TODO tooltips on dates and gaps
-
-      case _ => element
-
-  private val facsimileSymbol: String = "⎙"
-
+  private final class TeiConverter extends Converter:
+    override def convert(
+      element: Xml.Element,
+      pageSource: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Xml.Element =
+      val name: String = element.getName
+  
+      val result: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
+        val nameNew =
+          if !reservedAttributes.contains(name)
+          then name
+          else withPrefix(name)
+        (nameNew, value)
+      ))
+  
+      name match
+        case "head" | "body" | "title" | "div" | "p" =>
+          renameElement(withPrefix(name), result)
+  
+        case "row" =>
+          renameElement("tr", result)
+  
+        case "cell" =>
+          renameElement("td", copyAttribute("cols", "colspan", result))
+  
+        case "graphic" =>
+          renameElement("image", copyAttribute("url", "src", result))
+  
+        case "ref" | "ptr" =>
+          renameElement("a", copyAttribute("target", "href", result))
+  
+        // TODO turn those into As *only* if 'ref' attribute is present!
+        case "persName" | "placeName" | "orgName" =>
+          renameElement("a", copyAttribute("ref", "href", result))
+  
+        case "pb" =>
+          renameElement("a", result.setText(facsimileSymbol))
+  
+        // TODO tooltips on dates and gaps
+  
+        case _ => element
+    
   private def renameElement(
     name: String,
     element: Xml.Element

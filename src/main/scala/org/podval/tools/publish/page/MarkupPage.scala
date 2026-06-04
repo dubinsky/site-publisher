@@ -14,7 +14,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
     markup: Markup,
     sourcePath: Path
   ): Unit = this.sourceVar = Some(PageSource(
-    site = site,
+    page = this,
     markup = markup,
     sourcePath = sourcePath
   ))
@@ -22,7 +22,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   final override def sourcePath: Option[Path] = source.map(_.sourcePath)
 
   final override def content: String =
-    val markupContent: Option[Html.Element] = source.map(_.htmlContent(this))
+    val markupContent: Option[Html.Element] = source.map(_.htmlContent)
 
     val html: Html.Element = Minima.render(
       page = this,

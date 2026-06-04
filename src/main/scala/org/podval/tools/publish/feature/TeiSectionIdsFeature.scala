@@ -1,21 +1,30 @@
 package org.podval.tools.publish.feature
 
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.processor.{Converter, Feature}
+import org.podval.tools.publish.util.IdGenerator
+import org.podval.xml.Xml
 
-object TeiSectionIdsFeature extends Feature:
+final class TeiSectionIdsFeature extends Feature(
+  converter = Some(TeiSectionIdsFeature.TeiSectionIdsConverter())
+)
 
-  // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
-  // but I do it manually and uniformly for HTML, TEI etc.
-  override def process(
-    element: Xml.Element,
-    context: Feature.ProcessContext
-  ): Xml.Element =
-    if element.getName != "div" || element.getId.isDefined
-    then element
-    else element.setId(sectionTitle(element).fold(context.generateId())(XmlAttribute.Id.toId))
+object TeiSectionIdsFeature:
+  private final class TeiSectionIdsConverter extends Converter:
+    // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
+    // but I do it manually and uniformly for HTML, TEI etc.
+    override def convert(
+      element: Xml.Element,
+      pageSource: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Xml.Element =
+      if element.getName != "div" || element.getId.isDefined
+      then element
+      else element.setId(sectionTitle(element).fold(ids.generate())(Xml.toId))
 
-  private def sectionTitle(element: Xml.Element): Option[String] = element
-    .getChildren
-    .flatMap(_.asElement)
-    .find(element => element.getName == "head")
-    .flatMap(_.getTextOpt)  
+    private def sectionTitle(element: Xml.Element): Option[String] = element
+      .getChildren
+      .flatMap(_.asElement)
+      .find(element => element.getName == "head")
+      .flatMap(_.getTextOpt)

@@ -1,16 +1,25 @@
 package org.podval.tools.publish.feature
 
 import org.podval.tools.publish.markup.HtmlLikeMarkup
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.processor.{Converter, Feature}
+import org.podval.tools.publish.util.IdGenerator
+import org.podval.xml.Xml
 
-object HtmlSectionIdsFeature extends Feature:
+final class HtmlSectionIdsFeature extends Feature(
+  converter = Some(HtmlSectionIdsFeature.HtmlSectionIdsConverter())
+)
 
-  // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
-  // but I do it manually and uniformly for HTML, TEI etc.
-  override def process(
-    element: Xml.Element,
-    context: Feature.ProcessContext
-  ): Xml.Element =
-    if element.getId.isDefined || HtmlLikeMarkup.headerLevel(element).isEmpty
-    then element
-    else element.setId(element.getTextOpt.fold(context.generateId())(XmlAttribute.Id.toId))
+object HtmlSectionIdsFeature:
+  private final class HtmlSectionIdsConverter extends Converter:
+    // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
+    // but I do it manually and uniformly for HTML, TEI etc.
+    override def convert(
+      element: Xml.Element,
+      pageSource: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Xml.Element =
+      if element.getId.isDefined || HtmlLikeMarkup.headerLevel(element).isEmpty
+      then element
+      else element.setId(element.getTextOpt.fold(ids.generate())(Xml.toId))

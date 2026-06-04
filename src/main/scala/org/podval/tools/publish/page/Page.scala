@@ -87,9 +87,9 @@ abstract class Page(
   final def description: Option[String] = frontMatter.description.orElse(descriptionDefault)
   protected def descriptionDefault: Option[String] = None
 
-  final def icon: Icon = frontMatter.icon match
-    case None => iconDefault
-    case Some(icon) => Icon(icon, frontMatter.iconStyle.getOrElse(Icon.Regular))
+  final def icon: Icon = frontMatter
+    .icon
+    .fold(iconDefault)(icon => Icon(icon, frontMatter.iconStyle.getOrElse(Icon.Regular)))
 
   protected def iconDefault: Icon
   
@@ -97,7 +97,7 @@ abstract class Page(
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
 
-  final def backLinks: Seq[BackLink] = source.fold(Seq.empty)(_.backLinks(this))
+  final def backLinks: Seq[BackLink] = source.fold(Seq.empty)(_.backLinks)
 
   final lazy val headerPage: Option[HeaderPage] = Option.when(frontMatter.headerPage)(HeaderPage(
     page = this,

@@ -21,6 +21,8 @@ trait XmlAst[ELEMENT]:
 
   final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString(" ")
 
+  final def toId(text: String): String = text.trim.replace(' ', '-')
+
   // Conversions
   extension (node: Node)
     def asElement: Option[Element]

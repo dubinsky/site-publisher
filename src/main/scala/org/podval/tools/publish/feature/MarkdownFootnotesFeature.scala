@@ -1,22 +1,31 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.PageError
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.processor.{Converter, Feature, Processor}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlElement, Xml}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
-object MarkdownFootnotesFeature extends Feature:
+final class MarkdownFootnotesFeature extends Feature(
+  converter = Some(MarkdownFootnotesFeature.MarkdownFootnotesConverter())
+)
+
+object MarkdownFootnotesFeature:
   private val startsString: String = "[^"
   private val endString: String = "]"
   private val bodyStartString: String = ":"
 
-  override def process(
-    element: Xml.Element,
-    context: Feature.ProcessContext
-  ): Xml.Element =
-    if element.isA
-    then element
-    else convertText(element, convertFootnotes(Chunk.empty, _))
+  private final class MarkdownFootnotesConverter extends Converter:
+    override def convert(
+      element: Xml.Element,
+      pageSource: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Xml.Element =
+      if element.isA
+      then element
+      else convertText(element, convertFootnotes(Chunk.empty, _))
 
   @tailrec
   // TODO this loop has commonality with the WikiLinksFeature.convertWikiLinks() loop...

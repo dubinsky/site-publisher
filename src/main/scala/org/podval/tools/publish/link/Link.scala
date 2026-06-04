@@ -75,7 +75,8 @@ object Link:
       val name: String = names.head
       val tail: Seq[String] = names.tail
       val done: Boolean = tail.isEmpty
-      Option.when(current.title == name || current.titleFromPath == name)(page).flatMap: (to: Page) =>
+      val is: Boolean = current.title == name || current.titleFromPath == name
+      Option.when(is)(page).flatMap: (to: Page) =>
         current.parent match
           case None =>
             Option.when(done)(to)
@@ -86,6 +87,7 @@ object Link:
 
     if path.extension.isEmpty || isExtension(page.path, path) then loop(page, path.path) else None
 
+  // TODO this should be the same as isPath()?
   private def isSourcePath(sourcePath: Path, path: Path, isAbsolute: Boolean): Boolean =
     isExtension(sourcePath, path) && (
       if isAbsolute
