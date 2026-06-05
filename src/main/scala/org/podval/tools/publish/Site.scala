@@ -3,7 +3,7 @@ package org.podval.tools.publish
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSource, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
   RealPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
 import org.podval.xml.Xml
@@ -120,7 +120,7 @@ final class Site(
           if path.fileName == DirectoryPage.fileName
           then DirectoryPage(this, path.html)
           else markup match
-            case None => AssetWithSource(this, sourcePath.get, path)
+            case None => AssetWithSourcePath(this, sourcePath.get, path)
             case Some(markup) => SimpleMarkupPage(this, path.html)
         setSource(page)
         addPage(page)
@@ -165,7 +165,7 @@ final class Site(
       )))
 
     // Gather back-links
-    pages.foreach(page => backLinks.addBackLinks(page.backLinks))
+    pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))
 
     // TODO sort pages topologically based on transclusions
 

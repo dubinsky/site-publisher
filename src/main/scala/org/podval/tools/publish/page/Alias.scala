@@ -16,11 +16,9 @@ final class Alias(
   override def real: RealPage = page.real
 
   override def source: Option[PageSource] = None
-
+  
   override def titleDefault: String = path.fileName
 
   override protected def iconDefault: Icon = Icon("link", Icon.Solid)
-
-  override def sourcePath: Option[Path] = None
-
-  override def content: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""
+  
+  override def textContent: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""

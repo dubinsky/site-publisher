@@ -15,7 +15,7 @@ object AnchorIdsFeature:
     
     override def convert(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =

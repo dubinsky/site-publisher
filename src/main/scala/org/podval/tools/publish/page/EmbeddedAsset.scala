@@ -4,7 +4,7 @@ import org.podval.tools.publish.{Path, Site}
 import org.podval.tools.publish.util.Files
 
 final class EmbeddedAsset(site: Site, path: Path) extends SyntheticAsset(site, path):
-  override def content: String = Files.readResource(EmbeddedAsset.resourcesBase + path.toString)
+  override def textContent: String = Files.readResource(EmbeddedAsset.resourcesBase + path.toString)
 
 object EmbeddedAsset:
   def embeddedAssets(site: Site): List[EmbeddedAsset] = resourcesList.map(EmbeddedAsset(site, _))

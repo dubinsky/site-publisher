@@ -1,7 +1,7 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.processor.{Converter, Feature, PostConverter, Processor}
+import org.podval.tools.publish.page.{PageContent, PageSource}
+import org.podval.tools.publish.processor.{Converter, Feature, PostConverter}
 import org.podval.tools.publish.util.{Files, IdGenerator, Media, Strings}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
@@ -18,7 +18,7 @@ object WikiLinksFeature:
   private final class WikiLinksConverter extends Converter:
     override def convert(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =
@@ -58,7 +58,7 @@ object WikiLinksFeature:
   private final class WikiLinksPostConverter extends PostConverter:
     override def postConvert(
       element: Xml.Element,
-      pageSource: PageSource
+      content: PageContent
     ): Xml.Element =
       if !element.isA || !Links.isTranscluded(element)
       then element

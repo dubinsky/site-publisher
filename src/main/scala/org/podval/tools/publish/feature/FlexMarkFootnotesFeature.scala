@@ -17,7 +17,7 @@ object FlexMarkFootnotesFeature:
   private final class FlexMarkFootnotesConverter extends Converter:
     override def convert(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =

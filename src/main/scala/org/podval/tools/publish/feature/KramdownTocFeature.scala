@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Feature, HtmlConverter}
 import org.podval.xml.Html
 
@@ -13,11 +13,11 @@ object KramdownTocFeature:
   private final class KramdownTocHtmlConverter extends HtmlConverter:
     override def convertHtml(
       element: Html.Element,
-      pageSource: PageSource
+      content: PageContent
     ): Html.Element =
       if !isKramdownTocMarker(element)
       then element
-      else pageSource.cached.toc.html
+      else content.toc.html
 
   private def isKramdownTocMarker(element: Html.Element): Boolean =
     element.getName == "ul" && element.getChildren.exists: node =>

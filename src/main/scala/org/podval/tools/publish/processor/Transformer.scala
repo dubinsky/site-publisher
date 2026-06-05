@@ -7,5 +7,5 @@ import org.podval.xml.Xml
 trait Transformer extends Processor:
   def transform(
     element: Xml.Element,
-    pageSource: PageSource
+    source: PageSource
   ): Xml.Element

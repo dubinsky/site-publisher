@@ -57,7 +57,7 @@ object Link:
       page = to,
       intrapage = from == to,
       fragment = fragment.flatMap: fragment =>
-        val toc: Option[Toc] = to.real.source.map(_.cached.toc)
+        val toc: Option[Toc] = to.real.content.map(_.toc)
         if fragment.startsWith("^")
         then toc.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
         else toc.flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(

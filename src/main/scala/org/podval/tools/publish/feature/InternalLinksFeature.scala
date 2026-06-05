@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.{PageContent, PageSource}
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.processor.{Converter, Feature, PostConverter}
@@ -19,7 +19,7 @@ object InternalLinksFeature:
 
     override def convert(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =
@@ -29,8 +29,8 @@ object InternalLinksFeature:
           val isInternal: Boolean =
             try
               val uri: URI = URI(href)
-              if uri.getScheme != null && uri.getHost == pageSource.site.config.url
-              then pageSource.errorReporter.error(PageError.SelfLink, href, None)
+              if uri.getScheme != null && uri.getHost == source.site.config.url
+              then source.errorReporter.error(PageError.SelfLink, href, None)
               uri.getScheme == null
             catch case e: URISyntaxException => true
   
@@ -41,21 +41,21 @@ object InternalLinksFeature:
   private final class InternalLinksPostConverter extends PostConverter:
     override def postConvert(
       element: Xml.Element,
-      pageSource: PageSource
+      content: PageContent
     ): Xml.Element =
       if !element.isA || !Links.isInternalLink(element)
       then element
-      else element.getHref.fold(element)(resolveInternalLinks(element, pageSource, _))
+      else element.getHref.fold(element)(resolveInternalLinks(element, content.source, _))
   
     private def resolveInternalLinks(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ref: String
     ): Xml.Element =
       val kind: Option[LinkKind] = LinkKind.of(element)
-      Link.resolve(ref, kind, pageSource.page) match
+      Link.resolve(ref, kind, source.page) match
         case None =>
-          pageSource.errorReporter.error(
+          source.errorReporter.error(
             PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element",
             element
           )

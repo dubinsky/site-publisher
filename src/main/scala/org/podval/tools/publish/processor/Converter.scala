@@ -8,7 +8,7 @@ import org.podval.xml.Xml
 trait Converter extends Processor:
   def convert(
     element: Xml.Element,
-    pageSource: PageSource,
+    source: PageSource,
     ids: IdGenerator,
     footnoteCorrelationIds: IdGenerator
   ): Xml.Element
@@ -18,4 +18,4 @@ trait Converter extends Processor:
     converter: String => Seq[Xml.Node]
   ): Xml.Element =
     element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(converter)))
-   
+

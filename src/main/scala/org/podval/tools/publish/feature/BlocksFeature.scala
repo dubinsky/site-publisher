@@ -18,7 +18,7 @@ object BlocksFeature:
   private final class BlocksConverter extends Converter: 
     override def convert(
       element: Xml.Element,
-      pageSource: PageSource,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =
@@ -32,7 +32,7 @@ object BlocksFeature:
             )
             result.getId match
               case Some(idExisting) =>
-                pageSource.errorReporter.error(
+                source.errorReporter.error(
                   PageError.NoId,
                   s"Block id '$id' conflicts with existing id '$idExisting'",
                   result
