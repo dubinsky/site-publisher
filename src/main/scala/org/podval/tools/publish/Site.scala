@@ -3,12 +3,12 @@ package org.podval.tools.publish
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page, PageSource, RealPage, SimpleMarkupPage}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
+  PageSource, SimpleMarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
-import org.podval.xml.{HtmlClass, Xml, XmlElement}
+import org.podval.xml.Xml
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
-
 import java.io.File
 
 final class Site(
@@ -98,8 +98,8 @@ final class Site(
             (markup, None)
           else
             // Parse and disambiguate XML markup by its XML dialect's root elements
-            val (frontMatter, xml: Xml.Element) = readAndParse(
-              markup = XmlMarkup,
+            val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
+              site = this,
               sourcePath = sourcePath,
               message = "Reading to disambiguate XML dialect",
               firstReading = true,
@@ -108,7 +108,7 @@ final class Site(
             val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
             (markup, Some((frontMatter, xml)))
 
-    def setSource(page: RealPage): Unit = page match
+    def setSource(page: Page): Unit = page match
       case markupPage: MarkupPage =>
         for
           sourcePath <- sourcePath
@@ -125,13 +125,12 @@ final class Site(
       case _ => ()
 
     pages.find(_.path == path.html) match
-      case Some(page) => page match
-        case markupPage: MarkupPage => setSource(markupPage)
-        case _ => ()
+      case Some(page) => 
+        setSource(page)
         page
 
       case None =>
-        val page: RealPage =
+        val page: Page =
           if path.fileName == DirectoryPage.fileName
           then DirectoryPage(this, path.html)
           else markup match
@@ -140,51 +139,7 @@ final class Site(
         setSource(page)
         addPage(page)
         page
-
-  def readAndParse(
-    markup: Markup,
-    sourcePath: Path,
-    message: String,
-    firstReading: Boolean,
-  ): (FrontMatter, Xml.Element) =
-    log.debug(s"$message: $sourcePath")
-
-    val (frontMatterContent: Option[String], content: String) =
-      FrontMatter.split(Files.read(sourcePath.file(sourceDirectory)))
-
-    val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
-      case Right(frontMatter) =>
-        frontMatter
-      case Left(error) =>
-        if firstReading then
-          this.error(
-            sourcePath = sourcePath,
-            kind = PageError.MalformedFrontMatter,
-            message = s"Malformed FrontMatter: [$frontMatterContent]",
-            cause = Some(error)
-          )
-
-        FrontMatter.empty
-
-    val xml: Xml.Element = markup.parse(content) match
-      case Right(xml) =>
-        xml
-      case Left(error) =>
-        if firstReading then
-          this.error(
-            sourcePath = sourcePath,
-            kind = PageError.MalformedXml,
-            message = s"malformed XML (${markup.extension})",
-            cause = Some(error)
-          )
-
-        Xml
-          .element(XmlElement(markup.xmlDialect.root.head))
-          .add(HtmlClass(s"malformed-${markup.extension}"))
-          .setText(s"Malformed ${markup.name}: $error")
-
-    (frontMatter, xml)
-
+  
   // Header pages
   lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
 

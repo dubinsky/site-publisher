@@ -3,20 +3,18 @@ package org.podval.tools.publish.feature
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
-import org.podval.tools.publish.processor.{Converter, Feature, PostConverter}
+import org.podval.tools.publish.processor.{Converter, PostConverter, Processors}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlClass, Xml}
 import java.net.{URI, URISyntaxException}
 
-final class InternalLinksFeature extends Feature(
-  converter = Some(InternalLinksFeature.InternalLinksConverter()),
-  postConverter = Some(InternalLinksFeature.InternalLinksPostConverter())
+final class InternalLinksProcessor extends Processors(
+  new InternalLinksProcessor.InternalLinksConverter,
+  new InternalLinksProcessor.InternalLinksPostConverter
 )
   
-object InternalLinksFeature:
-  private final class InternalLinksConverter extends Converter:
-    override def runLast: Boolean = true
-
+private object InternalLinksProcessor:
+  private final class InternalLinksConverter extends Converter(convertLinks = true):
     override def convert(
       element: Xml.Element,
       content: PageContent,
@@ -47,20 +45,20 @@ object InternalLinksFeature:
       then element
       else element.getHref.fold(element)(resolveInternalLinks(element, content, _))
   
-    private def resolveInternalLinks(
-      element: Xml.Element,
-      content: PageContent,
-      ref: String
-    ): Xml.Element =
-      val kind: Option[LinkKind] = LinkKind.of(element)
-      Link.resolve(ref, kind, content.page) match
-        case None =>
-          content.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
-          element.add(HtmlClass("unresolved-link")) // TODO move into Links
-        case Some(linkTo) =>
-          // TODO transclude
-          val result: Xml.Element = element.setHref(linkTo.url)
-  
-          if result.getText != Links.linkText(element, ref)
-          then result
-          else result.setText(Links.linkText(element, linkTo.title))
+  private def resolveInternalLinks(
+    element: Xml.Element,
+    content: PageContent,
+    ref: String
+  ): Xml.Element =
+    val kind: Option[LinkKind] = LinkKind.of(element)
+    Link.resolve(ref, kind, content.page) match
+      case None =>
+        content.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+        element.add(HtmlClass("unresolved-link")) // TODO move into Links
+      case Some(linkTo) =>
+        // TODO transclude
+        val result: Xml.Element = element.setHref(linkTo.url)
+
+        if result.getText != Links.linkText(element, ref)
+        then result
+        else result.setText(Links.linkText(element, linkTo.title))

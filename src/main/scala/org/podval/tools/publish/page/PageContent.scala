@@ -4,7 +4,6 @@ import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.tools.publish.feature.Links
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
 import org.podval.tools.publish.markup.Markup
-import org.podval.tools.publish.processor.Features
 import org.podval.tools.publish.util.{Date, IdGenerator}
 import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
 
@@ -20,13 +19,13 @@ final class PageContent(
   private val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
   xmlVar = xmlDialect.transform(xml, element =>
-    features.converters.foldLeft(element)((result, converter) =>
+    markup.converters.foldLeft(element)((result, converter) =>
       converter.convert(result, this, ids, footnoteCorrelationIds)
     )
   )
 
   // Run transformers
-  xmlVar = features.transformers.foldLeft(xml)((result, transformer) =>
+  xmlVar = markup.transformers.foldLeft(xml)((result, transformer) =>
     transformer.transform(xml, this)
   )
 
@@ -35,7 +34,6 @@ final class PageContent(
   def sourcePath: Path = source.sourcePath
   def markup: Markup = source.markup
   def xmlDialect: XmlDialect = markup.xmlDialect
-  def features: Features = markup.features
 
   def error(
     kind: PageError.Kind,
@@ -80,7 +78,7 @@ final class PageContent(
   def htmlContent: Html.Element =
     // Post-process XML
     val xmlResult: Xml.Element = xmlDialect.transform(xml, element =>
-      features.postConverters.foldLeft(element)((result, postConverter) =>
+      markup.postConverters.foldLeft(element)((result, postConverter) =>
         postConverter.postConvert(result, this)
       )
     )
@@ -90,7 +88,7 @@ final class PageContent(
 
     // Post-process HTML
     xmlDialect.transform(htmlResult, element =>
-      features.htmlConverters.foldLeft(element)((result, htmlConverter) =>
+      markup.htmlConverters.foldLeft(element)((result, htmlConverter) =>
         htmlConverter.convertHtml(result, this)
       )
     )

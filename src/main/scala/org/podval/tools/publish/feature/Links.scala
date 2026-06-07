@@ -1,6 +1,5 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.feature.WikiLinksFeature
 import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
 
 object Links:

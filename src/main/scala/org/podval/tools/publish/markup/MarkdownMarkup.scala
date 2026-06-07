@@ -1,15 +1,11 @@
 package org.podval.tools.publish.markup
 
-
-import org.podval.tools.publish.PageError
 import org.podval.tools.publish.feature.*
-import org.podval.xml.Xml
-
+import org.podval.tools.publish.processor.Processors
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
-import org.podval.tools.publish.processor.Features
 //import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughSubscriptExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -26,18 +22,18 @@ object MarkdownMarkup extends HtmlLikeMarkup:
   def parseAndRenderMarkdown(content: String): String = renderer.render(parseMarkdown(content))
   // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
   def parseMarkdown(content: String): Document = parser.parse(content)
-  
-  override def features: Features = Features(Seq(
-    BlocksFeature(),
-    WikiLinksFeature(),
-    MarkdownFootnotesFeature(),
-    FlexMarkFootnotesFeature(),
-    KramdownTocFeature(),
-    HtmlSectionIdsFeature(),
-    AnchorIdsFeature(),
-    InternalLinksFeature(),
-    FootnotesFeature()
-  ))
+
+  override def processors: Processors = Processors(
+    new BlocksConverter,
+    new WikiLinksProcessor,
+    new MarkdownFootnotesConverter,
+    new FlexMarkFootnotesConverter,
+    new KramdownTocHtmlConverter,
+    new HtmlSectionIdsConverter,
+    new AnchorIdsConverter,
+    new InternalLinksProcessor,
+    new FootnotesTransformer
+  )
 
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
     FootnoteExtension.create,

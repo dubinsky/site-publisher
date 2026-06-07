@@ -1,10 +1,8 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.FrontMatter
 import zio.Scope
 import zio.blocks.schema.SchemaError
 import zio.test.*
-
 import java.time.LocalDate
 
 object FrontMatterSpec extends ZIOSpecDefault:

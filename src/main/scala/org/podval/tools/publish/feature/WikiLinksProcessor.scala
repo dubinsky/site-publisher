@@ -1,20 +1,19 @@
 package org.podval.tools.publish.feature
 
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.{Converter, Feature, PostConverter}
+import org.podval.tools.publish.processor.{Converter, PostConverter, Processors}
 import org.podval.tools.publish.util.{Files, IdGenerator, Media, Strings}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import zio.blocks.chunk.Chunk
-
 import scala.annotation.tailrec
 
 // see https://obsidian.md/help/links
-final class WikiLinksFeature extends Feature(
-  converter = Some(WikiLinksFeature.WikiLinksConverter()),
-  postConverter = Some(WikiLinksFeature.WikiLinksPostConverter())
+final class WikiLinksProcessor extends Processors(
+  new WikiLinksProcessor.WikiLinksConverter,
+  new WikiLinksProcessor.WikiLinksPostConverter
 )
 
-object WikiLinksFeature:
+object WikiLinksProcessor:
   private final class WikiLinksConverter extends Converter:
     override def convert(
       element: Xml.Element,

@@ -5,7 +5,10 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
 // Converts individual XML elements.
-trait Converter extends Processor:
+abstract class Converter(
+  // Converter that converts links needs to run after everything that was to become a link had.
+  val convertLinks: Boolean = false
+) extends SingleProcessor:
   def convert(
     element: Xml.Element,
     content: PageContent,

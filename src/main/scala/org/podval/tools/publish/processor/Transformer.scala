@@ -4,7 +4,10 @@ import org.podval.tools.publish.page.PageContent
 import org.podval.xml.Xml
 
 // Transforms XML as a whole.
-trait Transformer extends Processor:
+abstract class Transformer(
+  // Transformer that transforms footnotes needs to run after everything that was to become a footnote had.
+  val transformsFootnotes: Boolean
+) extends SingleProcessor:
   def transform(
     element: Xml.Element,
     content: PageContent

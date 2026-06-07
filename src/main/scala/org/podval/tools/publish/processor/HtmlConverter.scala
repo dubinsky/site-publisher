@@ -4,7 +4,7 @@ import org.podval.tools.publish.page.PageContent
 import org.podval.xml.Html
 
 // Converts individual HTML elements.
-trait HtmlConverter extends Processor:
+abstract class HtmlConverter extends SingleProcessor:
   def convertHtml(
     element: Html.Element,
     content: PageContent
