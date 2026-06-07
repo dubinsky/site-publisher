@@ -2,7 +2,7 @@ package org.podval.tools.publish.feature
 
 import org.podval.tools.publish.util.{IdGenerator, Strings}
 import org.podval.tools.publish.PageError
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Converter, Feature}
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
@@ -18,7 +18,7 @@ object BlocksFeature:
   private final class BlocksConverter extends Converter: 
     override def convert(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =
@@ -32,10 +32,10 @@ object BlocksFeature:
             )
             result.getId match
               case Some(idExisting) =>
-                source.errorReporter.error(
+                content.error(
                   PageError.NoId,
-                  s"Block id '$id' conflicts with existing id '$idExisting'",
-                  result
+                  s"Block id '$id' conflicts with existing id '$idExisting'"
                 )
+                result
               case None =>
                 Links.markBlock(result).setId(id)

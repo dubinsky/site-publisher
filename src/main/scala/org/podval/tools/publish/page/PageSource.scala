@@ -2,9 +2,8 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Markup
 import org.podval.tools.publish.page.Page
-import org.podval.tools.publish.processor.Features
-import org.podval.tools.publish.{PageError, Path, Site}
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.tools.publish.Path
+import org.podval.xml.Xml
 import scala.ref.SoftReference
 
 final class PageSource(
@@ -12,36 +11,32 @@ final class PageSource(
   val markup: Markup,
   val sourcePath: Path
 ):
-  def site: Site = page.site
-  def xmlDialect: XmlDialect = markup.xmlDialect
-  def features: Features = markup.features
-  
-  val errorReporter: PageError.Reporter = PageError.SiteReporter(sourcePath, site)
-
   private var cachedVar: Option[SoftReference[PageContent]] = None
-
-  def content: PageContent = cachedVar match
-    case None => readAndCache("Reading")
-    case Some(reference) => reference.get match
-      case None => readAndCache("Re-reading evicted")
-      case Some(cached) => cached
-
-  // TODO cache XML pre-parsed as part of the disambiguation!
-  private def readAndCache(message: String): PageContent =
-    site.log.debug(s"$message MarkupSource: $sourcePath")
-    val (frontMatterContent: Option[String], markupContent: String) = site.readAndSplit(sourcePath)
-    val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent, errorReporter)
-    val xmlParsed: Xml.Element = markup.parse(markupContent, errorReporter)
-
+  
+  def cache(frontMatter: FrontMatter, xml: Xml.Element): PageContent =
     val result: PageContent = PageContent(
-      this,
-      frontMatter,
-      xmlParsed,
+      source = this,
+      frontMatter = frontMatter,
+      xmlVar = xml,
     )
 
     cachedVar = Some(SoftReference(result))
 
     result
+  
+  def content: PageContent = cachedVar match
+    case None => readParseAndCache("Reading", firstReading = true)
+    case Some(reference) => reference.get match
+      case None => readParseAndCache("Re-reading evicted", firstReading = false)
+      case Some(cached) => cached
 
-
-
+  private def readParseAndCache(message: String, firstReading: Boolean): PageContent =
+    val (frontMatter: FrontMatter, xml: Xml.Element) = page.site.readAndParse(
+      markup = markup,
+      sourcePath = sourcePath,
+      message = message,
+      firstReading = firstReading
+    )
+    
+    cache(frontMatter, xml)
+    

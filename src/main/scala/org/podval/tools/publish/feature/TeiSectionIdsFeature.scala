@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Converter, Feature}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
@@ -15,7 +15,7 @@ object TeiSectionIdsFeature:
     // but I do it manually and uniformly for HTML, TEI etc.
     override def convert(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =

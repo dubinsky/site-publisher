@@ -3,12 +3,12 @@ package org.podval.tools.publish
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
-  RealPage, SimpleMarkupPage}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page, PageSource, RealPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
-import org.podval.xml.Xml
+import org.podval.xml.{HtmlClass, Xml, XmlElement}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
+
 import java.io.File
 
 final class Site(
@@ -50,6 +50,14 @@ final class Site(
 
   // Components
   val errors: Errors = Errors(this)
+
+  def error(
+    sourcePath: Path,
+    kind: PageError.Kind,
+    message: String,
+    cause: Option[Throwable] = None
+  ): Unit = errors.error(PageError(sourcePath, kind, message, cause))
+
   val ignore: Ignore = Ignore(this)
   val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
@@ -69,9 +77,6 @@ final class Site(
   private var pagesVar: List[Page] = List.empty
   def pages: List[Page] = pagesVar
 
-  def readAndSplit(sourcePath: Path): (Option[String], String) =
-    FrontMatter.split(Files.read(sourcePath.file(sourceDirectory)))
-
   def addPage(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
     // Add implied directories
@@ -83,22 +88,25 @@ final class Site(
     sourcePath: Option[Path],
     path: Path
   ): Page =
-    val markup: Option[Markup] =
-      for
-        sourcePath <- sourcePath
-        extension <- sourcePath.extension
-        result <-
+    val (markup: Option[Markup], parsed: Option[(FrontMatter, Xml.Element)]) =
+      sourcePath.fold((None, None)): sourcePath =>
+        sourcePath.extension.fold((None, None)): extension =>
           if extension != XmlLikeMarkup.extension
           then
-            // Determine by the file extension
-            Markup.all.find(_.isExtension(extension))
+            // Determine markup by the file extension
+            val markup: Option[Markup] = Markup.all.find(_.isExtension(extension))
+            (markup, None)
           else
-            // Disambiguate XML markup by its XML dialect's root elements:
-            val xmlContent: String = readAndSplit(sourcePath)._2
-            val xml: Xml.Element = XmlMarkup.parse(xmlContent, PageError.SiteReporter(sourcePath, this))
+            // Parse and disambiguate XML markup by its XML dialect's root elements
+            val (frontMatter, xml: Xml.Element) = readAndParse(
+              markup = XmlMarkup,
+              sourcePath = sourcePath,
+              message = "Reading to disambiguate XML dialect",
+              firstReading = true,
+            )
             val rootElementName: String = xml.getName
-            Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
-      yield result
+            val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
+            (markup, Some((frontMatter, xml)))
 
     def setSource(page: RealPage): Unit = page match
       case markupPage: MarkupPage =>
@@ -106,7 +114,14 @@ final class Site(
           sourcePath <- sourcePath
           markup <- markup
         do
-          markupPage.setSource(markup, sourcePath)
+          val pageSource: PageSource = PageSource(
+            page = markupPage,
+            markup = markup,
+            sourcePath = sourcePath
+          )
+          markupPage.setSource(pageSource)
+          parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
+
       case _ => ()
 
     pages.find(_.path == path.html) match
@@ -125,6 +140,50 @@ final class Site(
         setSource(page)
         addPage(page)
         page
+
+  def readAndParse(
+    markup: Markup,
+    sourcePath: Path,
+    message: String,
+    firstReading: Boolean,
+  ): (FrontMatter, Xml.Element) =
+    log.debug(s"$message: $sourcePath")
+
+    val (frontMatterContent: Option[String], content: String) =
+      FrontMatter.split(Files.read(sourcePath.file(sourceDirectory)))
+
+    val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
+      case Right(frontMatter) =>
+        frontMatter
+      case Left(error) =>
+        if firstReading then
+          this.error(
+            sourcePath = sourcePath,
+            kind = PageError.MalformedFrontMatter,
+            message = s"Malformed FrontMatter: [$frontMatterContent]",
+            cause = Some(error)
+          )
+
+        FrontMatter.empty
+
+    val xml: Xml.Element = markup.parse(content) match
+      case Right(xml) =>
+        xml
+      case Left(error) =>
+        if firstReading then
+          this.error(
+            sourcePath = sourcePath,
+            kind = PageError.MalformedXml,
+            message = s"malformed XML (${markup.extension})",
+            cause = Some(error)
+          )
+
+        Xml
+          .element(XmlElement(markup.xmlDialect.root.head))
+          .add(HtmlClass(s"malformed-${markup.extension}"))
+          .setText(s"Malformed ${markup.name}: $error")
+
+    (frontMatter, xml)
 
   // Header pages
   lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
@@ -160,9 +219,11 @@ final class Site(
       .groupBy(_.path)
       .filter(_._2.length > 1)
       .toList
-      .foreach((path: Path, pages: List[Page]) => errors.error(PageError(
-        PageError.Duplicate, path, s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
-      )))
+      .foreach((path: Path, pages: List[Page]) => error(
+        path,
+        PageError.Duplicate,
+        s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
+      ))
 
     // Gather back-links
     pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))

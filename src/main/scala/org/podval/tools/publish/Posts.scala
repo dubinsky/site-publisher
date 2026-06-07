@@ -4,7 +4,6 @@ import org.podval.tools.publish.page.{DirectoryPage, NonDirectoryPage, Page, Syn
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
-
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -67,7 +66,6 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
 
     if !isPost && !isDaily then None else
       val fileName: String = sourcePath.fileName
-      val errorReporter: PageError.Reporter = PageError.SiteReporter(sourcePath, site)
 
       for
         date: LocalDate <-
@@ -76,16 +74,38 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
             if fileName.length < 10 then throw DateTimeParseException("Date is too short", fileName, 0)
             Some(LocalDate.parse(fileName.substring(0, 10)))
           catch case e: DateTimeParseException =>
-            errorReporter.error(PageError.FileName, s"Post and daily note names must start with date: $fileName", None, Some(e))
+            site.error(
+              sourcePath, 
+              PageError.FileName, 
+              s"Post and daily note names must start with date: $fileName", 
+              Some(e)
+            )
+            None
 
         title: String <-
           val titleString: String = if fileName.length <= 11 then "" else fileName.substring(11).trim
           val title: String = if titleString.nonEmpty then titleString else DirectoryPage.fileName
           val dailiesMixedWithPosts: Boolean = dailyNotesDirectoryName.contains(postsDirectoryName)
-          if dailiesMixedWithPosts then Some(title) else if isPost && titleString.isEmpty
-          then errorReporter.error(PageError.FileName, s"Post must have title: $fileName", None)
-          else if isDaily && titleString.nonEmpty
-          then errorReporter.error(PageError.FileName, s"Daily note can not have title: $fileName", None)
-          else Some(title)
+          if dailiesMixedWithPosts
+          then Some(title) else
+            if isPost && titleString.isEmpty
+            then
+              site.error(
+                sourcePath, 
+                PageError.FileName, 
+                s"Post must have title: $fileName"
+              )
+              None
+            else
+              if isDaily && titleString.nonEmpty
+              then
+                site.error(
+                  sourcePath, 
+                  PageError.FileName, 
+                  s"Daily note can not have title: $fileName"
+                )
+                None
+              else
+                Some(title)
       yield
         Posts.path(date, title)

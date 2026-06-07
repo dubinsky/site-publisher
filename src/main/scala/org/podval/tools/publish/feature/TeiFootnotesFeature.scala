@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Converter, Feature}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, XmlAttribute}
@@ -13,7 +13,7 @@ object TeiFootnotesFeature:
   private final class TeiFootnotesConverter extends Converter:
     override def convert(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =

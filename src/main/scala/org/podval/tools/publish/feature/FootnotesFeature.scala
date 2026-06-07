@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Feature, Transformer}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlClass, Xml, XmlElement}
@@ -16,24 +16,24 @@ object FootnotesFeature:
 
     override def transform(
       element: Xml.Element,
-      source: PageSource
+      content: PageContent
     ): Xml.Element =
       var xml: Xml.Element = element
 
       // Retrieve footnote bodies
-      val footnoteBodies: Map[String, Chunk[Xml.Node]] = source.xmlDialect.gather(xml, element =>
+      val footnoteBodies: Map[String, Chunk[Xml.Node]] = content.xmlDialect.gather(xml, element =>
         if !Footnotes.isBody(element)
         then None
         else Footnotes.getCorrelationId(element).map(_ -> element.getChildren)
       ).toMap
 
       // Replace footnotes with link stubs
-      xml = source.xmlDialect.transform(xml, element =>
+      xml = content.xmlDialect.transform(xml, element =>
         Footnotes.getCorrelationId(element).fold(element)(Footnotes.linkStub)
       )
 
       // Remove body stubs
-      xml = source.xmlDialect.transform(xml, element =>
+      xml = content.xmlDialect.transform(xml, element =>
         element.setChildren(element
           .getChildren
           .filterNot(_.asElement.fold(false)(child =>
@@ -48,7 +48,7 @@ object FootnotesFeature:
       val footnoteNumbers: IdGenerator = IdGenerator("")
       var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
 
-      xml = source.xmlDialect.transform(xml, element =>
+      xml = content.xmlDialect.transform(xml, element =>
         Footnotes.getCorrelationId(element).fold(element): correlationId =>
           val footnoteNumber: String = footnoteNumbers.generate()
           // TODO error when not found:

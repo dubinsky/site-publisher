@@ -4,6 +4,7 @@ import org.podval.tei.TeiXmlDialect
 import org.podval.tools.publish.feature.*
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.Fragment
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Features
 import org.podval.xml.{Xml, XmlDialect}
 
@@ -21,7 +22,6 @@ object TeiMarkup extends XmlLikeMarkup:
   ))
 
   override def sections(
-    element: Xml.Element,
-    errorReporter: PageError.Reporter
+    content: PageContent
   ): Seq[Fragment.Section] = Seq.empty // TODO
 

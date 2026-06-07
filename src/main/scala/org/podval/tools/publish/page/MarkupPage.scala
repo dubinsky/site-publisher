@@ -1,6 +1,5 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.Markup
 import org.podval.tools.publish.{Minima, Path, Site}
 import org.podval.xml.{Html, HtmlXmlDialect}
 
@@ -9,16 +8,8 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
 
   private var sourceVar: Option[PageSource] = None
   final override def source: Option[PageSource] = sourceVar
-  
-  def setSource(
-    markup: Markup,
-    sourcePath: Path
-  ): Unit = this.sourceVar = Some(PageSource(
-    page = this,
-    markup = markup,
-    sourcePath = sourcePath
-  ))
-  
+  def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
+
   final override def textContent: String =
     val markupContent: Option[Html.Element] = content.map(_.htmlContent)
 

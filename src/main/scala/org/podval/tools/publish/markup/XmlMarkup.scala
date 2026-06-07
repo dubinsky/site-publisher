@@ -1,9 +1,9 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.Fragment
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Features
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.xml.XmlDialect
 
 object XmlMarkup extends XmlLikeMarkup:
   override val additionalExtensions: Set[String] = Set.empty
@@ -12,7 +12,6 @@ object XmlMarkup extends XmlLikeMarkup:
   def features: Features = Features(Seq.empty)
   
   override def sections(
-    element: Xml.Element,
-    errorReporter: PageError.Reporter
+    content: PageContent
   ): Seq[Fragment.Section] = Seq.empty
 

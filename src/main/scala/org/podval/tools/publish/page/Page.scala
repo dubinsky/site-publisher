@@ -65,7 +65,7 @@ abstract class Page(
 
   private def postPath: Option[String] = if !frontMatter.post then None else date match
     case None =>
-      site.errors.error(PageError(PageError.NoDate, path, s"No date for an automatic blog post"))
+      site.error(path, PageError.NoDate, s"No date for an automatic blog post")
       None
     case Some(date) =>
       val title: String = frontMatter.postTitle.getOrElse(path.fileName) // TODO titleFromPath?

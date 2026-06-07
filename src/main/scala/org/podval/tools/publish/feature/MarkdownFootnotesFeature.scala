@@ -1,10 +1,11 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.{Converter, Feature}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
+
 import scala.annotation.tailrec
 
 final class MarkdownFootnotesFeature extends Feature(
@@ -19,7 +20,7 @@ object MarkdownFootnotesFeature:
   private final class MarkdownFootnotesConverter extends Converter:
     override def convert(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =

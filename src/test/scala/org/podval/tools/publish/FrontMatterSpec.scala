@@ -2,16 +2,18 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.page.FrontMatter
 import zio.Scope
+import zio.blocks.schema.SchemaError
 import zio.test.*
+
 import java.time.LocalDate
 
 object FrontMatterSpec extends ZIOSpecDefault:
   private given CanEqual[LocalDate, LocalDate] = CanEqual.derived
 
   def roundTrip(input: String): TestResult =
-    val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1, TestErrorReporter())
+    val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1).toOption.get
     val rendered: String = parsed.write
-    val reparsed: FrontMatter = FrontMatter.parse(FrontMatter.split(rendered)._1, TestErrorReporter())
+    val reparsed: FrontMatter = FrontMatter.parse(FrontMatter.split(rendered)._1).toOption.get
     assertTrue(
       rendered == reparsed.write
     )
@@ -19,13 +21,12 @@ object FrontMatterSpec extends ZIOSpecDefault:
 
   def parse(input: String, verify: (FrontMatter, String) => TestResult): TestResult =
     val (frontMatterInput, content) = FrontMatter.split(input)
-    val parsed: FrontMatter = FrontMatter.parse(frontMatterInput, TestErrorReporter())
+    val parsed: FrontMatter = FrontMatter.parse(frontMatterInput).toOption.get
     verify(parsed, content)
 
-  def error(input: String, verify: TestErrorReporter => TestResult): TestResult =
-    val errorReporter = TestErrorReporter()
-    val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1, errorReporter)
-    assertTrue(!errorReporter.empty) && verify(errorReporter)
+  def error(input: String, verify: SchemaError => TestResult): TestResult =
+    val error: SchemaError = FrontMatter.parse(FrontMatter.split(input)._1).left.toOption.get
+    verify(error)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("FrontMatter")(
     test("empty FrontMatter") {
@@ -69,7 +70,7 @@ object FrontMatterSpec extends ZIOSpecDefault:
           |---
           |# Hello
           |""".stripMargin,
-        errorReporter => assertTrue(errorReporter.cause.get.getMessage.contains("Expected mapping for record"))
+        error => assertTrue(error.getCause.getMessage.contains("Expected mapping for record"))
       )
     },
     test("round-trip without FrontMatter") {

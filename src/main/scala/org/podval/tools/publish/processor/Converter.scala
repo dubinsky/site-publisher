@@ -1,6 +1,6 @@
 package org.podval.tools.publish.processor
 
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
@@ -8,7 +8,7 @@ import org.podval.xml.Xml
 trait Converter extends Processor:
   def convert(
     element: Xml.Element,
-    source: PageSource,
+    content: PageContent,
     ids: IdGenerator,
     footnoteCorrelationIds: IdGenerator
   ): Xml.Element

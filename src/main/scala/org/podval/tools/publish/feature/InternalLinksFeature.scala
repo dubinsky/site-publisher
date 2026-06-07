@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.{PageContent, PageSource}
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.processor.{Converter, Feature, PostConverter}
@@ -19,7 +19,7 @@ object InternalLinksFeature:
 
     override def convert(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Xml.Element =
@@ -29,8 +29,8 @@ object InternalLinksFeature:
           val isInternal: Boolean =
             try
               val uri: URI = URI(href)
-              if uri.getScheme != null && uri.getHost == source.site.config.url
-              then source.errorReporter.error(PageError.SelfLink, href, None)
+              if uri.getScheme != null && uri.getHost == content.site.config.url
+              then content.error(PageError.SelfLink, href)
               uri.getScheme == null
             catch case e: URISyntaxException => true
   
@@ -45,20 +45,17 @@ object InternalLinksFeature:
     ): Xml.Element =
       if !element.isA || !Links.isInternalLink(element)
       then element
-      else element.getHref.fold(element)(resolveInternalLinks(element, content.source, _))
+      else element.getHref.fold(element)(resolveInternalLinks(element, content, _))
   
     private def resolveInternalLinks(
       element: Xml.Element,
-      source: PageSource,
+      content: PageContent,
       ref: String
     ): Xml.Element =
       val kind: Option[LinkKind] = LinkKind.of(element)
-      Link.resolve(ref, kind, source.page) match
+      Link.resolve(ref, kind, content.page) match
         case None =>
-          source.errorReporter.error(
-            PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element",
-            element
-          )
+          content.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
           element.add(HtmlClass("unresolved-link")) // TODO move into Links
         case Some(linkTo) =>
           // TODO transclude

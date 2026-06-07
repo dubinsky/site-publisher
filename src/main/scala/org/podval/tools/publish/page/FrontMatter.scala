@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.util.{Date, Icon, SchemaUtil}
-import org.podval.tools.publish.PageError
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.yaml.{Yaml, YamlCodec, YamlFormat, YamlReader, YamlWriter}
 import zio.blocks.schema.{Schema, SchemaError}
@@ -69,22 +68,17 @@ object FrontMatter:
   def split(input: String): (Option[String], String) =
     val frontMatterEnd: Int = if !input.startsWith("---\n") then -1 else input.indexOf("\n---\n", 3)
     if frontMatterEnd == -1 then (None, input) else
-      val frontMatter: String = input.substring(3, frontMatterEnd)
-      val frontMatterLines: Int = frontMatter.count(_ == '\n') + 2
+      val frontMatterContent: String = input.substring(3, frontMatterEnd)
+      val frontMatterLines: Int = frontMatterContent.count(_ == '\n') + 2
       val content: String = "\n" * frontMatterLines + input.substring(frontMatterEnd + 5)
-      (Some(frontMatter), content)
+      (Some(frontMatterContent), content)
 
-  def parse(
-    input: Option[String],
-    errorReporter: PageError.Reporter
-  ): FrontMatter = input.fold(absent): input =>
-    if input.isEmpty then empty else decode(input) match
-      case Right(frontMatter) =>
-        frontMatter
-      case Left(error) =>
-        errorReporter.error(PageError.Parsing, s"Malformed FrontMatter: [$input]", Some(error))
-        empty
-
+  def parse(input: Option[String]): Either[SchemaError, FrontMatter] =
+    input.fold(Right(absent)): input =>
+      if input.isEmpty
+      then Right(empty)
+      else decode(input)
+    
   private def decode(input: String): Either[SchemaError, FrontMatter] =
     try
       val yaml: Yaml = YamlReader.read(input)

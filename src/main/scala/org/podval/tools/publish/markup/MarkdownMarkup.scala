@@ -21,7 +21,12 @@ object MarkdownMarkup extends HtmlLikeMarkup:
   override def name: String = "Markdown"
   override val extension: String = "md"
   override val additionalExtensions: Set[String] = Set.empty
-
+  // Wrap Markdown rendered as HTML in a 'div'.
+  override def xmlContent(content: String): String = s"<div>${parseAndRenderMarkdown(content)}</div>"
+  def parseAndRenderMarkdown(content: String): String = renderer.render(parseMarkdown(content))
+  // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
+  def parseMarkdown(content: String): Document = parser.parse(content)
+  
   override def features: Features = Features(Seq(
     BlocksFeature(),
     WikiLinksFeature(),
@@ -65,18 +70,5 @@ object MarkdownMarkup extends HtmlLikeMarkup:
     .builder(options)
     .extensions(extensionsRenderer.asJava)
     .build
-
-  // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
-  def parse(content: String): Document = parser.parse(content)
-  def parseAndRender(content: String): String = renderer.render(parse(content))
-
-  // Wrap Markdown rendered as HTML in a 'div' and parse.
-  override def parse(
-    content: String,
-    errorReporter: PageError.Reporter
-  ): Xml.Element = HtmlMarkup.parse(
-    s"<div>${parseAndRender(content)}</div>",
-    errorReporter
-  )
 
 

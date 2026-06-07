@@ -2,8 +2,10 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
+import org.podval.tools.publish.page.PageContent
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
+
 import scala.annotation.tailrec
 
 // Common for markup formats whose XML representation is actually HTML:
@@ -31,8 +33,9 @@ abstract class HtmlLikeMarkup extends Markup:
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.
-  final override def sections(element: Xml.Element, errorReporter: PageError.Reporter): Seq[Section] =
-    val fromHeaders: Chunk[HtmlSection] = element
+  final override def sections(content: PageContent): Seq[Section] =
+    val fromHeaders: Chunk[HtmlSection] = content
+      .xml
       .getChildren
       .flatMap(_.asElement)
       .flatMap(element =>
@@ -40,8 +43,8 @@ abstract class HtmlLikeMarkup extends Markup:
           level <- HtmlLikeMarkup.headerLevel(element)
           title <- element.getTextOpt
           id <-
-            val id = element.getId
-            if id.isEmpty then errorReporter.error(PageError.NoId, s"Defect: No id on section $element", ())
+            val id: Option[String] = element.getId
+            if id.isEmpty then content.error(PageError.NoId, s"Defect: No id on section $element")
             id
         yield HtmlSection(
           level = level,

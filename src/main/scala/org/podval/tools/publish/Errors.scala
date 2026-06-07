@@ -18,11 +18,11 @@ final class Errors(site: Site) extends SyntheticMarkupPage(site, Path("errors").
   private var errorsVar: List[PageError] = List.empty
   //  def errors: List[PageError] = errorsVar
 
-  def warning(error: PageError): Unit =
-    errorsVar = errorsVar.appended(error)
-    site.log.warn(error.getMessage)
+  def warning(pageError: PageError): Unit =
+    errorsVar = errorsVar.appended(pageError)
+    site.log.warn(pageError.getMessage)
 
-  def error(error: PageError): Unit =
+  def error(pageError: PageError): Unit =
     if site.treatErrorsAsWarnings
-    then warning(error)
-    else throw error
+    then warning(pageError)
+    else throw pageError
