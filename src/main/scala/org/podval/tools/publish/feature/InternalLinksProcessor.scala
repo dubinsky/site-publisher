@@ -4,8 +4,7 @@ import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.processor.{Converter, PostConverter, Processors}
-import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.Xml
 import java.net.{URI, URISyntaxException}
 
 final class InternalLinksProcessor extends Processors(
@@ -15,11 +14,9 @@ final class InternalLinksProcessor extends Processors(
   
 private object InternalLinksProcessor:
   private final class InternalLinksConverter extends Converter(convertLinks = true):
-    override def convert(
+    override protected def convert(
       element: Xml.Element,
-      content: PageContent,
-      ids: IdGenerator,
-      footnoteCorrelationIds: IdGenerator
+      content: PageContent
     ): Xml.Element =
       if !element.isA then element else
         element.getHref.fold(element): href =>
@@ -54,7 +51,7 @@ private object InternalLinksProcessor:
     Link.resolve(ref, kind, content.page) match
       case None =>
         content.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
-        element.add(HtmlClass("unresolved-link")) // TODO move into Links
+        element.addClass("unresolved-link") // TODO move into Links
       case Some(linkTo) =>
         // TODO transclude
         val result: Xml.Element = element.setHref(linkTo.url)

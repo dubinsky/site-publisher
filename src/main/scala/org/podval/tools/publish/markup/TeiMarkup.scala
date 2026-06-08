@@ -1,8 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tei.TeiXmlDialect
+import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.feature.*
-import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Processors
@@ -12,8 +11,13 @@ object TeiMarkup extends XmlLikeMarkup:
   override val additionalExtensions: Set[String] = Set.empty
   override def xmlDialect: XmlDialect = TeiXmlDialect
 
+  override def entityKind(xml: Xml.Element): Option[EntityKind] =
+    EntityKind.values.find(entityKind => xml.getName == entityKind.element)
+
   def processors: Processors = Processors(
-    new TeiConverter,
+    new Tei2HtmlConverter,
+    new TeiEntityNamesConverter,
+    new TeiFacsimileLinksConverter,
     new TeiFootnotesConverter,
     new TeiSectionIdsConverter,
     new AnchorIdsConverter,

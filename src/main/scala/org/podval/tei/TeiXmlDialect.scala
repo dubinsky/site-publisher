@@ -4,7 +4,7 @@ import org.podval.xml.XmlDialect
 
 object TeiXmlDialect extends XmlDialect(
   name = "TEI",
-  root = Set("TEI", "store", "collection", "place", "person", "org"),
+  root = Set("TEI", "store", "collection") ++ EntityKind.elements,
   stop = Set.empty,
   preformat = Set.empty,
   stack = Set.empty,

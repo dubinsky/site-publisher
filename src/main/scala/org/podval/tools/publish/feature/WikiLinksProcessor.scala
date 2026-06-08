@@ -1,9 +1,8 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.{Converter, PostConverter, Processors}
-import org.podval.tools.publish.util.{Files, IdGenerator, Media, Strings}
-import org.podval.xml.{Xml, XmlAttribute, XmlElement}
+import org.podval.tools.publish.processor.{Processors, ConverterSimple, PostConverterSimple}
+import org.podval.tools.publish.util.{Files, Media, Strings}
+import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
@@ -14,13 +13,8 @@ final class WikiLinksProcessor extends Processors(
 )
 
 object WikiLinksProcessor:
-  private final class WikiLinksConverter extends Converter:
-    override def convert(
-      element: Xml.Element,
-      content: PageContent,
-      ids: IdGenerator,
-      footnoteCorrelationIds: IdGenerator
-    ): Xml.Element =
+  private final class WikiLinksConverter extends ConverterSimple:
+    override def convert(element: Xml.Element): Xml.Element =
       if element.isA
       then element
       else convertText(element, convertWikiLinks(Chunk.empty, _))
@@ -54,11 +48,8 @@ object WikiLinksProcessor:
           after
         )
 
-  private final class WikiLinksPostConverter extends PostConverter:
-    override def postConvert(
-      element: Xml.Element,
-      content: PageContent
-    ): Xml.Element =
+  private final class WikiLinksPostConverter extends PostConverterSimple:
+    override protected def postConvert(element: Xml.Element): Xml.Element =
       if !element.isA || !Links.isTranscluded(element)
       then element
       else element.getHref.fold(element)(embed(element, _).getOrElse(element))
@@ -73,16 +64,16 @@ object WikiLinksProcessor:
           (None, None)
 
         Some(Xml
-          .element(XmlElement("img"))
-          .set(XmlAttribute("src"), ref)
-          .set(XmlAttribute("alt"), s"Image: $ref")
-          .set(XmlAttribute("width"), width.map(_.toString))
-          .set(XmlAttribute("height"), height.map(_.toString))
+          .element("img")
+          .set("src", ref)
+          .set("alt", s"Image: $ref")
+          .set("width", width.map(_.toString))
+          .set("height", height.map(_.toString))
         )
       else if Media.isAudio(extension) then Some(Xml
-        .element(XmlElement("audio"))
-        .set(XmlAttribute("src"), ref)
-        .set(XmlAttribute("controls"), true.toString)
+        .element("audio")
+        .set("src", ref)
+        .set("controls", true.toString)
       )
       else if extension == "pdf" then
         // TODO Embed PDF viewer, with potentially page=PAGE&height=HEIGHT or one or none in the text

@@ -11,7 +11,7 @@ abstract class WithRawXml:
   var rawChildren: Chunk[Xml] = Chunk.empty
 
 object WithRawXml:
-  object dummyElement extends XmlElement("idioticDummyElementToForceZioBlocksXmlToNotDiscardAttributes")
+  val dummyElement: String = "idioticDummyElementToForceZioBlocksXmlToNotDiscardAttributes"
 
   def codec[A <: WithRawXml](
     schema: Schema[A],
@@ -34,7 +34,7 @@ object WithRawXml:
       )
 
       result.rawChildren = element.children.filterNot {
-        case element: Xml.Element => isParsed(element.name) || element.name.localName == dummyElement.name
+        case element: Xml.Element => isParsed(element.name) || element.name.localName == dummyElement
         case _ => false
       }
 

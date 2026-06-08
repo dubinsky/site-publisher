@@ -1,6 +1,6 @@
 package org.podval.tools.publish.feature
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
 
 // TODO footnotes placed at the end of elements like table, not the overall end?
 // TODO how do multi-level footnotes look?
@@ -42,7 +42,7 @@ object Footnotes:
     .setText(footnoteNumber)
 
   def bodyStub(correlationId: String, content: Xml.Nodes): Xml.Element = Xml
-    .element(XmlElement("span"))
+    .element("span")
     .add(BodyClass)
     .set(CorrelationId, correlationId)
     .setChildren(content)
@@ -51,7 +51,7 @@ object Footnotes:
     footnoteNumber: String,
     footnoteBody: Xml.Nodes
   ): Xml.Element = Xml
-    .element(XmlElement("span"))
+    .element("span")
     .add(BodyClass)
     .setId(Footnotes.footnoteBodyId(footnoteNumber))
     .setChildren(Footnotes.backLink(footnoteNumber) +: footnoteBody)

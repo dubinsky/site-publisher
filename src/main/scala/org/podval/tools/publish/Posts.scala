@@ -29,6 +29,7 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
 
   def posts: List[Page] = site
     .pages
+    .pages
     .filter(_.postDate.isDefined)
     .filterNot(page => page.isDirectory && page.source.isEmpty)
     .sortBy(_.date)

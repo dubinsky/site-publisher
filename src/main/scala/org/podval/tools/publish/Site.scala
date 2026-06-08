@@ -2,11 +2,8 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
-import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
-  PageSource, SimpleMarkupPage}
+import org.podval.tools.publish.page.{DirectoryPage, EmbeddedAsset, Page}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
-import org.podval.xml.Xml
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
 import java.io.File
@@ -49,6 +46,14 @@ final class Site(
   private val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
 
   // Components
+  val pages: Pages = Pages(this)
+  val ignore: Ignore = Ignore(this)
+  val git: Git = Git(sourceDirectory)
+  val backLinks: BackLinks = BackLinks()
+  val tags: Tags = Tags(this)
+  val posts: Posts = Posts(this)
+
+  // Errors
   val errors: Errors = Errors(this)
 
   def error(
@@ -57,12 +62,6 @@ final class Site(
     message: String,
     cause: Option[Throwable] = None
   ): Unit = errors.error(PageError(sourcePath, kind, message, cause))
-
-  val ignore: Ignore = Ignore(this)
-  val git: Git = Git(sourceDirectory)
-  val backLinks: BackLinks = BackLinks()
-  val tags: Tags = Tags(this)
-  val posts: Posts = Posts(this)
 
   log.info(s"source directory: $sourceDirectory")
   log.info(s"target directory: $targetDirectory")
@@ -73,75 +72,9 @@ final class Site(
   def postsDirectoryName: String = "_posts"
   def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
   def dailyNotesDirectoryName: Option[String] = obsidianConfig.daysFolder
-  
-  private var pagesVar: List[Page] = List.empty
-  def pages: List[Page] = pagesVar
 
-  def addPage(page: Page): Unit =
-    pagesVar = pagesVar.appended(page)
-    // Add implied directories
-    page.parent
-    // Add alias pages
-    page.aliases.foreach(addPage)
-
-  def addPage(
-    sourcePath: Option[Path],
-    path: Path
-  ): Page =
-    val (markup: Option[Markup], parsed: Option[(FrontMatter, Xml.Element)]) =
-      sourcePath.fold((None, None)): sourcePath =>
-        sourcePath.extension.fold((None, None)): extension =>
-          if extension != XmlLikeMarkup.extension
-          then
-            // Determine markup by the file extension
-            val markup: Option[Markup] = Markup.all.find(_.isExtension(extension))
-            (markup, None)
-          else
-            // Parse and disambiguate XML markup by its XML dialect's root elements
-            val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
-              site = this,
-              sourcePath = sourcePath,
-              message = "Reading to disambiguate XML dialect",
-              firstReading = true,
-            )
-            val rootElementName: String = xml.getName
-            val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
-            (markup, Some((frontMatter, xml)))
-
-    def setSource(page: Page): Unit = page match
-      case markupPage: MarkupPage =>
-        for
-          sourcePath <- sourcePath
-          markup <- markup
-        do
-          val pageSource: PageSource = PageSource(
-            page = markupPage,
-            markup = markup,
-            sourcePath = sourcePath
-          )
-          markupPage.setSource(pageSource)
-          parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
-
-      case _ => ()
-
-    pages.find(_.path == path.html) match
-      case Some(page) => 
-        setSource(page)
-        page
-
-      case None =>
-        val page: Page =
-          if path.fileName == DirectoryPage.fileName
-          then DirectoryPage(this, path.html)
-          else markup match
-            case None => AssetWithSourcePath(this, sourcePath.get, path)
-            case Some(markup) => SimpleMarkupPage(this, path.html)
-        setSource(page)
-        addPage(page)
-        page
-  
   // Header pages
-  lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
+  lazy val headerPages: List[HeaderPage] = pages.pages.flatMap(_.headerPage).sortBy(_.priority)
 
   // Social links
   val socialLinks: Seq[SocialLink] = Seq(
@@ -164,13 +97,14 @@ final class Site(
     )
 
     // Add special pages
-    (EmbeddedAsset.embeddedAssets(this) ++ special).foreach(addPage)
+    (EmbeddedAsset.embeddedAssets(this) ++ special).foreach(pages.add)
 
     // Scan the directories and add all source pages
-    DirectoryPage.scan(this, Seq.empty, sourceDirectory, None)
+    pages.scan(Seq.empty, sourceDirectory, None)
 
     // Report conflicting pages
     pages
+      .pages
       .groupBy(_.path)
       .filter(_._2.length > 1)
       .toList
@@ -181,7 +115,7 @@ final class Site(
       ))
 
     // Gather back-links
-    pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))
+    pages.pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))
 
     // TODO sort pages topologically based on transclusions
 
@@ -192,7 +126,7 @@ final class Site(
     Files.deleteDirectory(targetDirectory)
 
     // Write pages
-    pages.foreach(_.write())
+    pages.pages.foreach(_.write())
 
     // Done
     log.info("Done!")

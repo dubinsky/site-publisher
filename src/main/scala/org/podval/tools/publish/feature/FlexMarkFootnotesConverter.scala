@@ -1,21 +1,14 @@
 package org.podval.tools.publish.feature
 
-import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.Converter
-import org.podval.tools.publish.util.IdGenerator
+import org.podval.tools.publish.processor.ConverterSimple
 import org.podval.xml.Xml
 
 // Note: without FootnotesExtension, FlexMark treats footnotes as links,
 // and by the time we get to `convertFootnotes()` footnotes are gone,
 // so to process footnotes in Markdown markup correctly, I have to enable FootnotesExtension.
 // Here I post-process its output to the form Markup understands.
-final class FlexMarkFootnotesConverter extends Converter:
-  override def convert(
-    element: Xml.Element,
-    content: PageContent,
-    ids: IdGenerator,
-    footnoteCorrelationIds: IdGenerator
-  ): Xml.Element =
+final class FlexMarkFootnotesConverter extends ConverterSimple:
+  override protected def convert(element: Xml.Element): Xml.Element =
     // FootnotesExtension footnote link:
     //   <sup id="fnref-$correlationId">
     //     <a class="${Footnotes.LinkClass.name}" href="#fn-$correlationId">

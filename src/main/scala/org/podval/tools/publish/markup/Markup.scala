@@ -1,11 +1,12 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
-import org.podval.tools.publish.processor.{Converter, HtmlConverter, PostConverter, Processors, Transformer}
+import org.podval.tools.publish.processor.{ConverterWithIds, HtmlConverter, PostConverter, Processors, Transformer}
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, PageContent}
 import org.podval.tools.publish.util.Files
-import org.podval.xml.{HtmlClass, Xml, XmlDialect, XmlElement, XmlParser}
+import org.podval.xml.{Xml, XmlDialect, XmlParser}
 
 abstract class Markup derives CanEqual:
   def name: String
@@ -25,14 +26,16 @@ abstract class Markup derives CanEqual:
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
   // and xmlDialect for pretty-printing.
   def xmlDialect: XmlDialect
+
+  def entityKind(xml: Xml.Element): Option[EntityKind] = None
   
   def sections(content: PageContent): Seq[Fragment.Section]
 
   def processors: Processors
 
-  lazy val converters: Seq[Converter] = processors
+  lazy val converters: Seq[ConverterWithIds] = processors
     .processors
-    .collect { case converter: Converter => converter }
+    .collect { case converter: ConverterWithIds => converter }
     .sortBy(_.convertLinks)
 
   lazy val transformers: Seq[Transformer] = processors
@@ -89,8 +92,8 @@ abstract class Markup derives CanEqual:
           )
 
         Xml
-          .element(XmlElement(xmlDialect.root.head))
-          .add(HtmlClass(s"malformed-$extension"))
+          .element(xmlDialect.root.head)
+          .addClass(s"malformed-$extension")
           .setText(s"Malformed $name: $error")
 
     (frontMatter, xml)

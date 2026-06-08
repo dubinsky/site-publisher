@@ -12,9 +12,18 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
   override protected def headerPagePriorityDefault: Int = 2
   override protected def langDefault: Option[String] = Some("en")
 
-  private def tagsAll: List[String] = site.pages.flatMap(_.tags).distinct.sorted
+  private def tagsAll: List[String] = site
+    .pages
+    .pages
+    .flatMap(_.tags)
+    .distinct
+    .sorted
 
-  private def withTag(tag: String): List[Page] = site.pages.filter(_.tags.contains(tag)).sortBy(_.title)
+  private def withTag(tag: String): List[Page] = site
+    .pages
+    .pages
+    .filter(_.tags.contains(tag))
+    .sortBy(_.title)
 
   def tagRef(tag: String): Html.Element = a(
     className := "page-tag",

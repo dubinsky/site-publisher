@@ -51,7 +51,11 @@ object Link:
           Path(pathSegments.init :+ lastSegment.trim, extension)
 
         // TODO search only pages corresponding to the 'kind'
-        from.site.pages.flatMap(page => is(page, path, isAbsolute)).headOption
+        from
+          .site
+          .pages
+          .pages
+          .flatMap(page => is(page, path, isAbsolute)).headOption
 
     to.map(to => Link(
       page = to,

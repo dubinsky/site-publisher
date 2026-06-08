@@ -9,8 +9,8 @@ given Html: XmlAst[XML.Element]:
   
   override def text(text: String): Node = XML.text(text)
 
-  override def element(elem: XmlElement): Element = XML.Element.Generic(
-    tag = elem.name,
+  override def element(name: String): Element = XML.Element.Generic(
+    tag = name,
     children = Chunk.empty,
     attributes = Chunk.empty
   )
@@ -67,7 +67,7 @@ given Html: XmlAst[XML.Element]:
     case XML.Attribute.BooleanAttribute(name, _) => name
     case XML.Attribute.AppendValue(name, _, _) => name
 
-  def mkAttribute(name: String, value: String) = XML.Attribute.KeyValue(
+  private def mkAttribute(name: String, value: String) = XML.Attribute.KeyValue(
     name,
     XML.AttributeValue.StringValue(value)
   )

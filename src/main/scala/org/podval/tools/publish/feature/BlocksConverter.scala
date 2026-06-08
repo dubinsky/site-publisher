@@ -3,7 +3,7 @@ package org.podval.tools.publish.feature
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Converter
-import org.podval.tools.publish.util.{IdGenerator, Strings}
+import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
@@ -11,11 +11,9 @@ import zio.blocks.chunk.Chunk
 // (e.g., a list) by putting it after the block, with empty lines before and after;
 // I'll deal with this later...
 final class BlocksConverter extends Converter:
-  override def convert(
+  override protected def convert(
     element: Xml.Element,
-    content: PageContent,
-    ids: IdGenerator,
-    footnoteCorrelationIds: IdGenerator
+    content: PageContent
   ): Xml.Element =
     val children: Chunk[Xml.Node] = element.getChildren
     if children.isEmpty then element else children.last.asText.fold(element): text =>

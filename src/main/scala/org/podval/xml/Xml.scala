@@ -9,7 +9,7 @@ given Xml: XmlAst[XML.Element]:
 
   override def text(text: String): Node = XML.Text(text)
 
-  override def element(elem: XmlElement): Element = XmlBuilder.element(elem.name).build
+  override def element(name: String): Element = XmlBuilder.element(name).build
 
   extension (node: Node)
     override def asElement: Option[Element] = node match

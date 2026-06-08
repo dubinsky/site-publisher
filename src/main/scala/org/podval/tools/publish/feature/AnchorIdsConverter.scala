@@ -1,12 +1,12 @@
 package org.podval.tools.publish.feature
 
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.processor.ConverterWithIds
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
-final class AnchorIdsConverter extends Converter(convertLinks = true):
-  override def convert(
+final class AnchorIdsConverter extends ConverterWithIds(convertLinks = true):
+  override def convertWithIds(
     element: Xml.Element,
     content: PageContent,
     ids: IdGenerator,

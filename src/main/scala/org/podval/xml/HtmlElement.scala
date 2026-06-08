@@ -5,3 +5,5 @@ object HtmlElement:
 
   object Code extends XmlElement("code")
   
+  val reservedElements: Set[String] = Set("head" , "body", "title", "div", "p")
+  

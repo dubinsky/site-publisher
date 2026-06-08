@@ -17,7 +17,9 @@ trait XmlAst[ELEMENT]:
 
   def text(text: String): Node
 
-  def element(elem: XmlElement): Element
+  final def element(elem: XmlElement): Element = element(elem.name)
+
+  def element(name: String): Element
 
   final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString(" ")
 
@@ -74,14 +76,23 @@ trait XmlAst[ELEMENT]:
     def setAttributes(attributes: Chunk[(String, String)]): Element
 
     def get(attribute: XmlAttribute): Option[String] =
-      element.getAttributes.find(_._1 == attribute.name).map(_._2)
+      get(attribute.name)
+
+    def get(attribute: String): Option[String] =
+      element.getAttributes.find(_._1 == attribute).map(_._2)
 
     def set(attribute: XmlAttribute, value: String): Element =
-      element.setAttributes(element.getAttributes.filterNot(_._1 == attribute.name).appended(attribute.name -> value))
+      set(attribute.name, value)
+
+    def set(attribute: String, value: String): Element =
+      element.setAttributes(element.getAttributes.filterNot(_._1 == attribute).appended(attribute -> value))
 
     def set(attribute: XmlAttribute, value: Option[String]): Element =
+      set(attribute.name, value)
+
+    def set(attribute: String, value: Option[String]): Element =
       value.fold(element)(element.set(attribute, _))
-      
+
     def getId: Option[String] = get(XmlAttribute.Id)
     
     def setId(value: String): Element = set(XmlAttribute.Id, value)
@@ -102,16 +113,21 @@ trait XmlAst[ELEMENT]:
     private def setClasses(values: Chunk[String]): Element =
       element.set(HtmlClass, values.mkString(" "))
 
-    def has(htmlClass: HtmlClass): Boolean = element.getClasses.contains(htmlClass.name)
+    def has(htmlClass: HtmlClass): Boolean = hasClass(htmlClass.name)
+    
+    def hasClass(htmlClass: String): Boolean = element.getClasses.contains(htmlClass)
 
     def add(htmlClass: Option[HtmlClass]): Element =
       htmlClass.fold(element)(element.add)
-      
+
     def add(htmlClass: HtmlClass): Element =
+      addClass(htmlClass.name)
+
+    def addClass(htmlClass: String): Element =
       val list = element.getClasses
-      if list.contains(htmlClass.name)
+      if list.contains(htmlClass)
       then element
-      else element.setClasses(list.appended(htmlClass.name))
+      else element.setClasses(list.appended(htmlClass))
 
     def getPrefixedClasses(prefix: String): Chunk[String] = element
       .getClasses

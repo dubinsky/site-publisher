@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.tools.publish.feature.Links
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
@@ -20,7 +21,7 @@ final class PageContent(
 
   xmlVar = xmlDialect.transform(xml, element =>
     markup.converters.foldLeft(element)((result, converter) =>
-      converter.convert(result, this, ids, footnoteCorrelationIds)
+      converter.convertWithIds(result, this, ids, footnoteCorrelationIds)
     )
   )
 
@@ -46,6 +47,8 @@ final class PageContent(
     cause
   )
 
+  def entityKind: Option[EntityKind] = markup.entityKind(xml)
+  
   // TODO take content into account:
   def author: Option[String] = frontMatter.author
   def title: Option[String] = frontMatter.title

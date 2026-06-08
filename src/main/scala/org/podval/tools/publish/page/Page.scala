@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Link
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.tools.publish.{HeaderPage, PageError, Path, Posts, Site}
@@ -37,11 +38,7 @@ abstract class Page(
       else None
 
     parentDirectory
-      .map(parentDirectory => site.addPage(None, Path(parentDirectory :+ DirectoryPage.fileName *).html))
-      .map {
-        case directoryPage: DirectoryPage => directoryPage
-        case _ => throw IllegalArgumentException(s"Not a Directory")
-      }
+      .map(parentDirectory => site.pages.addOrFindDirectory(Path(parentDirectory :+ DirectoryPage.fileName *).html))
 
   def isAlias: Boolean
 
@@ -106,6 +103,8 @@ abstract class Page(
   final def lang: String = content(_.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
+  
+  final def entityKind: Option[EntityKind] = content(_.entityKind)
   
   final def ref(
     cls: Option[String] = None,

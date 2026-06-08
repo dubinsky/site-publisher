@@ -3,7 +3,7 @@ package org.podval.tools.publish.feature
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Transformer
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlClass, Xml, XmlElement}
+import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
 final class FootnotesTransformer extends Transformer(transformsFootnotes = true):
@@ -32,7 +32,7 @@ final class FootnotesTransformer extends Transformer(transformsFootnotes = true)
         .filterNot(_.asElement.fold(false)(child =>
           Footnotes.isBody(child) ||
             // FlexMark FootnotesExtension footnotes 'div'
-            child.getName == "div" && child.has(HtmlClass("footnotes"))
+            child.getName == "div" && child.hasClass("footnotes")
         ))
       )
     )
@@ -52,8 +52,8 @@ final class FootnotesTransformer extends Transformer(transformsFootnotes = true)
 
     // Add footnotes 'div'
     val footnotesDiv: Xml.Element = Xml
-      .element(XmlElement("div"))
-      .add(HtmlClass("footnotes"))
+      .element("div")
+      .addClass("footnotes")
       .setChildren(footnotesToAdd)
 
     if footnotesToAdd.isEmpty

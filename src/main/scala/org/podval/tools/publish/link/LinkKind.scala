@@ -1,18 +1,23 @@
 package org.podval.tools.publish.link
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.tei.EntityKind
+import org.podval.xml.Xml
 
-sealed abstract class LinkKind(val htmlClass: String)
+sealed abstract class LinkKind
 
-// TODO split into Entity snd not
-// TODO Tag, Category, Pb/facsimile
 object LinkKind:
-  case object Person extends LinkKind("persName")
+  final case class Entity(kind: EntityKind) extends LinkKind
 
-  case object Place extends LinkKind("placeName")
+  // TODO use
+  case object Facsimile extends LinkKind
 
-  case object Organization extends LinkKind("orgName")
+  // TODO use
+  case object Tag extends LinkKind
 
-  val all: List[LinkKind] = List(Person, Place, Organization)
+  // TODO use
+  case object Category extends LinkKind
 
-  def of(element: Xml.Element): Option[LinkKind] = all.find(kind => element.has(HtmlClass(kind.htmlClass)))
+  def of(element: Xml.Element): Option[LinkKind] = EntityKind
+    .values
+    .find(entityKind => element.hasClass(entityKind.nameElement))
+    .map(Entity(_))

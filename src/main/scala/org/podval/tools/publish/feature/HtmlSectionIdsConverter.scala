@@ -2,14 +2,14 @@ package org.podval.tools.publish.feature
 
 import org.podval.tools.publish.markup.HtmlLikeMarkup
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.processor.ConverterWithIds
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
-final class HtmlSectionIdsConverter extends Converter:
+final class HtmlSectionIdsConverter extends ConverterWithIds:
   // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
   // but I do it manually and uniformly for HTML, TEI etc.
-  override def convert(
+  override def convertWithIds(
     element: Xml.Element,
     content: PageContent,
     ids: IdGenerator,
