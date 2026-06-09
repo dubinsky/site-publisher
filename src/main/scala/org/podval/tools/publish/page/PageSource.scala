@@ -9,7 +9,8 @@ import scala.ref.SoftReference
 final class PageSource(
   val page: Page,
   val markup: Markup,
-  val sourcePath: Path
+  val sourcePath: Path,
+  standAloneFrontMatter: Option[Path]
 ):
   private var cachedVar: Option[SoftReference[PageContent]] = None
   
@@ -34,6 +35,7 @@ final class PageSource(
     val (frontMatter: FrontMatter, xml: Xml.Element) = markup.readAndParse(
       site = page.site,
       sourcePath = sourcePath,
+      standAloneFrontMatter = standAloneFrontMatter,
       message = message,
       firstReading = firstReading
     )

@@ -48,6 +48,9 @@ final case class FrontMatter(
     s"---\n$mapping\n---\n"
 
 object FrontMatter:
+  private val standAloneExtensions: Seq[String] = Seq("yaml", "yml")
+  def isStandAloneExtension(extension: Option[String]): Boolean = extension.exists(standAloneExtensions.contains)
+  
   val empty: FrontMatter = FrontMatter()
 
   val absent: FrontMatter =

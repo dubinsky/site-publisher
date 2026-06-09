@@ -7,6 +7,7 @@ import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, PageContent}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Xml, XmlDialect, XmlParser}
+import java.io.File
 
 abstract class Markup derives CanEqual:
   def name: String
@@ -57,16 +58,25 @@ abstract class Markup derives CanEqual:
   final def readAndParse(
     site: Site,
     sourcePath: Path,
+    standAloneFrontMatter: Option[Path],
     message: String,
     firstReading: Boolean,
   ): (FrontMatter, Xml.Element) =
     site.log.debug(s"$message: $sourcePath")
 
-    val (frontMatterContent: Option[String], content: String) =
+    val frontMatterContentStandAlone: Option[String] = standAloneFrontMatter
+      .map(_.file(site.sourceDirectory))
+      .map(Files.read)
+
+    val (frontMatterContentInternal: Option[String], content: String) =
       FrontMatter.split(Files.read(sourcePath.file(site.sourceDirectory)))
+
+    // TODO error if both are present
+    val frontMatterContent: Option[String] = frontMatterContentInternal.orElse(frontMatterContentStandAlone)
 
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
       case Right(frontMatter) =>
+        // TODO mark as stand-alone for round-trip
         frontMatter
       case Left(error) =>
         if firstReading then
@@ -104,7 +114,10 @@ object Markup:
   )
 
   // Some XmlLike markups can have extensions other than `.xml`, so we add `xmlLike` to `all`:
-  val all: List[Markup] = xmlLike ++ List(
+  private val all: List[Markup] = xmlLike ++ List(
     MarkdownMarkup,
     HtmlMarkup
   )
+
+  def forExtension(extension: Option[String]): Option[Markup] = extension.flatMap(forExtension)
+  private def forExtension(extension: String): Option[Markup] = all.find(_.isExtension(extension))

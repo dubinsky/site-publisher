@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
-import org.podval.tools.publish.page.{DirectoryPage, EmbeddedAsset, Page}
+import org.podval.tools.publish.page.{EmbeddedAsset, Page}
 import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
@@ -84,23 +84,24 @@ final class Site(
   ).flatten
 
   private def load(): Unit =
-    val special: Seq[Page] = Seq(
-      // Synthetic assets
-      Sitemap(this),
-      Robots(this),
-      Feed(this),
+    // Add embedded assets
+    EmbeddedAsset.embeddedAssets(this).foreach(pages.add)
 
-      // Automatic pages
+    // Add automatic pages
+    val automaticPages: Seq[Page] = Seq(
       errors,
       tags,
       posts
     )
-
-    // Add special pages
-    (EmbeddedAsset.embeddedAssets(this) ++ special).foreach(pages.add)
+    automaticPages.foreach(pages.add)
 
     // Scan the directories and add all source pages
     pages.scan(Seq.empty, sourceDirectory, None)
+
+    // Add synthetic assets that were not supplied explicitly
+    if pages.get(Sitemap.path).isEmpty then pages.add(Sitemap(this))
+    if pages.get(Robots.path).isEmpty then pages.add(Robots(this))
+    if pages.get(Feed.path).isEmpty then pages.add(Feed(this))
 
     // Report conflicting pages
     pages
@@ -135,5 +136,7 @@ object Site:
   def main(args: Array[String]): Unit = Cli.main(Array(
     "--log-level=INFO",
     "--treat-errors-as-warnings=true",
-    "/home/dub/Podval/dub.podval.org"
+    "/home/dub/OpenTorah/alter-rebbe.org"
+//  "/home/dub/Podval/dub.podval.org"
+//    "/home/dub/Podval/www.podval.org"
   ))

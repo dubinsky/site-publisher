@@ -38,7 +38,8 @@ abstract class Page(
       else None
 
     parentDirectory
-      .map(parentDirectory => site.pages.addOrFindDirectory(Path(parentDirectory :+ DirectoryPage.fileName *).html))
+      .filterNot(_.isEmpty)
+      .map(parentDirectory => site.pages.getOrAddDirectory(Path(parentDirectory :+ DirectoryPage.fileName *).html))
 
   def isAlias: Boolean
 

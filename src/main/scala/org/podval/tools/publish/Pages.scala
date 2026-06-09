@@ -1,16 +1,22 @@
 package org.podval.tools.publish
 
+import org.podval.tools.publish.link.LinkKind
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, FrontMatter, MarkupPage, Page, PageSource, SimpleMarkupPage}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, FrontMatter, MarkupPage, Page, PageSource,
+  SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
-
 import java.io.File
 
 final class Pages(site: Site):
+  import Pages.{ForName, ForMarkup}
+
   private var pagesVar: List[Page] = List.empty
 
   def pages: List[Page] = pagesVar
+
+  // TODO make a map for quick lookups:
+  def get(path: Path): Option[Page] = pages.find(_.path == path)
 
   def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
@@ -20,9 +26,9 @@ final class Pages(site: Site):
     page.aliases.foreach(add)
 
   // Note: only (implied) directories are added without sourcePath
-  def addOrFindDirectory(path: Path): DirectoryPage =
+  def getOrAddDirectory(path: Path): DirectoryPage =
     require(path.fileName == DirectoryPage.fileName)
-    val (page: DirectoryPage, addIt: Boolean) = pages.find(_.path == path.html) match
+    val (page: DirectoryPage, addIt: Boolean) = get(path.html) match
       case None =>
         (DirectoryPage(site, path.html), true)
       case Some(page) => page match
@@ -33,64 +39,11 @@ final class Pages(site: Site):
 
     if addIt then add(page)
     page
-
-  def add(
-    sourcePath: Path,
-    path: Path
-  ): Page =
-    val (markup: Option[Markup], parsed: Option[(FrontMatter, Xml.Element)]) =
-      sourcePath.extension.fold((None, None)): extension =>
-        if extension != XmlLikeMarkup.extension
-        then
-          // Determine markup by the file extension
-          val markup: Option[Markup] = Markup.all.find(_.isExtension(extension))
-          (markup, None)
-        else
-          // Parse and disambiguate XML markup by its XML dialect's root elements
-          val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
-            site = site,
-            sourcePath = sourcePath,
-            message = "Reading to disambiguate XML dialect",
-            firstReading = true,
-          )
-          val rootElementName: String = xml.getName
-          val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
-          (markup, Some((frontMatter, xml)))
-
-    val (page: Page, addIt: Boolean) = pages.find(_.path == path.html) match
-      case Some(page) =>
-        (page, false)
-
-      case None =>
-        val page: Page =
-          if path.fileName == DirectoryPage.fileName
-          then DirectoryPage(site, path.html)
-          else markup match
-            case None => AssetWithSourcePath(site, sourcePath, path)
-            case Some(markup) => SimpleMarkupPage(site, path.html)
-        (page, true)
-
-    page match
-      case markupPage: MarkupPage =>
-        markup.foreach: markup =>
-          val pageSource: PageSource = PageSource(
-            page = markupPage,
-            markup = markup,
-            sourcePath = sourcePath
-          )
-          markupPage.setSource(pageSource)
-          parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
-
-      case _ => ()
-
-    if addIt then add(page)
-    page
-
-
+  
   def scan(
     path: Seq[String],
     directory: File,
-    externalIndex: Option[Path]
+    externalIndex: Option[ForMarkup]
   ): Unit =
     val pathString: String = if path.isEmpty then "/" else path.mkString("/", "/", "/")
 
@@ -105,23 +58,29 @@ final class Pages(site: Site):
       )
       .partition(_.isFile)
 
-    var name2file: Map[String, Path] = files
+    // TODO separate assets from markup at the beginning
+    var forNames: Map[String, ForName] = files
       .map(file =>
         val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
-        name -> Path(path :+ name, extension)
+        Path(path :+ name, extension)
       )
+      .groupBy(_.fileName)
+      .view
+      .mapValues(forName)
       .toMap
 
-    def fileByName(name: String): Option[Path] =
-      val result = name2file.get(name)
-      if result.isDefined then name2file = name2file.removed(name)
+    def getForMarkup(name: String): Option[ForMarkup] = forNames.get(name).flatMap: forName =>
+      val result = forName.markup
+      // Remove from the list of files to add
+      if result.isDefined then forNames = forNames.updated(name, forName.copy(markup = None))
       result
 
     val addDirectory: Boolean = !site.posts.isDirectoryEmptiedOut(path)
 
-    val internalIndex: Option[Path] = fileByName(DirectoryPage.fileName)
+    val internalIndex: Option[ForMarkup] = getForMarkup(DirectoryPage.fileName)
+
     // TODO error when internalIndex.isDefined && externalIndex.isDefined
-    val index: Option[Path] = internalIndex.orElse(externalIndex)
+    val index: Option[ForMarkup] = internalIndex.orElse(externalIndex)
     // TODO error if index exists but !addDirectory
 
     val sourcePath: Path = Path(path :+ DirectoryPage.fileName)
@@ -129,17 +88,19 @@ final class Pages(site: Site):
     val directoryPage: Option[Page] = Option.when(addDirectory):
       val path: Path = toPath(sourcePath)
       index match
-        case None => site.pages.addOrFindDirectory(path)
-        case Some(index) => site.pages.add(index, path)
+        case None => getOrAddDirectory(path)
+        case Some(index) => addMarkup(index.markup, index.standAloneFrontMatter, path)
 
     val directoryPageSource: Option[PageSource] = directoryPage.flatMap(_.source)
 
     // TODO if directoryPage has structure, use that instead of file list!!!
 
-    val directory2index: List[(File, Option[Path])] = directories
-      .map(directory => directory -> fileByName(directory.getName))
+    val directory2index: List[(File, Option[ForMarkup])] = directories
+      .map(directory => directory -> getForMarkup(directory.getName))
 
-    name2file.values.foreach(sourcePath => site.pages.add(sourcePath, toPath(sourcePath)))
+    forNames.values.foreach: forName =>
+      forName.markup.foreach(forMarkup => addMarkup(forMarkup.markup, forMarkup.standAloneFrontMatter, toPath(forMarkup.markup)))
+      forName.assets.foreach(sourcePath => add(AssetWithSourcePath(site, sourcePath, toPath(sourcePath))))
 
     // TODO for Store-described directories, do not scan directory listing
     directory2index.foreach: (directory, externalIndex) =>
@@ -148,3 +109,131 @@ final class Pages(site: Site):
         directory,
         externalIndex
       )
+
+  private def forName(paths: List[Path]): ForName =
+    val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(path => Markup.forExtension(path.extension).isDefined)
+    // TODO error if markup.length > 1
+    if markup.isEmpty
+    then
+      ForName(
+        markup = None,
+        assets = nonMarkup
+      )
+    else
+      val (frontMatter, nonFrontMatter) = nonMarkup.partition(path => FrontMatter.isStandAloneExtension(path.extension))
+      // TODO error if frontMatter.length > 1
+      ForName(
+        markup = Some(ForMarkup(
+          markup = markup.head,
+          standAloneFrontMatter = frontMatter.headOption
+        )),
+        assets = nonFrontMatter
+      )
+
+  private def addMarkup(
+    sourcePath: Path,
+    standAloneFrontMatter: Option[Path],
+    path: Path
+  ): Page =
+    val (markup: Markup, parsed: Option[(FrontMatter, Xml.Element)]) =
+      if !sourcePath.extension.contains(XmlLikeMarkup.extension)
+      then
+        // Determine markup by the file extension
+        // Note: we can only get here after forName() verified that the extension is a markup one, so - get:
+        val markup: Markup = Markup.forExtension(sourcePath.extension).get
+        (markup, None)
+      else
+        // Parse and disambiguate XML markup by its XML dialect's root elements
+        val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
+          site = site,
+          sourcePath = sourcePath,
+          standAloneFrontMatter = standAloneFrontMatter,
+          message = "Reading to disambiguate XML dialect",
+          firstReading = true,
+        )
+        val rootElementName: String = xml.getName
+        val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
+        // TODO error if unknown XML dialect
+        (markup.get, Some((frontMatter, xml)))
+
+    val (page: Page, addIt: Boolean) = get(path.html) match
+      case Some(page) =>
+        (page, false)
+
+      case None =>
+        val page: Page =
+          if path.fileName == DirectoryPage.fileName
+          then DirectoryPage(site, path.html)
+          else SimpleMarkupPage(site, path.html)
+        (page, true)
+
+    page match
+      case markupPage: MarkupPage =>
+        val pageSource: PageSource = PageSource(
+          page = markupPage,
+          markup = markup,
+          sourcePath = sourcePath,
+          standAloneFrontMatter = standAloneFrontMatter
+        )
+        markupPage.setSource(pageSource)
+        parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
+
+      case _ => () // TODO error?
+
+    if addIt then add(page)
+    page
+
+  // TODO search only pages corresponding to the 'kind'
+  def find(
+    path: Path,
+    isAbsolute: Boolean,
+    kind: Option[LinkKind]
+  ): Option[Page] = pages.flatMap(page => is(page, path, isAbsolute)).headOption
+
+  private def is(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
+    isPath(page, path, isAbsolute).orElse(
+      Option.when(page.sourcePath.exists(isSourcePath(_, path, isAbsolute)))(page)
+    )
+
+  private def isPath(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
+    def loop(current: Page, names: Seq[String]): Option[Page] =
+      val name: String = names.last
+      val init: Seq[String] = names.init
+      val done: Boolean = init.isEmpty
+      val is: Boolean = current.title == name || current.titleFromPath == name
+      Option.when(is)(page).flatMap: (to: Page) =>
+        current.parent match
+          case None =>
+            Option.when(done)(to)
+          case Some(parent) =>
+            if done
+            then Option.when(!isAbsolute)(to)
+            else loop(parent, init)
+
+    if !isExtension(page.path, path) then None else
+      val names: Seq[String] = path.path
+      if names.lastOption.contains(DirectoryPage.fileName)
+      then loop(page, names.init)
+      else loop(page, names)
+
+  // TODO this should be the same as isPath()?
+  private def isSourcePath(sourcePath: Path, path: Path, isAbsolute: Boolean): Boolean =
+    isExtension(sourcePath, path) && (
+      if isAbsolute
+      then sourcePath.path == path.path
+      else sourcePath.path.endsWith(path.path)
+      )
+
+  private def isExtension(pagePath: Path, path: Path): Boolean =
+    path.extension.fold(true)(pagePath.extension.contains)
+
+object Pages:
+  final class ForMarkup(
+    val markup: Path,
+    val standAloneFrontMatter: Option[Path]
+  )
+
+  private final case class ForName(
+    markup: Option[ForMarkup],
+    assets: List[Path]
+  )

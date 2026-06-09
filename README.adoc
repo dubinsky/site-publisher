@@ -115,7 +115,7 @@ Write about all the plugins I used:
 === TEI
 
 - metadata (including title) from the document itself
-- footnotes
+- footnotes should cling to preceding elements, not just text
 - facsimiles
 - raw TEI
 
@@ -124,9 +124,7 @@ Write about all the plugins I used:
 - do video embedding?
 - recognize more audio/image types;
 - treat `<img>` as a link element also?
-- retrieve Git creation/modification dates using JGit
 - sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
-- file named after a directory is its index!
 - generate RSS feed
 - add whatever is needed for the feed to the `<head>`
 - implement SEO - or is just the page title in the `<head>` all I need?
