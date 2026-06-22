@@ -30,7 +30,7 @@ final class PageContent(
     transformer.transform(xml, this)
   )
 
-  def page: Page = source.page
+  def page: MarkupPage = source.page
   def site: Site = page.site
   def sourcePath: Path = source.sourcePath
   def markup: Markup = source.markup
@@ -78,7 +78,7 @@ final class PageContent(
       gatherElement = BackLink(_, _, page, toc)
     )
 
-  def htmlContent: Html.Element =
+  def toHtml: Html.Element =
     // Post-process XML
     val xmlResult: Xml.Element = xmlDialect.transform(xml, element =>
       markup.postConverters.foldLeft(element)((result, postConverter) =>

@@ -125,6 +125,12 @@ abstract class Page(
       Option.when(withTitle)(pageLink.titleReal)
     )
 
+  final def navRef(icon: Icon): Html.Element = ref(
+    cls = Some("nav-item"),
+    icon = Some(icon),
+    withTitle = false
+  )
+
 object Page:
   def pageList(pages: Seq[Page], cls: Option[String] = None): Html.Element = ul(
     className := "page-list",

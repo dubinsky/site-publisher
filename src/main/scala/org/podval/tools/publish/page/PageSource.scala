@@ -7,7 +7,7 @@ import org.podval.xml.Xml
 import scala.ref.SoftReference
 
 final class PageSource(
-  val page: Page,
+  val page: MarkupPage,
   val markup: Markup,
   val sourcePath: Path,
   standAloneFrontMatter: Option[Path]

@@ -5,7 +5,7 @@ import org.podval.tools.publish.feature.*
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Processors
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.xml.{Html, Xml, XmlDialect}
 
 object TeiMarkup extends XmlLikeMarkup:
   override val additionalExtensions: Set[String] = Set.empty
@@ -29,3 +29,5 @@ object TeiMarkup extends XmlLikeMarkup:
     content: PageContent
   ): Seq[Fragment.Section] = Seq.empty // TODO
 
+  // TODO !!!
+  override def pageHeader(content: PageContent): Html.Element = Markup.pageHeader(content)

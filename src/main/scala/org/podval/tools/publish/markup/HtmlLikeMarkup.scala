@@ -3,9 +3,8 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.page.PageContent
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlDialect}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
-
 import scala.annotation.tailrec
 
 // Common for markup formats whose XML representation is actually HTML:
@@ -30,6 +29,8 @@ abstract class HtmlLikeMarkup extends Markup:
   import HtmlLikeMarkup.HtmlSection
 
   final override def xmlDialect: XmlDialect = HtmlXmlDialect
+
+  final override def pageHeader(content: PageContent): Html.Element = Markup.pageHeader(content)
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.

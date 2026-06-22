@@ -2,8 +2,10 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
-import org.podval.tools.publish.page.{EmbeddedAsset, Page}
-import org.podval.tools.publish.util.{Files, Git, Logging, ObsidianConfig}
+import org.podval.tools.publish.page.EmbeddedAsset
+import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig}
+import org.podval.xml.Html
+import zio.blocks.html.*
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.event.Level
 import java.io.File
@@ -47,14 +49,12 @@ final class Site(
 
   // Components
   val pages: Pages = Pages(this)
+  val errors: Errors = Errors(this)
   val ignore: Ignore = Ignore(this)
   val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
-
-  // Errors
-  val errors: Errors = Errors(this)
 
   def error(
     sourcePath: Path,
@@ -73,47 +73,16 @@ final class Site(
   def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
   def dailyNotesDirectoryName: Option[String] = obsidianConfig.daysFolder
 
-  // Header pages
-  lazy val headerPages: List[HeaderPage] = pages.pages.flatMap(_.headerPage).sortBy(_.priority)
-
   // Social links
-  val socialLinks: Seq[SocialLink] = Seq(
+  private val socialLinks: Seq[SocialLink] = Seq(
     config.social.github.map(SocialLink.GitHub(_)),
     config.social.twitter.map(SocialLink.Twitter(_)),
     config.social.linkedin.map(SocialLink.LinkedIn(_))
   ).flatten
 
   private def load(): Unit =
-    // Add embedded assets
-    EmbeddedAsset.embeddedAssets(this).foreach(pages.add)
-
-    // Add automatic pages
-    val automaticPages: Seq[Page] = Seq(
-      errors,
-      tags,
-      posts
-    )
-    automaticPages.foreach(pages.add)
-
-    // Scan the directories and add all source pages
-    pages.scan(Seq.empty, sourceDirectory, None)
-
-    // Add synthetic assets that were not supplied explicitly
-    if pages.get(Sitemap.path).isEmpty then pages.add(Sitemap(this))
-    if pages.get(Robots.path).isEmpty then pages.add(Robots(this))
-    if pages.get(Feed.path).isEmpty then pages.add(Feed(this))
-
-    // Report conflicting pages
-    pages
-      .pages
-      .groupBy(_.path)
-      .filter(_._2.length > 1)
-      .toList
-      .foreach((path: Path, pages: List[Page]) => error(
-        path,
-        PageError.Duplicate,
-        s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
-      ))
+    // Load all pages
+    pages.load()
 
     // Gather back-links
     pages.pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))
@@ -132,11 +101,54 @@ final class Site(
     // Done
     log.info("Done!")
 
+  def siteFooter: Html.Element =
+    footer(className := "site-footer h-card",
+      data(className := "u-url", href := "/"),
+      div(className := "wrapper",
+        h2(className := "footer-heading", config.title),
+        div(className := "footer-col-wrapper",
+          div(className := "footer-col footer-col-1",
+            ul(className := "contact-list",
+              li(className := "p-name", config.author),
+              li(a(className := "u-email", href := s"mailto:${config.email}", config.email))
+            )
+          ),
+          div(className := "footer-col footer-col-2",
+            div(className := "social-links",
+              ul(className := "social-media-list", socialLinks.map(social =>
+                li(
+                  a(
+                    rel := "me",
+                    href := social.href,
+                    target := "_blank",
+                    titleAttr := social.title,
+                    Icon.brand(social.icon).html,
+                    span(className := "username", social.userName)
+                  )
+                )
+              ))
+            )
+          ),
+          div(className := "footer-col footer-col-3",
+            p(config.description),
+            p(
+              // TODO move to Feed
+              a(
+                href := Feed.path.toString,
+                Icon.rss.html,
+                span(className := "rss-feed", "RSS feed")
+              )
+            )
+          )
+        )
+      )
+    )
+
 object Site:
   def main(args: Array[String]): Unit = Cli.main(Array(
     "--log-level=INFO",
     "--treat-errors-as-warnings=true",
-    "/home/dub/OpenTorah/alter-rebbe.org"
-//  "/home/dub/Podval/dub.podval.org"
+//    "/home/dub/OpenTorah/alter-rebbe.org"
+  "/home/dub/Podval/dub.podval.org"
 //    "/home/dub/Podval/www.podval.org"
   ))

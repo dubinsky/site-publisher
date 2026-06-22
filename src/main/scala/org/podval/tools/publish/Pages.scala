@@ -2,8 +2,8 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.link.LinkKind
 import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, FrontMatter, MarkupPage, Page, PageSource,
-  SimpleMarkupPage}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
+  PageSource, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -15,10 +15,44 @@ final class Pages(site: Site):
 
   def pages: List[Page] = pagesVar
 
-  // TODO make a map for quick lookups:
-  def get(path: Path): Option[Page] = pages.find(_.path == path)
+  // Header pages
+  lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
 
-  def add(page: Page): Unit =
+  // TODO make a map for quick lookups:
+  private def get(path: Path): Option[Page] = pages.find(_.path == path)
+
+  def load(): Unit =
+    // Add embedded assets
+    EmbeddedAsset.embeddedAssets(site).foreach(add)
+
+    // Add automatic pages
+    val automaticPages: Seq[Page] = Seq(
+      site.errors,
+      site.tags,
+      site.posts
+    )
+    automaticPages.foreach(add)
+
+    // Scan the directories and add all source pages
+    scan(Seq.empty, site.sourceDirectory, None)
+
+    // Add synthetic assets that were not supplied explicitly
+    if get(Sitemap.path).isEmpty then add(Sitemap(site))
+    if get(Robots.path).isEmpty then add(Robots(site))
+    if get(Feed.path).isEmpty then add(Feed(site))
+
+    // Report conflicting pages
+    pages
+      .groupBy(_.path)
+      .filter(_._2.length > 1)
+      .toList
+      .foreach((path: Path, pages: List[Page]) => site.error(
+        path,
+        PageError.Duplicate,
+        s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
+      ))
+
+  private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
     // Add implied directories
     page.parent
@@ -40,7 +74,7 @@ final class Pages(site: Site):
     if addIt then add(page)
     page
   
-  def scan(
+  private def scan(
     path: Seq[String],
     directory: File,
     externalIndex: Option[ForMarkup]
