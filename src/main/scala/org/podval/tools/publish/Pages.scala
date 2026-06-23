@@ -145,7 +145,7 @@ final class Pages(site: Site):
       )
 
   private def forName(paths: List[Path]): ForName =
-    val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(path => Markup.forExtension(path.extension).isDefined)
+    val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(_.extension.flatMap(site.markups.forExtension).isDefined)
     // TODO error if markup.length > 1
     if markup.isEmpty
     then
@@ -174,7 +174,7 @@ final class Pages(site: Site):
       then
         // Determine markup by the file extension
         // Note: we can only get here after forName() verified that the extension is a markup one, so - get:
-        val markup: Markup = Markup.forExtension(sourcePath.extension).get
+        val markup: Markup = sourcePath.extension.flatMap(site.markups.forExtension).get
         (markup, None)
       else
         // Parse and disambiguate XML markup by its XML dialect's root elements
@@ -185,8 +185,7 @@ final class Pages(site: Site):
           message = "Reading to disambiguate XML dialect",
           firstReading = true,
         )
-        val rootElementName: String = xml.getName
-        val markup: Option[Markup] = Markup.xmlLike.find(_.xmlDialect.root.contains(rootElementName))
+        val markup: Option[Markup] = site.markups.forElement(xml.getName)
         // TODO error if unknown XML dialect
         (markup.get, Some((frontMatter, xml)))
 
@@ -262,7 +261,7 @@ final class Pages(site: Site):
     path.extension.fold(true)(pagePath.extension.contains)
 
 object Pages:
-  final class ForMarkup(
+  private final class ForMarkup(
     val markup: Path,
     val standAloneFrontMatter: Option[Path]
   )

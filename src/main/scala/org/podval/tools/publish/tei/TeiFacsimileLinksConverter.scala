@@ -1,4 +1,4 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.tei
 
 import org.podval.tools.publish.processor.ConverterSimple
 import org.podval.xml.Xml

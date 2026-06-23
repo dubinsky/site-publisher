@@ -1,5 +1,6 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.markdown
 
+import org.podval.tools.publish.markup.Footnotes
 import org.podval.tools.publish.processor.ConverterSimple
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.markdown
 
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.HtmlConverter

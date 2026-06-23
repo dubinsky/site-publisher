@@ -1,16 +1,8 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.feature.*
-import org.podval.tools.publish.processor.Processors
+import org.podval.tools.publish.processor.SingleProcessor
 
-object HtmlMarkup extends HtmlLikeMarkup with XmlParsableMarkup:
-  override def name: String = xmlDialect.name
-  override val extension: String = "html"
-  override val additionalExtensions: Set[String] = Set.empty
+final class HtmlMarkup(processors: Seq[SingleProcessor]) extends HtmlLikeMarkup(processors) with XmlParsableMarkup
 
-  def processors: Processors = Processors(
-    new HtmlSectionIdsConverter,
-    new AnchorIdsConverter,
-    new InternalLinksProcessor,
-    new FootnotesTransformer
-  )
+object HtmlMarkup:
+  val extension: String = "html"

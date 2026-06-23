@@ -1,4 +1,4 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.tei
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.processor.ConverterSimple

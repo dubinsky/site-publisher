@@ -5,7 +5,7 @@ import zio.blocks.chunk.Chunk
 object XmlDialect:
   object Plain extends XmlDialect(
     name = "XML",
-    root = Set.empty
+    root = Seq.empty
   )
 
 // Describes an XML dialect.
@@ -13,7 +13,7 @@ open class XmlDialect(
   val name: String,
 
   // identification
-  val root: Set[String],
+  val root: Seq[String],
 
   // traversal stop
   val stop: Set[String] = Set.empty,

@@ -1,5 +1,6 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.markup.Footnotes
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Transformer
 import org.podval.tools.publish.util.IdGenerator

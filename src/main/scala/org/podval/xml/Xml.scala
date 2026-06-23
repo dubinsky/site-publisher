@@ -56,7 +56,7 @@ given Xml: XmlAst[XML.Element]:
         |""".stripMargin
 
     //    println(Markdown.parseAndRender(string))
-    val xmlString = org.podval.tools.publish.markup.MarkdownMarkup.parseAndRenderMarkdown(string)
+    val xmlString = org.podval.tools.publish.markdown.FlexMark.parseAndRenderMarkdown(string)
     //    println(XmlParser.parse(string).toOption.get)
     XmlParser.parse(xmlString) match
       case Left(error) => println(error)

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.feature
+package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
 

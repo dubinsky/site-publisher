@@ -1,7 +1,6 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.feature.*
-import org.podval.tools.publish.processor.Processors
+import org.podval.tools.publish.markup.Footnotes
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
@@ -13,31 +12,15 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
 
-object MarkdownMarkup extends HtmlLikeMarkup:
-  override def name: String = "Markdown"
-  override val extension: String = "md"
-  override val additionalExtensions: Set[String] = Set.empty
-  // Wrap Markdown rendered as HTML in a 'div'.
-  override def xmlContent(content: String): String = s"<div>${parseAndRenderMarkdown(content)}</div>"
+object FlexMark:
   def parseAndRenderMarkdown(content: String): String = renderer.render(parseMarkdown(content))
-  // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
-  def parseMarkdown(content: String): Document = parser.parse(content)
 
-  override def processors: Processors = Processors(
-    new BlocksConverter,
-    new WikiLinksProcessor,
-    new MarkdownFootnotesConverter,
-    new FlexMarkFootnotesConverter,
-    new KramdownTocHtmlConverter,
-    new HtmlSectionIdsConverter,
-    new AnchorIdsConverter,
-    new InternalLinksProcessor,
-    new FootnotesTransformer
-  )
+  // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
+  private def parseMarkdown(content: String): Document = parser.parse(content)
 
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
     FootnoteExtension.create,
-//    StrikethroughSubscriptExtension.create,
+    //    StrikethroughSubscriptExtension.create,
     TablesExtension.create,
     TaskListExtension.create
   )
@@ -66,5 +49,3 @@ object MarkdownMarkup extends HtmlLikeMarkup:
     .builder(options)
     .extensions(extensionsRenderer.asJava)
     .build
-
-

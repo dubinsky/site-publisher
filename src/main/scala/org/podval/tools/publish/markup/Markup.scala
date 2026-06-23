@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
-import org.podval.tools.publish.processor.{ConverterWithIds, HtmlConverter, PostConverter, Processors, Transformer}
+import org.podval.tools.publish.processor.{ConverterWithIds, HtmlConverter, PostConverter, SingleProcessor, Transformer}
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageContent}
 import org.podval.tools.publish.util.{Date, Files}
@@ -10,49 +10,37 @@ import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}
 import zio.blocks.html.*
 import java.io.File
 
-abstract class Markup derives CanEqual:
-  def name: String
-
-  final override def toString: String = name
-
-  def extension: String
-
-  def additionalExtensions: Set[String]
-
-  private lazy val extensions: Set[String] = Set(extension) ++ additionalExtensions
-
-  final def isExtension(extension: String): Boolean = extensions.contains(extension)
-  
-  def xmlContent(content: String): String
-
+abstract class Markup(
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
   // and xmlDialect for pretty-printing.
-  def xmlDialect: XmlDialect
+  val xmlDialect: XmlDialect,
+  processors: Seq[SingleProcessor],
+  nameOverride: Option[String] = None
+) derives CanEqual:
+  final override def toString: String = name
+
+  final def name: String = nameOverride.getOrElse(xmlDialect.name)
+
+  def xmlContent(content: String): String
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
   def pageHeader(content: PageContent): Html.Element
 
   def sections(content: PageContent): Seq[Fragment.Section]
-
-  def processors: Processors
-
-  lazy val converters: Seq[ConverterWithIds] = processors
-    .processors
+  
+  final lazy val converters: Seq[ConverterWithIds] = processors
     .collect { case converter: ConverterWithIds => converter }
     .sortBy(_.convertLinks)
 
-  lazy val transformers: Seq[Transformer] = processors
-    .processors
+  final lazy val transformers: Seq[Transformer] = processors
     .collect { case transformer: Transformer => transformer }
     .sortBy(_.transformsFootnotes)
 
-  lazy val postConverters: Seq[PostConverter] = processors
-    .processors
+  final lazy val postConverters: Seq[PostConverter] = processors
     .collect { case postConverter: PostConverter => postConverter }
 
-  lazy val htmlConverters: Seq[HtmlConverter] = processors
-    .processors
+  final lazy val htmlConverters: Seq[HtmlConverter] = processors
     .collect { case htmlConverter: HtmlConverter => htmlConverter }
 
   final def parse(content: String): Either[Throwable, Xml.Element] =
@@ -100,31 +88,18 @@ abstract class Markup derives CanEqual:
           site.error(
             sourcePath = sourcePath,
             kind = PageError.MalformedXml,
-            message = s"malformed XML ($extension)",
+            message = s"malformed XML ($name)",
             cause = Some(error)
           )
 
         Xml
           .element(xmlDialect.root.head)
-          .addClass(s"malformed-$extension")
+          .addClass(s"malformed-$name")
           .setText(s"Malformed $name: $error")
 
     (frontMatter, xml)
 
 object Markup:
-  val xmlLike: List[XmlLikeMarkup] = List(
-    TeiMarkup
-  )
-
-  // Some XmlLike markups can have extensions other than `.xml`, so we add `xmlLike` to `all`:
-  private val all: List[Markup] = xmlLike ++ List(
-    MarkdownMarkup,
-    HtmlMarkup
-  )
-
-  def forExtension(extension: Option[String]): Option[Markup] = extension.flatMap(forExtension)
-  private def forExtension(extension: String): Option[Markup] = all.find(_.isExtension(extension))
-
   def pageHeader(content: PageContent): Html.Element =
     val page: MarkupPage = content.page
     header(className := "post-header",

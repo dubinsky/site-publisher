@@ -2,9 +2,8 @@ package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
-import org.podval.tools.publish.feature.Links
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
-import org.podval.tools.publish.markup.Markup
+import org.podval.tools.publish.markup.{Links, Markup}
 import org.podval.tools.publish.util.{Date, IdGenerator}
 import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
 

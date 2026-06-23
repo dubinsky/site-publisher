@@ -1,6 +1,6 @@
 package org.podval.tools.publish.link
 
-import org.podval.tools.publish.feature.Links
+import org.podval.tools.publish.markup.Links
 import org.podval.tools.publish.page.Page
 import org.podval.xml.Xml
 

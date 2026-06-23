@@ -2,6 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
+import org.podval.tools.publish.markup.Markups
 import org.podval.tools.publish.page.EmbeddedAsset
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig}
 import org.podval.xml.Html
@@ -48,6 +49,7 @@ final class Site(
   private val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
 
   // Components
+  val markups: Markups = Markups.default
   val pages: Pages = Pages(this)
   val errors: Errors = Errors(this)
   val ignore: Ignore = Ignore(this)
