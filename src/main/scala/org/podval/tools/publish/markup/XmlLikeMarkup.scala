@@ -1,17 +1,19 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.processor.SingleProcessor
 import org.podval.xml.XmlDialect
+
+object XmlLikeMarkup:
+  val extension: String = "xml"
 
 // Markup that parses into XML.
 // Sections are nested.
 abstract class XmlLikeMarkup(
+  name: String,
   xmlDialect: XmlDialect,
-  processors: Seq[SingleProcessor]
-) extends Markup(
-  xmlDialect,
-  processors
+  additionalExtensions: Set[String] = Set.empty
+) extends MarkupKind(
+  name = name,
+  xmlDialect = xmlDialect,
+  extension = XmlLikeMarkup.extension,
+  additionalExtensions = additionalExtensions
 ) with XmlParsableMarkup
-
-object XmlLikeMarkup:
-  val extension: String = "xml"

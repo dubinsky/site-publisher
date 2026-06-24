@@ -8,8 +8,3 @@ enum EntityKind(
   case Person       extends EntityKind("person",  "persName", "listPerson")
   case Place        extends EntityKind("place" , "placeName", "listPlace" )
   case Organization extends EntityKind("org"   ,   "orgName", "listOrg"   )
-
-object EntityKind:
-  val elements: Set[String] = values.map(_.element).toSet
-  val names: Set[String] = values.map(_.nameElement).toSet
-  

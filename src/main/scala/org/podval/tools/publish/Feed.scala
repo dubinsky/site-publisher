@@ -2,14 +2,23 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.xml.{Html, Xml, XmlAttribute}
+import zio.blocks.html.*
 
 object Feed:
   val path: Path = Path("feed").withExtension("xml")
   
-final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
-  override protected def iconDefault: Icon = Icon.rss
+  def icon: Icon = Icon.rss
 
+  def feedFooter: Html.Element = a(
+    href := Feed.path.toString,
+    icon.html,
+    span(className := "rss-feed", "RSS feed")
+  )
+  
+final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
+  override protected def iconDefault: Icon = Feed.icon
+  
   override def xmlContent: Xml.Element = Xml
     .element("feed")
     .set(XmlAttribute.Xmlns, "http://www.w3.org/2005/Atom")

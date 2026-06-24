@@ -70,7 +70,7 @@ abstract class Page(
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
 
   final def tags: List[String] = frontMatter.tags
-  final def math: Boolean = site.config.math || frontMatter.math
+  final def math: Boolean = site.math || frontMatter.math
 
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
@@ -101,7 +101,7 @@ abstract class Page(
 
   protected def iconDefault: Icon
   
-  final def lang: String = content(_.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
+  final def lang: String = content(_.lang).orElse(langDefault).orElse(site.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
   

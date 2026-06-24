@@ -1,8 +1,6 @@
 package org.podval.xml
 
 object HtmlXmlDialect extends XmlDialect(
-  name = "HTML",
-  root = Seq("html"),
   stop = Set("code"),
   preformat = Set("pre"),
   stack = Set("nav", "header", "main", "div"),

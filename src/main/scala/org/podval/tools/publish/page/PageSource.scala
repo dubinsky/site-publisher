@@ -32,7 +32,7 @@ final class PageSource(
       case Some(cached) => cached
 
   private def readParseAndCache(message: String, firstReading: Boolean): PageContent =
-    val (frontMatter: FrontMatter, xml: Xml.Element) = markup.readAndParse(
+    val (frontMatter: FrontMatter, xml: Xml.Element) = markup.kind.readAndParse(
       site = page.site,
       sourcePath = sourcePath,
       standAloneFrontMatter = standAloneFrontMatter,

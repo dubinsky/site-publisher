@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
-import org.podval.tools.publish.markup.{Links, Markup}
+import org.podval.tools.publish.markup.{Links, Markup, MarkupKind}
 import org.podval.tools.publish.util.{Date, IdGenerator}
 import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
 
@@ -33,7 +33,8 @@ final class PageContent(
   def site: Site = page.site
   def sourcePath: Path = source.sourcePath
   def markup: Markup = source.markup
-  def xmlDialect: XmlDialect = markup.xmlDialect
+  def markupKind: MarkupKind = markup.kind
+  def xmlDialect: XmlDialect = markupKind.xmlDialect
 
   def error(
     kind: PageError.Kind,
@@ -46,7 +47,7 @@ final class PageContent(
     cause
   )
 
-  def entityKind: Option[EntityKind] = markup.entityKind(xml)
+  def entityKind: Option[EntityKind] = markupKind.entityKind(xml)
   
   // TODO take content into account:
   def author: Option[String] = frontMatter.author
@@ -57,7 +58,7 @@ final class PageContent(
   def lang: Option[String] = frontMatter.lang
 
   lazy val toc: Toc = Toc(
-    sections = markup.sections(this),
+    sections = markupKind.sections(this),
     ids = xmlDialect.gather(xml, _.getId),
     blocks = xmlDialect.gather(xml, element =>
       if !Links.isBlock(element)

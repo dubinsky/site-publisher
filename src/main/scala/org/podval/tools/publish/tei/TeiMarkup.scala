@@ -2,14 +2,13 @@ package org.podval.tools.publish.tei
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.link.Fragment
-import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup}
+import org.podval.tools.publish.markup.{MarkupKind, XmlLikeMarkup}
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.SingleProcessor
-import org.podval.xml.{Html, Xml, XmlDialect}
+import org.podval.xml.{Html, Xml}
 
-final class TeiMarkup(processors: Seq[SingleProcessor]) extends XmlLikeMarkup(
-  TeiXmlDialect,
-  processors
+object TeiMarkup extends XmlLikeMarkup(
+  name = "TEI",
+  xmlDialect = TeiXmlDialect
 ):
   override def entityKind(xml: Xml.Element): Option[EntityKind] =
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
@@ -19,4 +18,5 @@ final class TeiMarkup(processors: Seq[SingleProcessor]) extends XmlLikeMarkup(
   ): Seq[Fragment.Section] = Seq.empty // TODO
 
   // TODO !!!
-  override def pageHeader(content: PageContent): Html.Element = Markup.pageHeader(content)
+  override def pageHeader(content: PageContent): Html.Element =
+    MarkupKind.pageHeader(content)

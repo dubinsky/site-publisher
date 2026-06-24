@@ -9,17 +9,16 @@ import ch.qos.logback.core.status.InfoStatus
 import net.logstash.logback.encoder.LogstashEncoder
 import org.slf4j.event.Level
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object Logging:
   def configureLogBack(
-    level: Level,
+    level: String,
     useLogStash: Boolean
   ): Unit = LoggerFactory.getILoggerFactory match
     case loggerContext: LoggerContext => configureLogback(
       loggerContext,
-      level,
+      Level.valueOf(level.toUpperCase),
       useLogStash
     )
     case _ =>

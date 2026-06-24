@@ -5,7 +5,10 @@ import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
 
-final class Errors(site: Site) extends SyntheticMarkupPage(site, Path("errors").html) with NonDirectoryPage:
+final class Errors(
+  site: Site,
+  treatErrorsAsWarnings: Boolean
+) extends SyntheticMarkupPage(site, Path("errors").html) with NonDirectoryPage:
   override def titleDefault: String = "Errors"
   override protected def descriptionDefault: Option[String] = Some("Site errors by kind")
   override protected def iconDefault: Icon = Icon.errors
@@ -23,6 +26,6 @@ final class Errors(site: Site) extends SyntheticMarkupPage(site, Path("errors").
     site.log.warn(pageError.getMessage)
 
   def error(pageError: PageError): Unit =
-    if site.treatErrorsAsWarnings
+    if treatErrorsAsWarnings
     then warning(pageError)
     else throw pageError

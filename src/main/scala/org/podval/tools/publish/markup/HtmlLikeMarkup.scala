@@ -3,8 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.SingleProcessor
-import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlDialect}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
@@ -27,16 +26,18 @@ object HtmlLikeMarkup:
 // Markup that parses into HTML.
 // Sections are represented by the HTML `h` elements and are not nested.
 abstract class HtmlLikeMarkup(
-  processors: Seq[SingleProcessor],
-  nameOverride: Option[String] = None
-) extends Markup(
-  HtmlXmlDialect,
-  processors,
-  nameOverride
+  name: String,
+  extension: String,
+  additionalExtensions: Set[String] = Set.empty
+) extends MarkupKind(
+  name = name,
+  xmlDialect = HtmlXmlDialect,
+  extension = extension,
+  additionalExtensions = additionalExtensions
 ):
   import HtmlLikeMarkup.HtmlSection
 
-  final override def pageHeader(content: PageContent): Html.Element = Markup.pageHeader(content)
+  final override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.

@@ -4,11 +4,19 @@ import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
 import org.podval.tools.publish.{Path, Site}
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.xml.{Html, Xml, XmlAttribute}
 import zio.blocks.chunk.Chunk
+import zio.blocks.html.*
 
 object Sitemap:
   val path: Path = Path("sitemap").withExtension("xml")
+  
+  def sitemapLink: Html.Element = link(
+    rel := "sitemap", 
+    `type` := "application/xml", 
+    titleAttr := "Sitemap",
+    href := path.toString
+  )
 
 // TODO <?xml version='1.0' encoding='UTF-8'?>
 final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
@@ -26,7 +34,7 @@ final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
     .pages
     .filter(_.path.extension.contains(HtmlMarkup.extension))
     .map: page =>
-      val loc = Xml.element("loc").setText(s"${site.config.url}${page.path}")
+      val loc = Xml.element("loc").setText(s"${site.url}${page.path}")
       // Date format: 2009-08-07T14:30:00-04:00
       val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date =>
         Xml.element("lastmod").setText(date.toString)
