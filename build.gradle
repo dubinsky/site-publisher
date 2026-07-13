@@ -16,7 +16,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 scala.scalaVersion = '3.8.4'
 project.gradle.startParameter.excludedTaskNames.add('compileJava')
 
-String zioBlocksVersion = '0.0.46'
+String zioBlocksVersion = '0.0.47'
 String flexMarkVersion = '0.64.8'
 
 dependencies {
@@ -32,7 +32,7 @@ dependencies {
   implementation 'org.typelevel:paiges-core_3:0.4.4'
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.7.0.202606012155-r'
   implementation 'org.slf4j:slf4j-api:2.0.18'
-  implementation 'ch.qos.logback:logback-classic:1.5.37'
+  implementation 'ch.qos.logback:logback-classic:1.5.38'
   compileOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
   testImplementation 'dev.zio:zio-test-sbt_3:2.1.26'
 }

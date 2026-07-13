@@ -1,0 +1,32 @@
+# Project-scoped MCP configuration for site-publisher
+# Grok Build + IntelliJ IDEA integration ("idea" MCP server)
+#
+# Usage:
+#   Run `grok` directly from the IntelliJ terminal inside this project.
+#   Grok detects the JetBrains environment and connects the "idea" MCP server
+#   (provides build_project, execute_run_configuration, PSI search, edit tools, etc.).
+#
+#   This config is loaded for project scope (higher priority than ~/.grok/config.toml).
+#
+# See:
+#   ~/.grok/docs/user-guide/07-mcp-servers.md
+#   AGENTS.md (build with ./gradlew build / test; use Site.main for local dev runs)
+
+[mcp_servers.idea]
+enabled = true
+# The IntelliJ MCP server. Auto-registered from the IDE when grok runs in its terminal.
+# Declaring it here ensures it is enabled for this project and allows per-tool settings.
+
+# Longer timeouts for Scala/Gradle work (values in seconds).
+[mcp_servers.idea.tool_timeouts]
+build_project = 600             # full rebuild + tests via IDE builder
+execute_terminal_command = 300
+execute_run_configuration = 300
+
+# Optional: explicitly allow MCP tools from the IntelliJ integration at project level.
+# [permission]
+# allow = [
+#   "MCPTool(idea__*)",
+#   "Bash(./gradlew *)",
+# ]
+
