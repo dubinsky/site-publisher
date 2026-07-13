@@ -11,6 +11,12 @@ import java.io.File
 final class Pages(site: Site):
   import Pages.{ForName, ForMarkup}
 
+  // TODO from Grok:
+  //- Description: Page lookup is linear (`pages.find`) and `find(..., kind)` ignores `kind` entirely.
+  // Link resolution, directory child listing patterns, duplicate detection, tags, and posts all scan full lists. 
+  // For large vaults this is quadratic overall (each page × each link × all pages).
+  //- Suggestion: Build indexes after scan: by exact path, by file name / title / titleFromPath, optionally by `LinkKind`.
+  // Use them in `get`, `find`, Tags, Posts, DirectoryPage children.
   private var pagesVar: List[Page] = List.empty
 
   def pages: List[Page] = pagesVar
@@ -187,6 +193,9 @@ final class Pages(site: Site):
         )
         val markup: Option[Markup] = site.markups.forElement(xml.getName)
         // TODO error if unknown XML dialect
+        // TODO from Grok:
+        //- Description: Unknown XML root element uses `markup.get`, throwing `NoSuchElementException` instead of a `PageError`. A stray or unsupported `.xml` file aborts the whole build with an opaque stack trace rather than a path-scoped diagnostic.
+        //- Suggestion: On `None`, report `PageError.FileKind` (or similar) and skip/add a malformed placeholder page, consistent with `MarkupKind.readAndParse` parse failures.
         (markup.get, Some((frontMatter, xml)))
 
     val (page: Page, addIt: Boolean) = get(path.html) match

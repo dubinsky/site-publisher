@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 final class PageError(
   sourcePath: Path,
-  kind: PageError.Kind,
+  val kind: PageError.Kind,
   message: String,
   cause: Option[Throwable]
 ) extends Throwable(
@@ -23,3 +23,16 @@ object PageError:
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
 
+  val all: List[Kind] = List(
+    MalformedFrontMatter, 
+    MalformedXml, 
+    FileName,
+    FileKind, 
+    Duplicate,
+    NoId,
+    NoDate,
+    SelfLink, 
+    Unresolved
+  )
+  
+  

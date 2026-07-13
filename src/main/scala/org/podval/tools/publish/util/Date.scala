@@ -12,7 +12,7 @@ sealed trait Date:
 object Date:
   given Ordering[Date] = Ordering.by(_.localDate)
 
-  private val shortFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("LLL d, YYYY")
+  private val shortFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("LLL d, yyyy")
 
   final class Local(val value: LocalDate) extends Date:
     override def localDate: LocalDate = value

@@ -16,7 +16,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 scala.scalaVersion = '3.8.4'
 project.gradle.startParameter.excludedTaskNames.add('compileJava')
 
-String zioBlocksVersion = '0.0.45'
+String zioBlocksVersion = '0.0.46'
 String flexMarkVersion = '0.64.8'
 
 dependencies {

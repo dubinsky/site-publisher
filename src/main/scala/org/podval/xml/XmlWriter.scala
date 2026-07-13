@@ -218,7 +218,14 @@ object XmlWriter:
 
   private def preformat(string: String): Seq[String] =
     Strings.encodeXmlSpecials(string).split("\n").toSeq
-  
+
+  // TODO from Grok:
+  //- Description: For HTML dialect, `encodeXmlSpecials` is disabled (`HtmlXmlDialect` default).
+  // Titles, tags, authors, and other front-matter strings rendered via the HTML DSL are written without escaping text nodes.
+  // Attribute quoting (`Strings.quote`) also does not escape `"`, so a title containing `"` can break attributes.
+  // For untrusted or multi-author content this is XSS/HTML injection risk; even for trusted content it can corrupt markup.
+  //- Suggestion: Escape text and attributes on render (use full `Strings.escape` for attributes).
+  // Prefer encoding on output always; only skip for preformatted trusted raw HTML islands if needed.
   private def encodeXmlSpecials(using dialect: XmlDialect)(string: String): String =
     if dialect.encodeXmlSpecials then Strings.encodeXmlSpecials(string) else string
 

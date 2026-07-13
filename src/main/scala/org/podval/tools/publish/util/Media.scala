@@ -1,10 +1,10 @@
 package org.podval.tools.publish.util
 
 object Media:
-  private val imageExtensions: Set[String] = Set("jpg")
+  private val imageExtensions: Set[String] = Set("jpg", "jpeg", "png", "gif", "webp", "svg")
   def isImage(extension: String): Boolean = imageExtensions.contains(extension)
 
-  private val audioExtensions: Set[String] = Set("ogg")
+  private val audioExtensions: Set[String] = Set("ogg", "mp3", "wav", "m4a")
   def isAudio(extension: String): Boolean = audioExtensions.contains(extension)
 
   def icon(extension: Option[String]): Option[Icon] = extension.flatMap(icons.get)

@@ -29,14 +29,20 @@ final case class FrontMatter(
 //  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
 ):
   private var extraKeys: Chunk[(Yaml, Yaml)] = Chunk.empty
+  
+  private def setExtraKeys(extraKeys: Chunk[(Yaml, Yaml)]): Unit =
+    this.extraKeys = extraKeys
+    modifiedTimeVar = findExtraKey("modified_time").map(Date.codec.decodeValue)
+
   private def findExtraKey(name: String): Option[Yaml] = extraKeys
     .find((key, _) => key match
       case Yaml.Scalar(key, _) => key == name
       case _ => false
     )
     .map(_._2)
-
-  def modifiedTime: Option[Date] = findExtraKey("modified_time").map(Date.codec.decodeValue)
+  
+  private var modifiedTimeVar: Option[Date] = None
+  def modifiedTime: Option[Date] = modifiedTimeVar
 
   private var absent: Boolean = false
 
@@ -86,13 +92,13 @@ object FrontMatter:
     try
       val yaml: Yaml = YamlReader.read(input)
       val result: FrontMatter = codec.decodeValue(yaml)
-      result.extraKeys = yaml
+      result.setExtraKeys(extraKeys = yaml
         .asInstanceOf[Yaml.Mapping]
         .entries
         .filter(_._1 match
           case Yaml.Scalar(key, _) => !fieldNames.contains(key)
           case _ => true
-        )
+        ))
       Right(result)
     catch
       case error: Throwable if NonFatal(error) => new Left(SchemaError(error.getMessage))

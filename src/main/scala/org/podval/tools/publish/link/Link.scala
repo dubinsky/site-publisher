@@ -39,7 +39,7 @@ object Link:
   // path could be `name`, `path/name`(?) - or empty, for intrapage links.
   // fragment could be `#section`, `#section#subsection`, `#^block`, or #id.
   def resolve(ref: String, kind: Option[LinkKind], from: Page): Option[Link] =
-    val (pathStringRaw: String, fragment: Option[String]) = Strings.split(ref, '#')
+    val (pathStringRaw: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
     val pathString: String = pathStringRaw.trim
     // TODO unify with Path.relativize()
     val isAbsolute: Boolean = pathString.startsWith("/")

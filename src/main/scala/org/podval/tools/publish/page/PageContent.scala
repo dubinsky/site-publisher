@@ -26,7 +26,7 @@ final class PageContent(
 
   // Run transformers
   xmlVar = markup.transformers.foldLeft(xml)((result, transformer) =>
-    transformer.transform(xml, this)
+    transformer.transform(result, this)
   )
 
   def page: MarkupPage = source.page

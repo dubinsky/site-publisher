@@ -9,6 +9,7 @@ import org.podval.xml.Html
 import zio.blocks.html.*
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.File
+import java.net.URI
 
 final class Site(options: Options) extends JSLibrary:
   // Site itself is a JavaScript library too
@@ -40,7 +41,7 @@ final class Site(options: Options) extends JSLibrary:
     case Left(error) => throw IllegalArgumentException("Malformed Config", error)
     case Right(result) => result
 
-  def url: String = config.url
+  def uri: URI = URI(config.url)
   def lang: Option[String] = config.lang
   def math: Boolean = config.math
   
@@ -95,6 +96,9 @@ final class Site(options: Options) extends JSLibrary:
 
     // TODO sort pages topologically based on transclusions
 
+  // TODO from Grok:
+  //- Description: `generate()` deletes the entire target directory, then writes page-by-page. A crash mid-write leaves a partial site; concurrent readers (local server, CI publish) can observe a wiped tree. No temp-dir + atomic rename.
+  //- Suggestion: Write to a staging directory (or `_site.tmp`) and atomically replace `_site`. Optionally preserve mtimes for unchanged assets to speed deploys.
   def generate(): Unit =
     load()
 

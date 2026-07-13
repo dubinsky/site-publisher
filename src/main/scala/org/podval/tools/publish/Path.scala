@@ -41,6 +41,12 @@ final case class Path(
 
   def relativize(alias: String): Path =
     // TODO handle '.' and '..'
+    // TODO from Grok:
+    //- Description: `relativize` does not normalize `.` / `..` (TODO at line 43).
+    // Alias / permalink values such as `../../other` can escape the intended URL tree
+    // and write outside the logical site layout (path traversal via content metadata).
+    //- Suggestion: Normalize segments (drop `.`, resolve `..` with bounds check);
+    // reject aliases that escape site root; never allow `..` to leave `targetDirectory` when resolving write paths.
     val segments: Seq[String] = alias.split("/").toSeq.filterNot(_.isEmpty)
     val pathSegments =
       if alias.startsWith("/") then segments

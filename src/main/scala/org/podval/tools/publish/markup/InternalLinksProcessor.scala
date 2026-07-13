@@ -25,7 +25,7 @@ private object InternalLinksProcessor:
           val isInternal: Boolean =
             try
               val uri: URI = URI(href)
-              if uri.getScheme != null && uri.getHost == content.site.url
+              if uri.getScheme != null && uri.getHost == content.site.uri.getHost
               then content.error(PageError.SelfLink, href)
               uri.getScheme == null
             catch case e: URISyntaxException => true
