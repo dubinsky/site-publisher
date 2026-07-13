@@ -57,6 +57,8 @@ final class Pages(site: Site):
         PageError.Duplicate,
         s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
       ))
+    
+    site.errors.throwIfErrors()
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)

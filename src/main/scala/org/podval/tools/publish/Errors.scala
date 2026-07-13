@@ -23,19 +23,22 @@ final class Errors(
     then site.log.warn(pageError.getMessage)
     else site.log.error(pageError.getMessage)
 
+  def throwIfErrors(): Unit =
+    if !treatErrorsAsWarnings && errorsVar.nonEmpty then
+      throw new IllegalStateException("There were errors")
+    
   override protected def syntheticContent: Html.Element =
-    if !treatErrorsAsWarnings && errorsVar.nonEmpty then throw new IllegalStateException("There were page errors") else
-      val byKind: Map[PageError.Kind, List[PageError]] = errorsVar.groupBy(_.kind)
-      val kinds: List[PageError.Kind] = byKind.keys.toList.intersect(PageError.all)
-      div(
-        className := "site-errors",
-        id := "site-errors",
-        kinds.map(kind =>
-          div(
-            className := "kind",
-            h2(kind.toString),
-            ul(byKind(kind).map(error => li(error.getMessage)))
-          )
+    val byKind: Map[PageError.Kind, List[PageError]] = errorsVar.groupBy(_.kind)
+    val kinds: List[PageError.Kind] = PageError.all.intersect(byKind.keys.toList)
+    div(
+      className := "site-errors",
+      id := "site-errors",
+      kinds.map(kind =>
+        div(
+          className := "kind",
+          h2(kind.toString),
+          ul(byKind(kind).map(error => li(error.getMessage)))
         )
       )
-      
+    )
+    

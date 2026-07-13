@@ -41,7 +41,11 @@ final class Site(options: Options) extends JSLibrary:
     case Left(error) => throw IllegalArgumentException("Malformed Config", error)
     case Right(result) => result
 
-  def uri: URI = URI(config.url)
+  val uri: URI = URI(config.url)
+
+  def isSelf(uri: URI): Boolean =
+    uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
+
   def lang: Option[String] = config.lang
   def math: Boolean = config.math
   
