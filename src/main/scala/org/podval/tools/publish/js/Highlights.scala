@@ -5,7 +5,7 @@ import zio.blocks.html.{Js, js}
 final class Highlights(languages: Set[String]) extends JSLibrary:
   val version = "11.11.1"
 
-  override def cdn: String = s"${JSLibrary.jsDelivr}/highlights@$version/lib"
+  override def cdn: String = s"${JSLibrary.jsDelivr}highlights@$version/lib"
 
   override val stylesheet: Some[String] = Some("/styles/default.min.css")
 
