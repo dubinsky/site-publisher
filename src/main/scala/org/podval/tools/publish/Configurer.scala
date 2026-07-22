@@ -1,6 +1,7 @@
 package org.podval.tools.publish
 
 import org.podval.tei.EntityKind
+import org.podval.tools.publish.asciidoc.{AsciiDocFootnotesConverter, AsciiDocMarkup}
 import org.podval.tools.publish.markdown.{BlocksConverter, FlexMarkFootnotesConverter, KramdownTocHtmlConverter,
   MarkdownFootnotesConverter, MarkdownMarkup, WikiLinksProcessor}
 import org.podval.tools.publish.markup.{AnchorIdsConverter, FootnotesTransformer, HtmlMarkup, HtmlSectionIdsConverter,
@@ -30,6 +31,10 @@ abstract class Configurer:
     new KramdownTocHtmlConverter
   )
 
+  protected def asciiDocProcessors: Seq[Processor] = Seq(
+    new AsciiDocFootnotesConverter  
+  )
+  
   protected def teiProcessors: Seq[Processor] = Seq(
     new Tei2HtmlConverter,
     new TeiEntityNamesConverter,
@@ -54,6 +59,11 @@ object Configurer:
         processors = commonProcessors ++ htmlLikeProcessors ++ markdownProcessors
       )
 
+      result.add(
+        markupKind = AsciiDocMarkup,
+        processors = commonProcessors ++ htmlLikeProcessors ++ asciiDocProcessors
+      )
+      
       result.add(
         markupKind = HtmlMarkup,
         processors = commonProcessors ++ htmlLikeProcessors

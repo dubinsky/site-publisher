@@ -14,6 +14,8 @@ abstract class XmlLikeMarkup(
 ) extends MarkupKind(
   name = name,
   xmlDialect = xmlDialect,
+  allowsInternalFrontMatter = false,
+  rendersToXml = true,
   extension = XmlLikeMarkup.extension,
   additionalExtensions = additionalExtensions
 ) with XmlParsableMarkup

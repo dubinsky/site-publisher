@@ -13,7 +13,8 @@ final class Config(
   val lang: Option[String] = None,
   val math: Boolean = false,
   val googleAnalytics: Option[String] = None,
-  val social: Config.Social = Config.Social()
+  val social: Config.Social = Config.Social(),
+  val asciidoctorExtensions: Seq[String] = Seq.empty
 )
 
 object Config:

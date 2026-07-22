@@ -7,19 +7,24 @@ import org.podval.tools.publish.util.{Date, Files}
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}
 import zio.blocks.html.*
-import java.io.File
 
 abstract class MarkupKind(
   final val name: String,
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
   // and xmlDialect for pretty-printing.
   final val xmlDialect: XmlDialect,
+  allowsInternalFrontMatter: Boolean,
   final val extension: String,
-  additionalExtensions: Set[String] = Set.empty
+  additionalExtensions: Set[String] = Set.empty,
+  rendersToXml: Boolean
 ) derives CanEqual:
   final override def toString: String = name
   
-  def xmlContent(content: String): String
+  def xmlContent(
+    site: Site,
+    sourcePath: Path,
+    content: String
+  ): String
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
@@ -28,9 +33,6 @@ abstract class MarkupKind(
   def sections(content: PageContent): Seq[Fragment.Section]
 
   final val extensions: Set[String] = additionalExtensions + extension
-
-  final def parse(content: String): Either[Throwable, Xml.Element] =
-    XmlParser.parse(xmlContent(content))
 
   final def readAndParse(
     site: Site,
@@ -42,11 +44,14 @@ abstract class MarkupKind(
     site.log.debug(s"$message: $sourcePath")
 
     val frontMatterContentStandAlone: Option[String] = standAloneFrontMatter
-      .map(_.file(site.sourceDirectory))
+      .map(site.sourceFile)
       .map(Files.read)
 
     val (frontMatterContentInternal: Option[String], content: String) =
-      FrontMatter.split(Files.read(sourcePath.file(site.sourceDirectory)))
+      val content: String = Files.read(site.sourceFile(sourcePath))
+      if allowsInternalFrontMatter
+      then FrontMatter.split(content)
+      else (None, content)
 
     // TODO error if both are present
     val frontMatterContent: Option[String] = frontMatterContentInternal.orElse(frontMatterContentStandAlone)
@@ -66,7 +71,13 @@ abstract class MarkupKind(
 
         FrontMatter.empty
 
-    val xml: Xml.Element = parse(content) match
+    val xmlString: String = xmlContent(
+      site,
+      sourcePath,
+      content
+    )
+
+    val xml: Xml.Element = (if rendersToXml then XmlParser.parseXml(xmlString) else XmlParser.parseHtml(xmlString)) match
       case Right(xml) =>
         xml
       case Left(error) =>
@@ -81,7 +92,7 @@ abstract class MarkupKind(
         Xml
           .element(name)
           .addClass(s"malformed-$name")
-          .setText(s"Malformed $name: $error")
+          .setText(s"malformed $name: $error\n${org.podval.xml.Strings.escape(xmlString)}")
 
     (frontMatter, xml)
 

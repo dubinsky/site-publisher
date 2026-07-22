@@ -58,6 +58,6 @@ given Xml: XmlAst[XML.Element]:
     //    println(Markdown.parseAndRender(string))
     val xmlString = org.podval.tools.publish.markdown.FlexMark.parseAndRenderMarkdown(string)
     //    println(XmlParser.parse(string).toOption.get)
-    XmlParser.parse(xmlString) match
+    XmlParser.parseXml(xmlString) match
       case Left(error) => println(error)
       case Right(xml) => println(HtmlXmlDialect.render(xml))

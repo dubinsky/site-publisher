@@ -1,5 +1,6 @@
 /* Inspired by Jekyll's Minima theme. */
-
+/* TODO merge ideas from the AsciiDoctor stylesheet! */
+/* TODO add TEI/AsciiDoc stylesheets only when relevant. */
 @import "skin.css";
 @import "initialize.css";
 /*@import "custom-variables"; // Hook to override predefined variables.*/

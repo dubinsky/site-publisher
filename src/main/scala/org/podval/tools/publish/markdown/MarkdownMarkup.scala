@@ -1,11 +1,18 @@
 package org.podval.tools.publish.markdown
 
+import org.podval.tools.publish.{Path, Site}
 import org.podval.tools.publish.markup.HtmlLikeMarkup
 
 object MarkdownMarkup extends HtmlLikeMarkup(
   name = "Markdown",
-  extension = "md"
+  allowsInternalFrontMatter = true,
+  extension = "md",
+  rendersToXml = true
 ):
-  // Wrap Markdown rendered as HTML in a 'div'.
-  override def xmlContent(content: String): String =
+  override def xmlContent(
+    site: Site,
+    sourcePath: Path,
+    content: String
+  ): String =
+    // Wrap Markdown rendered as HTML in a 'div'.
     s"<div>${FlexMark.parseAndRenderMarkdown(content)}</div>"

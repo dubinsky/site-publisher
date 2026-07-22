@@ -2,5 +2,7 @@ package org.podval.tools.publish.markup
 
 object HtmlMarkup extends HtmlLikeMarkup(
   name = "HTML",
-  extension = "html"
+  allowsInternalFrontMatter = true,
+  extension = "html",
+  rendersToXml = false
 ) with XmlParsableMarkup

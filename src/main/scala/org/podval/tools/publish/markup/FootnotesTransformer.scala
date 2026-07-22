@@ -33,7 +33,9 @@ final class FootnotesTransformer extends Transformer(transformsFootnotes = true)
         .filterNot(_.asElement.fold(false)(child =>
           Footnotes.isBody(child) ||
             // FlexMark FootnotesExtension footnotes 'div'
-            child.getName == "div" && child.hasClass("footnotes")
+            (child.getName == "div" && child.hasClass("footnotes")) ||
+            // Asciidoctor footnotes 'div:
+            (child.getName == "div" && child.getId.contains("footnotes"))
         ))
       )
     )

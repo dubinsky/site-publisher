@@ -27,13 +27,17 @@ object HtmlLikeMarkup:
 // Sections are represented by the HTML `h` elements and are not nested.
 abstract class HtmlLikeMarkup(
   name: String,
+  allowsInternalFrontMatter: Boolean,
   extension: String,
-  additionalExtensions: Set[String] = Set.empty
+  additionalExtensions: Set[String] = Set.empty,
+  rendersToXml: Boolean
 ) extends MarkupKind(
   name = name,
   xmlDialect = HtmlXmlDialect,
+  allowsInternalFrontMatter = allowsInternalFrontMatter,
   extension = extension,
-  additionalExtensions = additionalExtensions
+  additionalExtensions = additionalExtensions,
+  rendersToXml = rendersToXml
 ):
   import HtmlLikeMarkup.HtmlSection
 

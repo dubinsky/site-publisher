@@ -1,12 +1,17 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.xml.{HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import zio.Scope
 import zio.test.*
 
 object MarkdownSpec extends ZIOSpecDefault:
   def parse(input: String, verify: Xml.Element => TestResult): TestResult =
-    val parsed: Xml.Element = MarkdownMarkup.parse(input).toOption.get
+    val xmlString: String = MarkdownMarkup.xmlContent(
+      null,
+      null,
+      input
+    )
+    val parsed: Xml.Element = XmlParser.parseXml(xmlString).toOption.get
     verify(parsed)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("Markdown")(
