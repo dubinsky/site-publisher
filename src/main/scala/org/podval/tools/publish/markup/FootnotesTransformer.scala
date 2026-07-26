@@ -1,5 +1,7 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.asciidoc.AsciiDocMarkup
+import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.markup.Footnotes
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Transformer
@@ -7,7 +9,10 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
-final class FootnotesTransformer extends Transformer(transformsFootnotes = true):
+final class FootnotesTransformer(
+  processMarkdown: Boolean,
+  processAsciidoc: Boolean
+) extends Transformer(transformsFootnotes = true):
   override def transform(
     element: Xml.Element,
     content: PageContent
@@ -16,7 +21,7 @@ final class FootnotesTransformer extends Transformer(transformsFootnotes = true)
 
     // Retrieve footnote bodies
     val footnoteBodies: Map[String, Chunk[Xml.Node]] = content.xmlDialect.gather(xml, element =>
-      if !Footnotes.isBody(element)
+      if !element.has(Footnotes.BodyClass)
       then None
       else Footnotes.getCorrelationId(element).map(_ -> element.getChildren)
     ).toMap
@@ -31,11 +36,9 @@ final class FootnotesTransformer extends Transformer(transformsFootnotes = true)
       element.setChildren(element
         .getChildren
         .filterNot(_.asElement.fold(false)(child =>
-          Footnotes.isBody(child) ||
-            // FlexMark FootnotesExtension footnotes 'div'
-            (child.getName == "div" && child.hasClass("footnotes")) ||
-            // Asciidoctor footnotes 'div:
-            (child.getName == "div" && child.getId.contains("footnotes"))
+          child.has(Footnotes.BodyClass) ||
+          processMarkdown && MarkdownMarkup.isFootnotesDiv(element) || 
+          processAsciidoc && AsciiDocMarkup.isFootnotesDiv(element)
         ))
       )
     )

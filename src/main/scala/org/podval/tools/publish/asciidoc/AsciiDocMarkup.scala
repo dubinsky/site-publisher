@@ -3,6 +3,8 @@ package org.podval.tools.publish.asciidoc
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.{Path, Site}
 import org.podval.tools.publish.markup.HtmlLikeMarkup
+import org.podval.tools.publish.processor.Processor
+import org.podval.xml.Xml
 
 object AsciiDocMarkup extends HtmlLikeMarkup(
   name = "AsciiDoc",
@@ -57,3 +59,12 @@ object AsciiDocMarkup extends HtmlLikeMarkup(
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"
+
+  def processors: Seq[Processor] = Seq(
+    new AsciiDocFootnoteLinksConverter,
+    new AsciiDocFootnoteBodiesConverter
+  )
+
+  def isFootnotesDiv(element: Xml.Element): Boolean =
+    element.getName == "div" && element.getId.contains("footnotes")
+  

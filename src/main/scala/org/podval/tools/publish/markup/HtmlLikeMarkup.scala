@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
@@ -21,6 +22,10 @@ object HtmlLikeMarkup:
     val level: Int,
     val title: String,
     val id: String
+  )
+
+  def processors: Seq[Processor] = Seq(
+    new HtmlSectionIdsConverter
   )
 
 // Markup that parses into HTML.

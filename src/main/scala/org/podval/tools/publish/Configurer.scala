@@ -1,47 +1,13 @@
 package org.podval.tools.publish
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.asciidoc.{AsciiDocFootnotesConverter, AsciiDocMarkup}
-import org.podval.tools.publish.markdown.{BlocksConverter, FlexMarkFootnotesConverter, KramdownTocHtmlConverter,
-  MarkdownFootnotesConverter, MarkdownMarkup, WikiLinksProcessor}
-import org.podval.tools.publish.markup.{AnchorIdsConverter, FootnotesTransformer, HtmlMarkup, HtmlSectionIdsConverter,
-  InternalLinksProcessor, Markups}
-import org.podval.tools.publish.processor.Processor
-import org.podval.tools.publish.tei.{Tei2HtmlConverter, TeiEntityNamesConverter, TeiFacsimileLinksConverter,
-  TeiFootnotesConverter, TeiMarkup, TeiSectionIdsConverter}
+import org.podval.tools.publish.asciidoc.AsciiDocMarkup
+import org.podval.tools.publish.markdown.MarkdownMarkup
+import org.podval.tools.publish.markup.{HtmlLikeMarkup, HtmlMarkup, MarkupKind, Markups}
+import org.podval.tools.publish.tei.TeiMarkup
 
 abstract class Configurer:
   def markups: Markups
-
-  protected def commonProcessors: Seq[Processor] = Seq(
-    new AnchorIdsConverter,
-    new InternalLinksProcessor,
-    new FootnotesTransformer
-  )
-
-  protected def htmlLikeProcessors: Seq[Processor] = Seq(
-    new HtmlSectionIdsConverter
-  )
-
-  protected def markdownProcessors: Seq[Processor] = Seq(
-    new BlocksConverter,
-    new WikiLinksProcessor,
-    new MarkdownFootnotesConverter,
-    new FlexMarkFootnotesConverter,
-    new KramdownTocHtmlConverter
-  )
-
-  protected def asciiDocProcessors: Seq[Processor] = Seq(
-    new AsciiDocFootnotesConverter  
-  )
-  
-  protected def teiProcessors: Seq[Processor] = Seq(
-    new Tei2HtmlConverter,
-    new TeiEntityNamesConverter,
-    new TeiFacsimileLinksConverter,
-    new TeiFootnotesConverter,
-    new TeiSectionIdsConverter
-  )
 
 object Configurer:
   def get(name: String): Configurer = Class
@@ -56,22 +22,22 @@ object Configurer:
 
       result.add(
         markupKind = MarkdownMarkup,
-        processors = commonProcessors ++ htmlLikeProcessors ++ markdownProcessors
+        processors = MarkupKind.processors(processMarkdown = true, processAsciidoc = false) ++ HtmlLikeMarkup.processors ++ MarkdownMarkup.processors
       )
 
       result.add(
         markupKind = AsciiDocMarkup,
-        processors = commonProcessors ++ htmlLikeProcessors ++ asciiDocProcessors
+        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = true) ++ HtmlLikeMarkup.processors ++ AsciiDocMarkup.processors
       )
       
       result.add(
         markupKind = HtmlMarkup,
-        processors = commonProcessors ++ htmlLikeProcessors
+        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = false) ++ HtmlLikeMarkup.processors
       )
 
       result.add(
         markupKind = TeiMarkup,
-        processors = commonProcessors ++ teiProcessors,
+        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = false) ++ TeiMarkup.processors,
         elements = Set("TEI", "store", "collection") ++ EntityKind.values.map(_.element).toSet,
       )
 

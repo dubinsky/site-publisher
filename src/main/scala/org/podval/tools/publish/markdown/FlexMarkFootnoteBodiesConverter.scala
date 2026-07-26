@@ -8,25 +8,10 @@ import org.podval.xml.Xml
 // and by the time we get to `convertFootnotes()` footnotes are gone,
 // so to process footnotes in Markdown markup correctly, I have to enable FootnotesExtension.
 // Here I post-process its output to the form Markup understands.
-// TODO split into two!
-final class FlexMarkFootnotesConverter extends ConverterSimple:
+final class FlexMarkFootnoteBodiesConverter extends ConverterSimple:
   override protected def convert(element: Xml.Element): Xml.Element =
-    link(element).orElse(body(element)).getOrElse(element)
-
-  // FootnotesExtension footnote link:
-  //   <sup id="fnref-$correlationId">
-  //     <a class="${Footnotes.LinkClass.name}" href="#fn-$correlationId">
-  //       $correlationId
-  //     </a>
-  //   </sup>
-  private def link(element: Xml.Element): Option[Xml.Element] =
-    if element.getName != "sup" then None else element
-      .getChildren
-      .flatMap(_.asElement)
-      .find(Footnotes.isLink)
-      .map(_.getText)
-      .map(Footnotes.linkStub)
-
+    body(element).getOrElse(element)
+  
   // FootnotesExtension footnote body:
   //   <li id="fn-$correlationId">
   //     ...
@@ -43,7 +28,7 @@ final class FlexMarkFootnotesConverter extends ConverterSimple:
       val body: Option[Xml.Nodes] = Xml
         .getChildren(element)
         .flatMap(_.asElement)
-        .find(Footnotes.isBody)
+        .find(_.has(Footnotes.BodyClass))
         .map(backLink => element.getChildren.takeWhile(_ ne backLink))
 
       for

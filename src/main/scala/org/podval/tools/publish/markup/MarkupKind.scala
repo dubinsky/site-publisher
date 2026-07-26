@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageContent}
+import org.podval.tools.publish.processor.Processor
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}
@@ -147,3 +148,17 @@ object MarkupKind:
     date.fold(Seq.empty): date =>
       label.fold(Seq.empty)(label => Seq(span(className := "meta-label", label))) ++
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
+
+  def processors(
+    processMarkdown: Boolean,
+    processAsciidoc: Boolean
+  ): Seq[Processor] = Seq(
+    new AnchorIdsConverter,
+    new InternalLinksConverter,
+    new InternalLinksPostConverter,
+    new FootnotesTransformer(
+      processMarkdown = processMarkdown,
+      processAsciidoc = processAsciidoc
+    )
+  )
+  

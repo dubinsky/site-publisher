@@ -20,10 +20,6 @@ object Footnotes:
   private def footnoteId(footnoteNumber: String): String = s"_footnote_src_$footnoteNumber"
   private def footnoteBodyId(footnoteNumber: String): String = s"_footnote_$footnoteNumber"
 
-  def isLink(element: Xml.Element): Boolean = element.has(LinkClass)
-  
-  def isBody(element: Xml.Element): Boolean = element.has(BodyClass)
-  
   def linkAndBodyStub(element: Xml.Element, correlationId: String): Xml.Element = element
     .set(CorrelationId, correlationId)
     .add(Footnotes.LinkClass)

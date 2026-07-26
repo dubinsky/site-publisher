@@ -7,33 +7,16 @@ import org.podval.xml.Xml
 // There is no way to take over Asciidoctor's footnote processing
 // nor even configure the class names it emits (unlike for FlexMark).
 // Here I post-process its output to the form Markup understands.
-// TODO split into two!
-final class AsciiDocFootnotesConverter extends ConverterSimple:
+final class AsciiDocFootnoteBodiesConverter extends ConverterSimple:
   override protected def convert(element: Xml.Element): Xml.Element =
-    link(element).orElse(body(element)).getOrElse(element)
-
-  // Asciidoctor footnote link:
-  // <sup class="footnote">
-  //   [
-  //     <a id="_footnoteref_$correlationId" class="footnote" href="#_footnotedef_$correlationId">
-  //       $correlationId
-  //     </a>
-  //   ]
-  // </sup>
-  private def link(element: Xml.Element): Option[Xml.Element] =
-    if element.getName != "sup" then None else element
-      .getChildren
-      .flatMap(_.asElement)
-      .find(Footnotes.isBody)
-      .map(_.getText)
-      .map(Footnotes.linkStub)
+    body(element).getOrElse(element)
 
   // Asciidoctor footnote body:
   //   <div class="footnote" id="_footnotedef_N">
   //     <a href="#_footnoteref_N">N</a>. Footnote Body
   //   </div>
   private def body(element: Xml.Element): Option[Xml.Element] =
-    if element.getName != "div" || !Footnotes.isBody(element) then None else
+    if element.getName != "div" || !element.has(Footnotes.BodyClass) then None else
       val correlationId: Option[String] = element
         .getChildren
         .flatMap(_.asElement)
