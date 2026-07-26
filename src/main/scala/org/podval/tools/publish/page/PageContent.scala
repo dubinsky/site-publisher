@@ -4,8 +4,8 @@ import org.podval.tei.EntityKind
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
 import org.podval.tools.publish.markup.{Links, Markup, MarkupKind}
-import org.podval.tools.publish.util.{Date, IdGenerator}
-import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
+import org.podval.tools.publish.util.Date
+import org.podval.xml.{Html, Xml, XmlDialect}
 
 final class PageContent(
   val source: PageSource,
@@ -14,22 +14,10 @@ final class PageContent(
 ):
   def xml: Xml.Element = xmlVar
 
-  // Run converters
-  private val ids: IdGenerator = IdGenerator("_generated_id")
-  private val footnoteCorrelationIds: IdGenerator = IdGenerator("")
-
-  xmlVar = xmlDialect.transform(xml, element =>
-    markup.converters.foldLeft(element)((result, converter) =>
-      converter.convertWithIds(result, this, ids, footnoteCorrelationIds)
-    )
-  )
-
-  // Run transformers
-  xmlVar = markup.transformers.foldLeft(xml)((result, transformer) =>
-    transformer.transform(result, this)
-  )
-
-  def page: MarkupPage = source.page
+  // Process XML
+  xmlVar = markup.processors.process(this)
+  
+  def page: OriginalMarkupPage = source.page
   def site: Site = page.site
   def sourcePath: Path = source.sourcePath
   def markup: Markup = source.markup
@@ -78,20 +66,4 @@ final class PageContent(
       gatherElement = BackLink(_, _, page, toc)
     )
 
-  def toHtml: Html.Element =
-    // Post-process XML
-    val xmlResult: Xml.Element = xmlDialect.transform(xml, element =>
-      markup.postConverters.foldLeft(element)((result, postConverter) =>
-        postConverter.postConvert(result, this)
-      )
-    )
-
-    // Convert to HTML
-    val htmlResult: Html.Element = Xml2Html.fromXml(xmlResult)
-
-    // Post-process HTML
-    xmlDialect.transform(htmlResult, element =>
-      markup.htmlConverters.foldLeft(element)((result, htmlConverter) =>
-        htmlConverter.convertHtml(result, this)
-      )
-    )
+  def toHtml: Html.Element = markup.processors.toHtml(this)

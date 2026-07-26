@@ -1,9 +1,9 @@
 package org.podval.tools.publish
 
 import org.podval.tools.publish.link.LinkKind
-import org.podval.tools.publish.markup.{Markup, XmlLikeMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, MarkupPage, Page,
-  PageSource, SimpleMarkupPage}
+import org.podval.tools.publish.markup.{Markup, XmlMarkup}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
+  OriginalMarkupPage, Page, PageSource, SimpleMarkupPage, TocPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -66,6 +66,17 @@ final class Pages(site: Site):
     page.parent
     // Add alias pages
     page.aliases.foreach(add)
+    // Add derived pages
+    if page.paginate then page match
+      case markupPage: OriginalMarkupPage => addDerivedPages(markupPage)
+      case _ => site.error(
+        page.path,
+        PageError.FileKind, // TODO
+        s"Page ${page.path} is paginated but not a markup page"
+      )
+
+  private def addDerivedPages(markupPage: OriginalMarkupPage): Unit =
+    add(TocPage(markupPage))
 
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
@@ -178,7 +189,7 @@ final class Pages(site: Site):
     path: Path
   ): Page =
     val (markup: Markup, parsed: Option[(FrontMatter, Xml.Element)]) =
-      if !sourcePath.extension.contains(XmlLikeMarkup.extension)
+      if !sourcePath.extension.contains(XmlMarkup.extension)
       then
         // Determine markup by the file extension
         // Note: we can only get here after forName() verified that the extension is a markup one, so - get:
@@ -212,7 +223,7 @@ final class Pages(site: Site):
         (page, true)
 
     page match
-      case markupPage: MarkupPage =>
+      case markupPage: OriginalMarkupPage =>
         val pageSource: PageSource = PageSource(
           page = markupPage,
           markup = markup,

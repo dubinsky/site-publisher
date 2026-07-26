@@ -15,6 +15,8 @@ final case class Path(
     
   override def toString: String = path.mkString("/", "/", extensionString)
 
+  def add(segment: String): Path = copy(path = path :+ segment)
+  
   def extensionString: String = extension match
     case None => ""
     case Some(extension) => s".$extension"

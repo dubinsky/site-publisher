@@ -11,10 +11,10 @@ final class InternalLinksPostConverter extends PostConverter:
   override def postConvert(
     element: Xml.Element,
     content: PageContent
-  ): Xml.Element =
-    if !element.isA || !Links.isInternalLink(element)
-    then element
-    else element.getHref.fold(element)(resolveInternalLinks(element, content, _))
+  ): Option[Xml.Element] =
+    Option.when(element.isA && Links.isInternalLink(element))(
+      element.getHref.fold(element)(resolveInternalLinks(element, content, _))
+    )
 
 private def resolveInternalLinks(
   element: Xml.Element,

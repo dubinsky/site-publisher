@@ -1,18 +1,18 @@
 package org.podval.tools.publish.markdown
 
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.processor.ConverterSimple
+import org.podval.tools.publish.processor.Converter
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
 // see https://obsidian.md/help/links
-final class WikiLinksConverter extends ConverterSimple:
-  override def convert(element: Xml.Element): Xml.Element =
-    if element.isA
-    then element
-    else convertText(element, convertWikiLinks(Chunk.empty, _))
+final class WikiLinksConverter extends Converter:
+  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+    Option.when(!element.isA)(
+      convertText(element, convertWikiLinks(Chunk.empty, _))
+    )
 
   @tailrec
   private def convertWikiLinks(result: Chunk[Xml.Node], text: String): Xml.Nodes =

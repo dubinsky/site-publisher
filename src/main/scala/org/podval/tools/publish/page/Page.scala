@@ -31,6 +31,8 @@ abstract class Page(
 
   final protected def targetFile: File = path.file(site.targetDirectory)
 
+  def up: Option[Page] = parent
+
   final lazy val parent: Option[DirectoryPage] =
     val parentDirectory: Option[Seq[String]] =
       if isDirectory && path.path.length > 1 then Some(path.path.init.init)
@@ -100,6 +102,8 @@ abstract class Page(
     .map(icon => Icon(icon, frontMatter.iconStyle.getOrElse(Icon.Regular)))
 
   protected def iconDefault: Icon
+  
+  final def paginate: Boolean = frontMatter.paginate
   
   final def lang: String = content(_.lang).orElse(langDefault).orElse(site.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides

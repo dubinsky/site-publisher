@@ -9,6 +9,7 @@ import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}
 import zio.blocks.html.*
 
+// TODO make this a JS library too, to install markup-specific stylesheet
 abstract class MarkupKind(
   final val name: String,
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
@@ -25,7 +26,8 @@ abstract class MarkupKind(
     site: Site,
     sourcePath: Path,
     content: String
-  ): String
+  ): String =
+    content // default: markup parses directly into XML
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 

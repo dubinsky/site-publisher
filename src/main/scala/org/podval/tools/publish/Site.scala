@@ -93,9 +93,6 @@ final class Site(options: Options) extends JSLibrary:
     config.social.linkedin.map(SocialLink.LinkedIn(_))
   ).flatten
 
-  // Asciidoctor Extensions
-  def asciidoctorExtensions: Seq[String] = config.asciidoctorExtensions
-  
   private def load(): Unit =
     // Load all pages
     pages.load()
@@ -137,9 +134,9 @@ final class Site(options: Options) extends JSLibrary:
           ),
           div(className := "nav-items",
             pages.headerPages.map(_.page.ref()),
-            page.parent.flatMap(parent => Option.when(parent.parent.isDefined)(parent.navRef(Icon.arrowUp))),
-            page.parent.flatMap(_.prev(page)).map(_.navRef(Icon.arrowLeft)),
-            page.parent.flatMap(_.next(page)).map(_.navRef(Icon.arrowRight))
+            page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
+            page.prev.map(_.navRef(Icon.arrowLeft)),
+            page.next.map(_.navRef(Icon.arrowRight))
           )
         )
       )
@@ -185,7 +182,7 @@ object Site:
       .generate()
 
   @main def generate(): Unit = main(Array(
-    "--log-level=DEBUG",
+    "--log-level=INFO",
     "--treat-errors-as-warnings=true",
     "/home/dub/OpenTorah/opentorah.org/docs"
 //  "/home/dub/OpenTorah/alter-rebbe.org"

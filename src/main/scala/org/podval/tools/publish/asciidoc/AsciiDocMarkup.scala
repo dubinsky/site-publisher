@@ -1,26 +1,34 @@
 package org.podval.tools.publish.asciidoc
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
+import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.{Path, Site}
-import org.podval.tools.publish.markup.HtmlLikeMarkup
+import org.podval.tools.publish.markup.{HtmlSections, MarkupKind}
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Processor
-import org.podval.xml.Xml
+import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
-object AsciiDocMarkup extends HtmlLikeMarkup(
+object AsciiDocMarkup extends MarkupKind(
   name = "AsciiDoc",
-  allowsInternalFrontMatter = false,
+  allowsInternalFrontMatter = true,
   extension = "adoc",
   // Note: by supplying `htmlsyntax=xml` we ensure that Asciidoctor produces well-formed XML;
   // the only markup with `rendersToXml=true` is HTML ;)
-  rendersToXml = true
+  rendersToXml = true,
+  xmlDialect = HtmlXmlDialect
 ):
+  override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
+
+  // TODO
+  override def sections(content: PageContent): Seq[Section] = HtmlSections.sections(content)
+
   private var asciidoctorVar: Option[Asciidoctor] = None
   private def asciidoctor(site: Site): Asciidoctor = asciidoctorVar.getOrElse:
     val result: Asciidoctor = Asciidoctor.Factory.create()
-    // Note: only extensions packaged as jars will work - if they are on the classpath.
-    site.asciidoctorExtensions.foreach: gemName =>
-      site.log.info(s"Loading AsciiDoc extension gem '$gemName'")
-      result.requireLibrary(gemName)
+//    // Note: only extensions packaged as jars will work - if they are on the classpath.
+//    site.asciidoctorExtensions.foreach: gemName =>
+//      site.log.info(s"Loading AsciiDoc extension gem '$gemName'")
+//      result.requireLibrary(gemName)
     asciidoctorVar = Some(result)
     result
 
@@ -31,6 +39,13 @@ object AsciiDocMarkup extends HtmlLikeMarkup(
   ): String =
     val attributes: Attributes = Attributes
       .builder()
+      // Suppress the TOC.
+      .attribute("toc", null)
+      // Suppress section anchors, automatic ids, links and numbers.
+      .attribute("sectanchors", null)
+      .attribute("sectids", null)
+      .attribute("sectlinks", null)
+      .attribute("sectnums", null)
       // Preserve document title.
       .showTitle(true)
       // Render into XML and not HTML.
@@ -40,9 +55,6 @@ object AsciiDocMarkup extends HtmlLikeMarkup(
       .attribute("docdir", site.sourceFile(sourcePath).getParentFile.getAbsolutePath)
 
       // TODO author and email attributes should be set from the Site
-
-      // TODO presence/absence and placement of the TOC can be controlled/overridden from here:
-      //      .tableOfContents() Boolean/Placement
 
       .build()
 
@@ -61,6 +73,7 @@ object AsciiDocMarkup extends HtmlLikeMarkup(
     s"<div>$result</div>"
 
   def processors: Seq[Processor] = Seq(
+    new AsciiDocDivSoupConverter,
     new AsciiDocFootnoteLinksConverter,
     new AsciiDocFootnoteBodiesConverter
   )

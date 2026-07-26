@@ -103,7 +103,7 @@ trait XmlAst[ELEMENT]:
 
   // HTML 'class' attribute
   extension (element: Element)
-    private def getClasses: Chunk[String] = element
+    def getClasses: Chunk[String] = element
       .get(HtmlClass)
       .fold(Chunk.empty): element =>
         Chunk.from(element.split(' '))

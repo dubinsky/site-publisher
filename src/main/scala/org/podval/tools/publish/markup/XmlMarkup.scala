@@ -5,9 +5,12 @@ import org.podval.tools.publish.page.PageContent
 import org.podval.xml.{Html, XmlDialect}
 
 // Note: this exist only to parse XML to disambiguate the dialect
-object XmlMarkup extends XmlLikeMarkup(
+object XmlMarkup extends MarkupKind(
   name = "XML",
-  xmlDialect = XmlDialect.Plain
+  xmlDialect = XmlDialect.Plain,
+  allowsInternalFrontMatter = false,
+  rendersToXml = true,
+  extension = "xml"
 ):
   override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
   override def sections(content: PageContent): Seq[Fragment.Section] = Seq.empty

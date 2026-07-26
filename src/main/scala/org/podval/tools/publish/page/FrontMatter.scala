@@ -27,6 +27,7 @@ final case class FrontMatter(
   headerPage: Boolean = false,
   headerPagePriority: Option[Int] = None,
 //  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
+  paginate: Boolean = false,
 ):
   private var extraKeys: Chunk[(Yaml, Yaml)] = Chunk.empty
   

@@ -7,13 +7,15 @@ import org.podval.tools.publish.processor.Converter
 import org.podval.xml.Xml
 import java.net.{URI, URISyntaxException}
 
-final class InternalLinksConverter extends Converter(convertLinks = true):
+final class InternalLinksConverter extends Converter:
+  override def stage: Converter.Stage = Converter.Stage.Links
+
   override protected def convert(
     element: Xml.Element,
     content: PageContent
-  ): Xml.Element =
-    if !element.isA then element else
-      element.getHref.fold(element): href =>
+  ): Option[Xml.Element] =
+    if element.isA then None else
+      element.getHref.flatMap: href =>
         // TODO verify that external link is not broken if the Site is so configured
         val isInternal: Boolean =
           try
@@ -22,6 +24,6 @@ final class InternalLinksConverter extends Converter(convertLinks = true):
             uri.getScheme == null
           catch case e: URISyntaxException => true
 
-        if !isInternal
-        then element
-        else Links.markInternalLink(element)
+        Option.when(isInternal)(
+          Links.markInternalLink(element)
+        )

@@ -3,7 +3,7 @@ package org.podval.tools.publish
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.asciidoc.AsciiDocMarkup
 import org.podval.tools.publish.markdown.MarkdownMarkup
-import org.podval.tools.publish.markup.{HtmlLikeMarkup, HtmlMarkup, MarkupKind, Markups}
+import org.podval.tools.publish.markup.{HtmlSections, HtmlMarkup, MarkupKind, Markups}
 import org.podval.tools.publish.tei.TeiMarkup
 
 abstract class Configurer:
@@ -22,17 +22,17 @@ object Configurer:
 
       result.add(
         markupKind = MarkdownMarkup,
-        processors = MarkupKind.processors(processMarkdown = true, processAsciidoc = false) ++ HtmlLikeMarkup.processors ++ MarkdownMarkup.processors
+        processors = MarkupKind.processors(processMarkdown = true, processAsciidoc = false) ++ HtmlSections.processors ++ MarkdownMarkup.processors
       )
 
       result.add(
         markupKind = AsciiDocMarkup,
-        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = true) ++ HtmlLikeMarkup.processors ++ AsciiDocMarkup.processors
+        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = true) ++ HtmlSections.processors ++ AsciiDocMarkup.processors
       )
       
       result.add(
         markupKind = HtmlMarkup,
-        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = false) ++ HtmlLikeMarkup.processors
+        processors = MarkupKind.processors(processMarkdown = false, processAsciidoc = false) ++ HtmlSections.processors
       )
 
       result.add(

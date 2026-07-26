@@ -1,16 +1,16 @@
 package org.podval.tools.publish.markdown
 
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.processor.PostConverterSimple
+import org.podval.tools.publish.processor.PostConverter
 import org.podval.tools.publish.util.{Files, Media}
 import org.podval.xml.Xml
 
 // see https://obsidian.md/help/links
-final class WikiLinksPostConverter extends PostConverterSimple:
-  override protected def postConvert(element: Xml.Element): Xml.Element =
-    if !element.isA || !Links.isTranscluded(element)
-    then element
-    else element.getHref.fold(element)(embed(element, _).getOrElse(element))
+final class WikiLinksPostConverter extends PostConverter:
+  override protected def postConvert(element: Xml.Element): Option[Xml.Element] =
+    Option.when(element.isA && Links.isTranscluded(element))(
+      element.getHref.fold(element)(embed(element, _).getOrElse(element))
+    )
 
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...

@@ -3,13 +3,13 @@ package org.podval.tools.publish.processor
 import org.podval.xml.{HtmlAttribute, HtmlElement, Xml}
 
 // Prefix attribute and element names that collide with the HTML ones
-abstract class Xml2HtmlConverter(prefix: String) extends ConverterSimple:
+abstract class Xml2HtmlConverter(prefix: String) extends Converter:
   private def withPrefix(name: String): String = s"$prefix-$name"
 
   // Dialect-specific conversions
   protected def convertMore(element: Xml.Element): Xml.Element = element
 
-  final override protected def convert(element: Xml.Element): Xml.Element =
+  final override protected def convert(element: Xml.Element): Option[Xml.Element] =
     val attributesConverted: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
       val nameNew: String =
         if !HtmlAttribute.reservedAttributes.contains(name)
@@ -25,4 +25,6 @@ abstract class Xml2HtmlConverter(prefix: String) extends ConverterSimple:
       then attributesConverted
       else renameElement(withPrefix(name), attributesConverted)
 
-    convertMore(elementsConverted)
+    Some(
+      convertMore(elementsConverted)
+    )

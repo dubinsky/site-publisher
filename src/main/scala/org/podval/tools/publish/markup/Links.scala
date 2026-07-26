@@ -11,6 +11,7 @@ object Links:
 
   private object InternalLinkClass extends HtmlClass("internal-link")
 
+  // TODO remove; add/check classes directly
   def markInternalLink(element: Xml.Element): Xml.Element = element.add(Links.InternalLinkClass)
   def isInternalLink(element: Xml.Element): Boolean = element.has(InternalLinkClass)
   

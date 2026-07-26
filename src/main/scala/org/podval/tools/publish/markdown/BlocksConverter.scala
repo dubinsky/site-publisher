@@ -15,12 +15,12 @@ final class BlocksConverter extends Converter:
   override protected def convert(
     element: Xml.Element,
     content: PageContent
-  ): Xml.Element =
+  ): Option[Xml.Element] =
     val children: Chunk[Xml.Node] = element.getChildren
-    if children.isEmpty then element else children.last.asText.fold(element): text =>
+    if children.isEmpty then None else children.last.asText.flatMap: text =>
       val (before: String, id: Option[String]) = Strings.split(text, '^')
-      id.fold(element): id =>
-        if before.nonEmpty && !Character.isWhitespace(before.last) then element else
+      id.flatMap: id =>
+        if before.nonEmpty && !Character.isWhitespace(before.last) then None else Some:
           val result: Xml.Element = element.setChildren(
             children.init ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq
           )

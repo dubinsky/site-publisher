@@ -10,9 +10,8 @@ import zio.blocks.html.Dom.Element.Script
 abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
-  private var sourceVar: Option[PageSource] = None
-  final override def source: Option[PageSource] = sourceVar
-  def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
+  def prev: Option[Page]
+  def next: Option[Page]
 
   def hasSyntheticContent: Boolean
 
@@ -21,11 +20,15 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   // TODO use markup.xmlDialect?
   final override def textContent: String = HtmlXmlDialect.render(toHtml)
 
+  def markupContent: Option[Html.Element]
+
+  def pageHeader: Option[Html.Element]
+
   // Based on https://github.com/jekyll/minima
   private def toHtml: Html.Element =
-    val pageHeader: Option[Html.Element] = content.map(content => content.markup.kind.pageHeader(content))
-    val markupContent: Option[Html.Element] = content.map(_.toHtml)
-    val syntheticContent: Option[Html.Element] = syntheticContentOpt
+    val pageHeader: Option[Html.Element] = this.pageHeader // TODO make a parameter
+    val markupContent: Option[Html.Element] = this.markupContent // TODO make a parameter
+    val syntheticContent: Option[Html.Element] = syntheticContentOpt // TODO make a parameter
 
     def getLanguages(element: Html.Element): Chunk[String] =
       if element.isElement(HtmlElement.Code)

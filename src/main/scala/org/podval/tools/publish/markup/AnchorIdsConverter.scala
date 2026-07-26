@@ -1,17 +1,19 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.ConverterWithIds
+import org.podval.tools.publish.processor.Converter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
-final class AnchorIdsConverter extends ConverterWithIds(convertLinks = true):
-  override def convertWithIds(
+final class AnchorIdsConverter extends Converter:
+  override def stage: Converter.Stage = Converter.Stage.Links
+
+  override def convert(
     element: Xml.Element,
     content: PageContent,
     ids: IdGenerator,
     footnoteCorrelationIds: IdGenerator
-  ): Xml.Element =
-    if !element.isA || element.getId.isDefined
-    then element
-    else element.setId(ids.generate())
+  ): Option[Xml.Element] =
+    Option.when(element.isA && element.getId.isEmpty)(
+      element.setId(ids.generate())
+    )

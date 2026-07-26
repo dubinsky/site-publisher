@@ -1,9 +1,10 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.processor.Processor
+import org.podval.tools.publish.processor.{Processor, Processors}
 import zio.blocks.chunk.Chunk
 
-// Known markup languages; note: some XmlLike markups can have extensions other than `.xml`.
+// Known markup languages.
+// Note: some XmlLike markups can have extensions other than `.xml`.
 final class Markups:
   private var forExtension: Map[String, Markup] = Map.empty
 
@@ -20,7 +21,7 @@ final class Markups:
     processors: Seq[Processor],
     elements: Set[String] = Set.empty
   ): Unit =
-    val markup: Markup = Markup(markupKind, processors.flatMap(_.processors))
+    val markup: Markup = Markup(markupKind, Processors(processors))
     
     // TODO verify that extensions do not overlap
     val extensions: Set[String] = markupKind.extensions

@@ -3,15 +3,31 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.page.PageContent
-import org.podval.tools.publish.processor.Processor
-import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import org.podval.tools.publish.processor.{Converter, Processor}
+import org.podval.tools.publish.util.IdGenerator
+import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
+// Sections are represented by the HTML `h` elements and are not nested.
 // Common for markup formats whose XML representation is actually HTML:
-// HTML itself, Markdown, and likely Re-Structured text and AsciiDoc;
+// HTML itself, Markdown, AsciiDoc, and likely Re-Structured text;
 // pure XML markup formats like TEI and DocBook are different.
-object HtmlLikeMarkup:
+// Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
+// and for AsciiDoc, by setting `sectids` -
+// but I do it manually and uniformly for HTML, Markdown, etc.
+object HtmlSections:
+  private final class IdsConverter extends Converter:
+    override def convert(
+      element: Xml.Element,
+      content: PageContent,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Option[Xml.Element] =
+    Option.when(element.getId.isEmpty && HtmlSections.headerLevel(element).isDefined)(
+      element.setId(element.getTextOpt.fold(ids.generate())(Xml.toId))
+    )
+
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName
     if !qName.startsWith("h") then None else
@@ -25,39 +41,19 @@ object HtmlLikeMarkup:
   )
 
   def processors: Seq[Processor] = Seq(
-    new HtmlSectionIdsConverter
+    new IdsConverter
   )
-
-// Markup that parses into HTML.
-// Sections are represented by the HTML `h` elements and are not nested.
-abstract class HtmlLikeMarkup(
-  name: String,
-  allowsInternalFrontMatter: Boolean,
-  extension: String,
-  additionalExtensions: Set[String] = Set.empty,
-  rendersToXml: Boolean
-) extends MarkupKind(
-  name = name,
-  xmlDialect = HtmlXmlDialect,
-  allowsInternalFrontMatter = allowsInternalFrontMatter,
-  extension = extension,
-  additionalExtensions = additionalExtensions,
-  rendersToXml = rendersToXml
-):
-  import HtmlLikeMarkup.HtmlSection
-
-  final override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.
-  final override def sections(content: PageContent): Seq[Section] =
+  def sections(content: PageContent): Seq[Section] =
     val fromHeaders: Chunk[HtmlSection] = content
       .xml
       .getChildren
       .flatMap(_.asElement)
       .flatMap(element =>
         for
-          level <- HtmlLikeMarkup.headerLevel(element)
+          level <- HtmlSections.headerLevel(element)
           title <- element.getTextOpt
           id <-
             val id: Option[String] = element.getId
@@ -93,4 +89,3 @@ abstract class HtmlLikeMarkup(
         level,
         tail
       )
-

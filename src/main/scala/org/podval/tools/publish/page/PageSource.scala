@@ -1,13 +1,12 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Markup
-import org.podval.tools.publish.page.Page
 import org.podval.tools.publish.Path
 import org.podval.xml.Xml
 import scala.ref.SoftReference
 
 final class PageSource(
-  val page: MarkupPage,
+  val page: OriginalMarkupPage,
   val markup: Markup,
   val sourcePath: Path,
   standAloneFrontMatter: Option[Path]

@@ -2,14 +2,17 @@ package org.podval.tools.publish.tei
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.link.Fragment
-import org.podval.tools.publish.markup.{MarkupKind, XmlLikeMarkup}
+import org.podval.tools.publish.markup.{MarkupKind, XmlMarkup}
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, Xml}
 
-object TeiMarkup extends XmlLikeMarkup(
+object TeiMarkup extends MarkupKind(
   name = "TEI",
-  xmlDialect = TeiXmlDialect
+  xmlDialect = TeiXmlDialect,
+  allowsInternalFrontMatter = false,
+  rendersToXml = true,
+  extension = XmlMarkup.extension
 ):
   override def entityKind(xml: Xml.Element): Option[EntityKind] =
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)

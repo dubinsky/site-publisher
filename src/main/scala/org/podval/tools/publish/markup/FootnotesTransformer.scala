@@ -9,10 +9,11 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
+// TODO split up; carry footnotes in the PageContent...
 final class FootnotesTransformer(
   processMarkdown: Boolean,
   processAsciidoc: Boolean
-) extends Transformer(transformsFootnotes = true):
+) extends Transformer(stage = Transformer.Stage.Footnotes):
   override def transform(
     element: Xml.Element,
     content: PageContent

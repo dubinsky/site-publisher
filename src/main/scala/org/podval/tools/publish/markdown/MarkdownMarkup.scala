@@ -1,16 +1,23 @@
 package org.podval.tools.publish.markdown
 
+import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.{Path, Site}
-import org.podval.tools.publish.markup.HtmlLikeMarkup
+import org.podval.tools.publish.markup.{HtmlSections, MarkupKind}
+import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.processor.Processor
-import org.podval.xml.Xml
+import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
-object MarkdownMarkup extends HtmlLikeMarkup(
+object MarkdownMarkup extends MarkupKind(
   name = "Markdown",
   allowsInternalFrontMatter = true,
   extension = "md",
-  rendersToXml = true
+  rendersToXml = true,
+  xmlDialect = HtmlXmlDialect,
 ):
+  override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
+
+  override def sections(content: PageContent): Seq[Section] = HtmlSections.sections(content)
+
   override def xmlContent(
     site: Site,
     sourcePath: Path,
