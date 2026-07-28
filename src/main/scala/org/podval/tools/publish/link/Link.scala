@@ -1,6 +1,6 @@
 package org.podval.tools.publish.link
 
-import org.podval.tools.publish.page.Page
+import org.podval.tools.publish.page.{Page, PageContent}
 import org.podval.tools.publish.util.{Files, Strings}
 import org.podval.tools.publish.Path
 
@@ -57,10 +57,10 @@ object Link:
       page = to,
       intrapage = from == to,
       fragment = fragment.flatMap: fragment =>
-        val toc: Option[Toc] = to.real.content.map(_.toc)
+        val content: Option[PageContent] = to.real.content
         if fragment.startsWith("^")
-        then toc.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
-        else toc.flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
-          toc.flatMap(_.resolveId(fragment))
+        then content.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
+        else content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
+          content.flatMap(_.resolveId(fragment))
         )
     ))

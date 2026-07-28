@@ -2,17 +2,9 @@ package org.podval.tools.publish.link
 
 import org.podval.xml.Html
 import zio.blocks.html.*
-import Fragment.{Block, Section}
+import Fragment.Section
 
-final class Toc(
-  sections: Seq[Section],
-  blocks: Seq[Block],
-  ids: Seq[String],
-):
-  def resolveId(id: String): Option[Link.ToId] = ids.find(_ == id).map(Link.ToId(_))
-
-  def resolveBlock(id: String): Option[Link.ToBlock] = blocks.find(_.id == id).map(Link.ToBlock(_))
-
+final class Toc(sections: Seq[Section]):
   def resolveSection(names: Seq[String]): Option[Link.ToSection] = Toc.resolve(
     result = Seq.empty,
     sections = sections,

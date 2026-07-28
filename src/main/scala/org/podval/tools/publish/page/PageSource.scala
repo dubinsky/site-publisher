@@ -18,10 +18,13 @@ final class PageSource(
   private var cachedVar: Option[SoftReference[PageContent]] = None
   
   def cache(frontMatter: FrontMatter, xml: Xml.Element): PageContent =
+    val xmlProcessed: Xml.Element = markup.process(this, xml)
+    
+    // TODO extract content title, remove it from XML and pass in:
     val result: PageContent = PageContent(
       source = this,
       frontMatter = frontMatter,
-      xml = markup.process(this, xml),
+      xml = xmlProcessed,
     )
 
     cachedVar = Some(SoftReference(result))

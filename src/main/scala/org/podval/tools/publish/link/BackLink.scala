@@ -1,7 +1,7 @@
 package org.podval.tools.publish.link
 
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.page.Page
+import org.podval.tools.publish.page.{Page, PageContent}
 import org.podval.xml.Xml
 
 final class BackLink private(
@@ -17,7 +17,7 @@ object BackLink:
     element: Xml.Element,
     parents: Seq[Xml.Element],
     from: Page,
-    toc: Toc
+    content: PageContent,
   ): Option[BackLink] =
     if !element.isA || !Links.isInternalLink(element) then None else
       for
@@ -25,7 +25,7 @@ object BackLink:
         to <- Link.resolve(ref, kind = None, from)
         id <- element.getId
       yield
-        val toId: Option[Link.ToId] = toc.resolveId(id)
+        val toId: Option[Link.ToId] = content.resolveId(id)
         val toFrom: Link = Link(from, fragment = toId, intrapage = false)
         val parent: Xml.Element = parents.head
         // TODO go back to `ne`
