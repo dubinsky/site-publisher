@@ -3,7 +3,7 @@ package org.podval.tools.publish.markdown
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.{Path, Site}
 import org.podval.tools.publish.markup.{HtmlSections, MarkupKind}
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
@@ -14,9 +14,9 @@ object MarkdownMarkup extends MarkupKind(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
+  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
 
-  override def sections(content: PageContent): Seq[Section] = HtmlSections.sections(content)
+  override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlSections.sections(source, xml)
 
   override def xmlContent(
     site: Site,
@@ -32,9 +32,16 @@ object MarkdownMarkup extends MarkupKind(
     new WikiLinksPostConverter,
     new MarkdownFootnotesConverter,
     new FlexMarkFootnoteLinksConverter,
-    new FlexMarkFootnoteBodiesConverter,
-    new KramdownTocHtmlConverter
+    new FlexMarkFootnoteBodiesConverter
   )
 
   def isFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
+
+  def isKramdownTocMarker(element: Html.Element): Boolean =
+    element.getName == "ul" && element.getChildren.exists: node =>
+      node.asElement.fold(false): child =>
+        child.getName == "li" &&
+        child.getChildren.length == 1 &&
+        child.getChildren.head.asText.fold(false): text =>
+          text.endsWith("{:toc}")

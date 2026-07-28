@@ -1,6 +1,6 @@
 package org.podval.tools.publish.processor
 
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
@@ -16,17 +16,17 @@ abstract class Converter extends Processor:
 
   def convert(
     element: Xml.Element,
-    content: PageContent,
+    source: PageSource,
     ids: IdGenerator,
     footnoteCorrelationIds: IdGenerator
   ): Option[Xml.Element]  = convert(
     element,
-    content
+    source
   )
 
   protected def convert(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource,
   ): Option[Xml.Element]  = convert(
     element
   )

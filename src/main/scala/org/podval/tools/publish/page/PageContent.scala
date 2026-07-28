@@ -1,43 +1,30 @@
 package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.{PageError, Path, Site}
+import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{BackLink, Fragment, Toc}
-import org.podval.tools.publish.markup.{Links, Markup, MarkupKind}
-import org.podval.tools.publish.util.Date
-import org.podval.xml.{Html, Xml, XmlDialect}
+import org.podval.tools.publish.markup.Links
+import org.podval.xml.{Html, Xml}
 
 final class PageContent(
   val source: PageSource,
   val frontMatter: FrontMatter,
-  private var xmlVar: Xml.Element
+  xml: Xml.Element
 ):
-  def xml: Xml.Element = xmlVar
+  def entityKind: Option[EntityKind] = source.markupKind.entityKind(xml)
 
-  // Process XML
-  xmlVar = markup.processors.process(this)
-  
-  def page: OriginalMarkupPage = source.page
-  def site: Site = page.site
-  def sourcePath: Path = source.sourcePath
-  def markup: Markup = source.markup
-  def markupKind: MarkupKind = markup.kind
-  def xmlDialect: XmlDialect = markupKind.xmlDialect
+  def backLinks: Seq[BackLink] =
+    source.xmlDialect.gatherWithParents(
+      element = xml,
+      gatherElement = BackLink(_, _, source.page, toc)
+    )
 
-  def entityKind: Option[EntityKind] = markupKind.entityKind(xml)
-  
-  // TODO take content into account:
-  def author: Option[String] = frontMatter.author
-  def title: Option[String] = frontMatter.title
-  def description: Option[String] = frontMatter.description
-  def date: Option[Date] = frontMatter.date
-  def dateModified: Option[Date] = frontMatter.modifiedTime
-  def lang: Option[String] = frontMatter.lang
+  def toHtml: Html.Element = source.markup.processors.toHtml(source, xml, toc)
 
   lazy val toc: Toc = Toc(
-    sections = markupKind.sections(this),
-    ids = xmlDialect.gather(xml, _.getId),
-    blocks = xmlDialect.gather(xml, element =>
+    sections = source.markupKind.sections(source, xml),
+    ids = source.xmlDialect.gather(xml, _.getId),
+    blocks = source.xmlDialect.gather(xml, element =>
       if !Links.isBlock(element)
       then None
       else element
@@ -48,11 +35,3 @@ final class PageContent(
           None
     )
   )
-
-  def backLinks: Seq[BackLink] =
-    xmlDialect.gatherWithParents(
-      element = xml,
-      gatherElement = BackLink(_, _, page, toc)
-    )
-
-  def toHtml: Html.Element = markup.processors.toHtml(this)

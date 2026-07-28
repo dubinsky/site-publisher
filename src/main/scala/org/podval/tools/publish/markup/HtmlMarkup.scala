@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.link.Fragment.Section
-import org.podval.tools.publish.page.PageContent
-import org.podval.xml.{Html, HtmlXmlDialect}
+import org.podval.tools.publish.page.{MarkupPage, PageSource}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
 object HtmlMarkup extends MarkupKind(
   name = "HTML",
@@ -11,6 +11,6 @@ object HtmlMarkup extends MarkupKind(
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
+  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
 
-  override def sections(content: PageContent): Seq[Section] = HtmlSections.sections(content)
+  override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlSections.sections(source, xml)

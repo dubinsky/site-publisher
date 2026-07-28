@@ -1,13 +1,13 @@
 package org.podval.tools.publish.processor
 
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.xml.Xml
 
 // Converts individual XML elements.
 abstract class PostConverter extends Processor:
   def postConvert(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource
   ): Option[Xml.Element] = postConvert(
     element
   )

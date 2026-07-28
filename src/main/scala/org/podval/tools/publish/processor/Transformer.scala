@@ -1,6 +1,6 @@
 package org.podval.tools.publish.processor
 
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.xml.Xml
 
 object Transformer:
@@ -15,5 +15,5 @@ abstract class Transformer(
 ) extends Processor:
   def transform(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource
   ): Xml.Element

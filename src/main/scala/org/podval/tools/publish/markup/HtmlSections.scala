@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.PageError
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.processor.{Converter, Processor}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
@@ -20,7 +20,7 @@ object HtmlSections:
   private final class IdsConverter extends Converter:
     override def convert(
       element: Xml.Element,
-      content: PageContent,
+      source: PageSource,
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Option[Xml.Element] =
@@ -46,9 +46,8 @@ object HtmlSections:
 
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.
-  def sections(content: PageContent): Seq[Section] =
-    val fromHeaders: Chunk[HtmlSection] = content
-      .xml
+  def sections(source: PageSource, xml: Xml.Element): Seq[Section] =
+    val fromHeaders: Chunk[HtmlSection] = xml
       .getChildren
       .flatMap(_.asElement)
       .flatMap(element =>
@@ -57,7 +56,7 @@ object HtmlSections:
           title <- element.getTextOpt
           id <-
             val id: Option[String] = element.getId
-            if id.isEmpty then content.source.error(PageError.NoId, s"Defect: No id on section $element")
+            if id.isEmpty then source.error(PageError.NoId, s"Defect: No id on section $element")
             id
         yield HtmlSection(
           level = level,

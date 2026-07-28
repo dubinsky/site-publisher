@@ -2,7 +2,7 @@ package org.podval.tools.publish.markdown
 
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.processor.Converter
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
@@ -14,7 +14,7 @@ import zio.blocks.chunk.Chunk
 final class BlocksConverter extends Converter:
   override protected def convert(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource
   ): Option[Xml.Element] =
     val children: Chunk[Xml.Node] = element.getChildren
     if children.isEmpty then None else children.last.asText.flatMap: text =>
@@ -26,7 +26,7 @@ final class BlocksConverter extends Converter:
           )
           result.getId match
             case Some(idExisting) =>
-              content.source.error(
+              source.error(
                 kind = PageError.NoId,
                 message = s"Block id '$id' conflicts with existing id '$idExisting'"
               )

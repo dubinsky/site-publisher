@@ -1,6 +1,8 @@
 package org.podval.tools.publish.processor
 
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.link.Toc
+import org.podval.tools.publish.markdown.MarkdownMarkup
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html}
 
@@ -16,34 +18,35 @@ final class Processors(
     .collect { case transformer: Transformer => transformer }
     .sortBy(_.stage.ordinal)
 
-  def process(pageContent: PageContent): Xml.Element =
+  def process(source: PageSource, xml: Xml.Element): Xml.Element =
     // Run converters
     val ids: IdGenerator = IdGenerator("_generated_id")
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
-    val converted: Xml.Element = pageContent.xmlDialect.transform(pageContent.xml, element =>
+    val converted: Xml.Element = source.xmlDialect.transform(xml, element =>
       converters.foldLeft(element)((result, converter) => converter
-        .convert(result, pageContent, ids, footnoteCorrelationIds)
+        .convert(result, source, ids, footnoteCorrelationIds)
         .getOrElse(result)
       )
     )
 
     // Run transformers
     transformers.foldLeft(converted)((result, transformer) =>
-      transformer.transform(result, pageContent)
+      transformer.transform(result, source)
     )
 
   private lazy val postConverters: Seq[PostConverter] = processors
     .collect { case postConverter: PostConverter => postConverter }
-
-  private lazy val htmlConverters: Seq[HtmlConverter] = processors
-    .collect { case htmlConverter: HtmlConverter => htmlConverter }
-
-  def toHtml(pageContent: PageContent): Html.Element =
+  
+  def toHtml(
+    source: PageSource,
+    xml: Xml.Element,
+    toc: Toc
+  ): Html.Element =
     // Post-process XML
-    val xmlResult: Xml.Element = pageContent.xmlDialect.transform(pageContent.xml, element =>
+    val xmlResult: Xml.Element = source.xmlDialect.transform(xml, element =>
       postConverters.foldLeft(element)((result, postConverter) => postConverter
-        .postConvert(result, pageContent)
+        .postConvert(result, source)
         .getOrElse(result)
       )
     )
@@ -51,9 +54,11 @@ final class Processors(
     // Convert to HTML
     val htmlResult: Html.Element = Xml2Html.fromXml(xmlResult)
 
-    // Post-process HTML
-    pageContent.xmlDialect.transform(htmlResult, element =>
-      htmlConverters.foldLeft(element)((result, htmlConverter) =>
-        htmlConverter.convertHtml(result, pageContent)
-      )
-    )
+    // Add TOC to HTML
+    source.xmlDialect.transform(htmlResult, element =>
+      // TODO only when relevant
+      // TODO if must add and did not add, add at the head
+      if !MarkdownMarkup.isKramdownTocMarker(element)
+      then element
+      else toc.html
+  )

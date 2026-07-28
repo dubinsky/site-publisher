@@ -3,7 +3,7 @@ package org.podval.tools.publish.tei
 import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.markup.{MarkupKind, XmlMarkup}
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, Xml}
 
@@ -18,12 +18,12 @@ object TeiMarkup extends MarkupKind(
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
 
   override def sections(
-    content: PageContent
+    source: PageSource, xml: Xml.Element
   ): Seq[Fragment.Section] = Seq.empty // TODO
 
   // TODO !!!
-  override def pageHeader(content: PageContent): Html.Element =
-    MarkupKind.pageHeader(content)
+  override def pageHeader(page: MarkupPage): Html.Element =
+    MarkupKind.pageHeader(page)
 
   def processors: Seq[Processor] = Seq(
     new Tei2HtmlConverter,

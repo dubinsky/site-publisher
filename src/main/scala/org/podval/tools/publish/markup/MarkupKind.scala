@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Fragment
-import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageContent}
+import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.processor.Processor
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.tools.publish.{PageError, Path, Site}
@@ -31,9 +31,9 @@ abstract class MarkupKind(
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
-  def pageHeader(content: PageContent): Html.Element
+  def pageHeader(page: MarkupPage): Html.Element
 
-  def sections(content: PageContent): Seq[Fragment.Section]
+  def sections(source: PageSource, xml: Xml.Element): Seq[Fragment.Section]
 
   final val extensions: Set[String] = additionalExtensions + extension
 
@@ -100,8 +100,7 @@ abstract class MarkupKind(
     (frontMatter, xml)
 
 object MarkupKind:
-  def pageHeader(content: PageContent): Html.Element =
-    val page: MarkupPage = content.page
+  def pageHeader(page: MarkupPage): Html.Element =
     header(className := "post-header",
       postPath(page),
       h1(className := "post-title p-name", itemProp := "name headline", page.title),

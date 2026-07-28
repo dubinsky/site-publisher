@@ -1,8 +1,8 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.Markup
-import org.podval.tools.publish.{PageError, Path}
-import org.podval.xml.Xml
+import org.podval.tools.publish.markup.{Markup, MarkupKind}
+import org.podval.tools.publish.{PageError, Path, Site}
+import org.podval.xml.{Xml, XmlDialect}
 import scala.ref.SoftReference
 
 final class PageSource(
@@ -11,13 +11,17 @@ final class PageSource(
   val sourcePath: Path,
   standAloneFrontMatter: Option[Path]
 ):
+  def site: Site = page.site
+  def markupKind: MarkupKind = markup.kind
+  def xmlDialect: XmlDialect = markupKind.xmlDialect
+
   private var cachedVar: Option[SoftReference[PageContent]] = None
   
   def cache(frontMatter: FrontMatter, xml: Xml.Element): PageContent =
     val result: PageContent = PageContent(
       source = this,
       frontMatter = frontMatter,
-      xmlVar = xml,
+      xml = markup.processors.process(this, xml),
     )
 
     cachedVar = Some(SoftReference(result))
@@ -50,4 +54,4 @@ final class PageSource(
     kind,
     message,
     cause
-  )  
+  )

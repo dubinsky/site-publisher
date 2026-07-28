@@ -4,7 +4,7 @@ import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.{Path, Site}
 import org.podval.tools.publish.markup.{HtmlSections, MarkupKind}
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
@@ -17,10 +17,10 @@ object AsciiDocMarkup extends MarkupKind(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  override def pageHeader(content: PageContent): Html.Element = MarkupKind.pageHeader(content)
+  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
 
   // TODO
-  override def sections(content: PageContent): Seq[Section] = HtmlSections.sections(content)
+  override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlSections.sections(source, xml)
 
   private var asciidoctorVar: Option[Asciidoctor] = None
   private def asciidoctor(site: Site): Asciidoctor = asciidoctorVar.getOrElse:

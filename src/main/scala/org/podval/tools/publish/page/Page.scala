@@ -76,8 +76,8 @@ abstract class Page(
 
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
-  final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(content(_.date))
-  final def dateModified: Option[Date] = content(_.dateModified)
+  final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(content(_.frontMatter.date))
+  final def dateModified: Option[Date] = content(_.frontMatter.modifiedTime)
   final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
 
   final lazy val headerPage: Option[HeaderPage] = Option.when(frontMatter.headerPage)(HeaderPage(
@@ -87,13 +87,14 @@ abstract class Page(
 
   protected def headerPagePriorityDefault: Int = 0
   
-  final def author: Option[String] = content(_.author)
+  final def author: Option[String] = content(_.frontMatter.author)
 
-  final def title: String = content(_.title).getOrElse(titleDefault)
+  // TODO take content into account
+  final def title: String = content(_.frontMatter.title).getOrElse(titleDefault)
   def titleDefault: String = titleFromPath
   def titleFromPath: String
 
-  final def description: Option[String] = content(_.description).orElse(descriptionDefault)
+  final def description: Option[String] = content(_.frontMatter.description).orElse(descriptionDefault)
   protected def descriptionDefault: Option[String] = None
 
   final def icon: Icon = frontMatterIcon.getOrElse(iconDefault)
@@ -105,7 +106,7 @@ abstract class Page(
   
   final def paginate: Boolean = frontMatter.paginate
   
-  final def lang: String = content(_.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
+  final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
   

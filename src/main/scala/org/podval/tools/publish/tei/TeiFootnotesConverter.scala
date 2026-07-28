@@ -1,7 +1,7 @@
 package org.podval.tools.publish.tei
 
 import org.podval.tools.publish.markup.Footnotes
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.processor.Converter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
@@ -9,7 +9,7 @@ import org.podval.xml.Xml
 final class TeiFootnotesConverter extends Converter:
   override def convert(
     element: Xml.Element,
-    content: PageContent,
+    source: PageSource,
     ids: IdGenerator,
     footnoteCorrelationIds: IdGenerator
   ): Option[Xml.Element] =

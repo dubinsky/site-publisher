@@ -3,28 +3,28 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.processor.PostConverter
 import org.podval.xml.Xml
 
 final class InternalLinksPostConverter extends PostConverter:
   override def postConvert(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource
   ): Option[Xml.Element] =
     Option.when(element.isA && Links.isInternalLink(element))(
-      element.getHref.fold(element)(resolveInternalLinks(element, content, _))
+      element.getHref.fold(element)(resolveInternalLinks(element, source, _))
     )
 
 private def resolveInternalLinks(
   element: Xml.Element,
-  content: PageContent,
+  source: PageSource,
   ref: String
 ): Xml.Element =
   val kind: Option[LinkKind] = LinkKind.of(element)
-  Link.resolve(ref, kind, content.page) match
+  Link.resolve(ref, kind, source.page) match
     case None =>
-      content.source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+      source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
       element.addClass("unresolved-link") // TODO move into Links
     case Some(linkTo) =>
       // TODO transclude

@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.page.PageContent
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.processor.Converter
 import org.podval.xml.Xml
 import java.net.{URI, URISyntaxException}
@@ -12,7 +12,7 @@ final class InternalLinksConverter extends Converter:
 
   override protected def convert(
     element: Xml.Element,
-    content: PageContent
+    source: PageSource
   ): Option[Xml.Element] =
     if element.isA then None else
       element.getHref.flatMap: href =>
@@ -20,7 +20,7 @@ final class InternalLinksConverter extends Converter:
         val isInternal: Boolean =
           try
             val uri: URI = URI(href)
-            if content.site.isSelf(uri) then content.source.error(PageError.SelfLink, href)
+            if source.site.isSelf(uri) then source.error(PageError.SelfLink, href)
             uri.getScheme == null
           catch case e: URISyntaxException => true
 
