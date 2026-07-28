@@ -37,7 +37,8 @@ object MarkdownMarkup extends MarkupKind(
   def isFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 
-  def isKramdownTocMarker(element: Html.Element): Boolean =
+  // Kramdown Toc Marker
+  override def isTocPlaceholder(element: Html.Element): Boolean =
     element.getName == "ul" && element.getChildren.exists: node =>
       node.asElement.fold(false): child =>
         child.getName == "li" &&

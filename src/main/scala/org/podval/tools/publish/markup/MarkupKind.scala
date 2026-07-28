@@ -28,6 +28,8 @@ abstract class MarkupKind(
   ): String =
     content // default: markup parses directly into XML
 
+  def isTocPlaceholder(element: Html.Element): Boolean = false
+  
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
   def pageHeader(page: MarkupPage): Html.Element

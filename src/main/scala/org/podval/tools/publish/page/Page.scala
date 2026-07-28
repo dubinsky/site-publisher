@@ -105,7 +105,7 @@ abstract class Page(
   protected def iconDefault: Icon
   
   final def paginate: Boolean = frontMatter.paginate
-  
+
   final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None

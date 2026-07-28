@@ -23,7 +23,7 @@ final class Markup(
     val ids: IdGenerator = IdGenerator("_generated_id")
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
-    val converted: Xml.Element = source.xmlDialect.transform(xml, element =>
+    val converted: Xml.Element = kind.xmlDialect.transform(xml, element =>
       converters.foldLeft(element)((result, converter) => converter
         .convert(result, source, ids, footnoteCorrelationIds)
         .getOrElse(result)
@@ -41,10 +41,11 @@ final class Markup(
   def toHtml(
     source: PageSource,
     xml: Xml.Element,
-    toc: Toc
+    toc: Toc,
+    doAddToc: Boolean
   ): Html.Element =
     // Post-process XML
-    val xmlResult: Xml.Element = source.xmlDialect.transform(xml, element =>
+    val xmlResult: Xml.Element = kind.xmlDialect.transform(xml, element =>
       postConverters.foldLeft(element)((result, postConverter) => postConverter
         .postConvert(result, source)
         .getOrElse(result)
@@ -55,11 +56,17 @@ final class Markup(
     val htmlResult: Html.Element = Xml2Html.fromXml(xmlResult)
 
     // Add TOC to HTML
+    var tocAdded: Boolean = false
     source.xmlDialect.transform(htmlResult, element =>
-      // TODO only when relevant
-      // TODO if must add and did not add, add at the head
-      if !MarkdownMarkup.isKramdownTocMarker(element)
-      then element
-      else toc.html
+      if tocAdded || !kind.isTocPlaceholder(element)
+      then
+        element
+      else
+        tocAdded = true
+        toc.html
     )
+
+    if doAddToc && !tocAdded
+    then htmlResult.setChildren(toc.html +: htmlResult.getChildren)
+    else htmlResult
 
