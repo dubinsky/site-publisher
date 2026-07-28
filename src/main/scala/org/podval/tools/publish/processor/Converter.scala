@@ -3,8 +3,6 @@ package org.podval.tools.publish.processor
 import org.podval.tools.publish.page.PageContent
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
-import zio.blocks.chunk.Chunk
-import scala.annotation.tailrec
 
 object Converter:
   enum Stage:
@@ -57,22 +55,4 @@ abstract class Converter extends Processor:
     element: Xml.Element
   ): Xml.Element =
     element.get(from).fold(element)(element.set(to, _))
-
-  // Replace the elements satisfying the predicate with their children (repeatedly).
-  final protected def unfold(element: Xml.Element, predicate: Xml.Element => Boolean): Xml.Element =
-    @tailrec
-    def unfold(children: Xml.Nodes): Xml.Nodes =
-      var unfolded: Boolean = false
-      val result = children.flatMap: child =>
-        child.asElement match
-          case Some(element) if predicate(element) =>
-            unfolded = true
-            element.getChildren
-          case _ =>
-            Chunk(child)
-
-      if !unfolded then result else unfold(result)
-
-    element.setChildren(unfold(element.getChildren))
-
 

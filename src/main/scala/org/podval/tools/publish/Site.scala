@@ -39,7 +39,7 @@ final class Site(options: Options) extends JSLibrary:
   Files.requireExists(configFile)
   Files.requireFile(configFile)
 
-  private val config: Config = Config.codec.decode(Files.read(configFile)) match
+  val config: Config = Config.codec.decode(Files.read(configFile)) match
     case Left(error) => throw IllegalArgumentException("Malformed Config", error)
     case Right(result) => result
 
@@ -48,9 +48,6 @@ final class Site(options: Options) extends JSLibrary:
   def isSelf(uri: URI): Boolean =
     uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
 
-  def lang: Option[String] = config.lang
-  def math: Boolean = config.math
-  
   // Configurer
   private val configurer: Configurer = Configurer.get(options.option("configurer", "Default"))
   val markups: Markups = configurer.markups

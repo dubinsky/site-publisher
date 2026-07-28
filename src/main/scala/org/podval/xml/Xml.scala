@@ -44,7 +44,6 @@ given Xml: XmlAst[XML.Element]:
     override def setChildren(children: Nodes): Element =
       element.copy(children = children)
 
-
   // Was with the ZIO Blocks XML parser
   //  def parse(content: String): Either[Throwable, Xml] =
   //    try Right(XmlReader.read(content))
