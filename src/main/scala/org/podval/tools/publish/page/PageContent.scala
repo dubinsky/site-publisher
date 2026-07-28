@@ -24,17 +24,6 @@ final class PageContent(
   def markupKind: MarkupKind = markup.kind
   def xmlDialect: XmlDialect = markupKind.xmlDialect
 
-  def error(
-    kind: PageError.Kind,
-    message: String,
-    cause: Option[Throwable] = None
-  ): Unit = site.error(
-    sourcePath,
-    kind,
-    message,
-    cause
-  )
-
   def entityKind: Option[EntityKind] = markupKind.entityKind(xml)
   
   // TODO take content into account:
@@ -55,7 +44,7 @@ final class PageContent(
         .getId
         .map(Fragment.Block(_))
         .orElse:
-          error(PageError.NoId, s"Defect: No id on block $element")
+          source.error(PageError.NoId, s"Defect: No id on block $element")
           None
     )
   )

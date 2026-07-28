@@ -24,7 +24,7 @@ private def resolveInternalLinks(
   val kind: Option[LinkKind] = LinkKind.of(element)
   Link.resolve(ref, kind, content.page) match
     case None =>
-      content.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+      content.source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
       element.addClass("unresolved-link") // TODO move into Links
     case Some(linkTo) =>
       // TODO transclude

@@ -57,7 +57,7 @@ object HtmlSections:
           title <- element.getTextOpt
           id <-
             val id: Option[String] = element.getId
-            if id.isEmpty then content.error(PageError.NoId, s"Defect: No id on section $element")
+            if id.isEmpty then content.source.error(PageError.NoId, s"Defect: No id on section $element")
             id
         yield HtmlSection(
           level = level,

@@ -26,7 +26,7 @@ final class BlocksConverter extends Converter:
           )
           result.getId match
             case Some(idExisting) =>
-              content.error(
+              content.source.error(
                 kind = PageError.NoId,
                 message = s"Block id '$id' conflicts with existing id '$idExisting'"
               )

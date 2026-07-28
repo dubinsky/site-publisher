@@ -20,7 +20,7 @@ final class InternalLinksConverter extends Converter:
         val isInternal: Boolean =
           try
             val uri: URI = URI(href)
-            if content.site.isSelf(uri) then content.error(PageError.SelfLink, href)
+            if content.site.isSelf(uri) then content.source.error(PageError.SelfLink, href)
             uri.getScheme == null
           catch case e: URISyntaxException => true
 
