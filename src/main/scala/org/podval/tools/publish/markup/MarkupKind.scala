@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
-import org.podval.tools.publish.processor.Processor
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.tools.publish.{PageError, Path, Site}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}

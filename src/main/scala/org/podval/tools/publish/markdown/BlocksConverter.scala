@@ -1,9 +1,8 @@
 package org.podval.tools.publish.markdown
 
 import org.podval.tools.publish.PageError
-import org.podval.tools.publish.markup.Links
+import org.podval.tools.publish.markup.{Converter, Links}
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.processor.Converter
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk

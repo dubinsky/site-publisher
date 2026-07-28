@@ -1,6 +1,6 @@
 package org.podval.tools.publish.tei
 
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.markup.Converter
 import org.podval.xml.Xml
 
 private object TeiFacsimileLinksConverter:

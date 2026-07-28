@@ -2,9 +2,8 @@ package org.podval.tools.publish.tei
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.link.Fragment
-import org.podval.tools.publish.markup.{MarkupKind, XmlMarkup}
+import org.podval.tools.publish.markup.{MarkupKind, Processor, XmlMarkup}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
-import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, Xml}
 
 object TeiMarkup extends MarkupKind(

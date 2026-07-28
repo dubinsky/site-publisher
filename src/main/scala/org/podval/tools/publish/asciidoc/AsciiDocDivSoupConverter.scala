@@ -1,7 +1,6 @@
 package org.podval.tools.publish.asciidoc
 
-import org.podval.tools.publish.markup.HtmlSections
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.markup.{Converter, HtmlSections}
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec

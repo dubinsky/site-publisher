@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.markup.Links
-import org.podval.tools.publish.processor.PostConverter
+import org.podval.tools.publish.markup.{Links, PostConverter}
 import org.podval.tools.publish.util.{Files, Media}
 import org.podval.xml.Xml
 

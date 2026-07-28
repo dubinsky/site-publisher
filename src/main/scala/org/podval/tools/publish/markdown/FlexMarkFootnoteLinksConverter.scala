@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.markup.Footnotes
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.markup.{Converter, Footnotes}
 import org.podval.xml.Xml
 
 // Note: without FootnotesExtension, FlexMark treats footnotes as links,

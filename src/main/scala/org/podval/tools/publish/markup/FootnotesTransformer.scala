@@ -4,7 +4,6 @@ import org.podval.tools.publish.asciidoc.AsciiDocMarkup
 import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.markup.Footnotes
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.processor.Transformer
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk

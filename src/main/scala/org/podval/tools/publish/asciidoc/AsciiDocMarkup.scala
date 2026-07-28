@@ -3,9 +3,8 @@ package org.podval.tools.publish.asciidoc
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.{Path, Site}
-import org.podval.tools.publish.markup.{HtmlSections, MarkupKind}
+import org.podval.tools.publish.markup.{HtmlSections, MarkupKind, Processor}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
-import org.podval.tools.publish.processor.Processor
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
 object AsciiDocMarkup extends MarkupKind(

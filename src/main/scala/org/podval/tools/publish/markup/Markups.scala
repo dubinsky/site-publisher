@@ -1,6 +1,5 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.processor.{Processor, Processors}
 import zio.blocks.chunk.Chunk
 
 // Known markup languages.
@@ -21,7 +20,7 @@ final class Markups:
     processors: Seq[Processor],
     elements: Set[String] = Set.empty
   ): Unit =
-    val markup: Markup = Markup(markupKind, Processors(processors))
+    val markup: Markup = Markup(markupKind, processors)
     
     // TODO verify that extensions do not overlap
     val extensions: Set[String] = markupKind.extensions

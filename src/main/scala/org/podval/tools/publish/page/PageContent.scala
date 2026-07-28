@@ -19,7 +19,7 @@ final class PageContent(
       gatherElement = BackLink(_, _, source.page, toc)
     )
 
-  def toHtml: Html.Element = source.markup.processors.toHtml(source, xml, toc)
+  def toHtml: Html.Element = source.markup.toHtml(source, xml, toc)
 
   lazy val toc: Toc = Toc(
     sections = source.markupKind.sections(source, xml),

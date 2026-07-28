@@ -21,7 +21,7 @@ final class PageSource(
     val result: PageContent = PageContent(
       source = this,
       frontMatter = frontMatter,
-      xml = markup.processors.process(this, xml),
+      xml = markup.process(this, xml),
     )
 
     cachedVar = Some(SoftReference(result))

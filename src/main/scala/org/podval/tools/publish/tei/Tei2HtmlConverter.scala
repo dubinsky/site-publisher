@@ -1,6 +1,6 @@
 package org.podval.tools.publish.tei
 
-import org.podval.tools.publish.processor.Xml2HtmlConverter
+import org.podval.tools.publish.markup.Xml2HtmlConverter
 import org.podval.xml.Xml
 
 /*

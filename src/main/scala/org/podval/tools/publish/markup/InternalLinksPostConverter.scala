@@ -4,7 +4,6 @@ import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.markup.Links
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.processor.PostConverter
 import org.podval.xml.Xml
 
 final class InternalLinksPostConverter extends PostConverter:

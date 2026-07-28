@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.PageError
 import org.podval.tools.publish.markup.Links
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.processor.Converter
 import org.podval.xml.Xml
 import java.net.{URI, URISyntaxException}
 

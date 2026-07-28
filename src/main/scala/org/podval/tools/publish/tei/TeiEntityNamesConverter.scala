@@ -1,7 +1,7 @@
 package org.podval.tools.publish.tei
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.processor.Converter
+import org.podval.tools.publish.markup.Converter
 import org.podval.xml.Xml
 
 final class TeiEntityNamesConverter extends Converter:
