@@ -1,4 +1,4 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 final class PageError(
   sourcePath: Path,

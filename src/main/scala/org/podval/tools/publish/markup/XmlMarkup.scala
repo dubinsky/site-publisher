@@ -1,17 +1,20 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.link.Fragment
-import org.podval.tools.publish.page.{MarkupPage, PageSource}
+import org.podval.tools.publish.link.{Fragment, Toc}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.xml.{Html, Xml, XmlDialect}
 
 // Note: this exist only to parse XML to disambiguate the dialect
-object XmlMarkup extends MarkupKind(
+object XmlMarkup extends Markup(
   name = "XML",
   xmlDialect = XmlDialect.Plain,
   allowsInternalFrontMatter = false,
   rendersToXml = true,
   extension = "xml"
 ):
+  override def xmlContent(site: Site, sourcePath: Path, content: String): String = content
+  override def xmlConverter: Converter = Converter.id
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None)
-  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
   override def sections(source: PageSource, xml: Xml.Element): Seq[Fragment.Section] = Seq.empty
+  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = xml

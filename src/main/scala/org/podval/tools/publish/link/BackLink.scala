@@ -19,7 +19,7 @@ object BackLink:
     from: Page,
     content: PageContent,
   ): Option[BackLink] =
-    if !element.isA || !Links.isInternalLink(element) then None else
+    if !(element.isA && element.has(Links.InternalLinkClass)) then None else
       for
         ref <- element.getHref
         to <- Link.resolve(ref, kind = None, from)

@@ -1,4 +1,4 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import zio.blocks.schema.Schema
 import zio.blocks.schema.yaml.{YamlCodec, YamlFormat}

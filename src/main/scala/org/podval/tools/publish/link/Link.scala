@@ -1,8 +1,8 @@
 package org.podval.tools.publish.link
 
 import org.podval.tools.publish.page.{Page, PageContent}
+import org.podval.tools.publish.site.Path
 import org.podval.tools.publish.util.{Files, Strings}
-import org.podval.tools.publish.Path
 
 final class Link(
   val page: Page,

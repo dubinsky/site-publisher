@@ -2,8 +2,8 @@ package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Link
+import org.podval.tools.publish.site.{HeaderPage, PageError, Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.tools.publish.{HeaderPage, PageError, Path, Posts, Site}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import java.io.File
@@ -106,8 +106,11 @@ abstract class Page(
     .map(icon => Icon(icon, frontMatter.iconStyle.getOrElse(Icon.Regular)))
 
   protected def iconDefault: Icon
-  
-  final def paginate: Boolean = frontMatter.paginate
+
+  final def tocDepth: Int = frontMatter.tocDepth.getOrElse(2)
+  final def chunk: Boolean = frontMatter.chunk
+  final def chunkDepth: Int = frontMatter.chunkDepth.getOrElse(2)
+  final def hasToc: Boolean = chunk || frontMatter.tocDepth.isDefined
 
   final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides

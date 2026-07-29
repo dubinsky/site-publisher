@@ -1,24 +1,40 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.html.HtmlMarkup
+import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionIdsConverter}
 import org.podval.tools.publish.link.Fragment.Section
-import org.podval.tools.publish.{Path, Site}
-import org.podval.tools.publish.markup.{MarkupKind, Processor}
-import org.podval.tools.publish.page.{MarkupPage, PageSource}
+import org.podval.tools.publish.link.Toc
+import org.podval.tools.publish.markup.{Converter, Markup, PostConverter}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
-object MarkdownMarkup extends MarkupKind(
+object MarkdownMarkup extends Markup(
   name = "Markdown",
   allowsInternalFrontMatter = true,
   extension = "md",
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,
 ):
+  override val xmlConverter: Converter = Converter.concat(
+    BlocksConverter(),
+    WikiLinksConverter(),
+    MarkdownFootnotesConverter(),
+    FlexMarkFootnoteLinksConverter(),
+    FlexMarkFootnoteBodiesConverter(),
+    HtmlSectionIdsConverter()
+  )
+
+  override val xmlPostConverter: PostConverter =
+    WikiLinksPostConverter()
+
+  override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
+    element.getName == "div" && element.hasClass("footnotes")
+
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
 
-  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
-
   override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlMarkup.sections(source, xml)
+
+  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
   override def xmlContent(
     site: Site,
@@ -27,18 +43,6 @@ object MarkdownMarkup extends MarkupKind(
   ): String =
     // Wrap Markdown rendered as HTML in a 'div'.
     s"<div>${FlexMark.parseAndRenderMarkdown(content)}</div>"
-
-  def processors: Seq[Processor] = Seq(
-    new BlocksConverter,
-    new WikiLinksConverter,
-    new WikiLinksPostConverter,
-    new MarkdownFootnotesConverter,
-    new FlexMarkFootnoteLinksConverter,
-    new FlexMarkFootnoteBodiesConverter
-  )
-
-  def isFootnotesDiv(element: Xml.Element): Boolean =
-    element.getName == "div" && element.hasClass("footnotes")
 
   // Kramdown Toc Marker
   override def isTocPlaceholder(element: Html.Element): Boolean =

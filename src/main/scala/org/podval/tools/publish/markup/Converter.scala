@@ -5,16 +5,52 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
 object Converter:
-  enum Stage:
-    case General
-    // Converter that converts links needs to run after everything that was to become a link had.
-    case Links
+  val id: Converter = new Converter {}
+
+  def concat(converters: Converter*): Converter = converters.reduce(_.andThen(_))
+
+  private final class AndThen(left: Converter, right: Converter) extends Converter:
+    override protected def convert(
+      element: Xml.Element,
+      source: PageSource,
+      ids: IdGenerator,
+      footnoteCorrelationIds: IdGenerator
+    ): Option[Xml.Element] =
+      val convertedByLeft: Xml.Element = left.doConvert(
+        element,
+        source,
+        ids,
+        footnoteCorrelationIds
+      )
+
+      val result: Xml.Element = right.doConvert(
+        convertedByLeft,
+        source,
+        ids,
+        footnoteCorrelationIds
+      )
+      
+      Some(result)
 
 // Converts individual XML elements.
-abstract class Converter extends Processor:
-  def stage: Converter.Stage = Converter.Stage.General
+abstract class Converter:
+  def andThen(right: Converter): Converter = Converter.AndThen(this, right)
 
-  def convert(
+  final def doConvert(
+    element: Xml.Element,
+    source: PageSource,
+    ids: IdGenerator,
+    footnoteCorrelationIds: IdGenerator
+  ): Xml.Element =
+    convert(
+      element,
+      source,
+      ids, 
+      footnoteCorrelationIds
+    )
+      .getOrElse(element)
+  
+  protected def convert(
     element: Xml.Element,
     source: PageSource,
     ids: IdGenerator,

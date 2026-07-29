@@ -1,17 +1,17 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.PageError
 import org.podval.tools.publish.link.{Link, LinkKind}
 import org.podval.tools.publish.markup.Links
 import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
 
 final class InternalLinksPostConverter extends PostConverter:
-  override def postConvert(
+  override protected def postConvert(
     element: Xml.Element,
     source: PageSource
   ): Option[Xml.Element] =
-    Option.when(element.isA && Links.isInternalLink(element))(
+    Option.when(element.isA && element.has(Links.InternalLinkClass))(
       element.getHref.fold(element)(resolveInternalLinks(element, source, _))
     )
 

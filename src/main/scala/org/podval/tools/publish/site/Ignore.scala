@@ -1,4 +1,4 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import org.eclipse.jgit.ignore.IgnoreNode
 import org.eclipse.jgit.ignore.IgnoreNode.MatchResult

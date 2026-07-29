@@ -1,4 +1,4 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{NonDirectoryPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon

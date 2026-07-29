@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Icon, Media}
-import org.podval.tools.publish.{Path, Site}
 
 abstract class Asset(site: Site, path: Path) extends RealPage(site: Site, path: Path):
   final override def isDirectory: Boolean = false

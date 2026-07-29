@@ -5,9 +5,7 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
 final class AnchorIdsConverter extends Converter:
-  override def stage: Converter.Stage = Converter.Stage.Links
-
-  override def convert(
+  override protected def convert(
     element: Xml.Element,
     source: PageSource,
     ids: IdGenerator,

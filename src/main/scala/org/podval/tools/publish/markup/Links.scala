@@ -3,21 +3,16 @@ package org.podval.tools.publish.markup
 import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
 
 object Links:
-  private object BlockClass extends HtmlClass("wiki-block")
+  object BlockClass extends HtmlClass("wiki-block")
 
   private object WikiLinkClass extends HtmlClass("wiki-link")
 
   private object TranscludeClass extends HtmlClass("transclude")
 
-  private object InternalLinkClass extends HtmlClass("internal-link")
+  object InternalLinkClass extends HtmlClass("internal-link")
 
   // TODO remove; add/check classes directly
-  def markInternalLink(element: Xml.Element): Xml.Element = element.add(Links.InternalLinkClass)
-  def isInternalLink(element: Xml.Element): Boolean = element.has(InternalLinkClass)
-  
   def markBlock(element: Xml.Element): Xml.Element = element.add(Links.BlockClass)
-  def isBlock(element: Xml.Element): Boolean = element.has(BlockClass)
-
   def isTranscluded(element: Xml.Element): Boolean = element.has(TranscludeClass)
 
   object WikiLink:

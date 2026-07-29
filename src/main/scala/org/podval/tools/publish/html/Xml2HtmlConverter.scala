@@ -1,5 +1,6 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.html
 
+import org.podval.tools.publish.markup.Converter
 import org.podval.xml.{HtmlAttribute, HtmlElement, Xml}
 
 // Prefix attribute and element names that collide with the HTML ones

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.{Path, Site, Sitemap}
 import org.podval.tools.publish.js
+import org.podval.tools.publish.site.{Path, Site, Sitemap}
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
@@ -18,18 +18,22 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   protected def syntheticContentOpt: Option[Html.Element]
 
   // TODO use markup.xmlDialect?
-  final override def textContent: String = HtmlXmlDialect.render(toHtml)
+  final override def textContent: String = HtmlXmlDialect.render(toHtml(
+    pageHeader = pageHeader,
+    markupContent = markupContent,
+    syntheticContent = syntheticContentOpt
+  ))
 
   def markupContent: Option[Html.Element]
-
+  
   def pageHeader: Option[Html.Element]
 
   // Based on https://github.com/jekyll/minima
-  private def toHtml: Html.Element =
-    val pageHeader: Option[Html.Element] = this.pageHeader // TODO make a parameter
-    val markupContent: Option[Html.Element] = this.markupContent // TODO make a parameter
-    val syntheticContent: Option[Html.Element] = syntheticContentOpt // TODO make a parameter
-
+  private def toHtml(
+    pageHeader: Option[Html.Element],
+    markupContent: Option[Html.Element],
+    syntheticContent: Option[Html.Element]
+  ): Html.Element =
     def getLanguages(element: Html.Element): Chunk[String] =
       if element.isElement(HtmlElement.Code)
       then element.getPrefixedClasses("language")

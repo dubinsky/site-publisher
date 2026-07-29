@@ -1,15 +1,16 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
+import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.link.LinkKind
 import org.podval.tools.publish.markup.{Markup, XmlMarkup}
 import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
-  OriginalMarkupPage, Page, PageSource, SimpleMarkupPage, TocPage}
+  OriginalMarkupPage, Page, PageSource, SectionChunkPage, SimpleMarkupPage, TocChunkPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
 
 final class Pages(site: Site):
-  import Pages.{ForName, ForMarkup}
+  import Pages.{ForMarkup, ForName}
 
   // TODO from Grok:
   //- Description: Page lookup is linear (`pages.find`) and `find(..., kind)` ignores `kind` entirely.
@@ -66,17 +67,33 @@ final class Pages(site: Site):
     page.parent
     // Add alias pages
     page.aliases.foreach(add)
-    // Add derived pages
-    if page.paginate then page match
-      case markupPage: OriginalMarkupPage => addDerivedPages(markupPage)
+    // Add chunk pages
+    if page.chunk then page match
+      case markupPage: OriginalMarkupPage => addChunkPages(markupPage)
       case _ => site.error(
         page.path,
         PageError.FileKind, // TODO
-        s"Page ${page.path} is paginated but not a markup page"
+        s"Page ${page.path} is chunked but is not a markup page"
       )
 
-  private def addDerivedPages(markupPage: OriginalMarkupPage): Unit =
-    add(TocPage(markupPage))
+  private def addChunkPages(markupPage: OriginalMarkupPage): Unit =
+    def addChunkPages(sections: Seq[Section], depth: Int): Unit =
+      if depth >= 1 then
+        val isTerminal = depth < 2
+        for section <- sections do
+          add(SectionChunkPage(
+            markupPage,
+            sectionId = section.id,
+            isTerminal = isTerminal
+          ))
+
+          addChunkPages(section.sections, depth - 1)
+
+    add(TocChunkPage(markupPage))
+    addChunkPages(
+      sections = markupPage.content.map(_.toc.sections).getOrElse(Seq.empty),
+      depth = markupPage.chunkDepth
+    )
 
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
@@ -164,7 +181,7 @@ final class Pages(site: Site):
       )
 
   private def forName(paths: List[Path]): ForName =
-    val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(_.extension.flatMap(site.markups.forExtension).isDefined)
+    val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(_.extension.flatMap(Markup.forExtension).isDefined)
     // TODO error if markup.length > 1
     if markup.isEmpty
     then
@@ -193,7 +210,7 @@ final class Pages(site: Site):
       then
         // Determine markup by the file extension
         // Note: we can only get here after forName() verified that the extension is a markup one, so - get:
-        val markup: Markup = sourcePath.extension.flatMap(site.markups.forExtension).get
+        val markup: Markup = sourcePath.extension.flatMap(Markup.forExtension).get
         (markup, None)
       else
         // Parse and disambiguate XML markup by its XML dialect's root elements
@@ -204,7 +221,7 @@ final class Pages(site: Site):
           message = "Reading to disambiguate XML dialect",
           firstReading = true,
         )
-        val markup: Option[Markup] = site.markups.forElement(xml.getName)
+        val markup: Option[Markup] = Markup.forElement(xml.getName)
         // TODO error if unknown XML dialect
         // TODO from Grok:
         //- Description: Unknown XML root element uses `markup.get`, throwing `NoSuchElementException` instead of a `PageError`. A stray or unsupported `.xml` file aborts the whole build with an opaque stack trace rather than a path-scoped diagnostic.

@@ -65,6 +65,31 @@ Obsidian supports them natively.
 Site generator supports Markdown task lists via FlexMark Task List Extension;
 Obsidian supports them natively.
 
+=== AsciiDoc
+
+TODO AsciiDoc support is not yet complete!
+
+TODO document it once it is
+
+=== Chunking
+
+Previously, I used `asciidoctor-multipage` Asciidoctor
+[extension](https://github.com/owenh000/asciidoctor-multipage)
+to split an HTML file into per-section pages.
+
+That extension has long-known
+[issues](https://github.com/owenh000/asciidoctor-multipage/issues/46),
+for example, it does not handle footnotes.
+
+Even if those issues get fixed (which seems extremely unlikely),
+this extension only works with AsciiDoc files;
+site generator can chunk files in any markup language it supports.
+
+I use the term `chunking` as did DocBook XSLT stylesheets
+and not `multi-page` as does AsciiDoctor extension.
+
+Chunking is enabled by setting `chunk` to `true` in the file's front-matter.
+
 == Farewell, Jekyll
 
 Events of 2026:
@@ -114,7 +139,6 @@ Write about all the plugins I used:
 
 === TEI
 
-- metadata (including title) from the document itself
 - footnotes should cling to preceding elements, not just text
 - facsimiles
 - raw TEI
@@ -122,10 +146,8 @@ Write about all the plugins I used:
 === Pages
 - do PDF embedding - with `<object>`, `<iframe>` or?
 - do video embedding?
-- recognize more audio/image types;
 - treat `<img>` as a link element also?
 - sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
-- generate RSS feed
 - add whatever is needed for the feed to the `<head>`
 - implement SEO - or is just the page title in the `<head>` all I need?
 - whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list
@@ -137,15 +159,13 @@ Write about all the plugins I used:
 - auto-create tag pages
 
 === Chunking and Paging
-- implement splitting of HTML by section when front matter has `chunk: true`
+
 - implement paging of the long lists (e.g., list of posts)
 - generate PDF when front-matter says `pdf: true`
 * danfickle/openhtmltopdf: An HTML to PDF library for the JVM. Based on Flying Saucer and Apache PDF-BOX 2. With SVG image support. Now also with accessible PDF support (WCAG, Section 508, PDF/UA)! · GitHub[https://share.google/UiGeZVUcInZur8zNF](https://share.google/UiGeZVUcInZur8zNF)
 * [https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd](https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd)
 
 === More Markup Languages
-
-- AsciiDoc
 
 - DocBook??
 - ReStructured Text?

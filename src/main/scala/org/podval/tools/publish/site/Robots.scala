@@ -1,8 +1,7 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.SyntheticAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.tools.publish.{Path, Site}
 
 object Robots:
   val path: Path = Path("robots").withExtension("txt")

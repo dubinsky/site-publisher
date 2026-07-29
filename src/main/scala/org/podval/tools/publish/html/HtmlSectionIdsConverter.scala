@@ -6,7 +6,7 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
 final class HtmlSectionIdsConverter extends Converter:
-  override def convert(
+  override protected def convert(
     element: Xml.Element,
     source: PageSource,
     ids: IdGenerator,

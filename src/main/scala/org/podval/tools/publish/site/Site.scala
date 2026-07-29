@@ -1,13 +1,12 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.link.BackLinks
-import org.podval.tools.publish.markup.Markups
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
 import org.podval.xml.Html
-import zio.blocks.html.*
 import org.slf4j.{Logger, LoggerFactory}
+import zio.blocks.html.*
 import java.io.File
 import java.net.URI
 
@@ -48,9 +47,13 @@ final class Site(options: Options) extends JSLibrary:
   def isSelf(uri: URI): Boolean =
     uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
 
-  // Configurer
-  private val configurer: Configurer = Configurer.get(options.option("configurer", "Default"))
-  val markups: Markups = configurer.markups
+  // TODO make HTML converter configurable.
+//  private val configurer: Configurer = Configurer.get(options.option("configurer", "Default"))
+//  def get(name: String): Configurer = Class
+//    .forName(if name.contains(".") then name else s"${Configurer.getClass.getName}$name")
+//    .getDeclaredConstructor()
+//    .newInstance()
+//    .asInstanceOf[Configurer]
 
   // Components
   val pages: Pages = Pages(this)
@@ -181,8 +184,8 @@ object Site:
   @main def generate(): Unit = main(Array(
     "--log-level=INFO",
     "--treat-errors-as-warnings=true",
-    "/home/dub/OpenTorah/opentorah.org/docs"
+//    "/home/dub/OpenTorah/opentorah.org/docs"
 //  "/home/dub/OpenTorah/alter-rebbe.org"
-//  "/home/dub/Podval/dub.podval.org"
+  "/home/dub/Podval/dub.podval.org"
 //  "/home/dub/Podval/www.podval.org"
   ))

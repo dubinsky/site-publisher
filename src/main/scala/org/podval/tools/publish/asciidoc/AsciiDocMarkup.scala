@@ -1,14 +1,15 @@
 package org.podval.tools.publish.asciidoc
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.{Path, Site}
-import org.podval.tools.publish.html.HtmlMarkup
+import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionIdsConverter}
 import org.podval.tools.publish.link.Fragment.Section
-import org.podval.tools.publish.markup.{MarkupKind, Processor}
-import org.podval.tools.publish.page.{MarkupPage, PageSource}
+import org.podval.tools.publish.link.Toc
+import org.podval.tools.publish.markup.{Converter, Markup}
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
-object AsciiDocMarkup extends MarkupKind(
+object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
   allowsInternalFrontMatter = true,
   extension = "adoc",
@@ -17,12 +18,21 @@ object AsciiDocMarkup extends MarkupKind(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
+  override val xmlConverter: Converter = Converter.concat(
+    AsciiDocDivSoupConverter(),
+    AsciiDocFootnoteBodiesConverter(),
+    AsciiDocFootnoteLinksConverter(),
+    HtmlSectionIdsConverter()
+  )
+
+  override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
+    element.getName == "div" && element.getId.contains("footnotes")
+
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
 
-  override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
-
-  // TODO
   override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlMarkup.sections(source, xml)
+
+  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
   private var asciidoctorVar: Option[Asciidoctor] = None
   private def asciidoctor(site: Site): Asciidoctor = asciidoctorVar.getOrElse:
@@ -73,13 +83,3 @@ object AsciiDocMarkup extends MarkupKind(
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"
-
-  def processors: Seq[Processor] = Seq(
-    new AsciiDocDivSoupConverter,
-    new AsciiDocFootnoteLinksConverter,
-    new AsciiDocFootnoteBodiesConverter
-  )
-
-  def isFootnotesDiv(element: Xml.Element): Boolean =
-    element.getName == "div" && element.getId.contains("footnotes")
-  

@@ -1,7 +1,5 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.asciidoc.AsciiDocMarkup
-import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.markup.Footnotes
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.util.IdGenerator
@@ -9,11 +7,8 @@ import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
 // TODO split up; carry footnotes in the PageContent...
-final class FootnotesTransformer(
-  processMarkdown: Boolean,
-  processAsciidoc: Boolean
-) extends Transformer(stage = Transformer.Stage.Footnotes):
-  override def transform(
+final class FootnotesTransformer(markup: Markup):
+  def transform(
     element: Xml.Element,
     source: PageSource
   ): Xml.Element =
@@ -36,9 +31,13 @@ final class FootnotesTransformer(
       element.setChildren(element
         .getChildren
         .filterNot(_.asElement.fold(false)(child =>
-          child.has(Footnotes.BodyClass) ||
-          processMarkdown && MarkdownMarkup.isFootnotesDiv(element) || 
-          processAsciidoc && AsciiDocMarkup.isFootnotesDiv(element)
+          val remove: Boolean =
+            child.has(Footnotes.BodyClass) ||
+            markup.isSpuriousFootnotesDiv(element)
+          // TODO AsciiDoc footnotes div does not get removed!
+          if remove then
+            val x = 0
+          remove
         ))
       )
     )

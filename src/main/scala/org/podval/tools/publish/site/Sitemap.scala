@@ -1,9 +1,8 @@
-package org.podval.tools.publish
+package org.podval.tools.publish.site
 
 import org.podval.tools.publish.html.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.tools.publish.{Path, Site}
 import org.podval.xml.{Html, Xml, XmlAttribute}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*

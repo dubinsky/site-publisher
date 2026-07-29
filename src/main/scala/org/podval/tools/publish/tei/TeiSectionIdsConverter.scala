@@ -8,7 +8,7 @@ import org.podval.xml.Xml
 final class TeiSectionIdsConverter extends Converter:
   // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
   // but I do it manually and uniformly for HTML, TEI etc.
-  override def convert(
+  override protected def convert(
     element: Xml.Element,
     source: PageSource,
     ids: IdGenerator,
