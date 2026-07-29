@@ -12,5 +12,6 @@ object XmlMarkup extends MarkupKind(
   rendersToXml = true,
   extension = "xml"
 ):
+  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None)
   override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
   override def sections(source: PageSource, xml: Xml.Element): Seq[Fragment.Section] = Seq.empty

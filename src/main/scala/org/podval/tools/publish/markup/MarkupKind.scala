@@ -28,6 +28,8 @@ abstract class MarkupKind(
   ): String =
     content // default: markup parses directly into XML
 
+  def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
+  
   def isTocPlaceholder(element: Html.Element): Boolean = false
   
   def entityKind(xml: Xml.Element): Option[EntityKind] = None

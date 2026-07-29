@@ -13,6 +13,8 @@ object TeiMarkup extends MarkupKind(
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):
+  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None) // TODO
+
   override def entityKind(xml: Xml.Element): Option[EntityKind] =
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
 

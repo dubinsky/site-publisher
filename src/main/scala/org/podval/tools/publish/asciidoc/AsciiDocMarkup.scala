@@ -16,6 +16,8 @@ object AsciiDocMarkup extends MarkupKind(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
+  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlSections.retrieveTitle(xml)
+
   override def pageHeader(page: MarkupPage): Html.Element = MarkupKind.pageHeader(page)
 
   // TODO

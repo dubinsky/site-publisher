@@ -4,7 +4,7 @@ import org.podval.tei.EntityKind
 import org.podval.tools.publish.link.Link
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.tools.publish.{HeaderPage, PageError, Path, Posts, Site}
-import org.podval.xml.Html
+import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import java.io.File
 import java.time.{Instant, LocalDate}
@@ -89,8 +89,11 @@ abstract class Page(
   
   final def author: Option[String] = content(_.frontMatter.author)
 
-  // TODO take content into account
-  final def title: String = content(_.frontMatter.title).getOrElse(titleDefault)
+  final def title: String =
+    content(_.title.map(_.getText))
+    .orElse(content(_.frontMatter.title))
+    .getOrElse(titleDefault)
+
   def titleDefault: String = titleFromPath
   def titleFromPath: String
 

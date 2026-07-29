@@ -12,8 +12,8 @@ import scala.annotation.tailrec
 // Common for markup formats whose XML representation is actually HTML:
 // HTML itself, Markdown, AsciiDoc, and likely Re-Structured text;
 // pure XML markup formats like TEI and DocBook are different.
-// Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
-// and for AsciiDoc, by setting `sectids` -
+// Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`;
+// for AsciiDoc, by setting `sectids` attribute to `true` -
 // but I do it manually and uniformly for HTML, Markdown, etc.
 object HtmlSections:
   private final class IdsConverter extends Converter:
@@ -23,9 +23,13 @@ object HtmlSections:
       ids: IdGenerator,
       footnoteCorrelationIds: IdGenerator
     ): Option[Xml.Element] =
-    Option.when(element.getId.isEmpty && HtmlSections.headerLevel(element).isDefined)(
+    Option.when(element.getId.isEmpty && headerLevel(element).isDefined)(
       element.setId(element.getTextOpt.fold(ids.generate())(Xml.toId))
     )
+
+  def processors: Seq[Processor] = Seq(
+    new IdsConverter
+  )
 
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName
@@ -39,10 +43,6 @@ object HtmlSections:
     val id: String
   )
 
-  def processors: Seq[Processor] = Seq(
-    new IdsConverter
-  )
-
   // Note: only sections on the top level are detected;
   // sections of levels lower than the level of the first section are not allowed.
   def sections(source: PageSource, xml: Xml.Element): Seq[Section] =
@@ -51,7 +51,7 @@ object HtmlSections:
       .flatMap(_.asElement)
       .flatMap(element =>
         for
-          level <- HtmlSections.headerLevel(element)
+          level <- headerLevel(element)
           title <- element.getTextOpt
           id <-
             val id: Option[String] = element.getId
@@ -87,3 +87,10 @@ object HtmlSections:
         level,
         tail
       )
+
+  def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = xml
+    .getChildren
+    .flatMap(_.asElement)
+    .find(element => headerLevel(element).contains(1))
+    .fold((xml, None)): h1 =>
+      (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))

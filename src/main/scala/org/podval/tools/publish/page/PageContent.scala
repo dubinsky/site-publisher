@@ -9,6 +9,7 @@ import org.podval.xml.{Html, Xml}
 final class PageContent(
   val source: PageSource,
   val frontMatter: FrontMatter,
+  val title: Option[Xml.Element],
   xml: Xml.Element
 ):
   def entityKind: Option[EntityKind] = source.markupKind.entityKind(xml)
