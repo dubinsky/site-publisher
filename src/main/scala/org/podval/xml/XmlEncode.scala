@@ -1,6 +1,6 @@
 package org.podval.xml
 
-object Strings:
+object XmlEncode:
   def encodeXmlSpecials(string: String): String = string
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

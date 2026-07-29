@@ -1,6 +1,6 @@
 package org.podval.tools.publish
 
-import org.podval.tools.publish.markup.HtmlMarkup
+import org.podval.tools.publish.html.HtmlMarkup
 import java.io.File
 
 final case class Path(

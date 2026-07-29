@@ -5,7 +5,7 @@ import org.podval.tools.publish.link.Fragment
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.tools.publish.{PageError, Path, Site}
-import org.podval.xml.{Html, Xml, XmlDialect, XmlParser}
+import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.html.*
 
 // TODO make this a JS library too, to install markup-specific stylesheet
@@ -29,9 +29,9 @@ abstract class MarkupKind(
     content // default: markup parses directly into XML
 
   def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
-  
+
   def isTocPlaceholder(element: Html.Element): Boolean = false
-  
+
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
   def pageHeader(page: MarkupPage): Html.Element
@@ -98,7 +98,7 @@ abstract class MarkupKind(
         Xml
           .element(name)
           .addClass(s"malformed-$name")
-          .setText(s"malformed $name: $error\n${org.podval.xml.Strings.escape(xmlString)}")
+          .setText(s"malformed $name: $error\n${XmlEncode.escape(xmlString)}")
 
     (frontMatter, xml)
 

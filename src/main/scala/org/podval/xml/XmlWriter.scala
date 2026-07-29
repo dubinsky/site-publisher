@@ -33,7 +33,7 @@ object XmlWriter:
     val attributes: Doc =
       if attributeValues.isEmpty then Doc.empty
       else Doc.lineOrSpace + Doc.intercalate(Doc.lineOrSpace, attributeValues.map((name, value) =>
-        Doc.text(s"$name=") + Doc.lineOrEmpty + Doc.text(Strings.quote(encodeXmlSpecials(value)))
+        Doc.text(s"$name=") + Doc.lineOrEmpty + Doc.text(XmlEncode.quote(encodeXmlSpecials(value)))
       ))
 
     val nodes: List[ast.Node] =
@@ -199,7 +199,7 @@ object XmlWriter:
   private def preformatElement[Element: XmlAst](element: Element): Seq[String] =
     val attributeValues: Chunk[(String, String)] = element.getAttributes
     val attributes: String = if attributeValues.isEmpty then "" else attributeValues
-      .map((name, value) => s"$name=${Strings.quote(value)}") // TODO escapeSpecials?
+      .map((name, value) => s"$name=${XmlEncode.quote(value)}") // TODO escapeSpecials?
       .mkString(" ", ", ", "")
 
     val children: Seq[String] =
@@ -217,7 +217,7 @@ object XmlWriter:
     .getOrElse(preformat(toString(node)))
 
   private def preformat(string: String): Seq[String] =
-    Strings.encodeXmlSpecials(string).split("\n").toSeq
+    XmlEncode.encodeXmlSpecials(string).split("\n").toSeq
 
   // TODO from Grok:
   //- Description: For HTML dialect, `encodeXmlSpecials` is disabled (`HtmlXmlDialect` default).
@@ -227,7 +227,7 @@ object XmlWriter:
   //- Suggestion: Escape text and attributes on render (use full `Strings.escape` for attributes).
   // Prefer encoding on output always; only skip for preformatted trusted raw HTML islands if needed.
   private def encodeXmlSpecials(using dialect: XmlDialect)(string: String): String =
-    if dialect.encodeXmlSpecials then Strings.encodeXmlSpecials(string) else string
+    if dialect.encodeXmlSpecials then XmlEncode.encodeXmlSpecials(string) else string
 
   private def space(using ast: XmlAst[?]): ast.Node = ast.text(" ")
 

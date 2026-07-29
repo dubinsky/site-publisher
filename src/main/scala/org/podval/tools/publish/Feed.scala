@@ -2,7 +2,7 @@ package org.podval.tools.publish
 
 import org.podval.tools.publish.page.{Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.xml.{Html, HtmlXmlDialect, Strings, Xml, XmlAttribute}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlEncode}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 import java.time.{Instant, LocalTime, ZoneId}
@@ -124,7 +124,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
 
   private def el(name: String, text: String): Xml.Element =
     // XmlDialect.Plain does not escape text nodes; Atom content must stay well-formed XML.
-    Xml.element(name).setText(Strings.encodeXmlSpecials(text))
+    Xml.element(name).setText(XmlEncode.encodeXmlSpecials(text))
 
   private def zone: ZoneId =
     site.config.timezone.flatMap(tz => Try(ZoneId.of(tz)).toOption).getOrElse(ZoneId.systemDefault)
