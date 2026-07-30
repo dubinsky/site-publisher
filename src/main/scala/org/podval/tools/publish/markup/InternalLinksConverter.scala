@@ -6,11 +6,8 @@ import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
 import java.net.{URI, URISyntaxException}
 
-final class InternalLinksConverter extends Converter:
-  override protected def convert(
-    element: Xml.Element,
-    source: PageSource
-  ): Option[Xml.Element] =
+final class InternalLinksConverter(source: PageSource) extends Converter:
+  override protected def convert(element: Xml.Element): Option[Xml.Element] =
     if !element.isA then None else
       element.getHref.flatMap: href =>
         // TODO verify that external link is not broken if the Site is so configured

@@ -5,6 +5,7 @@ import org.podval.tools.publish.link.Toc
 import org.podval.tools.publish.markup.{Converter, Markup}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{PageError, Path, Site}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
@@ -20,8 +21,11 @@ object HtmlMarkup extends Markup(
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
 
-  override val xmlConverter: Converter = Converter.concat(
-    HtmlSectionIdsConverter()
+  override def converters(
+    ids: IdGenerator = IdGenerator("_generated_id"),
+    source: PageSource
+  ): Seq[Converter] = Seq(
+    HtmlSectionIdsConverter(ids)
   )
 
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = xml

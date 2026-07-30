@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.markup.{Links, PostConverter}
+import org.podval.tools.publish.markup.{Links, Converter}
 import org.podval.tools.publish.util.{Files, Media}
 import org.podval.xml.Xml
 
 // see https://obsidian.md/help/links
-final class WikiLinksPostConverter extends PostConverter:
-  override protected def postConvert(element: Xml.Element): Option[Xml.Element] =
+final class WikiLinksPostConverter extends Converter:
+  override protected def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(element.isA && Links.isTranscluded(element))(
       element.getHref.fold(element)(embed(element, _).getOrElse(element))
     )

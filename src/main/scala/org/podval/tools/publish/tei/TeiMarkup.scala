@@ -5,6 +5,7 @@ import org.podval.tools.publish.link.{Fragment, Toc}
 import org.podval.tools.publish.markup.{Converter, Markup, XmlMarkup}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
 
 object TeiMarkup extends Markup(
@@ -18,12 +19,15 @@ object TeiMarkup extends Markup(
 
   override def xmlContent(site: Site, sourcePath: Path, content: String): String = content
 
-  override val xmlConverter: Converter = Converter.concat(
+  override def converters(
+    ids: IdGenerator,
+    source: PageSource
+  ): Seq[Converter] = Seq(
     Tei2HtmlConverter(),
     TeiEntityNamesConverter(),
     TeiFacsimileLinksConverter(),
     TeiFootnotesConverter(),
-    TeiSectionIdsConverter()
+    TeiSectionIdsConverter(ids)
   )
 
   override def entityKind(xml: Xml.Element): Option[EntityKind] =

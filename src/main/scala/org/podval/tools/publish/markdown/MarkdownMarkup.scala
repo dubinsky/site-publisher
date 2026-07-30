@@ -3,9 +3,10 @@ package org.podval.tools.publish.markdown
 import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionIdsConverter}
 import org.podval.tools.publish.link.Fragment.Section
 import org.podval.tools.publish.link.Toc
-import org.podval.tools.publish.markup.{Converter, Markup, PostConverter}
+import org.podval.tools.publish.markup.{Converter, Markup}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
 object MarkdownMarkup extends Markup(
@@ -15,17 +16,23 @@ object MarkdownMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,
 ):
-  override val xmlConverter: Converter = Converter.concat(
-    BlocksConverter(),
+  override def converters(
+    ids: IdGenerator = IdGenerator("_generated_id"),
+    source: PageSource
+  ): Seq[Converter] = Seq(
+    BlocksConverter(source),
     WikiLinksConverter(),
     MarkdownFootnotesConverter(),
     FlexMarkFootnoteLinksConverter(),
     FlexMarkFootnoteBodiesConverter(),
-    HtmlSectionIdsConverter()
+    HtmlSectionIdsConverter(ids)
   )
 
-  override val xmlPostConverter: PostConverter =
+  override def postConverters(
+    source: PageSource
+  ): Seq[Converter] = Seq(
     WikiLinksPostConverter()
+  )
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")

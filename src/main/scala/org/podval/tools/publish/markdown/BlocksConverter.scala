@@ -10,11 +10,8 @@ import zio.blocks.chunk.Chunk
 // TODO according to the Obsidian documentation, block anchor can be added to a "structured block"
 // (e.g., a list) by putting it after the block, with empty lines before and after;
 // I'll deal with this later...
-final class BlocksConverter extends Converter:
-  override protected def convert(
-    element: Xml.Element,
-    source: PageSource
-  ): Option[Xml.Element] =
+final class BlocksConverter(source: PageSource) extends Converter:
+  override protected def convert(element: Xml.Element): Option[Xml.Element] =
     val children: Chunk[Xml.Node] = element.getChildren
     if children.isEmpty then None else children.last.asText.flatMap: text =>
       val (before: String, id: Option[String]) = Strings.split(text, '^')

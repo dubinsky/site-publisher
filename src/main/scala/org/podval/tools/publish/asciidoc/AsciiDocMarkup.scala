@@ -7,6 +7,7 @@ import org.podval.tools.publish.link.Toc
 import org.podval.tools.publish.markup.{Converter, Markup}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 
 object AsciiDocMarkup extends Markup(
@@ -18,11 +19,14 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  override val xmlConverter: Converter = Converter.concat(
+  override def converters(
+    ids: IdGenerator = IdGenerator("_generated_id"),
+    source: PageSource
+  ): Seq[Converter] = Seq(
     AsciiDocDivSoupConverter(),
     AsciiDocFootnoteBodiesConverter(),
     AsciiDocFootnoteLinksConverter(),
-    HtmlSectionIdsConverter()
+    HtmlSectionIdsConverter(ids)
   )
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =

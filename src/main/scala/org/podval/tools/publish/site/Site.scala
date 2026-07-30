@@ -181,11 +181,12 @@ object Site:
     Site(Options(args, environmentVariablesPrefix = "SITE_PUBLISHER"))
       .generate()
 
+  // TODO same "unresolved reference" error is now logged multiple times - chunking?
   @main def generate(): Unit = main(Array(
     "--log-level=INFO",
     "--treat-errors-as-warnings=true",
-//    "/home/dub/OpenTorah/opentorah.org/docs"
+    "/home/dub/OpenTorah/opentorah.org/docs"
 //  "/home/dub/OpenTorah/alter-rebbe.org"
-  "/home/dub/Podval/dub.podval.org"
+//  "/home/dub/Podval/dub.podval.org"
 //  "/home/dub/Podval/www.podval.org"
   ))

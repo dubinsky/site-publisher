@@ -1,76 +1,26 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
 
 object Converter:
   val id: Converter = new Converter {}
 
-  def concat(converters: Converter*): Converter = converters.reduce(_.andThen(_))
+  def concat(converters: Seq[Converter]): Converter = converters.reduce(_.andThen(_))
 
   private final class AndThen(left: Converter, right: Converter) extends Converter:
-    override protected def convert(
-      element: Xml.Element,
-      source: PageSource,
-      ids: IdGenerator,
-      footnoteCorrelationIds: IdGenerator
-    ): Option[Xml.Element] =
-      val convertedByLeft: Xml.Element = left.doConvert(
-        element,
-        source,
-        ids,
-        footnoteCorrelationIds
-      )
-
-      val result: Xml.Element = right.doConvert(
-        convertedByLeft,
-        source,
-        ids,
-        footnoteCorrelationIds
-      )
-      
+    override protected def convert(element: Xml.Element): Option[Xml.Element] =
+      val convertedByLeft: Xml.Element = left.doConvert(element)
+      val result: Xml.Element = right.doConvert(convertedByLeft)
       Some(result)
 
 // Converts individual XML elements.
 abstract class Converter:
   def andThen(right: Converter): Converter = Converter.AndThen(this, right)
 
-  final def doConvert(
-    element: Xml.Element,
-    source: PageSource,
-    ids: IdGenerator,
-    footnoteCorrelationIds: IdGenerator
-  ): Xml.Element =
-    convert(
-      element,
-      source,
-      ids, 
-      footnoteCorrelationIds
-    )
-      .getOrElse(element)
+  final def doConvert(element: Xml.Element): Xml.Element =
+    convert(element).getOrElse(element)
   
-  protected def convert(
-    element: Xml.Element,
-    source: PageSource,
-    ids: IdGenerator,
-    footnoteCorrelationIds: IdGenerator
-  ): Option[Xml.Element]  = convert(
-    element,
-    source
-  )
-
-  protected def convert(
-    element: Xml.Element,
-    source: PageSource,
-  ): Option[Xml.Element]  = convert(
-    element
-  )
-
-  protected def convert(
-    element: Xml.Element
-  ): Option[Xml.Element] =
-    None
+  protected def convert(element: Xml.Element): Option[Xml.Element] = None
 
   final protected def convertText(
     element: Xml.Element,

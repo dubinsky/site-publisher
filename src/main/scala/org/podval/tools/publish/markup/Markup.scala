@@ -35,9 +35,15 @@ abstract class Markup(
     content: String
   ): String
 
-  def xmlConverter: Converter
+  def converters(
+    ids: IdGenerator,
+    source: PageSource
+  ): Seq[Converter]
 
-  def xmlPostConverter: PostConverter = PostConverter.id
+  def postConverters(
+    source: PageSource
+  ): Seq[Converter] =
+    Seq.empty
 
   def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
 
@@ -113,34 +119,37 @@ abstract class Markup(
 
     (frontMatter, xml)
 
-  private lazy val converter: Converter = Converter.concat(
-    xmlConverter,
-    // Converters that convert links need to run after everything that was to become a link had.
-    AnchorIdsConverter(),
-    InternalLinksConverter()
-  )
-
   final def process(source: PageSource, xml: Xml.Element): Xml.Element =
     // Run converters
-    val ids: IdGenerator = IdGenerator("_generated_id")
-    val footnoteCorrelationIds: IdGenerator = IdGenerator("")
+    val converter: Converter =
+      // TODO shove it into PageContent?
+      val ids: IdGenerator = IdGenerator("_generated_id")
+      Converter.concat(
+        converters(
+          ids = ids,
+          source
+        ) ++
+        // Converters that convert links need to run after everything that was to become a link had.
+        Seq(
+          AnchorIdsConverter(ids),
+          InternalLinksConverter(source)
+        )
+      )
 
-    val converted: Xml.Element = xmlDialect.transform(xml, element =>
-      converter.doConvert(element, source, ids, footnoteCorrelationIds)
-    )
+    val converted: Xml.Element = xmlDialect.transform(xml, converter.doConvert)
 
     // Run transformers
     FootnotesTransformer(this).transform(converted, source)
 
-  private lazy val postConverter: PostConverter = PostConverter.concat(
-    xmlPostConverter,
-    InternalLinksPostConverter()
-  )
-
   def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
-    xmlDialect.transform(xml, element =>
-      postConverter.doPostConvert(element, source)
+    // Run post-converters
+    val postConverter: Converter = Converter.concat(
+      postConverters(source) ++ Seq(
+        InternalLinksPostConverter(source)
+      )
     )
+
+    xmlDialect.transform(xml, postConverter.doConvert)
 
   def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element
   

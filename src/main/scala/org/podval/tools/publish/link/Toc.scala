@@ -5,6 +5,7 @@ import zio.blocks.html.*
 import Fragment.Section
 
 // TODO for chunked pages, links must be to chunked pages!!!
+// TODO derive both Toc and Section from Sections
 final class Toc(val sections: Seq[Section]):
   def resolveSection(names: Seq[String]): Option[Link.ToSection] = Toc.resolve(
     result = Seq.empty,
