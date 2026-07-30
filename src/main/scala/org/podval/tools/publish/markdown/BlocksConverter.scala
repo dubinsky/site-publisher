@@ -11,7 +11,7 @@ import zio.blocks.chunk.Chunk
 // (e.g., a list) by putting it after the block, with empty lines before and after;
 // I'll deal with this later...
 final class BlocksConverter(source: PageSource) extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     val children: Chunk[Xml.Node] = element.getChildren
     if children.isEmpty then None else children.last.asText.flatMap: text =>
       val (before: String, id: Option[String]) = Strings.split(text, '^')

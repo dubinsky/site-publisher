@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 
 // see https://obsidian.md/help/links
 final class WikiLinksConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(!element.isA)(
       convertText(element, convertWikiLinks(Chunk.empty, _))
     )

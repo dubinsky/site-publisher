@@ -10,7 +10,7 @@ abstract class Xml2HtmlConverter(prefix: String) extends Converter:
   // Dialect-specific conversions
   protected def convertMore(element: Xml.Element): Xml.Element = element
 
-  final override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  final override def convert(element: Xml.Element): Option[Xml.Element] =
     val attributesConverted: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
       val nameNew: String =
         if !HtmlAttribute.reservedAttributes.contains(name)

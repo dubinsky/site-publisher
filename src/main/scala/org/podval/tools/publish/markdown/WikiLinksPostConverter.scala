@@ -6,7 +6,7 @@ import org.podval.xml.Xml
 
 // see https://obsidian.md/help/links
 final class WikiLinksPostConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(element.isA && Links.isTranscluded(element))(
       element.getHref.fold(element)(embed(element, _).getOrElse(element))
     )

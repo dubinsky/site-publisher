@@ -19,14 +19,14 @@ object TeiMarkup extends Markup(
 
   override def xmlContent(site: Site, sourcePath: Path, content: String): String = content
 
-  override def converters(
+  override def processors(
     ids: IdGenerator,
     source: PageSource
   ): Seq[Converter] = Seq(
     Tei2HtmlConverter(),
     TeiEntityNamesConverter(),
     TeiFacsimileLinksConverter(),
-    TeiFootnotesConverter(),
+    TeiFootnotesConverter(ids),
     TeiSectionIdsConverter(ids)
   )
 

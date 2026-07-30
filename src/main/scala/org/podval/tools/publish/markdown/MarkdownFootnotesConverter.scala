@@ -6,7 +6,7 @@ import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
 final class MarkdownFootnotesConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(!element.isA)(
       convertText(element, MarkdownFootnotesConverter.convertFootnotes(Chunk.empty, _))
     )

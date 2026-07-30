@@ -12,7 +12,7 @@ import org.podval.xml.Xml
 //     <a href="#_footnoteref_N">N</a>. Footnote Body
 //   </div>
 final class AsciiDocFootnoteBodiesConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "div" || !element.has(Footnotes.BodyClass) then None else
       val correlationId: Option[String] = element
         .getChildren

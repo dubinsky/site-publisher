@@ -10,6 +10,7 @@ import org.podval.tools.publish.site.{PageError, Path, Site}
 import org.podval.tools.publish.tei.TeiMarkup
 import org.podval.tools.publish.util.{Date, Files, IdGenerator}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
+import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
 // TODO make this a JS library too, to install markup-specific stylesheet
@@ -35,14 +36,14 @@ abstract class Markup(
     content: String
   ): String
 
-  def converters(
+  def processors(
     ids: IdGenerator,
     source: PageSource
-  ): Seq[Converter]
+  ): Seq[Processor]
 
-  def postConverters(
+  def postProcessors(
     source: PageSource
-  ): Seq[Converter] =
+  ): Seq[Processor] =
     Seq.empty
 
   def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
@@ -120,36 +121,31 @@ abstract class Markup(
     (frontMatter, xml)
 
   final def process(source: PageSource, xml: Xml.Element): Xml.Element =
-    // Run converters
-    val converter: Converter =
-      // TODO shove it into PageContent?
-      val ids: IdGenerator = IdGenerator("_generated_id")
-      Converter.concat(
-        converters(
-          ids = ids,
-          source
-        ) ++
-        // Converters that convert links need to run after everything that was to become a link had.
-        Seq(
-          AnchorIdsConverter(ids),
-          InternalLinksConverter(source)
-        )
-      )
+    // Run processors
+    val ids: IdGenerator = IdGenerator()
+    val processed: Xml.Element = Processor.process(xmlDialect, xml, processors(ids, source) ++ Seq(
+      // Converters that convert links need to run after everything that was to become a link had.
+      AnchorIdsConverter(ids),
+      InternalLinksConverter(source)
+    ))
 
-    val converted: Xml.Element = xmlDialect.transform(xml, converter.doConvert)
+    // Process Footnotes
 
-    // Run transformers
-    FootnotesTransformer(this).transform(converted, source)
+    // Retrieve footnote bodies
+    // TODO shove them into PageContent
+    val footnoteBodies: Map[String, Chunk[Xml.Node]] = Footnotes.footnoteBodies(processed, source.xmlDialect)
+
+    Processor.process(xmlDialect, processed, Seq(
+      FootnoteLinksTransformer(xmlDialect),
+      FootnoteBodiesTransformer(source),
+      FootnotesTransformer(footnoteBodies, ids, source)
+    ))
 
   def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
-    // Run post-converters
-    val postConverter: Converter = Converter.concat(
-      postConverters(source) ++ Seq(
-        InternalLinksPostConverter(source)
-      )
-    )
-
-    xmlDialect.transform(xml, postConverter.doConvert)
+    // Run post-processors
+    Processor.process(xmlDialect, xml, postProcessors(source) ++ Seq(
+      InternalLinksPostConverter(source)
+    ))
 
   def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element
   

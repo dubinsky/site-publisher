@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlDialect}
+import zio.blocks.chunk.Chunk
 
 // TODO footnotes placed at the end of elements like table, not the overall end?
 // TODO how do multi-level footnotes look?
@@ -57,3 +58,11 @@ object Footnotes:
     .add(BackLinkClass)
     .setHref(s"#${footnoteId(footnoteNumber)}")
     .setText(footnoteNumber)
+
+  def footnoteBodies(xml: Xml.Element, xmlDialect: XmlDialect): Map[String, Chunk[Xml.Node]] = 
+    xmlDialect.gather(xml, element =>
+      if !element.has(BodyClass)
+      then None
+      else getCorrelationId(element).map(_ -> element.getChildren)
+    ).toMap
+    

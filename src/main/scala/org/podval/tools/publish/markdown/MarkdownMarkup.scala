@@ -16,8 +16,8 @@ object MarkdownMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def converters(
-    ids: IdGenerator = IdGenerator("_generated_id"),
+  override def processors(
+    ids: IdGenerator,
     source: PageSource
   ): Seq[Converter] = Seq(
     BlocksConverter(source),
@@ -28,7 +28,7 @@ object MarkdownMarkup extends Markup(
     HtmlSectionIdsConverter(ids)
   )
 
-  override def postConverters(
+  override def postProcessors(
     source: PageSource
   ): Seq[Converter] = Seq(
     WikiLinksPostConverter()

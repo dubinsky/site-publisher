@@ -7,9 +7,9 @@ import org.podval.xml.Xml
 final class TeiSectionIdsConverter(ids: IdGenerator) extends Converter:
   // Note: for Markdown, this can be achieved by setting `HtmlRenderer.GENERATE_HEADER_ID`,
   // but I do it manually and uniformly for HTML, TEI etc.
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(element.getName == "div" && element.getId.isEmpty)(
-      element.setId(sectionTitle(element).fold(ids.generate())(Xml.toId))
+      element.setId(sectionTitle(element).fold(ids.general())(Xml.toId))
     )
 
   private def sectionTitle(element: Xml.Element): Option[String] = element

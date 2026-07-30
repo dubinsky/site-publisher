@@ -7,7 +7,7 @@ import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
 
 final class InternalLinksPostConverter(source: PageSource) extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(element.isA && element.has(Links.InternalLinkClass))(
       element.getHref.fold(element)(resolveInternalLinks(element, source, _))
     )

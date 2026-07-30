@@ -19,8 +19,8 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  override def converters(
-    ids: IdGenerator = IdGenerator("_generated_id"),
+  override def processors(
+    ids: IdGenerator,
     source: PageSource
   ): Seq[Converter] = Seq(
     AsciiDocDivSoupConverter(),

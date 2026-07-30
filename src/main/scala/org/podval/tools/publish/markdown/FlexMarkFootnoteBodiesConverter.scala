@@ -17,7 +17,7 @@ import org.podval.xml.Xml
 //     ...
 //   </li>
 final class FlexMarkFootnoteBodiesConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "li" then None else
       val correlationId: Option[String] = element.getId.flatMap: id =>
         Option.when(id.startsWith("fn-"))(id.substring("fn-".length))

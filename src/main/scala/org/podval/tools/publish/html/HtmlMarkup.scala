@@ -21,8 +21,8 @@ object HtmlMarkup extends Markup(
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
 
-  override def converters(
-    ids: IdGenerator = IdGenerator("_generated_id"),
+  override def processors(
+    ids: IdGenerator,
     source: PageSource
   ): Seq[Converter] = Seq(
     HtmlSectionIdsConverter(ids)

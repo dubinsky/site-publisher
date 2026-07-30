@@ -15,7 +15,7 @@ import org.podval.xml.Xml
 //     </a>
 //   </sup>
 final class FlexMarkFootnoteLinksConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "sup" then None else element
       .getChildren
       .flatMap(_.asElement)

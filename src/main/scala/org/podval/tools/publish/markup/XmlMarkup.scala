@@ -15,7 +15,7 @@ object XmlMarkup extends Markup(
   extension = "xml"
 ):
   override def xmlContent(site: Site, sourcePath: Path, content: String): String = content
-  override def converters(ids: IdGenerator, source: PageSource): Seq[Converter] = Seq.empty
+  override def processors(ids: IdGenerator, source: PageSource): Seq[Converter] = Seq.empty
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None)
   override def sections(source: PageSource, xml: Xml.Element): Seq[Fragment.Section] = Seq.empty
   override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = xml

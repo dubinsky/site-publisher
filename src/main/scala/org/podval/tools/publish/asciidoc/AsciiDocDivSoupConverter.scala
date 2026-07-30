@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 // Distill the soup of meaningless `div`s that Asciidoctor emits;
 // see, for example, https://tiffnix.com/soupault#html-de-uglifier-plugin.
 final class AsciiDocDivSoupConverter extends Converter:
-  override protected def convert(element: Xml.Element): Option[Xml.Element] =
+  override def convert(element: Xml.Element): Option[Xml.Element] =
     @tailrec
     def removeSpuriousElements(children: Xml.Nodes): Xml.Nodes =
       var changed: Boolean = false

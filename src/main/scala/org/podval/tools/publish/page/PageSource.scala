@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Markup
-import org.podval.tools.publish.site.{PageError, Path, Site}
+import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlDialect}
 import scala.ref.SoftReference
 
