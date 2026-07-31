@@ -21,7 +21,7 @@ final class Site(options: Options) extends JSLibrary:
   Files.requireDirectory(sourceDirectory)
 
   def sourceFile(sourcePath: Path): File = sourcePath.file(sourceDirectory)
-  
+
   val targetDirectory: File = File(sourceDirectory, options.option("target-directory-name", "_site"))
   targetDirectory.mkdirs()
   Files.requireExists(targetDirectory)

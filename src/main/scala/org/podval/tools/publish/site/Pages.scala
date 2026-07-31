@@ -202,7 +202,7 @@ final class Pages(site: Site):
 
   private def addMarkup(
     sourcePath: Path,
-    standAloneFrontMatter: Option[Path],
+    frontMatterStandAlone: Option[Path],
     path: Path
   ): Page =
     val (markup: Markup, parsed: Option[(FrontMatter, Xml.Element)]) =
@@ -217,7 +217,7 @@ final class Pages(site: Site):
         val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
           site = site,
           sourcePath = sourcePath,
-          standAloneFrontMatter = standAloneFrontMatter,
+          frontMatterStandAlone = frontMatterStandAlone,
           message = "Reading to disambiguate XML dialect",
           firstReading = true,
         )
@@ -245,7 +245,7 @@ final class Pages(site: Site):
           page = markupPage,
           markup = markup,
           sourcePath = sourcePath,
-          standAloneFrontMatter = standAloneFrontMatter
+          frontMatterStandAlone = frontMatterStandAlone
         )
         markupPage.setSource(pageSource)
         parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))

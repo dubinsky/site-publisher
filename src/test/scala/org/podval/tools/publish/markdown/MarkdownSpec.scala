@@ -7,9 +7,8 @@ import zio.test.*
 object MarkdownSpec extends ZIOSpecDefault:
   def parse(input: String, verify: Xml.Element => TestResult): TestResult =
     val xmlString: String = MarkdownMarkup.xmlContent(
-      null,
-      null,
-      input
+      input,
+      null
     )
     val parsed: Xml.Element = XmlParser.parseXml(xmlString).toOption.get
     verify(parsed)

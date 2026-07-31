@@ -85,7 +85,12 @@ trait XmlAst[ELEMENT]:
       set(attribute.name, value)
 
     def set(attribute: String, value: String): Element =
-      element.setAttributes(element.getAttributes.filterNot(_._1 == attribute).appended(attribute -> value))
+      val otherAttributes: Chunk[(String, String)] = element.getAttributes.filterNot(_._1 == attribute)
+      element.setAttributes(
+        if value.nonEmpty
+        then otherAttributes.appended(attribute -> value)
+        else otherAttributes
+      )
 
     def set(attribute: XmlAttribute, value: Option[String]): Element =
       set(attribute.name, value)
@@ -110,7 +115,7 @@ trait XmlAst[ELEMENT]:
           .map(_.trim)
           .filterNot(_.isEmpty)
 
-    private def setClasses(values: Chunk[String]): Element =
+    def setClasses(values: Chunk[String]): Element =
       element.set(HtmlClass, values.mkString(" "))
 
     def has(htmlClass: HtmlClass): Boolean = hasClass(htmlClass.name)

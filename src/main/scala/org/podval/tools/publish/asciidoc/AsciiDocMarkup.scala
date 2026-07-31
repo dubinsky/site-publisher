@@ -9,6 +9,7 @@ import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import java.io.File
 
 object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
@@ -39,7 +40,7 @@ object AsciiDocMarkup extends Markup(
   override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
   private var asciidoctorVar: Option[Asciidoctor] = None
-  private def asciidoctor(site: Site): Asciidoctor = asciidoctorVar.getOrElse:
+  private def asciidoctor: Asciidoctor = asciidoctorVar.getOrElse:
     val result: Asciidoctor = Asciidoctor.Factory.create()
 //    // Note: only extensions packaged as jars will work - if they are on the classpath.
 //    site.asciidoctorExtensions.foreach: gemName =>
@@ -48,11 +49,7 @@ object AsciiDocMarkup extends Markup(
     asciidoctorVar = Some(result)
     result
 
-  override def xmlContent(
-    site: Site,
-    sourcePath: Path,
-    content: String
-  ): String =
+  override def xmlContent(content: String, sourceFile: File): String =
     val attributes: Attributes = Attributes
       .builder()
       // Suppress the TOC.
@@ -67,8 +64,8 @@ object AsciiDocMarkup extends Markup(
       // Render into XML and not HTML.
       .attribute("htmlsyntax", "xml")
       // Set some attributes.
-      .attribute("docfile", site.sourceFile(sourcePath).getAbsolutePath)
-      .attribute("docdir", site.sourceFile(sourcePath).getParentFile.getAbsolutePath)
+      .attribute("docfile", sourceFile.getAbsolutePath)
+      .attribute("docdir", sourceFile.getParentFile.getAbsolutePath)
 
       // TODO author and email attributes should be set from the Site
 
@@ -83,7 +80,7 @@ object AsciiDocMarkup extends Markup(
       .attributes(attributes)
       .build()
 
-    val result: String = asciidoctor(site).convert(content, options)
+    val result: String = asciidoctor.convert(content, options)
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"

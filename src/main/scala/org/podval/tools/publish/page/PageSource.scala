@@ -9,7 +9,7 @@ final class PageSource(
   val page: OriginalMarkupPage,
   val markup: Markup,
   val sourcePath: Path,
-  standAloneFrontMatter: Option[Path]
+  frontMatterStandAlone: Option[Path]
 ):
   def xmlDialect: XmlDialect = markup.xmlDialect
 
@@ -42,7 +42,7 @@ final class PageSource(
     val (frontMatter: FrontMatter, xml: Xml.Element) = markup.readAndParse(
       site = page.site,
       sourcePath = sourcePath,
-      standAloneFrontMatter = standAloneFrontMatter,
+      frontMatterStandAlone = frontMatterStandAlone,
       message = message,
       firstReading = firstReading
     )

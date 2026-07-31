@@ -8,6 +8,7 @@ import org.podval.tools.publish.site.{PageError, Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
+import java.io.File
 import scala.annotation.tailrec
 
 object HtmlMarkup extends Markup(
@@ -17,7 +18,7 @@ object HtmlMarkup extends Markup(
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def xmlContent(site: Site, sourcePath: Path, content: String): String =
+  override def xmlContent(content: String, sourceFile: File): String =
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
 

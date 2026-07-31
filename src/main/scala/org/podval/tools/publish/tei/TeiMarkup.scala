@@ -7,6 +7,7 @@ import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
+import java.io.File
 
 object TeiMarkup extends Markup(
   name = "TEI",
@@ -17,7 +18,7 @@ object TeiMarkup extends Markup(
 ):
   override def rootElements: Set[String] = Set("TEI", "store", "collection") ++ EntityKind.values.map(_.element).toSet
 
-  override def xmlContent(site: Site, sourcePath: Path, content: String): String = content
+  override def xmlContent(content: String, sourceFile: File): String = content
 
   override def processors(
     ids: IdGenerator,

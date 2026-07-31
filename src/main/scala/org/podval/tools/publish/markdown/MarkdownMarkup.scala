@@ -8,6 +8,7 @@ import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import java.io.File
 
 object MarkdownMarkup extends Markup(
   name = "Markdown",
@@ -43,11 +44,7 @@ object MarkdownMarkup extends Markup(
 
   override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
-  override def xmlContent(
-    site: Site,
-    sourcePath: Path,
-    content: String
-  ): String =
+  override def xmlContent(content: String, sourceFile: File): String =
     // Wrap Markdown rendered as HTML in a 'div'.
     s"<div>${FlexMark.parseAndRenderMarkdown(content)}</div>"
 

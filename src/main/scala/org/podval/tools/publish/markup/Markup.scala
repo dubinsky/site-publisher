@@ -13,6 +13,8 @@ import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
+import java.io.File
+
 // TODO make this a JS library too, to install markup-specific stylesheet
 abstract class Markup(
   final val name: String,
@@ -30,11 +32,7 @@ abstract class Markup(
 
   def rootElements: Set[String] = Set.empty
 
-  def xmlContent(
-    site: Site,
-    sourcePath: Path,
-    content: String
-  ): String
+  def xmlContent(content: String, sourceFile: File): String
 
   def processors(
     ids: IdGenerator,
@@ -61,24 +59,22 @@ abstract class Markup(
   final def readAndParse(
     site: Site,
     sourcePath: Path,
-    standAloneFrontMatter: Option[Path],
+    frontMatterStandAlone: Option[Path],
     message: String,
     firstReading: Boolean,
   ): (FrontMatter, Xml.Element) =
     site.log.debug(s"$message: $sourcePath")
 
-    val frontMatterContentStandAlone: Option[String] = standAloneFrontMatter
-      .map(site.sourceFile)
-      .map(Files.read)
-
-    val (frontMatterContentInternal: Option[String], content: String) =
-      val content: String = Files.read(site.sourceFile(sourcePath))
+    val sourceFile: File = site.sourceFile(sourcePath)
+    val sourceContent: String = Files.read(sourceFile)
+    val (frontMatterInternalContent: Option[String], content: String) =
       if allowsInternalFrontMatter
-      then FrontMatter.split(content)
-      else (None, content)
+      then FrontMatter.split(sourceContent)
+      else (None, sourceContent)
 
+    val frontMatterStandAloneContent: Option[String] = frontMatterStandAlone.map(site.sourceFile).map(Files.read)
     // TODO error if both are present
-    val frontMatterContent: Option[String] = frontMatterContentInternal.orElse(frontMatterContentStandAlone)
+    val frontMatterContent: Option[String] = frontMatterInternalContent.orElse(frontMatterStandAloneContent)
 
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
       case Right(frontMatter) =>
@@ -95,11 +91,7 @@ abstract class Markup(
 
         FrontMatter.empty
 
-    val xmlString: String = xmlContent(
-      site,
-      sourcePath,
-      content
-    )
+    val xmlString: String = xmlContent(content, sourceFile)
 
     val xml: Xml.Element = (if rendersToXml then XmlParser.parseXml(xmlString) else XmlParser.parseHtml(xmlString)) match
       case Right(xml) =>
