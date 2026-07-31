@@ -1,10 +1,8 @@
 package org.podval.tools.publish.tei
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
-import org.podval.tools.publish.link.{Fragment, Toc}
 import org.podval.tools.publish.markup.{Converter, Markup, XmlMarkup}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
-import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
 import java.io.File
@@ -36,14 +34,7 @@ object TeiMarkup extends Markup(
 
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) =
     (xml, None) // TODO
-
-  override def sections(
-    source: PageSource, xml: Xml.Element
-  ): Seq[Fragment.Section] = Seq.empty // TODO
-
-  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element =
-    xml // TODO
-
+  
   override def pageHeader(page: MarkupPage): Html.Element =
     super.pageHeader(page) // TODO
 

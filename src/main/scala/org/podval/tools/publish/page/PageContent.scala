@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.link.{BackLink, Fragment, Link, Toc}
+import org.podval.tools.publish.link.{BackLink, Block, Link, Toc}
 import org.podval.tools.publish.markup.Links
 import org.podval.tools.publish.site.PageError
 import org.podval.xml.{Html, Xml, Xml2Html}
@@ -14,7 +14,7 @@ final class PageContent(
 ):
   def entityKind: Option[EntityKind] = source.markup.entityKind(xml)
 
-  lazy val toc: Toc = Toc(source.markup.sections(source, xml))
+  lazy val toc: Toc = Toc(xml, source)
 
   def resolveId(id: String): Option[Link.ToId] = ids.find(_ == id).map(Link.ToId(_))
 
@@ -22,10 +22,10 @@ final class PageContent(
 
   def resolveBlock(id: String): Option[Link.ToBlock] = blocks.find(_.id == id).map(Link.ToBlock(_))
 
-  private lazy val blocks: Seq[Fragment.Block] = source.xmlDialect.gather(xml, element =>
+  private lazy val blocks: Seq[Block] = source.xmlDialect.gather(xml, element =>
     if !element.has(Links.BlockClass) then None else element
       .getId
-      .map(Fragment.Block(_))
+      .map(Block(_))
       .orElse:
         source.error(PageError.NoId, s"Defect: No id on block $element")
         None
@@ -89,22 +89,24 @@ final class PageContent(
     xml: Xml.Element,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Xml.Element = sectionId match
-    case None =>
-      if isTerminal
-      then xml
-      else takeChildrenBeforeId(xml, toc.sections.headOption.map(_.id))
+  ): Xml.Element =
+    val (element, sections) = sectionId match
+      case None =>
+        (xml, toc.sections)
 
-    case Some(sectionId) =>
-      val sectionXml: Xml.Element = source.markup.section(xml, sectionId, toc)
-      if isTerminal
-      then sectionXml
-      else takeChildrenBeforeId(sectionXml, toc.getById(sectionId).sections.headOption.map(_.id))
+      case Some(sectionId) =>
+        (getSection(xml, sectionId), toc.getById(sectionId).sections)
 
-  private def takeChildrenBeforeId(xml: Xml.Element, id: Option[String]): Xml.Element = id match
-    case None =>
-      xml
-    case Some(stopAtId) =>
-      xml.setChildren(xml.getChildren.takeWhile(
-        _.asElement.fold(true)(!_.getId.contains(stopAtId))
-      ))
+    if isTerminal then element else sections.headOption.map(_.id) match
+      case None =>
+        element
+      case Some(stopAtId) =>
+        element.setChildren(element.getChildren.takeWhile(
+          _.asElement.fold(true)(!_.getId.contains(stopAtId))
+        ))
+
+  private def getSection(element: Xml.Element, sectionId: String): Xml.Element = source
+    .xmlDialect
+    .gather(element, element => element.getId.flatMap(id => Option.when(id.contains(sectionId))(element)))
+    .head
+

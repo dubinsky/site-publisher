@@ -25,11 +25,11 @@ object Link:
     def title: String
     def id: String
 
-  final class ToBlock(block: Fragment.Block) extends ToFragment:
+  final class ToBlock(block: Block) extends ToFragment:
     override def id: String = block.id
     override def title: String = s"^${block.id}"
 
-  final class ToSection(sections: Seq[Fragment.Section]) extends ToFragment:
+  final class ToSection(sections: Seq[Section]) extends ToFragment:
     override def id: String = sections.last.id
     override def title: String = sections.map(_.title).mkString("#")
 

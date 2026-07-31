@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.asciidoc.AsciiDocMarkup
 import org.podval.tools.publish.html.HtmlMarkup
-import org.podval.tools.publish.link.{Fragment, Toc}
+import org.podval.tools.publish.link.Toc
 import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.site.{PageError, Path, Site}
@@ -12,10 +12,12 @@ import org.podval.tools.publish.util.{Date, Files, IdGenerator}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
-
 import java.io.File
 
-// TODO make this a JS library too, to install markup-specific stylesheet
+// TODO because of the cross-markup transclusion,
+// all markup-specific stylesheets need to be always included;
+// in fact, MathJax and friends too...
+// unless we actually calculate the set of markup languages used in a page ;)
 abstract class Markup(
   final val name: String,
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
@@ -45,9 +47,7 @@ abstract class Markup(
     Seq.empty
 
   def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
-
-  def sections(source: PageSource, xml: Xml.Element): Seq[Fragment.Section]
-
+  
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
@@ -139,8 +139,6 @@ abstract class Markup(
       InternalLinksPostConverter(source)
     ))
 
-  def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element
-  
 object Markup:
   // Known markup languages.
   // Note: some XmlLike markups can have extensions other than `.xml`.

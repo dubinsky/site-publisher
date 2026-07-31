@@ -1,18 +1,20 @@
 package org.podval.tools.publish.link
 
-import org.podval.xml.Html
+import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
-import Fragment.Section
+import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.PageError
+import zio.blocks.chunk.Chunk
 
 // TODO for chunked pages, links must be to chunked pages!!!
-// TODO derive both Toc and Section from Sections
-final class Toc(val sections: Seq[Section]):
-  def resolveSection(names: Seq[String]): Option[Link.ToSection] = Toc.resolve(
-    result = Seq.empty,
-    sections = sections,
-    names = names,
-    includeNested = true
-  ).map(Link.ToSection(_))
+final class Toc(override val sections: Seq[Section]) extends Sections:
+  def resolveSection(names: Seq[String]): Option[Link.ToSection] =
+    resolve(
+      result = Seq.empty,
+      names = names,
+      includeNested = true
+    )
+      .map(Link.ToSection(_))
 
   // Id must exist within this TOC
   def getById(id: String): Section =
@@ -59,24 +61,22 @@ final class Toc(val sections: Seq[Section]):
       )
     )
 
-object Toc: 
-  private def resolve(
-    result: Seq[Section],
-    sections: Seq[Section],
-    names: Seq[String],
-    includeNested: Boolean
-  ): Option[Seq[Section]] =
-    def next(section: Section, includeNested: Boolean) = resolve(
-      result = result :+ section,
-      sections = section.sections,
-      names = names.tail,
-      includeNested = includeNested
-    )
+object Toc:
+  def apply(element: Xml.Element, source: PageSource): Toc =
+    def sections(element: Xml.Element): Chunk[Section] =
+      val isSection: Boolean = element.getName == "div" && element.has(Section.SectionClass)
+      if !isSection then Chunk.empty else element.getId match
+        case None =>
+          source.error(PageError.NoId, s"Defect: No id on section $element")
+          Chunk.empty
+        case Some(id) =>
+          val headerElement: Option[Xml.Element] = element.getChildren.flatMap(_.asElement).headOption
+          // TODO ask Markup if this is, indeed, a header element
+          val title: String = headerElement.map(_.getText).getOrElse(s"Untitled Section $id") // TODO error
+          Chunk(Section(
+            id,
+            title,
+            element.flatMapElements(sections)
+          ))
 
-    if names.isEmpty then Some(result) else sections
-      .find(section => section.title == names.head || section.id == names.head)
-      .flatMap(section => next(section, includeNested = false))
-      .orElse:
-        if !includeNested then None else sections
-          .flatMap(section => next(section, includeNested = true))
-          .headOption
+    new Toc(element.flatMapElements(sections))

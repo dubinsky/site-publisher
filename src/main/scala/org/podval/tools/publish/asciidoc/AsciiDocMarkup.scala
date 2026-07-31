@@ -1,14 +1,11 @@
 package org.podval.tools.publish.asciidoc
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionIdsConverter}
-import org.podval.tools.publish.link.Fragment.Section
-import org.podval.tools.publish.link.Toc
-import org.podval.tools.publish.markup.{Converter, Markup}
+import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionsTransformer}
+import org.podval.tools.publish.markup.{Markup, Processor}
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlDialect, Xml}
 import java.io.File
 
 object AsciiDocMarkup extends Markup(
@@ -23,21 +20,17 @@ object AsciiDocMarkup extends Markup(
   override def processors(
     ids: IdGenerator,
     source: PageSource
-  ): Seq[Converter] = Seq(
+  ): Seq[Processor] = Seq(
     AsciiDocDivSoupConverter(),
     AsciiDocFootnoteBodiesConverter(),
     AsciiDocFootnoteLinksConverter(),
-    HtmlSectionIdsConverter(ids)
+    HtmlSectionsTransformer(ids)
   )
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
-
-  override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlMarkup.sections(source, xml)
-
-  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
   private var asciidoctorVar: Option[Asciidoctor] = None
   private def asciidoctor: Asciidoctor = asciidoctorVar.getOrElse:
@@ -60,7 +53,7 @@ object AsciiDocMarkup extends Markup(
       .attribute("sectlinks", null)
       .attribute("sectnums", null)
       // Preserve document title.
-      .showTitle(true)
+//      .showTitle(true)
       // Render into XML and not HTML.
       .attribute("htmlsyntax", "xml")
       // Set some attributes.

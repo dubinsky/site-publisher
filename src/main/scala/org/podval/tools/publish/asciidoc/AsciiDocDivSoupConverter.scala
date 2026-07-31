@@ -1,6 +1,6 @@
 package org.podval.tools.publish.asciidoc
 
-import org.podval.tools.publish.html.HtmlSection
+import org.podval.tools.publish.html.HtmlMarkup
 import org.podval.tools.publish.markup.Converter
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
@@ -35,7 +35,7 @@ final class AsciiDocDivSoupConverter extends Converter:
                 .getChildren
                 .flatMap(_.asElement)
                 .headOption
-                .flatMap(HtmlSection.headerLevel)
+                .flatMap(HtmlMarkup.headerLevel)
                 .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
             )
         then

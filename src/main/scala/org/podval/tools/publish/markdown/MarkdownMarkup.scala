@@ -1,11 +1,8 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionIdsConverter}
-import org.podval.tools.publish.link.Fragment.Section
-import org.podval.tools.publish.link.Toc
-import org.podval.tools.publish.markup.{Converter, Markup}
+import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionsTransformer}
+import org.podval.tools.publish.markup.{Converter, Markup, Processor}
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
 import java.io.File
@@ -20,13 +17,13 @@ object MarkdownMarkup extends Markup(
   override def processors(
     ids: IdGenerator,
     source: PageSource
-  ): Seq[Converter] = Seq(
+  ): Seq[Processor] = Seq(
     BlocksConverter(source),
     WikiLinksConverter(),
     MarkdownFootnotesConverter(),
     FlexMarkFootnoteLinksConverter(),
     FlexMarkFootnoteBodiesConverter(),
-    HtmlSectionIdsConverter(ids)
+    HtmlSectionsTransformer(ids)
   )
 
   override def postProcessors(
@@ -39,10 +36,6 @@ object MarkdownMarkup extends Markup(
     element.getName == "div" && element.hasClass("footnotes")
 
   override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
-
-  override def sections(source: PageSource, xml: Xml.Element): Seq[Section] = HtmlMarkup.sections(source, xml)
-
-  override def section(xml: Xml.Element, sectionId: String, toc: Toc): Xml.Element = HtmlMarkup.section(xml, sectionId, toc)
 
   override def xmlContent(content: String, sourceFile: File): String =
     // Wrap Markdown rendered as HTML in a 'div'.

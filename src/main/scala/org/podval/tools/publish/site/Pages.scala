@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.link.Fragment.Section
+import org.podval.tools.publish.link.Section
 import org.podval.tools.publish.link.LinkKind
 import org.podval.tools.publish.markup.{Markup, XmlMarkup}
 import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
