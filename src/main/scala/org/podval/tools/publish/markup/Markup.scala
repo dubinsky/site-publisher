@@ -3,14 +3,12 @@ package org.podval.tools.publish.markup
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.asciidoc.AsciiDocMarkup
 import org.podval.tools.publish.html.HtmlMarkup
-import org.podval.tools.publish.link.Toc
 import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.site.{PageError, Path, Site}
 import org.podval.tools.publish.tei.TeiMarkup
 import org.podval.tools.publish.util.{Date, Files, IdGenerator}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
-import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 import java.io.File
 
@@ -36,18 +34,22 @@ abstract class Markup(
 
   def xmlContent(content: String, sourceFile: File): String
 
-  def processors(
+  // Process raw parsed XML:
+  // - clean it up (AsciiDoc div soup etc.)
+  // - nest HTML sections
+  // - convert footnotes into common format
+  // - extract title
+  def process(
+    source: PageSource,
     ids: IdGenerator,
-    source: PageSource
-  ): Seq[Processor]
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element])
 
   def postProcessors(
     source: PageSource
   ): Seq[Processor] =
     Seq.empty
 
-  def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element])
-  
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
@@ -111,27 +113,6 @@ abstract class Markup(
           .setText(s"malformed $name: $error\n${XmlEncode.escape(xmlString)}")
 
     (frontMatter, xml)
-
-  final def process(source: PageSource, xml: Xml.Element): Xml.Element =
-    // Run processors
-    val ids: IdGenerator = IdGenerator()
-    val processed: Xml.Element = Processor.process(xmlDialect, xml, processors(ids, source) ++ Seq(
-      // Converters that convert links need to run after everything that was to become a link had.
-      AnchorIdsConverter(ids),
-      InternalLinksConverter(source)
-    ))
-
-    // Process Footnotes
-
-    // Retrieve footnote bodies
-    // TODO shove them into PageContent
-    val footnoteBodies: Map[String, Chunk[Xml.Node]] = Footnotes.footnoteBodies(processed, source.xmlDialect)
-
-    Processor.process(xmlDialect, processed, Seq(
-      FootnoteLinksTransformer(xmlDialect),
-      FootnoteBodiesTransformer(source),
-      FootnotesTransformer(footnoteBodies, ids, source)
-    ))
 
   def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
     // Run post-processors

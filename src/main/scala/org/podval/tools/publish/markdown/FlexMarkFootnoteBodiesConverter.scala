@@ -9,28 +9,30 @@ import org.podval.xml.Xml
 // Here I post-process its output to the form Markup understands.
 //
 // FootnotesExtension footnote body:
-//   <li id="fn-$correlationId">
+//   <li id="fn-N">
 //     ...
 //     <p>...</p>
 //     ...
-//     <a class="Footnotes.LinkBody.name" href="fnref-$correlationId">arrow back symbol</a>
+//     <a class="footnote-backref" href="fnref-N">Footnote Body</a>
 //     ...
 //   </li>
+//
+// Footnote body stub:
+//    <span class="footnote" footnoteCorrelationId="N">Footnote Body</span>
+//
 final class FlexMarkFootnoteBodiesConverter extends Converter:
   override def convert(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "li" then None else
-      val correlationId: Option[String] = element.getId.flatMap: id =>
-        Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
-
-      val body: Option[Xml.Nodes] = Xml
-        .getChildren(element)
-        .flatMap(_.asElement)
-        .find(_.has(Footnotes.BodyClass))
-        .map(backLink => element.getChildren.takeWhile(_ ne backLink))
-
       for
-        correlationId <- correlationId
-        body <- body
+        correlationId <- element
+          .getId
+          .flatMap: id =>
+            Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
+        body <- Xml
+          .getChildren(element)
+          .flatMap(_.asElement)
+          .find(_.hasClass("footnote-backref"))
+          .map(backLink => element.getChildren.takeWhile(_ ne backLink))
       yield
         // TODO find the <p> within the body and use its children as body...
         Footnotes.bodyStub(correlationId, body)

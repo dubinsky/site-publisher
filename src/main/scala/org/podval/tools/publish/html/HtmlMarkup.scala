@@ -17,21 +17,37 @@ object HtmlMarkup extends Markup(
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
 
-  override def processors(
+  override def process(
+    source: PageSource,
     ids: IdGenerator,
-    source: PageSource
-  ): Seq[Processor] = Seq(
-    HtmlSectionsTransformer(ids)
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element]) = process(
+    source,
+    ids,
+    xml,
+    Seq.empty
   )
-
-  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None)
-
-  //  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = xml
-//    .getChildren
-//    .flatMap(_.asElement)
-//    .find(element => headerLevel(element).contains(1))
-//    .fold((xml, None)): h1 =>
-//      (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))
+    
+  def process(
+    source: PageSource,
+    ids: IdGenerator,
+    xml: Xml.Element,
+    processors: Seq[Processor]
+  ): (Xml.Element, Option[Xml.Element]) =
+    val xmlProcessed: Xml.Element = Processor.process(source.xmlDialect, xml, processors)
+    val (xmlAfterTitle: Xml.Element, title: Option[Xml.Element]) = retrieveTitle(xmlProcessed)
+    // Nest HTML sections once the title ('h1') is removed.
+    val xmlSectioned: Xml.Element = Processor.process(source.xmlDialect, xmlAfterTitle, Seq(
+      HtmlSectionsTransformer(ids)
+    ))
+    (xmlSectioned, title)
+  
+  private def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = xml
+    .getChildren
+    .flatMap(_.asElement)
+    .find(element => headerLevel(element).contains(1))
+    .fold((xml, None)): h1 =>
+      (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))
 
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName

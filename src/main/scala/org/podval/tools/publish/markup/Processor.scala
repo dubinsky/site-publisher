@@ -1,6 +1,5 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.tei.TeiMarkup.processors
 import org.podval.xml.{Xml, XmlDialect}
 import scala.annotation.tailrec
 

@@ -11,25 +11,26 @@ import org.podval.xml.Xml
 //   <div class="footnote" id="_footnotedef_N">
 //     <a href="#_footnoteref_N">N</a>. Footnote Body
 //   </div>
+//
+// Footnote body stub:
+//    <span class="footnote" footnoteCorrelationId="N">Footnote Body</span>
 final class AsciiDocFootnoteBodiesConverter extends Converter:
   override def convert(element: Xml.Element): Option[Xml.Element] =
-    if element.getName != "div" || !element.has(Footnotes.BodyClass) then None else
-      val correlationId: Option[String] = element
+    val isFootnoteBody: Boolean = element.getName == "div" && element.hasClass("footnote")
+    if !isFootnoteBody then None else
+      for correlationId <- element
         .getChildren
         .flatMap(_.asElement)
         .headOption
         .map(_.getText)
-
-      val bodyRaw: Xml.Nodes = element
-        .getChildren
-        .dropUntil(_.asElement.isDefined)
-
-      val body: Xml.Nodes = bodyRaw.head.asText match
-        case Some(text) if text.startsWith(".") => Xml.text(text.drop(1)) +: bodyRaw.tail
-        case _ => bodyRaw
-
-      for
-        correlationId <- correlationId
       yield
-        // TODO drop the leading dot!
+        val bodyRaw: Xml.Nodes = element
+          .getChildren
+          .dropUntil(_.asElement.isDefined) // TODO why?
+
+        val body: Xml.Nodes = bodyRaw.head.asText match
+          case Some(text) if text.startsWith(".") => Xml.text(text.drop(1)) +: bodyRaw.tail
+          case _ => bodyRaw
+          
         Footnotes.bodyStub(correlationId, body)
+        

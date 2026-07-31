@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionsTransformer}
+import org.podval.tools.publish.html.HtmlMarkup
 import org.podval.tools.publish.markup.{Converter, Markup, Processor}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.util.IdGenerator
@@ -14,16 +14,21 @@ object MarkdownMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def processors(
+  override def process(
+    source: PageSource,
     ids: IdGenerator,
-    source: PageSource
-  ): Seq[Processor] = Seq(
-    BlocksConverter(source),
-    WikiLinksConverter(),
-    MarkdownFootnotesConverter(),
-    FlexMarkFootnoteLinksConverter(),
-    FlexMarkFootnoteBodiesConverter(),
-    HtmlSectionsTransformer(ids)
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.process(
+    source,
+    ids,
+    xml,
+    Seq(
+      BlocksConverter(source),
+      WikiLinksConverter(),
+      MarkdownFootnotesConverter(),
+      FlexMarkFootnoteLinksConverter(),
+      FlexMarkFootnoteBodiesConverter(),
+    )
   )
 
   override def postProcessors(
@@ -34,8 +39,6 @@ object MarkdownMarkup extends Markup(
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
-
-  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
 
   override def xmlContent(content: String, sourceFile: File): String =
     // Wrap Markdown rendered as HTML in a 'div'.

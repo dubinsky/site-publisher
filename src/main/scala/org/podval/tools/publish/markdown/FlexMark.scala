@@ -37,8 +37,9 @@ object FlexMark:
   private val extensionsRenderer: List[HtmlRenderer.HtmlRendererExtension] = extensionsCommon ++ extensionsRendererOnly
 
   private val options: MutableDataSet = new MutableDataSet
-  options.set(FootnoteExtension.FOOTNOTE_LINK_REF_CLASS, Footnotes.LinkClass.name)
-  options.set(FootnoteExtension.FOOTNOTE_BACK_LINK_REF_CLASS, Footnotes.BodyClass.name)
+  // FlexMarkFootnoteBodiesConverter and FlexMarkFootnoteLinksConverter
+//  options.set(FootnoteExtension.FOOTNOTE_LINK_REF_CLASS, Footnotes.LinkClass.name)
+//  options.set(FootnoteExtension.FOOTNOTE_BACK_LINK_REF_CLASS, Footnotes.BodyClass.name)
 
   private val parser: Parser = Parser
     .builder(options)

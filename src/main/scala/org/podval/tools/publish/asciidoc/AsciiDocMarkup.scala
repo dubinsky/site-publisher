@@ -1,7 +1,7 @@
 package org.podval.tools.publish.asciidoc
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.html.{HtmlMarkup, HtmlSectionsTransformer}
+import org.podval.tools.publish.html.HtmlMarkup
 import org.podval.tools.publish.markup.{Markup, Processor}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.util.IdGenerator
@@ -17,20 +17,23 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  override def processors(
+  override def process(
+    source: PageSource,
     ids: IdGenerator,
-    source: PageSource
-  ): Seq[Processor] = Seq(
-    AsciiDocDivSoupConverter(),
-    AsciiDocFootnoteBodiesConverter(),
-    AsciiDocFootnoteLinksConverter(),
-    HtmlSectionsTransformer(ids)
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.process(
+    source,
+    ids,
+    xml,
+    Seq(
+      AsciiDocDivSoupConverter(),
+      AsciiDocFootnoteBodiesConverter(),
+      AsciiDocFootnoteLinksConverter()
+    )
   )
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
-
-  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.retrieveTitle(xml)
 
   private var asciidoctorVar: Option[Asciidoctor] = None
   private def asciidoctor: Asciidoctor = asciidoctorVar.getOrElse:

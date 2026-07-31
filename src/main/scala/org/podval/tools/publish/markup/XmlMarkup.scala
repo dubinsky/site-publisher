@@ -14,5 +14,10 @@ object XmlMarkup extends Markup(
   extension = "xml"
 ):
   override def xmlContent(content: String, sourceFile: File): String = content
-  override def processors(ids: IdGenerator, source: PageSource): Seq[Converter] = Seq.empty
-  override def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = (xml, None)
+
+  override def process(
+    source: PageSource,
+    ids: IdGenerator,
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element]) =
+    (xml, None)

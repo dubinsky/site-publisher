@@ -65,4 +65,19 @@ object Footnotes:
       then None
       else getCorrelationId(element).map(_ -> element.getChildren)
     ).toMap
-    
+
+  def removeFootnoteBodies(xml: Xml.Element, markup: Markup): Xml.Element =
+    markup.xmlDialect.transform(xml, element =>
+      element.setChildren(element
+        .getChildren
+        .filterNot(_.asElement.fold(false)(child =>
+          val remove: Boolean =
+            child.has(Footnotes.BodyClass) ||
+              markup.isSpuriousFootnotesDiv(element)
+          // TODO AsciiDoc footnotes div does not get removed!
+          if remove then
+            val x = 0
+          remove
+        ))
+      )
+    )

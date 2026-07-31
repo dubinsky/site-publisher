@@ -9,16 +9,21 @@ import org.podval.xml.Xml
 // Here I post-process its output to the form Markup understands.
 //
 // FootnotesExtension footnote link:
-//   <sup id="fnref-$correlationId">
-//     <a class="${Footnotes.LinkClass.name}" href="#fn-$correlationId">
-//       $correlationId
-//     </a>
+//   <sup id="fnref-N">
+//     <a class="footnote-ref" href="#fn-N">N</a>
 //   </sup>
+//
+// Footnote link stub:
+//   <a class="footnote-link" footnoteCorrelationId="N"/>
+//
 final class FlexMarkFootnoteLinksConverter extends Converter:
   override def convert(element: Xml.Element): Option[Xml.Element] =
-    if element.getName != "sup" then None else element
-      .getChildren
-      .flatMap(_.asElement)
-      .find(_.has(Footnotes.LinkClass))
-      .map(_.getText)
-      .map(Footnotes.linkStub)
+    if element.getName != "sup" then None else
+      for correlationId <- element
+        .getChildren
+        .flatMap(_.asElement)
+        .find(_.hasClass("footnote-ref"))
+        .flatMap(_.getTextOpt)
+      yield  
+        Footnotes.linkStub(correlationId)
+        
