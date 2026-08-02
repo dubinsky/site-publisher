@@ -1,8 +1,8 @@
 package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.link.{BackLink, Block, Link, Toc}
-import org.podval.tools.publish.markup.Links
+import org.podval.tools.publish.markup.{BackLink, Block, Link, LinkKind, Links, Toc}
+import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.xml.{Html, Xml, Xml2Html}
 
@@ -42,7 +42,33 @@ final class PageContent(
   )
 
   // TODO maybe make it a lazy val?
-  private def xmlFinal: Xml.Element = source.markup.postProcess(source, xml)
+  private def xmlFinal: Xml.Element =
+    var result: Xml.Element = source.markup.postProcess(source, xml)
+    result = source.xmlDialect.transform(result, element => resolveInternalLinks(element, source).getOrElse(element))
+    result
+
+  private def resolveInternalLinks(element: Xml.Element, source: PageSource): Option[Xml.Element] =
+    Option.when(element.isA && element.has(Links.InternalLinkClass))(
+      element.getHref.fold(element)(resolveInternalLinks(element, source, _))
+    )
+
+  private def resolveInternalLinks(
+    element: Xml.Element,
+    source: PageSource,
+    ref: String
+  ): Xml.Element =
+    val kind: Option[LinkKind] = LinkKind.of(element)
+    Link.resolve(ref, kind, source.page) match
+      case None =>
+        source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+        element.addClass("unresolved-link") // TODO move into Links
+      case Some(linkTo) =>
+        // TODO transclude
+        val result: Xml.Element = element.setHref(linkTo.url)
+  
+        if result.getText != Links.linkText(element, ref)
+        then result
+        else result.setText(Links.linkText(element, linkTo.title))
 
   def toHtml(
     sectionId: Option[String],

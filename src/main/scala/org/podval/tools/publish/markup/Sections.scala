@@ -1,4 +1,4 @@
-package org.podval.tools.publish.link
+package org.podval.tools.publish.markup
 
 trait Sections:
   def sections: Seq[Section]

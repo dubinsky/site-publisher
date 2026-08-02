@@ -99,8 +99,9 @@ trait XmlAst[ELEMENT]:
       value.fold(element)(element.set(attribute, _))
 
     def getId: Option[String] = get(XmlAttribute.Id)
-    
+
     def setId(value: String): Element = set(XmlAttribute.Id, value)
+    def setId(value: Option[String]): Element = set(XmlAttribute.Id, value)
     
     def getHref: Option[String] = get(HtmlAttribute.Href)
     

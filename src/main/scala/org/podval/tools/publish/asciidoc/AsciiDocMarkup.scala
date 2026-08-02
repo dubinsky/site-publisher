@@ -1,10 +1,8 @@
 package org.podval.tools.publish.asciidoc
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.html.HtmlMarkup
-import org.podval.tools.publish.markup.{Markup, Processor}
+import org.podval.tools.publish.markup.{HtmlMarkup, Markup}
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import java.io.File
 
@@ -17,21 +15,6 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  override def process(
-    source: PageSource,
-    ids: IdGenerator,
-    xml: Xml.Element
-  ): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.process(
-    source,
-    ids,
-    xml,
-    Seq(
-      AsciiDocDivSoupConverter(),
-      AsciiDocFootnoteBodiesConverter(),
-      AsciiDocFootnoteLinksConverter()
-    )
-  )
-
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 
@@ -80,3 +63,20 @@ object AsciiDocMarkup extends Markup(
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"
+
+  override def process(
+    source: PageSource,
+    xml: Xml.Element
+  ): (Xml.Element, Option[Xml.Element]) =
+    val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
+      var result: Xml.Element = element
+      result = AsciiDocDivSoup.cleanUp(result) // TODO separate transform()?
+      result = AsciiDocFootnotes.convertFootnoteLink(result).getOrElse(result)
+      result = AsciiDocFootnotes.convertFootnoteBody(result).getOrElse(result)
+      result
+    )
+    HtmlMarkup.process(
+      source,
+      result
+    )
+  

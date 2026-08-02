@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlDialect}
 import zio.blocks.chunk.Chunk
 
@@ -81,3 +82,33 @@ object Footnotes:
         ))
       )
     )
+    
+  def transformFootnotes(
+    element: Xml.Element,
+    footnoteBodies: Map[String, Chunk[Xml.Node]],
+    xmlDialect: XmlDialect
+  ): Xml.Element =
+    val footnoteNumbers: IdGenerator = IdGenerator("")
+
+    // Number the footnotes
+    var footnotesToAdd: Chunk[Xml.Element] = Chunk.empty
+
+    val xml: Xml.Element = xmlDialect.transform(element, element =>
+      Footnotes.getCorrelationId(element).fold(element): correlationId =>
+        val footnoteNumber: String = footnoteNumbers.generate()
+        // TODO error when not found:
+        footnoteBodies.get(correlationId).foreach: footnoteBody =>
+          footnotesToAdd = footnotesToAdd.appended(Footnotes.body(footnoteNumber, footnoteBody))
+        Footnotes.link(footnoteNumber)
+    )
+
+    // Add footnotes 'div'
+    val footnotesDiv: Xml.Element = Xml
+      .element("div")
+      .addClass("footnotes")
+      .setChildren(footnotesToAdd)
+
+    if footnotesToAdd.isEmpty
+    then xml
+    else xml.setChildren(xml.getChildren :+ footnotesDiv)
+

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.link
+package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{Page, PageContent}
 import org.podval.tools.publish.site.Path

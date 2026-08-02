@@ -1,9 +1,9 @@
-package org.podval.tools.publish.link
+package org.podval.tools.publish.markup
 
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.PageError
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import zio.blocks.chunk.Chunk
 
 // TODO for chunked pages, links must be to chunked pages!!!
@@ -62,12 +62,12 @@ final class Toc(override val sections: Seq[Section]) extends Sections:
     )
 
 object Toc:
-  def apply(element: Xml.Element, source: PageSource): Toc =
+  def apply(element: Xml.Element, errorReporter: PageErrorReporter): Toc =
     def sections(element: Xml.Element): Chunk[Section] =
       val isSection: Boolean = element.getName == "div" && element.has(Section.SectionClass)
       if !isSection then Chunk.empty else element.getId match
         case None =>
-          source.error(PageError.NoId, s"Defect: No id on section $element")
+          errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
           Chunk.empty
         case Some(id) =>
           val headerElement: Option[Xml.Element] = element.getChildren.flatMap(_.asElement).headOption

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.link
+package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
 import org.podval.xml.Xml

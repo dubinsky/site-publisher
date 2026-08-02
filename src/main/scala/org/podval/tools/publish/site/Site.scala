@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.link.BackLinks
+import org.podval.tools.publish.markup.BackLinks
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
 import org.podval.xml.Html

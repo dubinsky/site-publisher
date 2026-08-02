@@ -2,12 +2,11 @@ package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.asciidoc.AsciiDocMarkup
-import org.podval.tools.publish.html.HtmlMarkup
 import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.site.{PageError, Path, Site}
 import org.podval.tools.publish.tei.TeiMarkup
-import org.podval.tools.publish.util.{Date, Files, IdGenerator}
+import org.podval.tools.publish.util.{Date, Files}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.html.*
 import java.io.File
@@ -39,16 +38,9 @@ abstract class Markup(
   // - nest HTML sections
   // - convert footnotes into common format
   // - extract title
-  def process(
-    source: PageSource,
-    ids: IdGenerator,
-    xml: Xml.Element
-  ): (Xml.Element, Option[Xml.Element])
+  def process(source: PageSource, xml: Xml.Element): (Xml.Element, Option[Xml.Element])
 
-  def postProcessors(
-    source: PageSource
-  ): Seq[Processor] =
-    Seq.empty
+  def postProcess(source: PageSource, xml: Xml.Element): Xml.Element = xml
 
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
@@ -113,12 +105,6 @@ abstract class Markup(
           .setText(s"malformed $name: $error\n${XmlEncode.escape(xmlString)}")
 
     (frontMatter, xml)
-
-  def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
-    // Run post-processors
-    Processor.process(xmlDialect, xml, postProcessors(source) ++ Seq(
-      InternalLinksPostConverter(source)
-    ))
 
 object Markup:
   // Known markup languages.

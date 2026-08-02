@@ -1,17 +1,16 @@
 package org.podval.tools.publish.markdown
 
-import org.podval.tools.publish.markup.{Converter, Footnotes}
+import org.podval.tools.publish.markup.Footnotes
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
-final class MarkdownFootnotesConverter extends Converter:
-  override def convert(element: Xml.Element): Option[Xml.Element] =
+object MarkdownFootnotes:
+  def convertFootnotes(element: Xml.Element): Option[Xml.Element] =
     Option.when(!element.isA)(
-      convertText(element, MarkdownFootnotesConverter.convertFootnotes(Chunk.empty, _))
+      element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(convertFootnotes(Chunk.empty, _))))
     )
 
-private object MarkdownFootnotesConverter:
   private val startsString: String = "[^"
   private val endString: String = "]"
   private val bodyStartString: String = ":"

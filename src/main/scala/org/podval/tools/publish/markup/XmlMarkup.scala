@@ -17,7 +17,6 @@ object XmlMarkup extends Markup(
 
   override def process(
     source: PageSource,
-    ids: IdGenerator,
     xml: Xml.Element
   ): (Xml.Element, Option[Xml.Element]) =
     (xml, None)

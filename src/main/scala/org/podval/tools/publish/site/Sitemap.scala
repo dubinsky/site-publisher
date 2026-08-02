@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.html.HtmlMarkup
+import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml, XmlAttribute}
