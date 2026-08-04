@@ -14,7 +14,7 @@ object Files:
   def requireFile(file: File): Unit = require(file.isFile, s"File is a directory: $file")
 
   def list(directory: File): List[File] = Option(directory.listFiles).getOrElse(Array.empty[File]).toList
-  
+
   def nameAndExtension(fullName: String): (String, Option[String]) = Strings.split(fullName, '.')
 
   def read(file: File): String = new String(NFiles.readAllBytes(file.toPath))
