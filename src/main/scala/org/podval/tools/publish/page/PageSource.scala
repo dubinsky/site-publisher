@@ -7,7 +7,6 @@ import org.podval.xml.{Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
 import scala.ref.SoftReference
 
-import java.net.{URI, URISyntaxException}
 final class PageSource(
   val page: OriginalMarkupPage,
   val markup: Markup,
@@ -62,49 +61,25 @@ final class PageSource(
 
     // After everything that was to become a link had.
     val ids: IdGenerator = IdGenerator("_generated_id")
-    val xmlLinksProcessed: Xml.Element = xmlDialect.transform(xmlProcessed, element =>
+    var result: Xml.Element = xmlDialect.transform(xmlProcessed, element =>
       var result: Xml.Element = element
-      result = setAnchorId(result, ids).getOrElse(result)
-      result = setSectionId(result, ids).getOrElse(result)
-      result = convertInternalLink(result, this).getOrElse(result)
+      result = Links.setAnchorId(result, ids).getOrElse(result)
+      result = Section.setSectionId(result, ids).getOrElse(result)
+      result = Links.convertInternalLink(result, page.site, this).getOrElse(result)
       result
     )
 
     // Process Footnotes
 
     // Retrieve footnote bodies // TODO shove them into PageContent
-    val footnoteBodies: Map[String, Chunk[Xml.Node]] = Footnotes.footnoteBodies(xmlLinksProcessed, xmlDialect)
-    val xmlFootnoteBodiesProcesses: Xml.Element = Footnotes.removeFootnoteBodies(xmlLinksProcessed, markup)
-    val xmlResult: Xml.Element = Footnotes.transformFootnotes(xmlFootnoteBodiesProcesses, footnoteBodies, xmlDialect) // TODO unfold!
+    val footnoteBodies: Map[String, Chunk[Xml.Node]] = Footnotes.footnoteBodies(result, xmlDialect)
+    result = Footnotes.removeFootnoteBodies(result, markup)
+    result = Footnotes.transformFootnotes(result, footnoteBodies, xmlDialect) // TODO unfold!
 
     PageContent(
       source = this,
       frontMatter = frontMatter,
       title = title,
-      xml = xmlResult,
+      xml = result,
     )
 
-  private def setAnchorId(element: Xml.Element, ids: IdGenerator): Option[Xml.Element] =
-    Option.when(element.isA && element.getId.isEmpty)(
-      element.setId(ids.generate())
-    )
-
-  private def setSectionId(element: Xml.Element, ids: IdGenerator): Option[Xml.Element] =
-    Option.when(Section.is(element) && element.getId.isEmpty)(
-      element.setId(ids.generate())
-    )
-
-  private def convertInternalLink(element: Xml.Element, source: PageSource): Option[Xml.Element] =
-    if !element.isA then None else
-      element.getHref.flatMap: href =>
-        // TODO verify that external link is not broken if the Site is so configured
-        val isInternal: Boolean =
-          try
-            val uri: URI = URI(href)
-            if source.page.site.isSelf(uri) then source.error(PageError.SelfLink, href)
-            uri.getScheme == null
-          catch case e: URISyntaxException => true
-
-        Option.when(isInternal)(
-          element.add(Links.InternalLinkClass)
-        )
