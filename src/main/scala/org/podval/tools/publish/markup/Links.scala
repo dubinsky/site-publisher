@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Site}
 import org.podval.tools.publish.page.OriginalMarkupPage
 import org.podval.tools.publish.util.{Files, IdGenerator, Media, Strings}
-import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
+import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
 import java.net.{URI, URISyntaxException}
 import scala.annotation.tailrec
@@ -16,10 +16,12 @@ object Links:
 
   object InternalLinkClass extends HtmlClass("internal-link")
 
+  private object UnresolvedLinkClass extends HtmlClass("unresolved-link")
+
   // TODO remove; add/check classes directly
   def isTranscluded(element: Xml.Element): Boolean = element.has(TranscludeClass)
 
-  def wikiLink(
+  private def wikiLink(
     transclude: Boolean,
     ref: String,
     title: Option[String]
@@ -39,7 +41,7 @@ object Links:
 
     def wikiLinkText(transclude: Boolean, text: String) = s"${wikiLinkStart(transclude)}$text$end"
 
-  def linkText(element: Xml.Element, text: String): String =
+  private def linkText(element: Xml.Element, text: String): String =
     if element.has(WikiLinkClass)
     then Wiki.wikiLinkText(isTranscluded(element), text)
     else text
@@ -83,8 +85,8 @@ object Links:
     Option.when(element.isA && element.getId.isEmpty)(
       element.setId(ids.generate())
     )
-    
-  def convertInternalLink(
+
+  def markInternalLink(
     element: Xml.Element,
     site: Site,
     errorReporter: PageErrorReporter
@@ -104,36 +106,41 @@ object Links:
         )
 
   def resolveInternalLinks(
-    element: Xml.Element,
-    page: OriginalMarkupPage,
-    errorReporter: PageErrorReporter
-  ): Option[Xml.Element] =
-    Option.when(element.isA && element.has(Links.InternalLinkClass))(
-      element.getHref.fold(element)(ref => Links.resolveInternalLinks(element, ref, page, errorReporter))
-    )
-    
-  private def resolveInternalLinks(
-    element: Xml.Element,
-    ref: String,
+    xml: Xml.Element,
+    xmlDialect: XmlDialect,
     page: OriginalMarkupPage,
     errorReporter: PageErrorReporter
   ): Xml.Element =
-    val kind: Option[LinkKind] = LinkKind.of(element)
-    Link.resolve(ref, kind, page) match
-      case None =>
-        errorReporter.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
-        element.addClass("unresolved-link") // TODO move into Links
-      case Some(linkTo) =>
-        // TODO transclude
-        val result: Xml.Element = element.setHref(linkTo.url)
+    def resolveInternalLink(
+      element: Xml.Element,
+      ref: String
+    ): Xml.Element =
+      val kind: Option[LinkKind] = LinkKind.of(element)
+      Link.resolve(ref, kind, page) match
+        case None =>
+          errorReporter.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+          element.add(UnresolvedLinkClass)
+        case Some(linkTo) =>
+          // TODO transclude
+          val result: Xml.Element = element.setHref(linkTo.url)
 
-        if result.getText != Links.linkText(element, ref)
-        then result
-        else result.setText(Links.linkText(element, linkTo.title))
+          if result.getText != Links.linkText(element, ref)
+          then result
+          else result.setText(Links.linkText(element, linkTo.title))
 
-  def embedWikiLink(element: Xml.Element): Option[Xml.Element] =
-    Option.when(element.isA && isTranscluded(element))(
-      element.getHref.fold(element)(embedWikiLink(element, _).getOrElse(element))
+    xmlDialect.transform(xml, element => Option
+      .when(element.isA && element.has(Links.InternalLinkClass))(
+        element.getHref.fold(element)(ref => resolveInternalLink(element, ref))
+      )
+      .getOrElse(element)
+    )
+
+  def embedWikiLinks(xml: Xml.Element, xmlDialect: XmlDialect): Xml.Element =
+    xmlDialect.transform(xml, element => Option
+      .when(element.isA && isTranscluded(element))(
+        element.getHref.fold(element)(embedWikiLink(element, _).getOrElse(element))
+      )
+      .getOrElse(element)
     )
 
   // see https://obsidian.md/help/embeds

@@ -59,8 +59,8 @@ object Link:
       fragment = fragment.flatMap: fragment =>
         val content: Option[PageContent] = to.real.content
         if fragment.startsWith("^")
-        then content.flatMap(_.resolveBlock(id = fragment.substring(1).trim))
+        then content.flatMap(_.blocks.resolve(id = fragment.substring(1).trim))
         else content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
-          content.flatMap(_.resolveId(fragment))
+          content.flatMap(_.ids.resolve(fragment))
         )
     ))

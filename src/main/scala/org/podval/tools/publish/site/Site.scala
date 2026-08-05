@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.BackLinks
+import org.podval.tools.publish.markup.{BackLink, BackLinks}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
 import org.podval.xml.Html
@@ -98,13 +98,25 @@ final class Site(options: Options) extends JSLibrary:
     pages.load()
 
     // Gather back-links
-    pages.pages.foreach(page => backLinks.addBackLinks(page.content.fold(Seq.empty)(_.backLinks)))
+    for
+      page <- pages.pages
+      content <- page.content
+    do
+      backLinks.addBackLinks(BackLink.backLinks(
+        content.xml,
+        content.xmlDialect,
+        content.page,
+        content.ids
+      ))
 
     // TODO sort pages topologically based on transclusions
 
   // TODO from Grok:
-  //- Description: `generate()` deletes the entire target directory, then writes page-by-page. A crash mid-write leaves a partial site; concurrent readers (local server, CI publish) can observe a wiped tree. No temp-dir + atomic rename.
-  //- Suggestion: Write to a staging directory (or `_site.tmp`) and atomically replace `_site`. Optionally preserve mtimes for unchanged assets to speed deploys.
+  //- Description: `generate()` deletes the entire target directory, then writes page-by-page.
+  // A crash mid-write leaves a partial site; concurrent readers (local server, CI publish) can observe a wiped tree.
+  // No temp-dir + atomic rename.
+  //- Suggestion: Write to a staging directory (or `_site.tmp`) and atomically replace `_site`.
+  // Optionally preserve mtimes for unchanged assets to speed deploys.
   def generate(): Unit =
     load()
 

@@ -69,17 +69,28 @@ open class XmlDialect(
 
     loop(element)
 
-  final def gatherWithParents[A, Element: XmlAst](
+  final def gatherWithContext[A, Element: XmlAst](
     element: Element,
-    gatherElement: (Element, Seq[Element]) => Option[A]
+    gatherElement: (Element, Option[Element]) => Option[A],
+    isContext: Element => Boolean
   ): Seq[A] =
-    def loop(element: Element, parents: Seq[Element]): Chunk[A] =
-      val fromElement: Option[A] = gatherElement(element, parents)
+    def loop(element: Element, context: Option[Element]): Chunk[A] =
+      val fromElement: Option[A] = gatherElement(element, context)
       val fromChildren: Chunk[A] = if stop(element) then Chunk.empty else
-        val parentsNew: Seq[Element] = element +: parents
-        element.flatMapElements(loop(_, parentsNew))
+        val contextNew: Option[Element] = if isContext(element) then Some(element) else context
+        element.flatMapElements(loop(_, contextNew))
 
       Chunk.from(fromElement) ++ fromChildren
 
-    loop(element, Seq.empty)
+    loop(element, None)
+
+  final def gatherWithParent[A, Element: XmlAst](
+    element: Element,
+    gatherElement: (Element, Option[Element]) => Option[A]
+  ): Seq[A] =
+    gatherWithContext(
+      element,
+      gatherElement,
+      isContext = element => true
+    )
 

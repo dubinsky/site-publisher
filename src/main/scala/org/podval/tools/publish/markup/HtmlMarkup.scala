@@ -12,6 +12,12 @@ object HtmlMarkup extends Markup(
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,
 ):
+  def headerLevel(element: Xml.Element): Option[Int] =
+    val qName: String = element.getName
+    if !qName.startsWith("h") then None else
+      try Some(qName.substring(1).toInt)
+      catch case _: NumberFormatException => None
+
   override def xmlContent(content: String, sourceFile: File): String =
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
@@ -20,24 +26,17 @@ object HtmlMarkup extends Markup(
     source: PageSource,
     xml: Xml.Element
   ): (Xml.Element, Option[Xml.Element]) =
-    val (xmlAfterTitle: Xml.Element, title: Option[Xml.Element]) = retrieveTitle(xml)
-    var result: Xml.Element = xmlAfterTitle
-    // Nest HTML sections once the title ('h1') is removed.
-    result = nestSections(result)
-    (result, title)
-  
-  private def retrieveTitle(xml: Xml.Element): (Xml.Element, Option[Xml.Element]) = xml
-    .getChildren
-    .flatMap(_.asElement)
-    .find(element => headerLevel(element).contains(1))
-    .fold((xml, None)): h1 =>
-      (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))
+    val (result: Xml.Element, title: Option[Xml.Element]) = xml
+      .getChildren
+      .flatMap(_.asElement)
+      .find(element => headerLevel(element).contains(1))
+      .fold((xml, None)): h1 =>
+        (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))
 
-  def headerLevel(element: Xml.Element): Option[Int] =
-    val qName: String = element.getName
-    if !qName.startsWith("h") then None else
-      try Some(qName.substring(1).toInt)
-      catch case _: NumberFormatException => None
+    // Nest HTML sections once the title ('h1') is removed.
+    val nested: Xml.Element = result.setChildren(nestSections(result.getChildren))
+
+    (nested, title)
 
   // Wrap each HTML section at the top level in a 'div' with class 'section'.
   // Transplant id from the header element to the section element;
@@ -60,9 +59,6 @@ object HtmlMarkup extends Markup(
   //     <h2>Colophon</h2>
   //     <p>...</p>
   //   </div>
-  private def nestSections(element: Xml.Element): Xml.Element =
-    element.setChildren(nestSections(element.getChildren))
-
   private def nestSections(nodes: Xml.Nodes): Xml.Nodes =
     val headerLevels: Chunk[Int] = nodes.flatMap(_.asElement).flatMap(HtmlMarkup.headerLevel)
     if headerLevels.isEmpty then nodes else

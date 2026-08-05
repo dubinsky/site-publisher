@@ -1,11 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.asciidoc.AsciiDocMarkup
-import org.podval.tools.publish.markdown.MarkdownMarkup
 import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
 import org.podval.tools.publish.site.{PageError, Path, Site}
-import org.podval.tools.publish.tei.TeiMarkup
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.html.*

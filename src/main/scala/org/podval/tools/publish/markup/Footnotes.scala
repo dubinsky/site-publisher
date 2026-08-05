@@ -10,25 +10,20 @@ import zio.blocks.chunk.Chunk
 object Footnotes:
   private object CorrelationId extends XmlAttribute("footnoteCorrelationId")
 
-  object LinkClass extends HtmlClass("footnote-link")
+  private object LinkClass extends HtmlClass("footnote-link")
   
-  object BodyClass extends HtmlClass("footnote")
+  private object BodyClass extends HtmlClass("footnote")
   
   private object BackLinkClass extends HtmlClass("footnote-backlink")
 
-  def getCorrelationId(element: Xml.Element): Option[String] = element.get(CorrelationId)
-  def setCorrelationId(element: Xml.Element, value: String): Xml.Element = element.set(CorrelationId, value)
+  private def getCorrelationId(element: Xml.Element): Option[String] = element.get(CorrelationId)
+//  def setCorrelationId(element: Xml.Element, value: String): Xml.Element = element.set(CorrelationId, value)
   
   private def footnoteId(footnoteNumber: String): String = s"_footnote_src_$footnoteNumber"
   private def footnoteBodyId(footnoteNumber: String): String = s"_footnote_$footnoteNumber"
-
-  def linkAndBodyStub(element: Xml.Element, correlationId: String): Xml.Element = element
-    .set(CorrelationId, correlationId)
-    .add(Footnotes.LinkClass)
-    .add(Footnotes.BodyClass)
-  
+    
   def linkStub(correlationId: String): Xml.Element = Xml
-    .element(HtmlElement.A)
+    .element(HtmlElement.A) // TODO use span for it to be invisible for id-assigning conversions and link resolution?
     .add(LinkClass)
     .set(CorrelationId, correlationId)
 

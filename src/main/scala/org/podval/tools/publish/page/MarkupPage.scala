@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
 import org.podval.tools.publish.site.{Path, Site, Sitemap}
-import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
+import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect, Xml, Xml2Html}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
 import zio.blocks.html.Dom.Element.Script
@@ -26,6 +26,30 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
 
   def markupContent: Option[Html.Element]
   
+  final def markupContent(
+    sectionId: Option[String],
+    isTerminal: Boolean
+  ): Option[Html.Element] = content.map: content =>
+    // Select XML to include
+    val xmlIncluded: Xml.Element = content.toc.select(
+      xml = content.xmlResolved,
+      sectionId = sectionId,
+      isTerminal = isTerminal,
+      xmlDialect = content.xmlDialect
+    )
+
+    // Convert to HTML
+    val html: Html.Element = Xml2Html.fromXml(xmlIncluded)
+
+    // Add TOC to HTML
+    content.toc.add(
+      html,
+      hasToc = content.page.hasToc,
+      tocDepth = content.page.tocDepth,
+      sectionId,
+      content.markup
+    )
+
   def pageHeader: Option[Html.Element]
 
   // Based on https://github.com/jekyll/minima

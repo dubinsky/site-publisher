@@ -1,4 +1,4 @@
-package org.podval.tools.publish.markdown
+package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import zio.Scope

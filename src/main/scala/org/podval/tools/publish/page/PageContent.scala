@@ -1,60 +1,26 @@
 package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{BackLink, Blocks, Ids, Link, Links, Toc}
+import org.podval.tools.publish.markup.{Blocks, Ids, Links, Markup, Toc}
 import org.podval.tools.publish.page.PageSource
-import org.podval.xml.{Html, Xml, Xml2Html}
+import org.podval.xml.{Xml, XmlDialect}
 
 final class PageContent(
-  val source: PageSource,
+  source: PageSource,
   val frontMatter: FrontMatter,
   val title: Option[Xml.Element],
-  xml: Xml.Element
+  val xml: Xml.Element
 ):
-  def entityKind: Option[EntityKind] = source.markup.entityKind(xml)
+  def page: OriginalMarkupPage = source.page
+  def markup: Markup = source.markup
+  def xmlDialect: XmlDialect = source.xmlDialect
+  def entityKind: Option[EntityKind] = markup.entityKind(xml)
 
   lazy val toc: Toc = Toc(xml, source)
+  lazy val ids: Ids = Ids(xml, xmlDialect)
+  lazy val blocks: Blocks = Blocks(xml, xmlDialect, source)
 
-  private lazy val ids: Ids = Ids(xml, source.xmlDialect)
-  def resolveId(id: String): Option[Link.ToId] = ids.resolve(id)
-
-  private lazy val blocks: Blocks = Blocks(xml, source.xmlDialect, source)
-  def resolveBlock(id: String): Option[Link.ToBlock] = blocks.resolve(id)
-
-  def backLinks: Seq[BackLink] = BackLink.backLinks(
-    xml,
-    source.xmlDialect,
-    source.page,
-    ids
-  )
-  
-  // TODO maybe make it a lazy val?
-  private def xmlFinal: Xml.Element =
-    var result: Xml.Element = source.markup.postProcess(source, xml)
-    // TODO move into Links
-    result = source.xmlDialect.transform(result, element => Links.resolveInternalLinks(element, source.page, source).getOrElse(element))
+  lazy val xmlResolved: Xml.Element =
+    var result: Xml.Element = markup.postProcess(source, xml)
+    result = Links.resolveInternalLinks(result, xmlDialect, page, source)
     result
-
-  def toHtml(
-    sectionId: Option[String],
-    isTerminal: Boolean
-  ): Html.Element =
-    // Select XML to include
-    val xmlIncluded: Xml.Element = toc.select(
-      xml = xmlFinal,
-      sectionId = sectionId,
-      isTerminal = isTerminal,
-      xmlDialect = source.xmlDialect
-    )
-
-    // Convert to HTML
-    val html: Html.Element = Xml2Html.fromXml(xmlIncluded)
-
-    // Add TOC to HTML
-    toc.add(
-      html,
-      hasToc = source.page.hasToc,
-      tocDepth = source.page.tocDepth,
-      sectionId,
-      source.markup
-    )

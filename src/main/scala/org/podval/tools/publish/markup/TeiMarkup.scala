@@ -1,7 +1,6 @@
-package org.podval.tools.publish.tei
+package org.podval.tools.publish.markup
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
-import org.podval.tools.publish.markup.{Markup, XmlMarkup}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html}
@@ -24,13 +23,14 @@ object TeiMarkup extends Markup(
     xml: Xml.Element
   ): (Xml.Element, Option[Xml.Element]) =
     val tei2Html: Xml2Html = Xml2Html("tei")
+    val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val result: Xml.Element = xmlDialect.transform(xml, element =>
       var result: Xml.Element = element
       result = tei2Html.convert(result)
       result = convertSpecial(result)
       result = convertEntityName(result).getOrElse(result)
       result = convertFacsimileLink(result).getOrElse(result)
-      result = convertFootnote(result).getOrElse(result)
+      result = convertFootnote(result, footnoteCorrelationIds).getOrElse(result)
       result = convertSection(result).getOrElse(result)
       result
     )
@@ -75,9 +75,10 @@ object TeiMarkup extends Markup(
   //  <p>...</p>
   //</div>
   private def convertSection(element: Xml.Element): Option[Xml.Element] =
-      Option.when(element.getName == "div" && element.getId.isEmpty)(
-        element.setId(sectionTitle(element).map(Xml.toId))
-      )
+    Option.when(element.getName == "div" && element.getId.isEmpty)(element
+      .setId(sectionTitle(element).map(Xml.toId))
+      .add(Section.SectionClass)
+    )
 
   private def sectionTitle(element: Xml.Element): Option[String] = element
     .getChildren
@@ -85,23 +86,11 @@ object TeiMarkup extends Markup(
     .find(element => element.getName == "head")
     .flatMap(_.getTextOpt)
 
-  // TODO split into body and link stubs - and simplify the non-markup-specific footnotes processing!
-  //  private val footnoteCorrelationIds: Prefixed = Prefixed("")
-  //  def footnoteCorrelationId(): String = footnoteCorrelationIds.generate()
-  private def convertFootnote(element: Xml.Element): Option[Xml.Element] =
+  private def convertFootnote(element: Xml.Element, footnoteCorrelationIds: IdGenerator): Option[Xml.Element] =
     Option.when(element.getName == "note" && element.get("place").contains("end"))(
-      element // TODO
-//      Footnotes.linkAndBodyStub(element, ids.footnoteCorrelationId())
+      element
+      // TODO generate correlationId and replace footnote element with link stub *and* body stub with the same correlationId
     )
-
-  //// Replace footnotes with link stubs
-  //final class FootnoteLinksTransformer(xmlDialect: XmlDialect) extends Transformer:
-  //  override def transform(element: Xml.Element): Xml.Element =
-  //    xmlDialect.transform(element, element =>
-  //      Footnotes.getCorrelationId(element).fold(element)(Footnotes.linkStub)
-  //    )
-  //
 
   override def pageHeader(page: MarkupPage): Html.Element =
     super.pageHeader(page) // TODO
-

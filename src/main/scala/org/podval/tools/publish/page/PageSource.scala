@@ -63,9 +63,9 @@ final class PageSource(
     val ids: IdGenerator = IdGenerator("_generated_id")
     var result: Xml.Element = xmlDialect.transform(xmlProcessed, element =>
       var result: Xml.Element = element
-      result = Links.setAnchorId(result, ids).getOrElse(result)
       result = Section.setSectionId(result, ids).getOrElse(result)
-      result = Links.convertInternalLink(result, page.site, this).getOrElse(result)
+      result = Links.setAnchorId(result, ids).getOrElse(result)
+      result = Links.markInternalLink(result, page.site, this).getOrElse(result)
       result
     )
 

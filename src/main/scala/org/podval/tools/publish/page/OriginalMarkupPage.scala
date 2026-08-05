@@ -8,12 +8,7 @@ abstract class OriginalMarkupPage(site: Site, path: Path) extends MarkupPage(sit
   final override def next: Option[Page] = parent.flatMap(_.next(this))
 
   private var sourceVar: Option[PageSource] = None
-  final override def source: Option[PageSource] = sourceVar
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
-
-  final override def markupContent: Option[Html.Element] = content.map(_.toHtml(
-    sectionId = None,
-    isTerminal = true
-  ))
-  
-  final override def pageHeader: Option[Html.Element] = content.map(_.source.markup.pageHeader(this))
+  final override def source: Option[PageSource] = sourceVar
+  final override def markupContent: Option[Html.Element] = markupContent(sectionId = None, isTerminal = true)
+  final override def pageHeader: Option[Html.Element] = content.map(_.markup.pageHeader(this))

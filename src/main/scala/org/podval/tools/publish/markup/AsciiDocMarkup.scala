@@ -1,7 +1,6 @@
-package org.podval.tools.publish.asciidoc
+package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.markup.{Footnotes, HtmlMarkup, Markup}
 import org.podval.tools.publish.page.PageSource
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
@@ -47,7 +46,9 @@ object AsciiDocMarkup extends Markup(
       .attribute("docfile", sourceFile.getAbsolutePath)
       .attribute("docdir", sourceFile.getParentFile.getAbsolutePath)
 
-      // TODO author and email attributes should be set from the Site
+      // Note: if in the future we need to set default values of attributes from Site:
+//      .attribute("author@", site.config.author)
+//      .attribute("email@", site.config.email)
 
       .build()
 

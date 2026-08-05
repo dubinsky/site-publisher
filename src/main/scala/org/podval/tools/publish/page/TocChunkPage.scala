@@ -8,10 +8,10 @@ final class TocChunkPage(markupPage: OriginalMarkupPage) extends ChunkPage(
 ):
   override def isDirectory: Boolean = false
 
-  override def markupContent: Option[Html.Element] = markupPage.content.map(_.toHtml(
+  override def markupContent: Option[Html.Element] = markupPage.markupContent(
     sectionId = None,
     isTerminal = false
-  ))
+  )
   
   override def up: Option[Page] = None
   override def prev: Option[Page] = None

@@ -1,10 +1,9 @@
-package org.podval.tools.publish.markdown
+package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.markup.{Block, Footnotes, HtmlMarkup, Links, Markup}
 import org.podval.tools.publish.page.PageSource
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
-import zio.blocks.chunk.Chunk
-import scala.annotation.tailrec
+//import zio.blocks.chunk.Chunk
+//import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
@@ -56,7 +55,7 @@ object MarkdownMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = Block.markBlock(result, source).getOrElse(result)
+      result = Blocks.convertBlock(result, source).getOrElse(result)
       result = Links.convertWikiLinks(result).getOrElse(result)
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
@@ -74,39 +73,39 @@ object MarkdownMarkup extends Markup(
   // To process footnotes in Markdown markup correctly, I have to enable FootnotesExtension -
   // and convert its output to the form Markup understands (in convertFootnoteLink() and convertFootnoteBody()).
 
-  private def convertMarkdownFootnotes(element: Xml.Element): Option[Xml.Element] =
-    Option.when(!element.isA)(
-      // TODO move to XmlUtils
-      element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(convertMarkdownFootnotes(Chunk.empty, _))))
-    )
-
-  private val startsString: String = "[^"
-  private val endString: String = "]"
-  private val bodyStartString: String = ":"
-
-  @tailrec
-  // TODO this loop has commonality with the WikiLinksFeature.convertWikiLinks() loop...
-  private def convertMarkdownFootnotes(result: Xml.Nodes, text: String): Xml.Nodes =
-    if text.isEmpty then result else
-      val start: Int = text.indexOf(startsString)
-      val end: Int = if start == -1 then -1 else text.indexOf(endString, start)
-      if end == -1 then result ++ Chunk(Xml.text(text)) else
-        val before: String = text.substring(0, start)
-        val correlationId: String = text.substring(start + startsString.length, end).trim
-        val afterRaw: String = text.substring(end + endString.length)
-
-        val (footnote: Xml.Element, after: String) =
-          if !afterRaw.startsWith(bodyStartString)
-          then (Footnotes.linkStub(correlationId), afterRaw)
-          // TODO be more precise:
-          // - only indented content counts
-          // - there may be markup in the footnote body
-          else (Footnotes.bodyStub(correlationId, Chunk(Xml.text(afterRaw.substring(bodyStartString.length).trim))), "")
-
-        convertMarkdownFootnotes(
-          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Chunk(footnote),
-          after
-        )
+//  private def convertMarkdownFootnotes(element: Xml.Element): Option[Xml.Element] =
+//    Option.when(!element.isA)(
+//      // TODO move to XmlUtils
+//      element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(convertMarkdownFootnotes(Chunk.empty, _))))
+//    )
+//
+//  private val startsString: String = "[^"
+//  private val endString: String = "]"
+//  private val bodyStartString: String = ":"
+//
+//  @tailrec
+//  // TODO this loop has commonality with the WikiLinksFeature.convertWikiLinks() loop...
+//  private def convertMarkdownFootnotes(result: Xml.Nodes, text: String): Xml.Nodes =
+//    if text.isEmpty then result else
+//      val start: Int = text.indexOf(startsString)
+//      val end: Int = if start == -1 then -1 else text.indexOf(endString, start)
+//      if end == -1 then result ++ Chunk(Xml.text(text)) else
+//        val before: String = text.substring(0, start)
+//        val correlationId: String = text.substring(start + startsString.length, end).trim
+//        val afterRaw: String = text.substring(end + endString.length)
+//
+//        val (footnote: Xml.Element, after: String) =
+//          if !afterRaw.startsWith(bodyStartString)
+//          then (Footnotes.linkStub(correlationId), afterRaw)
+//          // TODO be more precise:
+//          // - only indented content counts
+//          // - there may be markup in the footnote body
+//          else (Footnotes.bodyStub(correlationId, Chunk(Xml.text(afterRaw.substring(bodyStartString.length).trim))), "")
+//
+//        convertMarkdownFootnotes(
+//          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Chunk(footnote),
+//          after
+//        )
 
   // From:
   //   <sup id="fnref-N"><a class="footnote-ref" href="#fn-N">N</a></sup>
@@ -149,10 +148,8 @@ object MarkdownMarkup extends Markup(
         Footnotes.bodyStub(correlationId, body)
 
   override def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
-    source.xmlDialect.transform(xml, element =>
-      Links.embedWikiLink(element).getOrElse(element)
-    )
-
+    Links.embedWikiLinks(xml, xmlDialect)
+  
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 
