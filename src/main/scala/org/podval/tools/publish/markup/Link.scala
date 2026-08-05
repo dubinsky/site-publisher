@@ -1,8 +1,10 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{Page, PageContent}
-import org.podval.tools.publish.site.Path
-import org.podval.tools.publish.util.{Files, Strings}
+import org.podval.tools.publish.page.{OriginalMarkupPage, Page, PageContent}
+import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
+import org.podval.tools.publish.util.{Files, IdGenerator, Strings}
+import org.podval.xml.{HtmlClass, Xml, XmlDialect}
+import java.net.{URI, URISyntaxException}
 
 final class Link(
   val page: Page,
@@ -21,6 +23,34 @@ final class Link(
     fragment.fold("")(fragment => s"#${get(fragment)}")
 
 object Link:
+  object InternalLinkClass extends HtmlClass("internal-link")
+
+  private object UnresolvedLinkClass extends HtmlClass("unresolved-link")
+
+  def setAnchorId(element: Xml.Element, ids: IdGenerator): Option[Xml.Element] =
+    Option.when(element.isA && element.getId.isEmpty)(
+      element.setId(ids.generate())
+    )
+
+  def markInternal(
+    element: Xml.Element,
+    site: Site,
+    errorReporter: PageErrorReporter
+  ): Option[Xml.Element] =
+    if !element.isA then None else
+      element.getHref.flatMap: href =>
+        // TODO verify that external link is not broken if the Site is so configured
+        val isInternal: Boolean =
+          try
+            val uri: URI = URI(href)
+            if site.isSelf(uri) then errorReporter.error(PageError.SelfLink, href)
+            uri.getScheme == null
+          catch case e: URISyntaxException => true
+
+        Option.when(isInternal)(
+          element.add(InternalLinkClass)
+        )
+
   sealed abstract class ToFragment:
     def title: String
     def id: String
@@ -64,3 +94,33 @@ object Link:
           content.flatMap(_.ids.resolve(fragment))
         )
     ))
+
+  def resolveInternalLinks(
+    xml: Xml.Element,
+    xmlDialect: XmlDialect,
+    page: OriginalMarkupPage,
+    errorReporter: PageErrorReporter
+  ): Xml.Element =
+    def resolveInternalLink(
+      element: Xml.Element,
+      ref: String
+    ): Xml.Element =
+      val kind: Option[LinkKind] = LinkKind.of(element)
+      resolve(ref, kind, page) match
+        case None =>
+          errorReporter.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+          element.add(UnresolvedLinkClass)
+        case Some(linkTo) =>
+          // TODO transclude
+          val result: Xml.Element = element.setHref(linkTo.url)
+
+          if result.getText != WikiLink.linkText(element, ref)
+          then result
+          else result.setText(WikiLink.linkText(element, linkTo.title))
+
+    xmlDialect.transform(xml, element => Option
+      .when(element.isA && element.has(InternalLinkClass))(
+        element.getHref.fold(element)(ref => resolveInternalLink(element, ref))
+      )
+      .getOrElse(element)
+    )

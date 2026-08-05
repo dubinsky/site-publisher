@@ -2,8 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageSource
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
-//import zio.blocks.chunk.Chunk
-//import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
@@ -55,8 +53,8 @@ object MarkdownMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = Blocks.convertBlock(result, source).getOrElse(result)
-      result = Links.convertWikiLinks(result).getOrElse(result)
+      result = Block.convert(result, source).getOrElse(result)
+      result = WikiLink.convert(result).getOrElse(result)
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
@@ -119,7 +117,7 @@ object MarkdownMarkup extends Markup(
         .find(_.hasClass("footnote-ref"))
         .map(_.getText)
       yield
-        Footnotes.linkStub(correlationId)
+        Footnote.link(correlationId)
 
   // From:
   //   <li id="fn-N">
@@ -145,11 +143,8 @@ object MarkdownMarkup extends Markup(
           .map(backLink => element.getChildren.takeWhile(_ ne backLink))
       yield
         // TODO find the <p> within the body and use its children as body...
-        Footnotes.bodyStub(correlationId, body)
+        Footnote.body(correlationId, body)
 
-  override def postProcess(source: PageSource, xml: Xml.Element): Xml.Element =
-    Links.embedWikiLinks(xml, xmlDialect)
-  
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 

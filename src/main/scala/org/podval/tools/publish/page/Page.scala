@@ -56,7 +56,9 @@ abstract class Page(
 
   final def content: Option[PageContent] = source.map(_.content)
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
-  
+
+  final def contentResolved: Option[PageContentResolved] = source.map(_.contentResolved)
+
   private def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
   // TODO permalink must be absolute
@@ -116,7 +118,7 @@ abstract class Page(
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
   
-  final def entityKind: Option[EntityKind] = content(_.entityKind)
+  final def entityKind: Option[EntityKind] = content(content => content.source.markup.entityKind(content.xml))
   
   final def ref(
     cls: Option[String] = None,

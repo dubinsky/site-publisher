@@ -148,7 +148,7 @@ object AsciiDocMarkup extends Markup(
         .find(_.hasClass("footnote"))
         .map(_.getText)
       yield
-        Footnotes.linkStub(correlationId)
+        Footnote.link(correlationId)
 
   // From:
   //   <div class="footnote" id="_footnotedef_N"><a href="#_footnoteref_N">N</a>. Footnote Body</div>
@@ -164,7 +164,7 @@ object AsciiDocMarkup extends Markup(
         .map(_.getText)
       yield
         val body: Xml.Nodes = element.getChildren.dropUntil(_.asElement.isDefined) // TODO why?
-        Footnotes.bodyStub(
+        Footnote.body(
           correlationId,
           body.head.asText match
             case Some(text) if text.startsWith(".") => Xml.text(text.drop(1)) +: body.tail

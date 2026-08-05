@@ -104,8 +104,8 @@ final class Site(options: Options) extends JSLibrary:
     do
       backLinks.addBackLinks(BackLink.backLinks(
         content.xml,
-        content.xmlDialect,
-        content.page,
+        content.source.markup.xmlDialect,
+        content.source.page, // TODO go through OriginalMarkupPages only, use page, remove content.page
         content.ids
       ))
 

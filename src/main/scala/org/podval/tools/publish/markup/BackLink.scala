@@ -19,7 +19,7 @@ object BackLink:
     ids: Ids
   ): Seq[BackLink] =
     def backLink(element: Xml.Element, parentOpt: Option[Xml.Element]): Option[BackLink] =
-      if !(element.isA && element.has(Links.InternalLinkClass)) then None else
+      if !(element.isA && element.has(Link.InternalLinkClass)) then None else
         val parent: Xml.Element = parentOpt.get
         for
           ref <- element.getHref
@@ -38,7 +38,7 @@ object BackLink:
           BackLink(
             to = to,
             from = from,
-            transclude = Links.isTranscluded(element),
+            transclude = WikiLink.isTranscluded(element),
             kind = LinkKind.of(element),
             context = LinkContext(
               toFrom = toFrom,

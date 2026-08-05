@@ -37,8 +37,6 @@ abstract class Markup(
   // - extract title
   def process(source: PageSource, xml: Xml.Element): (Xml.Element, Option[Xml.Element])
 
-  def postProcess(source: PageSource, xml: Xml.Element): Xml.Element = xml
-
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
