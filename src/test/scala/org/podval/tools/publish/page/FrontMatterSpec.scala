@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
 import zio.Scope
-import zio.blocks.schema.SchemaError
 import zio.test.*
 import java.time.LocalDate
 
@@ -12,8 +11,10 @@ object FrontMatterSpec extends ZIOSpecDefault:
     val parsed: FrontMatter = FrontMatter.parse(FrontMatter.split(input)._1).toOption.get
     val rendered: String = parsed.write
     val reparsed: FrontMatter = FrontMatter.parse(FrontMatter.split(rendered)._1).toOption.get
+    val rerendered: String = reparsed.write
+
     assertTrue(
-      rendered == reparsed.write
+      rendered == rerendered
     )
     
 
@@ -22,8 +23,8 @@ object FrontMatterSpec extends ZIOSpecDefault:
     val parsed: FrontMatter = FrontMatter.parse(frontMatterInput).toOption.get
     verify(parsed, content)
 
-  def error(input: String, verify: SchemaError => TestResult): TestResult =
-    val error: SchemaError = FrontMatter.parse(FrontMatter.split(input)._1).left.toOption.get
+  def error(input: String, verify: Throwable => TestResult): TestResult =
+    val error: Throwable = FrontMatter.parse(FrontMatter.split(input)._1).left.toOption.get
     verify(error)
 
   override def spec: Spec[TestEnvironment & Scope, Any] = suite("FrontMatter")(
@@ -68,7 +69,7 @@ object FrontMatterSpec extends ZIOSpecDefault:
           |---
           |# Hello
           |""".stripMargin,
-        error => assertTrue(error.getCause.getMessage.contains("Expected mapping for record"))
+        error => assertTrue(error.getMessage.contains("Expected mapping for record"))
       )
     },
     test("round-trip without FrontMatter") {

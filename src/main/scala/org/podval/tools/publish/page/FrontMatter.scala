@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.util.{Date, Icon, SchemaUtil}
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.yaml.{Yaml, YamlCodec, YamlFormat, YamlReader, YamlWriter}
-import zio.blocks.schema.{Schema, SchemaError}
+import zio.blocks.schema.{NameMapper, Schema}
 import zio.blocks.typeid.TypeId
 import scala.util.control.NonFatal
 
@@ -70,6 +70,7 @@ object FrontMatter:
   private val schema: Schema[FrontMatter] = Schema.derived
 
   private val fieldNames: Set[String] = SchemaUtil.fieldNames(schema)
+  private val fieldNamesMangled: Set[String] = fieldNames.map(NameMapper.KebabCase.apply)
 
   private val codec: YamlCodec[FrontMatter] = schema
     .deriving(YamlFormat.deriver)
@@ -85,13 +86,13 @@ object FrontMatter:
       val content: String = "\n" * frontMatterLines + input.substring(frontMatterEnd + 5)
       (Some(frontMatterContent), content)
 
-  def parse(input: Option[String]): Either[SchemaError, FrontMatter] =
+  def parse(input: Option[String]): Either[Throwable, FrontMatter] =
     input.fold(Right(absent)): input =>
       if input.isEmpty
       then Right(empty)
       else decode(input)
     
-  private def decode(input: String): Either[SchemaError, FrontMatter] =
+  private def decode(input: String): Either[Throwable, FrontMatter] =
     try
       val yaml: Yaml = YamlReader.read(input)
       val result: FrontMatter = codec.decodeValue(yaml)
@@ -99,9 +100,9 @@ object FrontMatter:
         .asInstanceOf[Yaml.Mapping]
         .entries
         .filter(_._1 match
-          case Yaml.Scalar(key, _) => !fieldNames.contains(key)
+          case Yaml.Scalar(key, _) => !fieldNamesMangled.contains(key)
           case _ => true
         ))
       Right(result)
     catch
-      case error: Throwable if NonFatal(error) => new Left(SchemaError(error.getMessage))
+      case error: Throwable if NonFatal(error) => Left(error)
