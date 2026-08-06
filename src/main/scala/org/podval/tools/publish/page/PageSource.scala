@@ -47,18 +47,3 @@ final class PageSource(
       case Some(reference) => reference.get match
         case None => readParseAndCache("Re-reading evicted", firstReading = false)
         case Some(cached) => cached
-
-  private var contentResolvedVar: Option[SoftReference[PageContentResolved]] = None
-
-  def contentResolved: PageContentResolved =
-    def resolveAndCache(message: String, firstReading: Boolean): PageContentResolved =
-      // TODO message
-      val result: PageContentResolved = PageContentResolved(content)
-      contentResolvedVar = Some(SoftReference(result))
-      result
-
-    contentResolvedVar match
-      case None => resolveAndCache("Resolving", firstReading = true)
-      case Some(reference) => reference.get match
-        case None => resolveAndCache("Re-resolving evicted", firstReading = false)
-        case Some(cached) => cached

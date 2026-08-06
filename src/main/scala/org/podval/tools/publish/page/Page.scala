@@ -56,9 +56,7 @@ abstract class Page(
 
   final def content: Option[PageContent] = source.map(_.content)
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
-
-  final def contentResolved: Option[PageContentResolved] = source.map(_.contentResolved)
-
+  
   private def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
   // TODO permalink must be absolute
@@ -127,7 +125,7 @@ abstract class Page(
     icon: Option[Icon] = None
   ): Html.Element =
     val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
-    val pageLink: Link = Link(this, fragment = None, intrapage = false)
+    val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
     a(
       className := clss,
       // TODO this results in duplicate class attribute!!!

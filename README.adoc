@@ -9,6 +9,10 @@ Generate and publish websites.
 [#summary]
 == Summary
 
+This here is a static site generator.
+
+It supports HTML, Markdown, and Asciidoc.
+
 == Opinionated
 
 Since I am writing this site generator for my own use,
@@ -65,12 +69,6 @@ Obsidian supports them natively.
 Site generator supports Markdown task lists via FlexMark Task List Extension;
 Obsidian supports them natively.
 
-=== AsciiDoc
-
-TODO AsciiDoc support is not yet complete!
-
-TODO document it once it is
-
 === Chunking
 
 Previously, I used `asciidoctor-multipage` Asciidoctor
@@ -90,6 +88,8 @@ and not `multi-page` as does AsciiDoctor extension.
 
 Chunking is enabled by setting `chunk` to `true` in the file's front-matter.
 
+Chunking depth is controlled by the `chunk-depth` front-matter field.
+
 == Farewell, Jekyll
 
 Events of 2026:
@@ -102,6 +102,8 @@ Events of 2026:
 - May 04: I removed all traces of Jekyll from my personal website
 - May 06: I became aware of the ZIO Blocks HTML that was added on Apr 25-May 01, and started switching to it from my home-grown HTML DSL
 - May 07: switched
+- June/July: working on TEI support
+- July/August: Asciidoc support and chunking
 
 
 First milestone for this project is to replace Jekyll on my personal website.

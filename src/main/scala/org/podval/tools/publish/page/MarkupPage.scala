@@ -1,9 +1,8 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
-import org.podval.tools.publish.markup.Footnote
 import org.podval.tools.publish.site.{Path, Site, Sitemap}
-import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect, Xml, Xml2Html, XmlDialect}
+import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
 import zio.blocks.html.Dom.Element.Script
@@ -30,36 +29,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   final def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] = contentResolved.map: contentResolved =>
-    val xmlDialect: XmlDialect = contentResolved.source.markup.xmlDialect
-    
-    var result: Xml.Element = contentResolved.xml
-    
-    // Select XML to include
-    result = contentResolved.toc.select(
-      xml = result,
-      sectionId = sectionId,
-      isTerminal = isTerminal,
-      xmlDialect = xmlDialect
-    )
-
-    // Add footnotes referenced in the selected XML
-    val footnotes: Map[String, Footnote] = contentResolved.footnotes
-    val toAdd: Chunk[Footnote] = Footnote.links(result, xmlDialect).map(footnotes)
-    result = Footnote.convertLinks(result, footnotes, xmlDialect)
-    result = Footnote.addFootnotesDiv(result, toAdd)
-
-    // Convert to HTML
-    val html: Html.Element = Xml2Html.fromXml(result)
-
-    // Add TOC to HTML
-    contentResolved.toc.add(
-      html,
-      hasToc = hasToc,
-      tocDepth = tocDepth,
-      sectionId,
-      contentResolved.source.markup
-    )
+  ): Option[Html.Element] = content.map(_.markupContent(sectionId, isTerminal))
 
   def pageHeader: Option[Html.Element]
 

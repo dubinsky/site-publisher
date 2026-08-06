@@ -3,19 +3,15 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 
-// TODO TOC for chunked pages needs to reference chunks
-// TODO intra-page links in the chunked page are no longer intra-page!
-// TODO rename PageContent ids to anchors; store the section they are in
 // Note: TOC - no sectionId, isTerminal = false
 final class ChunkedMarkupPage(
   markupPage: FullMarkupPage,
   sectionId: Option[String],
-  isTerminal: Boolean
+  isTerminal: Boolean,
+  name: String
 ) extends MarkupPage(
   markupPage.site,
-  markupPage.path.add(
-    sectionId.getOrElse(markupPage.path.fileName) // TODO TOC: DirectoryPage.fileName!
-  ).html
+  markupPage.path.add(name).html
 ):
   override def markupContent: Option[Html.Element] = markupPage.markupContent(
     sectionId = sectionId,

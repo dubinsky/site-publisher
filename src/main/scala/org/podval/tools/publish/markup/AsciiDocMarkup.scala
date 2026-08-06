@@ -56,8 +56,8 @@ object AsciiDocMarkup extends Markup(
       .builder()
       .backend("html5")
       .toFile(false)
-      .standalone(false) // No HTNL wrapper: site publisher does it for all formats.
-      .safe(SafeMode.UNSAFE /* TODO more safe? */)
+      .standalone(false)
+      .safe(SafeMode.UNSAFE)
       .attributes(attributes)
       .build()
 
@@ -72,7 +72,8 @@ object AsciiDocMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = cleanUp(result) // TODO run in a separate transform()?
+      result = removeSpuriousClasses(result)
+      result = result.setChildren(removeSpuriousElements(result.getChildren)) // TODO run in a separate transform?
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
       result
@@ -84,13 +85,20 @@ object AsciiDocMarkup extends Markup(
 
   // Distill the soup of meaningless `div`s that Asciidoctor emits;
   // see, for example, https://tiffnix.com/soupault#html-de-uglifier-plugin.
-  private def cleanUp(element: Xml.Element): Xml.Element =
-    removeSpuriousClasses(element).setChildren(removeSpuriousElements(element.getChildren))
 
+  private val spuriousClasses: Set[String] = Set(
+    "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
+  )
+  
   private def removeSpuriousClasses(element: Xml.Element): Xml.Element =
-    val classes = element.getClasses
-    if classes.isEmpty then element else
-      element.setClasses(classes.filterNot(spuriousClasses.contains))
+    val classes: Chunk[String] = element.getClasses
+    if classes.isEmpty
+    then element
+    else element.setClasses(classes.filterNot(spuriousClasses.contains))
+
+  private val spuriousDivClasses: Set[String] = Set(
+    "paragraph", "sectionbody", "ulist", "olist", "quoteblock", "openblock", "content"
+  )
 
   private def removeSpuriousElements(children: Xml.Nodes): Xml.Nodes = children.flatMap: child =>
     val replacement: Option[Xml.Nodes] = child.asElement.flatMap: element =>
@@ -126,15 +134,7 @@ object AsciiDocMarkup extends Markup(
         Chunk(child)
       case Some(result) =>
         result
-
-  private val spuriousDivClasses: Set[String] = Set(
-    "paragraph", "sectionbody", "ulist", "olist", "quoteblock", "openblock", "content"
-  )
-
-  private val spuriousClasses: Set[String] = Set(
-    "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
-  )
-
+  
   // From:
   //   <sup class="footnote">[<a id="_footnoteref_N" class="footnote" href="#_footnotedef_N">N</a>]</sup>
   // To:
@@ -146,7 +146,7 @@ object AsciiDocMarkup extends Markup(
         .getChildren
         .flatMap(_.asElement)
         .find(_.hasClass("footnote"))
-        .map(_.getText)
+        .flatMap(_.getTextOpt)
       yield
         Footnote.link(correlationId)
 
@@ -161,7 +161,7 @@ object AsciiDocMarkup extends Markup(
         .getChildren
         .flatMap(_.asElement)
         .headOption
-        .map(_.getText)
+        .flatMap(_.getTextOpt)
       yield
         val body: Xml.Nodes = element.getChildren.dropUntil(_.asElement.isDefined) // TODO why?
         Footnote.body(

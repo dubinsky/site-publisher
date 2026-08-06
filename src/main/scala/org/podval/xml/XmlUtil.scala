@@ -16,3 +16,11 @@ object XmlUtil:
     element: Xml.Element
   ): Xml.Element =
     element.get(from).fold(element)(element.set(to, _))
+
+  def elementById(
+    xml: Xml.Element,
+    id: String,
+    xmlDialect: XmlDialect
+  ): Xml.Element = xmlDialect
+    .gather(xml, element => Option.when(element.getId.contains(id))(element))
+    .head

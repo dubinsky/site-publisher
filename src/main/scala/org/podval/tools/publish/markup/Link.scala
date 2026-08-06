@@ -1,15 +1,15 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{FullMarkupPage, Page, PageContent}
+import org.podval.tools.publish.page.{Page, PageContent}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.{Files, Strings}
-import org.podval.xml.{HtmlClass, Xml, XmlDialect}
+import org.podval.xml.{HtmlClass, Xml}
 import java.net.{URI, URISyntaxException}
 
 final class Link(
   val page: Page,
-  fragment: Option[Link.ToFragment],
-  intrapage: Boolean
+  val fragment: Option[Link.ToFragment],
+  val isIntrapage: Boolean
 ):
   def url: String = withFragment(page.real.path.toString, _.id)
   def title: String = withFragment(page.title, _.title)
@@ -19,14 +19,16 @@ final class Link(
     fromPage: String,
     get: Link.ToFragment => String
   ): String =
-    (if intrapage then "" else fromPage) +
+    (if isIntrapage then "" else fromPage) +
     fragment.fold("")(fragment => s"#${get(fragment)}")
 
 object Link:
-  object InternalLinkClass extends HtmlClass("internal-link")
+  private object InternalLinkClass extends HtmlClass("internal-link")
 
-  private object UnresolvedLinkClass extends HtmlClass("unresolved-link")
+  object UnresolvedLinkClass extends HtmlClass("unresolved-link")
 
+  def isInternal(element: Xml.Element): Boolean = element.isA && element.has(InternalLinkClass)
+  
   // TODO unfold
   def markInternal(
     element: Xml.Element,
@@ -51,7 +53,7 @@ object Link:
     def title: String
     def id: String
 
-  final class ToBlock(block: Block) extends ToFragment:
+  final class ToBlock(block: WikiBlock) extends ToFragment:
     override def id: String = block.id
     override def title: String = s"^${block.id}"
 
@@ -64,8 +66,12 @@ object Link:
 
   // path could be `name`, `path/name`(?) - or empty, for intrapage links.
   // fragment could be `#section`, `#section#subsection`, `#^block`, or #id.
-  def resolve(ref: String, kind: Option[LinkKind], from: Page): Option[Link] =
-    val (pathStringRaw: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
+  def resolve(
+    ref: String,
+    kind: Option[LinkKind],
+    from: Page
+  ): Option[Link] =
+    val (pathStringRaw: String, fragmentStr: Option[String]) = Strings.splitFirst(ref, '#')
     val pathString: String = pathStringRaw.trim
     // TODO unify with Path.relativize()
     val isAbsolute: Boolean = pathString.startsWith("/")
@@ -79,44 +85,19 @@ object Link:
       then Some(from)
       else from.site.pages.find(path, isAbsolute, kind)
 
-    to.map(to => Link(
-      page = to,
-      intrapage = from == to,
-      fragment = fragment.flatMap: fragment =>
+    to.map: to =>
+      val fragment: Option[ToFragment] = fragmentStr.flatMap: fragment =>
         val content: Option[PageContent] = to.real.content
         if fragment.startsWith("^")
         then content.flatMap(_.blocks.resolve(id = fragment.substring(1).trim))
-        else content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq)).orElse(
-          content.flatMap(_.ids.resolve(fragment))
+        else if fragment.contains("#")
+        then content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq))
+        else content.flatMap(_.ids.resolve(fragment)).orElse(
+          content.map(_.toc).flatMap(_.resolveSection(names = Seq(fragment.trim)))
         )
-    ))
 
-  def resolveInternalLinks(
-    xml: Xml.Element,
-    xmlDialect: XmlDialect,
-    page: FullMarkupPage,
-    errorReporter: PageErrorReporter
-  ): Xml.Element =
-    def resolveInternalLink(
-      element: Xml.Element,
-      ref: String
-    ): Xml.Element =
-      val kind: Option[LinkKind] = LinkKind.of(element)
-      resolve(ref, kind, page) match
-        case None =>
-          errorReporter.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
-          element.add(UnresolvedLinkClass)
-        case Some(linkTo) =>
-          // TODO transclude
-          val result: Xml.Element = element.setHref(linkTo.url)
-
-          if result.getText != WikiLink.linkText(element, ref)
-          then result
-          else result.setText(WikiLink.linkText(element, linkTo.title))
-
-    xmlDialect.transform(xml, element => Option
-      .when(element.isA && element.has(InternalLinkClass))(
-        element.getHref.fold(element)(ref => resolveInternalLink(element, ref))
+      Link(
+        page = to,
+        isIntrapage = from == to,
+        fragment = fragment
       )
-      .getOrElse(element)
-    )

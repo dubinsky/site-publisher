@@ -1,10 +1,10 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{BackLink, BackLinks}
+import org.podval.tools.publish.markup.{BackLink, Link}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
-import org.podval.xml.Html
+import org.podval.xml.{Html, Xml}
 import org.slf4j.{Logger, LoggerFactory}
 import zio.blocks.html.*
 import java.io.File
@@ -102,12 +102,18 @@ final class Site(options: Options) extends JSLibrary:
       page <- pages.pages
       content <- page.content
     do
-      backLinks.addBackLinks(BackLink.backLinks(
-        content.xml,
-        content.source.markup.xmlDialect,
-        content.source.page, // TODO go through OriginalMarkupPages only, use page, remove content.page
-        content.ids
-      ))
+      backLinks.addBackLinks(
+        content.source.markup.xmlDialect.gatherWithParent(
+          element = content.xml,
+          gatherElement = (element: Xml.Element, parent: Option[Xml.Element]) =>
+            if !Link.isInternal(element) then None else BackLink(
+              element,
+              parent = parent.get,
+              from = content.source.page, // TODO go through FullMarkupPages only, use page, remove content.page
+              ids = content.ids
+            )
+        )
+      )
 
     // TODO sort pages topologically based on transclusions
 

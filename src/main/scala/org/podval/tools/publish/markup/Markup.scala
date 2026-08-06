@@ -82,7 +82,7 @@ abstract class Markup(
 
     val xmlString: String = xmlContent(content, sourceFile)
 
-    val xml: Xml.Element = (if rendersToXml then XmlParser.parseXml(xmlString) else XmlParser.parseHtml(xmlString)) match
+    val xml: Xml.Element = XmlParser.parse(xmlString, isXml = rendersToXml) match
       case Right(xml) =>
         xml
       case Left(error) =>

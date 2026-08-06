@@ -11,7 +11,6 @@ object WikiLink:
 
   private object TranscludeClass extends HtmlClass("transclude")
 
-  // TODO remove; add/check classes directly
   def isTranscluded(element: Xml.Element): Boolean = element.has(TranscludeClass)
 
   private def wikiLink(
@@ -36,6 +35,7 @@ object WikiLink:
     then wikiLinkText(isTranscluded(element), text)
     else text
 
+  // TODO unfold
   def convert(element: Xml.Element): Option[Xml.Element] =
     Option.when(!element.isA)(
       // TODO move to XmlUtils
@@ -71,6 +71,7 @@ object WikiLink:
           after
         )
 
+  // TODO unfold
   def embed(xml: Xml.Element, xmlDialect: XmlDialect): Xml.Element =
     xmlDialect.transform(xml, element => Option
       .when(element.isA && isTranscluded(element))(

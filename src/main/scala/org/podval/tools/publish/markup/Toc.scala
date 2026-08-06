@@ -1,17 +1,17 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Html, Xml, XmlDialect}
+import org.podval.tools.publish.page.{ChunkedMarkupPage, FullMarkupPage}
+import org.podval.xml.{Html, Xml, XmlDialect, XmlUtil}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import zio.blocks.chunk.Chunk
 
-// TODO for chunked pages, links must be to chunked pages!!!
 final class Toc(sections: Seq[Section]) extends Sections(sections):
-  private val id2section: Map[String, Section] =
-    def flatten(sections: Sections): Seq[Section] = sections.sections ++ sections.sections.flatMap(flatten)
-    flatten(this).map(section => section.id -> section).toMap
+  private val id2section: Map[String, Section] = flatten
+    .map(section => section.id -> section)
+    .toMap
 
-  // Id must exist within this TOC
+  // id must exist within this TOC
   private def getById(id: String): Section =
     id2section(id)
 
@@ -22,6 +22,34 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
       includeNested = true
     )
       .map(Link.ToSection(_))
+
+  // TODO TOC: DirectoryPage.fileName!
+  private def tocChunkName(markupPage: FullMarkupPage): String = markupPage.path.fileName
+
+  def chunks(page: FullMarkupPage): Seq[ChunkedMarkupPage] =
+    def chunks(depth: Int, isTerminal: Boolean): Seq[ChunkedMarkupPage] =
+      for section <- flatten.filter(_.depth == depth) yield ChunkedMarkupPage(
+        page,
+        sectionId = Some(section.id),
+        isTerminal = isTerminal,
+        name = section.id
+      )
+
+    Seq(ChunkedMarkupPage(page, sectionId = None, isTerminal = false, name = tocChunkName(page))) ++
+    chunks(depth = page.chunkDepth-2, isTerminal = false) ++
+    chunks(depth = page.chunkDepth-1, isTerminal = true)
+
+  def chunkName(sectionId: String, chunkDepth: Option[Int]): String = chunkDepth match
+    case None => ""
+    case Some(chunkDepth) => chunkName(Some(sectionId), chunkDepth)
+
+  def chunkName(sectionId: Option[String], chunkDepth: Int): String = sectionId match
+    case None =>
+      "" // TODO TOC Chunk!
+    case Some(sectionId) =>
+      var section: Section = getById(sectionId)
+      while section.depth > chunkDepth - 1 do section = section.parent.get
+      s"${section.id}.${HtmlMarkup.extension}"
 
   // Select XML
   // sectionId  isTerminal  what is it?         what is included?
@@ -40,7 +68,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         (xml, this)
 
       case Some(sectionId) =>
-        (Toc.getSection(xml, sectionId, xmlDialect), getById(sectionId))
+        (XmlUtil.elementById(xml, sectionId, xmlDialect), getById(sectionId))
 
     if isTerminal then element else sections.sections.headOption.map(_.id) match
       case None =>
@@ -50,10 +78,12 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
           _.asElement.fold(true)(!_.getId.contains(stopAtId))
         ))
 
+  // TODO unfold
   def add(
     html: Html.Element,
     hasToc: Boolean,
     tocDepth: Int,
+    chunkDepth: Option[Int],
     sectionId: Option[String],
     markup: Markup
   ): Html.Element =
@@ -63,10 +93,11 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     def tocHtml: Html.Element =
       div(className := "toc",
         h3("Table of Contents"),
-        this.html(
+        toHtml(
           sections,
           sectionId,
-          tocDepth
+          tocDepth,
+          chunkDepth
         )
       )
 
@@ -83,21 +114,23 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     then result.setChildren(tocHtml +: result.getChildren)
     else result
 
-  private def html(
+  private def toHtml(
     sections: Seq[Section],
     selectedSectionId: Option[String],
-    depth: Int
+    tocDepth: Int,
+    chunkDepth: Option[Int]
   ): Html.Element =
     ul(sections.map(section =>
       val sectionId: String = section.id
       li(
         className := (if selectedSectionId.contains(sectionId) then "toc-section-selected" else "toc-section"),
-        a(href := s"#$sectionId", section.title),
-        Option.when(depth > 1 && section.sections.nonEmpty)(
-          html(
+        a(href := s"${chunkName(sectionId, chunkDepth)}#$sectionId", section.title),
+        Option.when(section.depth < tocDepth-1 && section.sections.nonEmpty)(
+          toHtml(
             section.sections,
             selectedSectionId,
-            depth = depth - 1
+            tocDepth,
+            chunkDepth
           )
         )
       )
@@ -122,12 +155,3 @@ object Toc:
           ))
 
     new Toc(element.flatMapElements(sections))
-
-  // TODO same for Block!
-  private def getSection(
-    xml: Xml.Element,
-    sectionId: String,
-    xmlDialect: XmlDialect
-  ): Xml.Element = xmlDialect
-    .gather(xml, element => element.getId.flatMap(id => Option.when(id.contains(sectionId))(element)))
-    .head

@@ -53,7 +53,7 @@ object MarkdownMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = Block.convert(result, source).getOrElse(result)
+      result = WikiBlock.convert(result, source).getOrElse(result)
       result = WikiLink.convert(result).getOrElse(result)
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)

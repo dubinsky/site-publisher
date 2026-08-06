@@ -1,8 +1,8 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.{LinkKind, Markup, Section, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, ChunkedMarkupPage, DirectoryPage, EmbeddedAsset, FrontMatter,
-  FullMarkupPage, Page, PageSource, SimpleMarkupPage}
+import org.podval.tools.publish.markup.{LinkKind, Markup, XmlMarkup}
+import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, FullMarkupPage,
+  Page, PageSource, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -65,40 +65,13 @@ final class Pages(site: Site):
     page.parent
     // Add alias pages
     page.aliases.foreach(add)
-    // Add chunk pages
-    if page.chunk then page match
-      case markupPage: FullMarkupPage => addChunkPages(markupPage)
-      case _ => site.error(
-        page.path,
-        PageError.FileKind, // TODO
-        s"Page ${page.path} is chunked but is not a markup page"
-      )
-
-  private def addChunkPages(markupPage: FullMarkupPage): Unit =
-    def addChunkPages(sections: Seq[Section], depth: Int): Unit =
-      if depth >= 1 then
-        val isTerminal = depth < 2
-        for section <- sections do
-          add(ChunkedMarkupPage(
-            markupPage,
-            sectionId = Some(section.id),
-            isTerminal = isTerminal
-          ))
-
-          addChunkPages(section.sections, depth - 1)
-
-    // Chunked Toc
-    add(ChunkedMarkupPage(
-      markupPage,
-      sectionId = None,
-      isTerminal = false
-    ))
-    // Chunks
-    addChunkPages(
-      sections = markupPage.content.map(_.toc.sections).getOrElse(Seq.empty),
-      depth = markupPage.chunkDepth
-    )
-
+    
+    page match
+      case page: FullMarkupPage =>
+        // Add chunk pages
+        if page.chunk then page.chunks.foreach(add)
+      case _ =>  
+      
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
     require(path.fileName == DirectoryPage.fileName)
@@ -109,7 +82,7 @@ final class Pages(site: Site):
         case page: DirectoryPage =>
           (page, false)
         case page =>
-          throw IllegalArgumentException(s"Not a Directory")
+          throw IllegalArgumentException(s"Not a Directory: $path")
 
     if addIt then add(page)
     page

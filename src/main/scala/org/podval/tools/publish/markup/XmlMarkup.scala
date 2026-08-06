@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, XmlDialect}
 import java.io.File
 

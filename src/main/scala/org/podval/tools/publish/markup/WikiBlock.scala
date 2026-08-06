@@ -5,14 +5,15 @@ import org.podval.tools.publish.util.Strings
 import org.podval.xml.{HtmlClass, Xml}
 import zio.blocks.chunk.Chunk
 
-// TODO rename WikiBlock?
-final class Block(
+final class WikiBlock(
   val id: String
 )
 
-object Block:
-  object BlockClass extends HtmlClass("wiki-block")
+object WikiBlock:
+  private object BlockClass extends HtmlClass("wiki-block")
 
+  def is(element: Xml.Element): Boolean = element.has(BlockClass)
+  
   // TODO according to the Obsidian documentation, block anchor can be added to a "structured block"
   // (e.g., a list) by putting it after the block, with empty lines before and after;
   // I'll deal with this later...
