@@ -9,6 +9,10 @@ object Ids:
   def apply(
     xml: Xml.Element,
     xmlDialect: XmlDialect
-  ): Ids =
-    val result: Seq[Id] = xmlDialect.gather(xml, _.getId.map(Id(_)))
-    new Ids(result)
+  ): Ids = new Ids(
+    xmlDialect.gatherWithContext(
+      xml,
+      isContext = Section.is,
+      gatherElement = (element, section) => element.getId.map(id => Id(id, section.map(_.getId.get)))
+    )
+  )

@@ -75,9 +75,8 @@ object TeiMarkup extends Markup(
   //  <p>...</p>
   //</div>
   private def convertSection(element: Xml.Element): Option[Xml.Element] =
-    Option.when(element.getName == "div" && element.getId.isEmpty)(element
+    Option.when(element.getName == "div" && element.getId.isEmpty)(Section.mark(element)
       .setId(sectionTitle(element).map(Xml.toId))
-      .add(Section.SectionClass)
     )
 
   private def sectionTitle(element: Xml.Element): Option[String] = element

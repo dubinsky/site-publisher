@@ -35,13 +35,19 @@ object PageContent:
     val ids: IdGenerator = IdGenerator("_generated_id")
     val result: Xml.Element = xmlDialect.transform(xmlProcessed, element =>
       var result: Xml.Element = element
+      
       // Note this is done so that Toc can be calculated.
       // TODO do section titles from the first element here, not in HtmlMarkdown and TeiMarkdown.
-      result = Section.setSectionId(result, ids).getOrElse(result)
+      if Section.is(result) && result.getId.isEmpty then
+        result = result.setId(ids.generate())
+      
       // Note: this is done so that backlinks can be calculated.
-      result = Link.setAnchorId(result, ids).getOrElse(result)
+      if result.isA && result.getId.isEmpty then
+        result = result.setId(ids.generate())
+      
       // Note: this is done so that backlinks can be calculated.
       result = Link.markInternal(result, source.page.site, source).getOrElse(result)
+      
       result
     )
 

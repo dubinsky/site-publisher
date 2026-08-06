@@ -1,8 +1,8 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{LinkKind, Markup, Section, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
-  OriginalMarkupPage, Page, PageSource, SectionChunkPage, SimpleMarkupPage, TocChunkPage}
+import org.podval.tools.publish.page.{AssetWithSourcePath, ChunkedMarkupPage, DirectoryPage, EmbeddedAsset, FrontMatter,
+  FullMarkupPage, Page, PageSource, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -67,27 +67,33 @@ final class Pages(site: Site):
     page.aliases.foreach(add)
     // Add chunk pages
     if page.chunk then page match
-      case markupPage: OriginalMarkupPage => addChunkPages(markupPage)
+      case markupPage: FullMarkupPage => addChunkPages(markupPage)
       case _ => site.error(
         page.path,
         PageError.FileKind, // TODO
         s"Page ${page.path} is chunked but is not a markup page"
       )
 
-  private def addChunkPages(markupPage: OriginalMarkupPage): Unit =
+  private def addChunkPages(markupPage: FullMarkupPage): Unit =
     def addChunkPages(sections: Seq[Section], depth: Int): Unit =
       if depth >= 1 then
         val isTerminal = depth < 2
         for section <- sections do
-          add(SectionChunkPage(
+          add(ChunkedMarkupPage(
             markupPage,
-            sectionId = section.id,
+            sectionId = Some(section.id),
             isTerminal = isTerminal
           ))
 
           addChunkPages(section.sections, depth - 1)
 
-    add(TocChunkPage(markupPage))
+    // Chunked Toc
+    add(ChunkedMarkupPage(
+      markupPage,
+      sectionId = None,
+      isTerminal = false
+    ))
+    // Chunks
     addChunkPages(
       sections = markupPage.content.map(_.toc.sections).getOrElse(Seq.empty),
       depth = markupPage.chunkDepth
@@ -238,7 +244,7 @@ final class Pages(site: Site):
         (page, true)
 
     page match
-      case markupPage: OriginalMarkupPage =>
+      case markupPage: FullMarkupPage =>
         val pageSource: PageSource = PageSource(
           page = markupPage,
           markup = markup,

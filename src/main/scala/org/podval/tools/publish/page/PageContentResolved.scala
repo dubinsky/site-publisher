@@ -3,6 +3,8 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{Footnote, Link, Markup, Toc, WikiLink}
 import org.podval.xml.{Xml, XmlDialect}
 
+// TODO switch to resolving last, after selection and adding footnotes;
+// fold this back into PageContent!
 final class PageContentResolved private(
   val source: PageSource,
   val xml: Xml.Element,

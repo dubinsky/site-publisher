@@ -4,7 +4,7 @@ import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 
-final class SimpleMarkupPage(site: Site, path: Path) extends OriginalMarkupPage(site, path) with NonDirectoryPage:
+final class SimpleMarkupPage(site: Site, path: Path) extends FullMarkupPage(site, path) with NonDirectoryPage:
   override protected def iconDefault: Icon = if isPost then Icon.envelope else Icon.note
 
   override def hasSyntheticContent: Boolean = false

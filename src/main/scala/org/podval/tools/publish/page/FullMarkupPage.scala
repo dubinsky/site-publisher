@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.xml.Html
 
-abstract class OriginalMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
+abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
   final override def prev: Option[Page] = parent.flatMap(_.prev(this))
   final override def next: Option[Page] = parent.flatMap(_.next(this))
 

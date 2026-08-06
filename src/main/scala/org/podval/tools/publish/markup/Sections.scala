@@ -1,8 +1,6 @@
 package org.podval.tools.publish.markup
 
-trait Sections:
-  def sections: Seq[Section]
-
+abstract class Sections(val sections: Seq[Section]):
   final def resolve(
     result: Seq[Section],
     names: Seq[String],

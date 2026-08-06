@@ -1,21 +1,25 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import org.podval.tools.publish.util.IdGenerator
 
 final class Section(
   val id: String,
   val title: String,
-  override val sections: Seq[Section]
-) extends Sections
+  sections: Seq[Section]
+) extends Sections(sections):
+  sections.foreach(_.setParent(this))
+
+  private var parentVar: Option[Section] = None
+  def setParent(parent: Section): Unit = parentVar = Some(parent)
 
 object Section:
-  object SectionClass extends HtmlClass("section")
-  
+  private object SectionClass extends HtmlClass("section")
+
+  def mark(element: Xml.Element): Xml.Element =
+    require(element.getName == "div")
+    element.add(SectionClass)
+
   def is(element: Xml.Element): Boolean =
     element.getName == "div" && element.has(SectionClass)
 
-  def setSectionId(element: Xml.Element, ids: IdGenerator): Option[Xml.Element] =
-    Option.when(Section.is(element) && element.getId.isEmpty)(
-      element.setId(ids.generate())
-    )
+

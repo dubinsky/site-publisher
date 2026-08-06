@@ -1,11 +1,11 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.OriginalMarkupPage
+import org.podval.tools.publish.page.FullMarkupPage
 import org.podval.xml.{Xml, XmlDialect}
 
 final class BackLink(
   val to: Link,
-  val from: OriginalMarkupPage,
+  val from: FullMarkupPage,
   val transclude: Boolean,
   val kind: Option[LinkKind],
   val context: LinkContext
@@ -15,7 +15,7 @@ object BackLink:
   def backLinks(
     xml: Xml.Element,
     xmlDialect: XmlDialect,
-    from: OriginalMarkupPage,
+    from: FullMarkupPage,
     ids: Ids
   ): Seq[BackLink] =
     def backLink(element: Xml.Element, parentOpt: Option[Xml.Element]): Option[BackLink] =

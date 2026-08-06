@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{MarkupPage, OriginalMarkupPage}
+import org.podval.tools.publish.page.{MarkupPage, FullMarkupPage}
 import org.podval.xml.Html
 import zio.blocks.html.*
 
@@ -11,7 +11,7 @@ final class BackLinks:
   def addBackLinks(backLink: Seq[BackLink]): Unit = backLinks = backLinks.appendedAll(backLink)
 
   def html(page: MarkupPage): Option[Html.Element] =
-    val pageBackLinks: Seq[(OriginalMarkupPage, List[BackLink])] = backLinks
+    val pageBackLinks: Seq[(FullMarkupPage, List[BackLink])] = backLinks
       .filter(_.to.page == page)
       .filterNot(_.from == page)
       .groupBy(_.from)

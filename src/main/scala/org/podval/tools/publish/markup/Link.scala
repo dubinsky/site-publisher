@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{OriginalMarkupPage, Page, PageContent}
+import org.podval.tools.publish.page.{FullMarkupPage, Page, PageContent}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
-import org.podval.tools.publish.util.{Files, IdGenerator, Strings}
+import org.podval.tools.publish.util.{Files, Strings}
 import org.podval.xml.{HtmlClass, Xml, XmlDialect}
 import java.net.{URI, URISyntaxException}
 
@@ -27,11 +27,7 @@ object Link:
 
   private object UnresolvedLinkClass extends HtmlClass("unresolved-link")
 
-  def setAnchorId(element: Xml.Element, ids: IdGenerator): Option[Xml.Element] =
-    Option.when(element.isA && element.getId.isEmpty)(
-      element.setId(ids.generate())
-    )
-
+  // TODO unfold
   def markInternal(
     element: Xml.Element,
     site: Site,
@@ -98,7 +94,7 @@ object Link:
   def resolveInternalLinks(
     xml: Xml.Element,
     xmlDialect: XmlDialect,
-    page: OriginalMarkupPage,
+    page: FullMarkupPage,
     errorReporter: PageErrorReporter
   ): Xml.Element =
     def resolveInternalLink(

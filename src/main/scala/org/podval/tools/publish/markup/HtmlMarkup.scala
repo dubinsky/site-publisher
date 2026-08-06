@@ -70,9 +70,7 @@ object HtmlMarkup extends Markup(
       val (body: Xml.Nodes, tail: Xml.Nodes) = rest.tail.span(
         _.asElement.fold(true)(HtmlMarkup.headerLevel(_).fold(true)(_ > headerLevel))
       )
-      val section: Xml.Element = Xml
-        .element("div")
-        .add(Section.SectionClass)
+      val section: Xml.Element = Section.mark(Xml.element("div"))
         .setId(header.getId)
         .setChildren(Chunk(header.setId("")) ++ nestSections(body))
 
