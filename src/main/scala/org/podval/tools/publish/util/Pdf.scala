@@ -8,7 +8,6 @@ import scala.util.matching.Regex
 // Note: written by Grok ;)
 // TODO
 // - suppress navigation and footer for print media in CSS;
-// - page numbers are staggered!
 object Pdf:
   val extension: String = "pdf"
 
@@ -103,7 +102,13 @@ object Pdf:
       m.group(1) + m.group(2).stripPrefix("/") + m.group(3)
     )
 
-  /** Dotted leaders + right-aligned page numbers for TOC entries (PDF only; applied in-page before print). */
+  /**
+   * Dotted leaders + right-aligned page numbers for TOC entries (PDF only; applied in-page before print).
+   *
+   * Nested `ul`/`ol` normally get `margin-left` from site CSS (list indent). That shifts the whole nested
+   * row — including page numbers — so subsection numbers no longer stack under section numbers.
+   * Zero nested TOC list margins and indent titles only, so the page-number column stays aligned.
+   */
   private val tocPageNumberCss: String =
     """
       |ul.toc > li.toc-section,
@@ -111,11 +116,14 @@ object Pdf:
       |  display: flex;
       |  flex-wrap: wrap;
       |  align-items: baseline;
+      |  width: 100%;
+      |  box-sizing: border-box;
       |}
       |ul.toc > li.toc-section > a,
       |ul.toc > li.toc-section-selected > a {
       |  flex: 0 1 auto;
       |  order: 1;
+      |  min-width: 0;
       |}
       |ul.toc > li.toc-section > .toc-leader,
       |ul.toc > li.toc-section-selected > .toc-leader {
@@ -128,14 +136,34 @@ object Pdf:
       |}
       |ul.toc > li.toc-section > .toc-page-number,
       |ul.toc > li.toc-section-selected > .toc-page-number {
-      |  flex: 0 0 auto;
+      |  flex: 0 0 2.5em;
       |  order: 3;
+      |  text-align: right;
       |  font-variant-numeric: tabular-nums;
       |}
+      |/* Full-width nested TOC rows; cancel list margin so page numbers share one column. */
       |ul.toc > li.toc-section > ul.toc,
       |ul.toc > li.toc-section-selected > ul.toc {
       |  flex: 1 0 100%;
       |  order: 4;
+      |  margin-left: 0;
+      |  width: 100%;
+      |  max-width: 100%;
+      |  min-width: 0;
+      |  box-sizing: border-box;
+      |}
+      |/* Indent nested titles only (not leaders / page numbers). */
+      |ul.toc ul.toc > li.toc-section > a,
+      |ul.toc ul.toc > li.toc-section-selected > a {
+      |  padding-left: 1.5em;
+      |}
+      |ul.toc ul.toc ul.toc > li.toc-section > a,
+      |ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+      |  padding-left: 3em;
+      |}
+      |ul.toc ul.toc ul.toc ul.toc > li.toc-section > a,
+      |ul.toc ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+      |  padding-left: 4.5em;
       |}
       |""".stripMargin
 
