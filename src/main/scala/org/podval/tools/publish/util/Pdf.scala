@@ -8,9 +8,7 @@ import scala.util.matching.Regex
 // Note: written by Grok ;)
 // TODO
 // - suppress navigation and footer for print media in CSS;
-// - are fonts used included in the PDF? Like, FontAwesome?
-// - there are no page numbers for subsections!
-// - there is no blockquote nor table styling!
+// - page numbers are staggered!
 object Pdf:
   val extension: String = "pdf"
 
@@ -56,33 +54,42 @@ object Pdf:
       html = htmlRaw,
       siteRoot = siteRoot
     )
-    val page: PlaywrightPage = sharedBrowser.newPage()
+    // Chromium blocks file:// (and thus local CSS/images) from setContent/about:blank.
+    // Navigate a real file under the site root so stylesheet @imports and assets load.
+    siteRoot.mkdirs()
+    // TODO instead of writing the content...
+    val tempHtml: File = File.createTempFile("pdf-render-", ".html", siteRoot)
     try
-      // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
-      page.setViewportSize(letterWidthPx, letterHeightPx)
-      page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
-      page.setContent(
-        html,
-        PlaywrightPage.SetContentOptions()
-          .setWaitUntil(WaitUntilState.LOAD)
-          .setTimeout(60_000)
-      )
-      page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
-      page.evaluate(fillTocPageNumbersJs)
-      page.pdf(
-        PlaywrightPage.PdfOptions()
-          .setPath(targetFile.toPath)
-          .setPrintBackground(true)
-          .setFormat("Letter")
-      )
+      Files.write(tempHtml, html)
+      val page: PlaywrightPage = sharedBrowser.newPage()
+      try
+        // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
+        page.setViewportSize(letterWidthPx, letterHeightPx)
+        page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
+        page.navigate(
+          tempHtml.getAbsoluteFile.toPath.toUri.toString,
+          PlaywrightPage.NavigateOptions()
+            .setWaitUntil(WaitUntilState.LOAD)
+            .setTimeout(60_000)
+        )
+        page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
+        page.evaluate(fillTocPageNumbersJs)
+        page.pdf(
+          PlaywrightPage.PdfOptions()
+            .setPath(targetFile.toPath)
+            .setPrintBackground(true)
+            .setFormat("Letter")
+        )
+      finally
+        page.close()
     finally
-      page.close()
+      tempHtml.delete()
 
   // Root-relative site URLs (`/assets/...`), excluding protocol-relative `//...`.
   private val rootRelativeUrl: Regex = """(?i)(\b(?:href|src)=")(/(?!/)[^"]*)(")""".r
 
   /**
-   * Prepare HTML for Chromium `setContent`:
+   * Prepare HTML for Chromium file:// navigation:
    * - inject `<base href="file:.../_site/">` so relative asset URLs resolve under the site root
    * - rewrite root-relative `/assets/...` links to relative `assets/...` (absolute `/...` ignores `<base>`)
    */
