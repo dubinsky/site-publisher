@@ -7,3 +7,4 @@
 out/
 target/
 .ai/
+/src/test/resources/org/podval/tools/publish/site/_site/

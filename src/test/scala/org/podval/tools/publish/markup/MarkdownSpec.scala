@@ -20,8 +20,6 @@ object MarkdownSpec extends ZIOSpecDefault:
           |{:toc}
           |""".stripMargin,
         xml =>
-
-          println(HtmlXmlDialect.render(xml))
           assertTrue(
             true
           )

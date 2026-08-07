@@ -109,9 +109,10 @@ abstract class Page(
   protected def iconDefault: Icon
 
   final def tocDepth: Int = frontMatter.tocDepth.getOrElse(2)
+  final def hasToc: Boolean = chunk || frontMatter.tocDepth.isDefined
   final def chunk: Boolean = frontMatter.chunk
   final def chunkDepth: Int = frontMatter.chunkDepth.getOrElse(2)
-  final def hasToc: Boolean = chunk || frontMatter.tocDepth.isDefined
+  final def pdf: Boolean = frontMatter.pdf
 
   final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides

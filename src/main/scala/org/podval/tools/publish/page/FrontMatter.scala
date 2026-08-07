@@ -29,7 +29,8 @@ final case class FrontMatter(
 //  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
   tocDepth: Option[Int] = None,
   chunk: Boolean = false,
-  chunkDepth: Option[Int] = None
+  chunkDepth: Option[Int] = None,
+  pdf: Boolean = false,
 ):
   private var extraKeys: Chunk[(Yaml, Yaml)] = Chunk.empty
   

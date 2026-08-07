@@ -23,6 +23,7 @@ final class Site(options: Options) extends JSLibrary:
   def sourceFile(sourcePath: Path): File = sourcePath.file(sourceDirectory)
 
   val targetDirectory: File = File(sourceDirectory, options.option("target-directory-name", "_site"))
+  // TODO do not pre-create it on instantiation of Site; maybe just verify that *if* it exists, it is a directory...
   targetDirectory.mkdirs()
   Files.requireExists(targetDirectory)
   Files.requireDirectory(targetDirectory)
