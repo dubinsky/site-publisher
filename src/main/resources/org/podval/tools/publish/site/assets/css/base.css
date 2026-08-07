@@ -368,7 +368,7 @@ pre code.hljs {
  */
 table {
     margin-bottom: var(--spacing-unit);
-    width: 100%;
+    /* LMD: follow Asciidoctor - do not stretch the tables! width: 100%;*/
     text-align: var(--table-text-align);
     color: var(--table-text-color);
     border-collapse: collapse;
