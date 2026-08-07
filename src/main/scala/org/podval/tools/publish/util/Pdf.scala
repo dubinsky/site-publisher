@@ -1,7 +1,7 @@
 package org.podval.tools.publish.util
 
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
-import com.microsoft.playwright.options.{Media, WaitUntilState}
+import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
 import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import java.io.File
 import java.net.{InetSocketAddress, URI}
@@ -10,9 +10,26 @@ import java.net.{InetSocketAddress, URI}
 object Pdf:
   val extension: String = "pdf"
 
-  // Letter at 96 CSS px / in — matches Playwright/Chromium default for format "Letter" with no margins.
-  private val letterWidthPx: Int = Math.round(8.5 * 96).toInt   // 816
-  private val letterHeightPx: Int = Math.round(11.0 * 96).toInt // 1056
+  // Letter paper at 96 CSS px / in (Playwright/Chromium default).
+  private val letterWidthIn: Double = 8.5
+  private val letterHeightIn: Double = 11.0
+  private val cssPxPerIn: Double = 96.0
+
+  // Paper margins for page.pdf (CSS length strings accepted by Chromium).
+  private val marginIn: Double = 0.5
+  private val marginCss: String = s"${marginIn}in"
+  private val pdfMargin: Margin =
+    Margin()
+      .setTop(marginCss)
+      .setRight(marginCss)
+      .setBottom(marginCss)
+      .setLeft(marginCss)
+
+  // Content box inside margins — viewport and TOC page math must match this, not full paper.
+  private val contentWidthPx: Int =
+    Math.round((letterWidthIn - 2 * marginIn) * cssPxPerIn).toInt   // 720
+  private val contentHeightPx: Int =
+    Math.round((letterHeightIn - 2 * marginIn) * cssPxPerIn).toInt  // 960
 
   // Shared across all PDF pages for one generate() run; closed by close().
   private var playwright: Option[Playwright] = None
@@ -96,8 +113,8 @@ object Pdf:
     val port: Int = ensureServer(siteRoot)
     val page: PlaywrightPage = sharedBrowser.newPage()
     try
-      // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
-      page.setViewportSize(letterWidthPx, letterHeightPx)
+      // Match the printable content box so wrapping/pagination align with page.pdf margins.
+      page.setViewportSize(contentWidthPx, contentHeightPx)
       page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
       page.navigate(
         pageUrl(port, sitePath),
@@ -112,6 +129,7 @@ object Pdf:
           .setPath(targetFile.toPath)
           .setPrintBackground(true)
           .setFormat("Letter")
+          .setMargin(pdfMargin)
       )
     finally
       page.close()
@@ -183,13 +201,13 @@ object Pdf:
 
   /**
    * For each TOC link to a fragment, append a dotted leader and the estimated PDF page number
-   * of the target element (Letter page height, zero margins).
+   * of the target element (printable content height = Letter minus paper margins).
    * Runs twice so a large TOC that grows after numbers are injected still gets accurate pages.
    */
   private val fillTocPageNumbersJs: String =
     s"""
        |(() => {
-       |  const pageHeight = $letterHeightPx;
+       |  const pageHeight = $contentHeightPx;
        |  const fill = () => {
        |    document.querySelectorAll('ul.toc a[href*="#"]').forEach((anchor) => {
        |      const href = anchor.getAttribute('href') || '';
