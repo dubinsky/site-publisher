@@ -30,7 +30,13 @@ final class PdfPage(
       siteRoot = site.targetDirectory
     )
 
-    val playwright: Playwright = Playwright.create()
+    // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
+    // dependency check even when headless Chromium works. Skip the check for the driver.
+    val playwright: Playwright = Playwright.create(
+      Playwright.CreateOptions().setEnv(java.util.Map.of(
+        "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
+      ))
+    )
     try
       val browser: Browser = playwright.chromium.launch(
         BrowserType.LaunchOptions().setHeadless(true)
