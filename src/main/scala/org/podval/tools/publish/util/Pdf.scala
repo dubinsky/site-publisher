@@ -2,8 +2,9 @@ package org.podval.tools.publish.util
 
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Media, WaitUntilState}
+import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import java.io.File
-import scala.util.matching.Regex
+import java.net.{InetSocketAddress, URI}
 
 // Note: written by Grok ;)
 object Pdf:
@@ -16,9 +17,16 @@ object Pdf:
   // Shared across all PDF pages for one generate() run; closed by close().
   private var playwright: Option[Playwright] = None
   private var browser: Option[Browser] = None
+  private var server: Option[HttpServer] = None
+  private var serverRoot: Option[File] = None
+  private var serverPort: Option[Int] = None
 
-  /** Shut down the shared Chromium/Playwright instance (no-op if never started). */
+  /** Shut down the shared HTTP server and Chromium/Playwright instance (no-op if never started). */
   def close(): Unit = synchronized:
+    server.foreach(_.stop(0))
+    server = None
+    serverRoot = None
+    serverPort = None
     browser.foreach(_.close())
     browser = None
     playwright.foreach(_.close())
@@ -40,65 +48,73 @@ object Pdf:
       browser = Some(launched)
       launched
 
+  /**
+   * Serve `siteRoot` over loopback HTTP (lazy, shared for one generate() run).
+   * Root-relative URLs like `/assets/css/style.css` resolve correctly without rewriting HTML.
+   */
+  private def ensureServer(siteRoot: File): Int = synchronized:
+    val root: File = siteRoot.getAbsoluteFile
+    root.mkdirs()
+    serverPort.filter(_ => serverRoot.contains(root)).getOrElse:
+      server.foreach(_.stop(0))
+      val httpServer: HttpServer = SimpleFileServer.createFileServer(
+        InetSocketAddress("127.0.0.1", 0),
+        root.toPath,
+        SimpleFileServer.OutputLevel.NONE
+      )
+      httpServer.start()
+      val port: Int = httpServer.getAddress.getPort
+      server = Some(httpServer)
+      serverRoot = Some(root)
+      serverPort = Some(port)
+      port
+
+  private def pageUrl(port: Int, sitePath: String): String =
+    val path: String = if sitePath.startsWith("/") then sitePath else s"/$sitePath"
+    URI("http", null, "127.0.0.1", port, path, null, null).toASCIIString
+
+  /**
+   * Render a PDF of a page already written under `siteRoot`.
+   *
+   * @param sitePath site-absolute path of the HTML page (e.g. `/asciidoc/calendar/calendar.html`)
+   * @param siteRoot generated site directory (`_site`)
+   * @param targetFile where to write the PDF
+   */
   def renderPdf(
-    htmlRaw: String,
+    sitePath: String,
     siteRoot: File,
     targetFile: File
   ): Unit =
     targetFile.getParentFile.mkdirs()
 
-    val html = prepareHtml(
-      html = htmlRaw,
-      siteRoot = siteRoot
+    val htmlFile: File = File(siteRoot, sitePath.stripPrefix("/"))
+    require(
+      htmlFile.isFile,
+      s"PDF source HTML not found (write the HTML page before the PDF): $htmlFile"
     )
-    // Chromium blocks file:// (and thus local CSS/images) from setContent/about:blank.
-    // Navigate a real file under the site root so stylesheet @imports and assets load.
-    siteRoot.mkdirs()
-    // TODO instead of writing the content...
-    val tempHtml: File = File.createTempFile("pdf-render-", ".html", siteRoot)
+
+    val port: Int = ensureServer(siteRoot)
+    val page: PlaywrightPage = sharedBrowser.newPage()
     try
-      Files.write(tempHtml, html)
-      val page: PlaywrightPage = sharedBrowser.newPage()
-      try
-        // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
-        page.setViewportSize(letterWidthPx, letterHeightPx)
-        page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
-        page.navigate(
-          tempHtml.getAbsoluteFile.toPath.toUri.toString,
-          PlaywrightPage.NavigateOptions()
-            .setWaitUntil(WaitUntilState.LOAD)
-            .setTimeout(60_000)
-        )
-        page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
-        page.evaluate(fillTocPageNumbersJs)
-        page.pdf(
-          PlaywrightPage.PdfOptions()
-            .setPath(targetFile.toPath)
-            .setPrintBackground(true)
-            .setFormat("Letter")
-        )
-      finally
-        page.close()
+      // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
+      page.setViewportSize(letterWidthPx, letterHeightPx)
+      page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
+      page.navigate(
+        pageUrl(port, sitePath),
+        PlaywrightPage.NavigateOptions()
+          .setWaitUntil(WaitUntilState.LOAD)
+          .setTimeout(60_000)
+      )
+      page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
+      page.evaluate(fillTocPageNumbersJs)
+      page.pdf(
+        PlaywrightPage.PdfOptions()
+          .setPath(targetFile.toPath)
+          .setPrintBackground(true)
+          .setFormat("Letter")
+      )
     finally
-      tempHtml.delete()
-
-  // Root-relative site URLs (`/assets/...`), excluding protocol-relative `//...`.
-  private val rootRelativeUrl: Regex = """(?i)(\b(?:href|src)=")(/(?!/)[^"]*)(")""".r
-
-  /**
-   * Prepare HTML for Chromium file:// navigation:
-   * - inject `<base href="file:.../_site/">` so relative asset URLs resolve under the site root
-   * - rewrite root-relative `/assets/...` links to relative `assets/...` (absolute `/...` ignores `<base>`)
-   */
-  private def prepareHtml(html: String, siteRoot: File): String =
-    val baseHref: String = siteRoot.getAbsoluteFile.toPath.toUri.toString
-    val withBase: String = html.replaceFirst(
-      """(?i)<head(\s[^>]*)?>""",
-      s"""<head$$1><base href="$baseHref">"""
-    )
-    rootRelativeUrl.replaceAllIn(withBase, m =>
-      m.group(1) + m.group(2).stripPrefix("/") + m.group(3)
-    )
+      page.close()
 
   /**
    * Dotted leaders + right-aligned page numbers for TOC entries (PDF only; applied in-page before print).

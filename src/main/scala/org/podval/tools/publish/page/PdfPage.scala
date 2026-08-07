@@ -17,7 +17,7 @@ final class PdfPage(
   override protected def iconDefault: Icon = Icon.pdf
 
   override def write(): Unit = Pdf.renderPdf(
-    htmlRaw = markupPage.textContent,
+    sitePath = markupPage.path.toString,
     siteRoot = markupPage.site.targetDirectory,
     targetFile = targetFile
   )
