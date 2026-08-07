@@ -120,7 +120,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     tocDepth: Int,
     chunkDepth: Option[Int]
   ): Html.Element =
-    ul(sections.map(section =>
+    ul(className := "toc", sections.map(section =>
       val sectionId: String = section.id
       li(
         className := (if selectedSectionId.contains(sectionId) then "toc-section-selected" else "toc-section"),

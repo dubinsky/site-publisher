@@ -403,6 +403,10 @@ ul.page-list {
     list-style: none;
 }
 
+ul.toc {
+  list-style: none;
+}
+
 .page-list {
     font-size: 18px;
 
