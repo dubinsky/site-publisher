@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{BackLink, Link}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
-import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
+import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options, Pdf}
 import org.podval.xml.{Html, Xml}
 import org.slf4j.{Logger, LoggerFactory}
 import zio.blocks.html.*
@@ -140,7 +140,7 @@ final class Site(options: Options) extends JSLibrary:
       log.info("Done!")
     finally
       // Shared Chromium used by all PdfPage writes
-      PdfPage.close()
+      Pdf.close()
 
   def siteHeader(page: MarkupPage): Html.Element =
     header(className := "site-header",
