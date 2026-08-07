@@ -24,46 +24,13 @@ final class PdfPage(
 
   override def write(): Unit =
     targetFile.getParentFile.mkdirs()
-
-    val html: String = PdfPage.prepareHtml(
-      html = markupPage.textContent,
-      siteRoot = site.targetDirectory
+    PdfPage.renderPdf(
+      html = PdfPage.prepareHtml(
+        html = markupPage.textContent,
+        siteRoot = site.targetDirectory
+      ),
+      target = targetFile
     )
-
-    // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
-    // dependency check even when headless Chromium works. Skip the check for the driver.
-    val playwright: Playwright = Playwright.create(
-      Playwright.CreateOptions().setEnv(java.util.Map.of(
-        "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
-      ))
-    )
-    try
-      val browser: Browser = playwright.chromium.launch(
-        BrowserType.LaunchOptions().setHeadless(true)
-      )
-      try
-        val page: PlaywrightPage = browser.newPage()
-        // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
-        page.setViewportSize(PdfPage.letterWidthPx, PdfPage.letterHeightPx)
-        page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
-        page.setContent(
-          html,
-          PlaywrightPage.SetContentOptions()
-            .setWaitUntil(WaitUntilState.LOAD)
-            .setTimeout(60_000)
-        )
-        page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(PdfPage.tocPageNumberCss))
-        page.evaluate(PdfPage.fillTocPageNumbersJs)
-        page.pdf(
-          PlaywrightPage.PdfOptions()
-            .setPath(targetFile.toPath)
-            .setPrintBackground(true)
-            .setFormat("Letter")
-        )
-      finally
-        browser.close()
-    finally
-      playwright.close()
 
 object PdfPage:
   val extension: String = "pdf"
@@ -71,6 +38,56 @@ object PdfPage:
   // Letter at 96 CSS px / in — matches Playwright/Chromium default for format "Letter" with no margins.
   private val letterWidthPx: Int = Math.round(8.5 * 96).toInt   // 816
   private val letterHeightPx: Int = Math.round(11.0 * 96).toInt // 1056
+
+  // Shared across all PDF pages for one generate() run; closed by close().
+  private var playwright: Option[Playwright] = None
+  private var browser: Option[Browser] = None
+
+  /** Shut down the shared Chromium/Playwright instance (no-op if never started). */
+  def close(): Unit = synchronized:
+    browser.foreach(_.close())
+    browser = None
+    playwright.foreach(_.close())
+    playwright = None
+
+  private def sharedBrowser: Browser = synchronized:
+    browser.getOrElse:
+      // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
+      // dependency check even when headless Chromium works. Skip the check for the driver.
+      val pw: Playwright = Playwright.create(
+        Playwright.CreateOptions().setEnv(java.util.Map.of(
+          "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
+        ))
+      )
+      playwright = Some(pw)
+      val launched: Browser = pw.chromium.launch(
+        BrowserType.LaunchOptions().setHeadless(true)
+      )
+      browser = Some(launched)
+      launched
+
+  private def renderPdf(html: String, target: File): Unit =
+    val page: PlaywrightPage = sharedBrowser.newPage()
+    try
+      // Match Letter content width so wrapping/pagination aligns with page.pdf(format=Letter).
+      page.setViewportSize(letterWidthPx, letterHeightPx)
+      page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
+      page.setContent(
+        html,
+        PlaywrightPage.SetContentOptions()
+          .setWaitUntil(WaitUntilState.LOAD)
+          .setTimeout(60_000)
+      )
+      page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
+      page.evaluate(fillTocPageNumbersJs)
+      page.pdf(
+        PlaywrightPage.PdfOptions()
+          .setPath(target.toPath)
+          .setPrintBackground(true)
+          .setFormat("Letter")
+      )
+    finally
+      page.close()
 
   // Root-relative site URLs (`/assets/...`), excluding protocol-relative `//...`.
   private val rootRelativeUrl: Regex = """(?i)(\b(?:href|src)=")(/(?!/)[^"]*)(")""".r

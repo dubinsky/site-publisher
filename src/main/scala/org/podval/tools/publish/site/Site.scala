@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{BackLink, Link}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
 import org.podval.xml.{Html, Xml}
 import org.slf4j.{Logger, LoggerFactory}
@@ -125,18 +125,22 @@ final class Site(options: Options) extends JSLibrary:
   //- Suggestion: Write to a staging directory (or `_site.tmp`) and atomically replace `_site`.
   // Optionally preserve mtimes for unchanged assets to speed deploys.
   def generate(): Unit =
-    load()
+    try
+      load()
 
-    // Wipe out output directory
-    Files.deleteDirectory(targetDirectory)
+      // Wipe out output directory
+      Files.deleteDirectory(targetDirectory)
 
-    // Write pages
-    pages.pages.foreach: page =>
-      log.debug(s"Writing ${page.path}")
-      page.write()
+      // Write pages
+      pages.pages.foreach: page =>
+        log.debug(s"Writing ${page.path}")
+        page.write()
 
-    // Done
-    log.info("Done!")
+      // Done
+      log.info("Done!")
+    finally
+      // Shared Chromium used by all PdfPage writes
+      PdfPage.close()
 
   def siteHeader(page: MarkupPage): Html.Element =
     header(className := "site-header",
