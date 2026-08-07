@@ -7,13 +7,13 @@ import org.scalatest.matchers.should.Matchers
 final class SiteTest extends AnyFlatSpec with Matchers {
   val anchorUrl: java.net.URL = getClass.getResource("/anchor.txt")
   val repositoryRoot: String = java.nio.file.Paths.get(anchorUrl.toURI).toFile
-    .getParentFile
-    .getParentFile
-    .getParentFile
-    .getParentFile
+    .getParentFile // resources
+    .getParentFile // test
+    .getParentFile // src
+    .getParentFile // root!
     .getAbsolutePath
 
-  val siteRoot: String = repositoryRoot + "/src/test/resources/org/podval/tools/publish/site"
+  val siteRoot: String = repositoryRoot + "/src/test/site"
   val options: Options = Options(
     environmentVariablesPrefix = "Nooo!",
     args = Array(
@@ -26,5 +26,5 @@ final class SiteTest extends AnyFlatSpec with Matchers {
 
   site.generate()
 
-  "sq1" should "work" in { 1 shouldBe 1 }
+  "site publisher" should "work" in { 1 shouldBe 1 }
 }
