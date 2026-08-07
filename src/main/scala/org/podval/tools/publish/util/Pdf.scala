@@ -6,8 +6,6 @@ import java.io.File
 import scala.util.matching.Regex
 
 // Note: written by Grok ;)
-// TODO
-// - suppress navigation and footer for print media in CSS;
 object Pdf:
   val extension: String = "pdf"
 

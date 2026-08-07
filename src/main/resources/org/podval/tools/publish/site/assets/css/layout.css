@@ -9,6 +9,10 @@
     background-color: var(--background-color);
     border-top: 5px solid var(--border-color-03);
     border-bottom: 1px solid var(--border-color-01);
+
+    @media print {
+        display: none;
+    }
 }
 
 .site-title {
@@ -126,6 +130,10 @@
 .site-footer {
     border-top: 1px solid var(--border-color-01);
     padding: var(--spacing-unit) 0;
+
+    @media print {
+        display: none;
+    }
 }
 
 .footer-heading {
@@ -230,6 +238,12 @@
 
     > li {
         margin-bottom: var(--spacing-unit);
+    }
+}
+
+.post-path {
+    @media print {
+        display: none;
     }
 }
 
