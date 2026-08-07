@@ -257,7 +257,7 @@ a.footnote-backlink {
  */
 blockquote {
     color: var(--brand-color);
-    border-left: 4px solid var(--border-color-01);
+    /* LMD styling block quotes like Asciidoctor; see below. border-left: 4px solid var(--border-color-01);*/
     padding-left: var(--spacing-unit-half);
     font-size: 1.05rem;
     font-style: italic;
@@ -269,6 +269,18 @@ blockquote {
     i, em {
         font-style: normal;
     }
+}
+
+/* LMD styling block quotes like Asciidoctor. */
+blockquote::before {
+    content:"\201c";
+    float:left;
+    font-size:2.75em;
+    font-weight:bold;
+    line-height:.6em;
+    margin-left:-.6em;
+    color:#7a2518;
+    text-shadow:0 1px 2px rgba(0,0,0,.1)
 }
 
 /**
