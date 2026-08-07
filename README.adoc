@@ -139,6 +139,14 @@ Write about all the plugins I used:
 [#future]
 == Future
 
+=== Style
+
+Get inspiration from `asciidoc.css`:
+
+- font
+- section title colour
+- section links on roll-over
+
 === TEI
 
 - footnotes should cling to preceding elements, not just text
@@ -185,7 +193,6 @@ Write about all the plugins I used:
 - Look at https://squidfunk.github.io/mkdocs-material/
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
 - Think about serializing the full list of back-links out of the memory
-- Maybe use FlexMark to convert wiki-links without resolving them (and lose support for wiki links in TEI)
 - Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
 
 [#motivation]

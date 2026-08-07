@@ -9,6 +9,7 @@ import zio.blocks.html.*
 import java.io.File
 import java.time.{Instant, LocalDate}
 
+// TODO move methods appropriate only for Markup pages there.
 abstract class Page(
   val site: Site,
   val path: Path
