@@ -9,6 +9,7 @@ import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
+import org.podval.tools.publish.site.Site
 import java.io.File
 
 object MarkdownMarkup extends Markup(
@@ -43,7 +44,7 @@ object MarkdownMarkup extends Markup(
   // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
   def parseAndRenderMarkdown(content: String): String = renderer.render(parser.parse(content))
 
-  override def xmlContent(content: String, sourceFile: File): String =
+  override def xmlContent(content: String, sourceFile: File, site: Site): String =
     // Wrap Markdown rendered as HTML in a 'div'.
     s"<div>${parseAndRenderMarkdown(content)}</div>"
 

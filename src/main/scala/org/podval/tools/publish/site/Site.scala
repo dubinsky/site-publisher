@@ -1,12 +1,16 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{BackLink, Link}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
-import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options, Pdf}
+import org.podval.tools.publish.util.{AsciidoctorUtil, Files, Git, HttpServerUtil, Icon, Logging, ObsidianConfig, Options, Pdf, PlaywrightUtil}
 import org.podval.xml.{Html, Xml}
-import org.slf4j.{Logger, LoggerFactory}
 import zio.blocks.html.*
+import com.sun.net.httpserver.HttpServer
+import com.microsoft.playwright.{Browser, Playwright}
+import org.asciidoctor.Asciidoctor
+import org.slf4j.{Logger, LoggerFactory}
+
 import java.io.File
 import java.net.URI
 
@@ -118,6 +122,41 @@ final class Site(options: Options) extends JSLibrary:
 
     // TODO sort pages topologically based on transclusions
 
+  private var asciidoctorVar: Option[Asciidoctor] = None
+  def asciidoctor: Asciidoctor = synchronized:
+    asciidoctorVar.getOrElse:
+      val result: Asciidoctor = AsciidoctorUtil.asciidoctor(this)
+      asciidoctorVar = Some(result)
+      result
+
+  private var httpServerVar: Option[HttpServer] = None
+  def httpServer: HttpServer = synchronized:
+    httpServerVar.getOrElse:
+      val result: HttpServer = HttpServerUtil.httpServer(targetDirectory)
+      httpServerVar = Some(result)
+      result
+
+  private var playwrightVar: Option[Playwright] = None
+  def playwright: Playwright = synchronized:
+    playwrightVar.getOrElse:
+      val result: Playwright = PlaywrightUtil.playwright
+      playwrightVar = Some(result)
+      result
+
+  private var browserVar: Option[Browser] = None
+  def browser: Browser = synchronized:
+    browserVar.getOrElse:
+      val result: Browser = PlaywrightUtil.browser(playwright)
+      browserVar = Some(result)
+      result
+
+  // close what needs to be closed
+  def close(): Unit =
+    asciidoctorVar.foreach(_.close())
+    browserVar.foreach(_.close())
+    playwrightVar.foreach(_.close())
+    httpServerVar.foreach(_.stop(0))
+
   // TODO from Grok:
   //- Description: `generate()` deletes the entire target directory, then writes page-by-page.
   // A crash mid-write leaves a partial site; concurrent readers (local server, CI publish) can observe a wiped tree.
@@ -139,8 +178,7 @@ final class Site(options: Options) extends JSLibrary:
       // Done
       log.info("Done!")
     finally
-      // Shared Chromium used by all PdfPage writes
-      Pdf.close()
+      close()
 
   def siteHeader(page: MarkupPage): Html.Element =
     header(className := "site-header",

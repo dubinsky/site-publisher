@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
 import org.podval.tools.publish.page.{MarkupPage, PageSource}
+import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html}
 import org.podval.xml.XmlUtil.*
@@ -16,7 +17,7 @@ object TeiMarkup extends Markup(
 ):
   override def rootElements: Set[String] = Set("TEI", "store", "collection") ++ EntityKind.values.map(_.element).toSet
 
-  override def xmlContent(content: String, sourceFile: File): String = content
+  override def xmlContent(content: String, sourceFile: File, site: Site): String = content
 
   override def process(
     source: PageSource,

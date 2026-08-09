@@ -2,9 +2,9 @@ package org.podval.tools.publish.util
 
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
-import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
+import org.podval.tools.publish.site.Site
 import java.io.File
-import java.net.{InetSocketAddress, URI}
+import java.net.URI
 
 // Note: written by Grok ;)
 object Pdf:
@@ -33,59 +33,12 @@ object Pdf:
 
   // Shared across all PDF pages for one generate() run; closed by close().
   private var playwright: Option[Playwright] = None
-  private var browser: Option[Browser] = None
-  private var server: Option[HttpServer] = None
-  private var serverRoot: Option[File] = None
-  private var serverPort: Option[Int] = None
 
   /** Shut down the shared HTTP server and Chromium/Playwright instance (no-op if never started). */
   def close(): Unit = synchronized:
-    server.foreach(_.stop(0))
-    server = None
-    serverRoot = None
-    serverPort = None
-    browser.foreach(_.close())
-    browser = None
     playwright.foreach(_.close())
     playwright = None
-
-  private def sharedBrowser: Browser = synchronized:
-    browser.getOrElse:
-      // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
-      // dependency check even when headless Chromium works. Skip the check for the driver.
-      val pw: Playwright = Playwright.create(
-        Playwright.CreateOptions().setEnv(java.util.Map.of(
-          "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
-        ))
-      )
-      playwright = Some(pw)
-      val launched: Browser = pw.chromium.launch(
-        BrowserType.LaunchOptions().setHeadless(true)
-      )
-      browser = Some(launched)
-      launched
-
-  /**
-   * Serve `siteRoot` over loopback HTTP (lazy, shared for one generate() run).
-   * Root-relative URLs like `/assets/css/style.css` resolve correctly without rewriting HTML.
-   */
-  private def ensureServer(siteRoot: File): Int = synchronized:
-    val root: File = siteRoot.getAbsoluteFile
-    root.mkdirs()
-    serverPort.filter(_ => serverRoot.contains(root)).getOrElse:
-      server.foreach(_.stop(0))
-      val httpServer: HttpServer = SimpleFileServer.createFileServer(
-        InetSocketAddress("127.0.0.1", 0),
-        root.toPath,
-        SimpleFileServer.OutputLevel.NONE
-      )
-      httpServer.start()
-      val port: Int = httpServer.getAddress.getPort
-      server = Some(httpServer)
-      serverRoot = Some(root)
-      serverPort = Some(port)
-      port
-
+  
   private def pageUrl(port: Int, sitePath: String): String =
     val path: String = if sitePath.startsWith("/") then sitePath else s"/$sitePath"
     URI("http", null, "127.0.0.1", port, path, null, null).toASCIIString
@@ -98,9 +51,11 @@ object Pdf:
    * @param targetFile where to write the PDF
    */
   def renderPdf(
+    site: Site,
     sitePath: String,
     siteRoot: File,
-    targetFile: File
+    targetFile: File,
+    browser: Browser
   ): Unit =
     targetFile.getParentFile.mkdirs()
 
@@ -110,8 +65,8 @@ object Pdf:
       s"PDF source HTML not found (write the HTML page before the PDF): $htmlFile"
     )
 
-    val port: Int = ensureServer(siteRoot)
-    val page: PlaywrightPage = sharedBrowser.newPage()
+    val port: Int = site.httpServer.getAddress.getPort
+    val page: PlaywrightPage = browser.newPage()
     try
       // Match the printable content box so wrapping/pagination align with page.pdf margins.
       page.setViewportSize(contentWidthPx, contentHeightPx)

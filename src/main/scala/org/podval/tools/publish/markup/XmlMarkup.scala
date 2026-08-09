@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.Site
 import org.podval.xml.{Xml, XmlDialect}
 import java.io.File
 
@@ -12,7 +13,7 @@ object XmlMarkup extends Markup(
   rendersToXml = true,
   extension = "xml"
 ):
-  override def xmlContent(content: String, sourceFile: File): String = content
+  override def xmlContent(content: String, sourceFile: File, site: Site): String = content
 
   override def process(
     source: PageSource,

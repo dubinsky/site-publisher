@@ -28,7 +28,7 @@ abstract class Markup(
 
   def rootElements: Set[String] = Set.empty
 
-  def xmlContent(content: String, sourceFile: File): String
+  def xmlContent(content: String, sourceFile: File, site: Site): String
 
   // Process raw parsed XML:
   // - clean it up (AsciiDoc div soup etc.)
@@ -80,7 +80,7 @@ abstract class Markup(
 
         FrontMatter.empty
 
-    val xmlString: String = xmlContent(content, sourceFile)
+    val xmlString: String = xmlContent(content, sourceFile, site)
 
     val xml: Xml.Element = XmlParser.parse(xmlString, isXml = rendersToXml) match
       case Right(xml) =>

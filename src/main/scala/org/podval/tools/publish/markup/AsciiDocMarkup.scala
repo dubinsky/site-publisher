@@ -1,7 +1,8 @@
 package org.podval.tools.publish.markup
 
-import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
+import org.asciidoctor.{Attributes, Options, SafeMode}
 import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.Site
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -18,17 +19,7 @@ object AsciiDocMarkup extends Markup(
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 
-  private var asciidoctorVar: Option[Asciidoctor] = None
-  private def asciidoctor: Asciidoctor = asciidoctorVar.getOrElse:
-    val result: Asciidoctor = Asciidoctor.Factory.create()
-//    // Note: only extensions packaged as jars will work - if they are on the classpath.
-//    site.asciidoctorExtensions.foreach: gemName =>
-//      site.log.info(s"Loading AsciiDoc extension gem '$gemName'")
-//      result.requireLibrary(gemName)
-    asciidoctorVar = Some(result)
-    result
-
-  override def xmlContent(content: String, sourceFile: File): String =
+  override def xmlContent(content: String, sourceFile: File, site: Site): String =
     val attributes: Attributes = Attributes
       .builder()
       // Suppress the TOC.
@@ -61,7 +52,7 @@ object AsciiDocMarkup extends Markup(
       .attributes(attributes)
       .build()
 
-    val result: String = asciidoctor.convert(content, options)
+    val result: String = site.asciidoctor.convert(content, options)
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"
