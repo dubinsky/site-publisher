@@ -10,6 +10,10 @@ import java.net.{InetSocketAddress, URI}
 object Pdf:
   val extension: String = "pdf"
 
+  // TOC script (function declaration); arg is printable content height in CSS px.
+  private lazy val fillTocPageNumbersJs: String =
+    Files.readResource("fill-toc-page-numbers.js")
+
   // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
   // dependency check even when headless Chromium works. Skip the check for the driver.
 
@@ -94,7 +98,9 @@ object Pdf:
           |  ? document.fonts.ready
           |  : Promise.resolve()""".stripMargin
       )
-      page.evaluate(fillTocPageNumbersJs)
+      // Inject TOC leaders/page numbers; print styling is in layout.css (@media print).
+      // Parenthesize: resource is a function declaration; evaluate needs a function expression.
+      page.evaluate(s"($fillTocPageNumbersJs)", Int.box(contentHeightPx))
       page.pdf(
         PlaywrightPage.PdfOptions()
           .setPath(targetFile.toPath)
@@ -104,47 +110,3 @@ object Pdf:
       )
     finally
       page.close()
-
-  /**
-   * For each TOC link to a fragment, append a dotted leader and the estimated PDF page number
-   * of the target element (printable content height = Letter minus paper margins).
-   * Runs twice so a large TOC that grows after numbers are injected still gets accurate pages.
-   * Print styling for the injected nodes lives in layout.css (@media print).
-   */
-  private val fillTocPageNumbersJs: String =
-    s"""
-       |(() => {
-       |  const pageHeight = $contentHeightPx;
-       |  const fill = () => {
-       |    document.querySelectorAll('ul.toc a[href*="#"]').forEach((anchor) => {
-       |      const href = anchor.getAttribute('href') || '';
-       |      const hash = href.indexOf('#');
-       |      if (hash < 0) return;
-       |      const id = decodeURIComponent(href.substring(hash + 1));
-       |      if (!id) return;
-       |      const target = document.getElementById(id);
-       |      if (!target) return;
-       |      const top = target.getBoundingClientRect().top + window.scrollY;
-       |      const pageNumber = Math.max(1, Math.floor(top / pageHeight) + 1);
-       |      const li = anchor.parentElement;
-       |      if (!li) return;
-       |      let leader = li.querySelector(':scope > .toc-leader');
-       |      if (!leader) {
-       |        leader = document.createElement('span');
-       |        leader.className = 'toc-leader';
-       |        leader.setAttribute('aria-hidden', 'true');
-       |        li.insertBefore(leader, anchor.nextSibling);
-       |      }
-       |      let pageEl = li.querySelector(':scope > .toc-page-number');
-       |      if (!pageEl) {
-       |        pageEl = document.createElement('span');
-       |        pageEl.className = 'toc-page-number';
-       |        li.insertBefore(pageEl, leader.nextSibling);
-       |      }
-       |      pageEl.textContent = String(pageNumber);
-       |    });
-       |  };
-       |  fill();
-       |  fill();
-       |})()
-       |""".stripMargin
