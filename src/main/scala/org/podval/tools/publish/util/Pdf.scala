@@ -1,14 +1,36 @@
 package org.podval.tools.publish.util
 
-import com.microsoft.playwright.{Browser, Page as PlaywrightPage}
+import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
-import org.podval.tools.publish.site.Site
+import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import java.io.File
-import java.net.URI
+import java.net.{InetSocketAddress, URI}
 
 // Note: written by Grok ;)
 object Pdf:
   val extension: String = "pdf"
+
+  // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
+  // dependency check even when headless Chromium works. Skip the check for the driver.
+
+  def playwright: Playwright = Playwright.create(
+    Playwright.CreateOptions().setEnv(java.util.Map.of(
+      "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
+    ))
+  )
+
+  def browser(playwright: Playwright): Browser = playwright.chromium.launch(
+    BrowserType.LaunchOptions().setHeadless(true)
+  )
+
+  def httpServer(siteRoot: File): HttpServer =
+    val result: HttpServer = SimpleFileServer.createFileServer(
+      InetSocketAddress("127.0.0.1", 0),
+      siteRoot.getAbsoluteFile.toPath,
+      SimpleFileServer.OutputLevel.NONE
+    )
+    result.start()
+    result
 
   // Letter paper at 96 CSS px / in (Playwright/Chromium default).
   private val letterWidthIn: Double = 8.5
@@ -30,10 +52,6 @@ object Pdf:
   private val contentHeightPx: Int =
     Math.round((letterHeightIn - 2 * marginIn) * cssPxPerIn).toInt  // 960
 
-  private def pageUrl(port: Int, sitePath: String): String =
-    val path: String = if sitePath.startsWith("/") then sitePath else s"/$sitePath"
-    URI("http", null, "127.0.0.1", port, path, null, null).toASCIIString
-
   /**
    * Render a PDF of a page already written under `siteRoot`.
    *
@@ -42,10 +60,10 @@ object Pdf:
    * @param targetFile where to write the PDF
    */
   def renderPdf(
-    site: Site,
     sitePath: String,
     siteRoot: File,
     targetFile: File,
+    httpServer: HttpServer,
     browser: Browser
   ): Unit =
     val htmlFile: File = File(siteRoot, sitePath.stripPrefix("/"))
@@ -54,14 +72,17 @@ object Pdf:
       s"PDF source HTML not found (write the HTML page before the PDF): $htmlFile"
     )
 
-    val port: Int = site.httpServer.getAddress.getPort
+    val port: Int = httpServer.getAddress.getPort
+    val path: String = if sitePath.startsWith("/") then sitePath else s"/$sitePath"
+    val url: String = URI("http", null, "127.0.0.1", port, path, null, null).toASCIIString
+
     val page: PlaywrightPage = browser.newPage()
     try
       // Match the printable content box so wrapping/pagination align with page.pdf margins.
       page.setViewportSize(contentWidthPx, contentHeightPx)
       page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
       page.navigate(
-        pageUrl(port, sitePath),
+        url,
         PlaywrightPage.NavigateOptions()
           .setWaitUntil(WaitUntilState.LOAD)
           .setTimeout(60_000)
