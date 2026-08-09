@@ -1,9 +1,9 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{BackLink, Link}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage}
-import org.podval.tools.publish.util.{AsciidoctorUtil, Files, Git, Icon, Logging, ObsidianConfig, Options, Pdf}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
+import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import com.sun.net.httpserver.HttpServer
@@ -124,28 +124,28 @@ final class Site(options: Options) extends JSLibrary:
   private var asciidoctorVar: Option[Asciidoctor] = None
   def asciidoctor: Asciidoctor = synchronized:
     asciidoctorVar.getOrElse:
-      val result: Asciidoctor = AsciidoctorUtil.asciidoctor(this)
+      val result: Asciidoctor = AsciiDocMarkup.asciidoctor(this)
       asciidoctorVar = Some(result)
       result
 
   private var httpServerVar: Option[HttpServer] = None
   def httpServer: HttpServer = synchronized:
     httpServerVar.getOrElse:
-      val result: HttpServer = Pdf.httpServer(targetDirectory)
+      val result: HttpServer = PdfPage.httpServer(this)
       httpServerVar = Some(result)
       result
 
   private var playwrightVar: Option[Playwright] = None
   def playwright: Playwright = synchronized:
     playwrightVar.getOrElse:
-      val result: Playwright = Pdf.playwright
+      val result: Playwright = PdfPage.playwright
       playwrightVar = Some(result)
       result
 
   private var browserVar: Option[Browser] = None
   def browser: Browser = synchronized:
     browserVar.getOrElse:
-      val result: Browser = Pdf.browser(playwright)
+      val result: Browser = PdfPage.browser(playwright)
       browserVar = Some(result)
       result
 

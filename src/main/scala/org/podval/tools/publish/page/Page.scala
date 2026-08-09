@@ -30,7 +30,7 @@ abstract class Page(
 
   def write(): Unit
 
-  final protected def targetFile: File = path.file(site.targetDirectory)
+  final def targetFile: File = path.file(site.targetDirectory)
 
   def up: Option[Page] = parent
 

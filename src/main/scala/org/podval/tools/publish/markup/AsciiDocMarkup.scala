@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.asciidoctor.{Attributes, Options, SafeMode}
+import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.Site
 import org.podval.xml.{HtmlXmlDialect, Xml}
@@ -16,6 +16,14 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
+  def asciidoctor(site: Site): Asciidoctor =
+    val result: Asciidoctor = Asciidoctor.Factory.create()
+    //    // Note: only extensions packaged as jars will work - if they are on the classpath.
+    //    site.asciidoctorExtensions.foreach: gemName =>
+    //      site.log.info(s"Loading AsciiDoc extension gem '$gemName'")
+    //      result.requireLibrary(gemName)
+    result
+
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 

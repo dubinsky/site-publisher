@@ -1,6 +1,6 @@
 package org.podval.tools.publish.util
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, StandardCopyOption, StandardOpenOption, Files as NFiles, Path as NPath}
@@ -33,8 +33,12 @@ object Files:
     toFile.getParentFile.mkdirs()
     NFiles.copy(fromFile.toPath, toFile.toPath, StandardCopyOption.REPLACE_EXISTING)
 
-  def readResource(name: String) =
-    String(getClass.getResourceAsStream(name).readAllBytes(), StandardCharsets.UTF_8)
+  def readResource(name: String): String =
+    val stream: InputStream = getClass.getResourceAsStream(name)
+    try
+      String(stream.readAllBytes(), StandardCharsets.UTF_8)
+    finally
+      stream.close()
 
   def listResources(base: String): Unit =
     val basePath: NPath = Paths.get(getClass.getClassLoader.getResource(base).toURI)
