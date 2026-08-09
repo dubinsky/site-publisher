@@ -421,6 +421,78 @@ ul.toc {
   list-style: none;
 }
 
+/**
+ * TOC dotted leaders + page numbers for print/PDF.
+ * Leaders and page numbers are injected by Pdf.fillTocPageNumbersJs; these rules only apply under print media.
+ *
+ * Nested ul/ol normally get margin-left (list indent). That would shift whole nested rows — including page
+ * numbers — so subsection numbers no longer stack under section numbers. Cancel nested TOC list margins
+ * and indent titles only, so the page-number column stays aligned.
+ */
+@media print {
+    ul.toc > li.toc-section,
+    ul.toc > li.toc-section-selected {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    ul.toc > li.toc-section > a,
+    ul.toc > li.toc-section-selected > a {
+        flex: 0 1 auto;
+        order: 1;
+        min-width: 0;
+    }
+
+    ul.toc > li.toc-section > .toc-leader,
+    ul.toc > li.toc-section-selected > .toc-leader {
+        flex: 1 1 auto;
+        order: 2;
+        border-bottom: 1px dotted rgba(0, 0, 0, 0.45);
+        margin: 0 0.4em;
+        min-width: 1em;
+        height: 0.65em;
+    }
+
+    ul.toc > li.toc-section > .toc-page-number,
+    ul.toc > li.toc-section-selected > .toc-page-number {
+        flex: 0 0 2.5em;
+        order: 3;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Full-width nested TOC rows; cancel list margin so page numbers share one column. */
+    ul.toc > li.toc-section > ul.toc,
+    ul.toc > li.toc-section-selected > ul.toc {
+        flex: 1 0 100%;
+        order: 4;
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    /* Indent nested titles only (not leaders / page numbers). */
+    ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 1.5em;
+    }
+
+    ul.toc ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 3em;
+    }
+
+    ul.toc ul.toc ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 4.5em;
+    }
+}
+
 .page-list {
     font-size: 18px;
 
