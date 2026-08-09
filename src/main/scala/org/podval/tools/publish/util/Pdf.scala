@@ -77,6 +77,13 @@ object Pdf:
           .setWaitUntil(WaitUntilState.LOAD)
           .setTimeout(60_000)
       )
+      // LOAD does not wait for webfonts (Google Fonts, Font Awesome, …).
+      // document.fonts.ready resolves once faces used by the document have loaded (or failed).
+      page.evaluate(
+        """() => (document.fonts && document.fonts.ready)
+          |  ? document.fonts.ready
+          |  : Promise.resolve()""".stripMargin
+      )
       page.addStyleTag(PlaywrightPage.AddStyleTagOptions().setContent(tocPageNumberCss))
       page.evaluate(fillTocPageNumbersJs)
       page.pdf(
