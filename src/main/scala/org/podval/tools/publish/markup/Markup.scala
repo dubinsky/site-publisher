@@ -57,7 +57,14 @@ abstract class Markup(
     val sourceContent: String = Files.read(sourceFile)
     val (frontMatterInternalContent: Option[String], content: String) = FrontMatter.split(sourceContent)
     val frontMatterStandAloneContent: Option[String] = frontMatterStandAlone.map(site.sourceFile).map(Files.read)
-    // TODO error if both are present
+
+    if frontMatterInternalContent.isDefined && frontMatterStandAloneContent.isDefined then
+      site.error(
+        sourcePath = sourcePath,
+        kind = PageError.AmbiguousFrontMatter,
+        message = s"Ambiguous FrontMatter: both internal [$frontMatterInternalContent] and standalone [$frontMatterStandAloneContent] found"
+      )
+
     val frontMatterContent: Option[String] = frontMatterInternalContent.orElse(frontMatterStandAloneContent)
 
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match

@@ -14,9 +14,9 @@ object PageError:
   sealed abstract class Kind(override val toString: String)
 
   case object MalformedFrontMatter extends Kind("malformed frontmatter")
+  case object AmbiguousFrontMatter extends Kind("ambiguous frontmatter")
   case object MalformedXml extends Kind("malformed XML")
   case object FileName extends Kind("file name")
-  case object FileKind extends Kind("file kind")
   case object Duplicate extends Kind("duplicate")
   case object NoId extends Kind("no id")
   case object NoDate extends Kind("no date")
@@ -27,7 +27,6 @@ object PageError:
     MalformedFrontMatter, 
     MalformedXml, 
     FileName,
-    FileKind, 
     Duplicate,
     NoId,
     NoDate,

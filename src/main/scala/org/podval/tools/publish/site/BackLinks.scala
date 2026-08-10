@@ -34,7 +34,9 @@ final class BackLinks:
                   a(
                     href := context.url,
                     context.before,
+                    " ",
                     span(className := "backlink", context.element),
+                    " ",
                     context.after
                   )
                 )

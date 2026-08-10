@@ -71,7 +71,7 @@ object AsciiDocMarkup extends Markup(
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
       result = removeSpuriousClasses(result)
-      result = result.setChildren(removeSpuriousElements(result.getChildren)) // TODO run in a separate transform?
+      result = result.setChildren(removeSpuriousElements(result.getChildren)) // TODO unfold
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
       result
@@ -163,16 +163,23 @@ object AsciiDocMarkup extends Markup(
   private def convertFootnoteBody(element: Xml.Element): Option[Xml.Element] =
     val isFootnoteBody: Boolean = element.getName == "div" && element.hasClass("footnote")
     if !isFootnoteBody then None else
+      // 'a' child
       for correlationId: String <- element
         .getChildren
         .flatMap(_.asElement)
         .headOption
         .flatMap(_.getTextOpt)
       yield
-        val body: Xml.Nodes = element.getChildren.dropUntil(_.asElement.isDefined) // TODO why?
+        // after the 'a' child
+        var body: Xml.Nodes = element
+          .getChildren
+          .dropUntil(_.asElement.isDefined)
+
+        body.head.asText.foreach: text => 
+          if text.startsWith(".") then
+            body = Xml.text(text.drop(1)) +: body.tail
+
         Footnote.body(
           correlationId,
-          body.head.asText match
-            case Some(text) if text.startsWith(".") => Xml.text(text.drop(1)) +: body.tail
-            case _ => body
+          body
         )
