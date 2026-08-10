@@ -11,7 +11,6 @@ import java.io.File
 object TeiMarkup extends Markup(
   name = "TEI",
   xmlDialect = TeiXmlDialect,
-  allowsInternalFrontMatter = false,
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):

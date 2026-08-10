@@ -9,7 +9,6 @@ import java.io.File
 object XmlMarkup extends Markup(
   name = "XML",
   xmlDialect = XmlDialect.Plain,
-  allowsInternalFrontMatter = false,
   rendersToXml = true,
   extension = "xml"
 ):

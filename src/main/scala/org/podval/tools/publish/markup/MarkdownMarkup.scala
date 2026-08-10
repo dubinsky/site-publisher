@@ -15,7 +15,6 @@ import java.io.File
 
 object MarkdownMarkup extends Markup(
   name = "Markdown",
-  allowsInternalFrontMatter = true,
   extension = "md",
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect,

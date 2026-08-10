@@ -17,7 +17,6 @@ abstract class Markup(
   // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
   // and xmlDialect for pretty-printing.
   final val xmlDialect: XmlDialect,
-  allowsInternalFrontMatter: Boolean,
   final val extension: String,
   additionalExtensions: Set[String] = Set.empty,
   rendersToXml: Boolean
@@ -56,11 +55,7 @@ abstract class Markup(
 
     val sourceFile: File = site.sourceFile(sourcePath)
     val sourceContent: String = Files.read(sourceFile)
-    val (frontMatterInternalContent: Option[String], content: String) =
-      if allowsInternalFrontMatter
-      then FrontMatter.split(sourceContent)
-      else (None, sourceContent)
-
+    val (frontMatterInternalContent: Option[String], content: String) = FrontMatter.split(sourceContent)
     val frontMatterStandAloneContent: Option[String] = frontMatterStandAlone.map(site.sourceFile).map(Files.read)
     // TODO error if both are present
     val frontMatterContent: Option[String] = frontMatterInternalContent.orElse(frontMatterStandAloneContent)

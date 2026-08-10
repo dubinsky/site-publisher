@@ -8,7 +8,6 @@ import java.io.File
 
 object HtmlMarkup extends Markup(
   name = "HTML",
-  allowsInternalFrontMatter = true,
   extension = "html",
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,

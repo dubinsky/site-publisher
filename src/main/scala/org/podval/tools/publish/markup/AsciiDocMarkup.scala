@@ -9,7 +9,6 @@ import java.io.File
 
 object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
-  allowsInternalFrontMatter = true,
   extension = "adoc",
   // Note: by supplying `htmlsyntax=xml` we ensure that Asciidoctor produces well-formed XML;
   // the only markup with `rendersToXml=true` is HTML ;)
