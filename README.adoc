@@ -145,7 +145,15 @@ Get inspiration from `asciidoc.css`:
 
 - font
 - section title colour
-- section links on roll-over
+- section links on roll-over: Asciidoctor produces
+
+[source, xml]
+----
+<hN>
+  <a class="anchor" href="#id"/> // ::before - paragraph sign
+  <a class="link" href="#id">original header content</a>
+</hN>
+----
 
 === TEI
 

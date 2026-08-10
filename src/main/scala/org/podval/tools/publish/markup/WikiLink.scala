@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.{Files, Media, Strings}
-import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml, XmlDialect}
+import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
 import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
@@ -35,15 +35,8 @@ object WikiLink:
     then wikiLinkText(isTranscluded(element), text)
     else text
 
-  // TODO unfold
-  def convert(element: Xml.Element): Option[Xml.Element] =
-    Option.when(!element.isA)(
-      // TODO move to XmlUtils
-      element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(convert(Chunk.empty, _))))
-    )
-
   @tailrec
-  private def convert(result: Chunk[Xml.Node], text: String): Xml.Nodes =
+  def convert(result: Chunk[Xml.Node], text: String): Xml.Nodes =
     if text.isEmpty then result else
       val startTransclusion: Int = text.indexOf(startTransclusionStr)
       val startLink: Int = text.indexOf(startLinkStr)
@@ -71,18 +64,9 @@ object WikiLink:
           after
         )
 
-  // TODO unfold
-  def embed(xml: Xml.Element, xmlDialect: XmlDialect): Xml.Element =
-    xmlDialect.transform(xml, element => Option
-      .when(element.isA && isTranscluded(element))(
-        element.getHref.fold(element)(embed(element, _).getOrElse(element))
-      )
-      .getOrElse(element)
-    )
-
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
-  private def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
+  def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
     Files.nameAndExtension(ref)._2.fold(None): extension =>
       if Media.isImage(extension) then
         val (width: Option[Int], height: Option[Int]) =

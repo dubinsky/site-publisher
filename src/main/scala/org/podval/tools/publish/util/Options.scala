@@ -14,10 +14,9 @@ final class Options(
     then (string.substring(0, eqIndex), string.substring(eqIndex + 1))
     else (string, "true") // option without value is treated as a boolean option with value "true"
 
-  def option(name: String, default: String): String = options
+  def option(name: String): Option[String] = options
     .find(_._1 == name)
     .map(_._2)
     .orElse(sys.env.get(s"${environmentVariablesPrefix}_${name.toUpperCase.replaceAll("-", "_")}"))
-    .getOrElse(default)
-
-  def booleanOption(name: String): Boolean = option(name, "false").toBoolean
+  
+  def booleanOption(name: String): Boolean = option(name).exists(_.toBoolean)

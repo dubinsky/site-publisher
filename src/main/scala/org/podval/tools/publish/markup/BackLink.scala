@@ -23,14 +23,8 @@ object BackLink:
       to <- Link.resolve(ref, kind = None, from)
       id <- element.getId
     yield
-      val toId: Option[Link.ToId] = ids.resolve(id)
-      val toFrom: Link = Link(from, fragment = toId, isIntrapage = false)
-      // TODO go back to `ne`
-      val (before: Xml.Nodes, tail) = parent.getChildren.span(
-        _.asElement.fold(true)(element => !element.getHref.contains(ref))
-      )
-      val it: Xml.Element = tail.head.asElement.get
-      val after: Xml.Nodes = tail.tail
+      val toFrom: Link = Link(from, fragment = ids.resolve(id), isIntrapage = false)
+      val (before: Xml.Nodes, tail: Xml.Nodes) = parent.getChildren.span(_ ne element)
 
       new BackLink(
         to = to,
@@ -40,8 +34,8 @@ object BackLink:
         context = LinkContext(
           toFrom = toFrom,
           before = before,
-          element = it,
-          after = after
+          element = element,
+          after = tail.tail
         )
       )
 

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.util.Options
+import org.podval.tools.publish.util.SiteOptions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -13,16 +13,11 @@ final class SiteTest extends AnyFlatSpec with Matchers {
     .getParentFile // root!
     .getAbsolutePath
 
-  val siteRoot: String = repositoryRoot + "/src/test/site"
-  val options: Options = Options(
-    environmentVariablesPrefix = "Nooo!",
-    args = Array(
-      "--log-level=INFO",
-      "--treat-errors-as-warnings=true",
-      siteRoot
-    )
-  )
-  val site: Site = Site(options)
+  val site: Site = Site(SiteOptions(
+    sourceDirectoryPath = "/src/test/site",
+    _logLevel = Some("INFO"),
+    treatErrorsAsWarnings = true
+  ))
 
   site.generate()
 

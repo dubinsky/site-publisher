@@ -19,6 +19,5 @@ object EmbeddedAsset:
     Path("assets", "css", "layout").withExtension("css"),
     Path("assets", "css", "skin").withExtension("css"),
     Path("assets", "css", "style").withExtension("css"),
-    Path("assets", "css", "asciidoc").withExtension("css"),
     Path("assets", "css", "tei").withExtension("css"),
   )

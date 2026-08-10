@@ -63,17 +63,30 @@ final class PageContent private(
     )
 
     // Convert to HTML
-    val html: Html.Element = Xml2Html.fromXml(result)
+    var html: Html.Element = Xml2Html.fromXml(result)
 
     // Add TOC to HTML
-    toc.add(
-      html,
-      hasToc = source.page.hasToc,
+    var tocAdded: Boolean = false
+
+    def tocHtml: Html.Element = toc.html(
+      sectionId = sectionId,
       tocDepth = source.page.tocDepth,
-      chunkDepth = Option.when(isChunked)(source.page.chunkDepth),
-      sectionId,
-      source.markup
+      chunkDepth = Option.when(isChunked)(source.page.chunkDepth)
     )
+
+    html = xmlDialect.transform(html, element =>
+      if tocAdded || !source.markup.isTocPlaceholder(element)
+      then
+        element
+      else
+        tocAdded = true
+        tocHtml
+    )
+
+    if source.page.hasToc && !tocAdded then
+      html = html.setChildren(tocHtml +: html.getChildren)
+
+    html
 
   private def resolveInternalLinks(
     xml: Xml.Element,
@@ -149,13 +162,18 @@ object PageContent:
         result = result.setId(ids.generate())
 
       // This has to happen before calculating backlinks.
-      result = Link.markInternal(result, source.page.site, source).getOrElse(result)
+      if result.isA then result.getHref.foreach: href =>
+        if source.page.site.isInternalLink(href, source) then
+          result = result.add(Link.InternalLinkClass)
 
+      // Embed
+      if result.isA && WikiLink.isTranscluded(result) then result.getHref.foreach: href =>
+        WikiLink.embed(result, href).foreach: embedded =>
+          result = embedded
+        
       result
     )
-
-    result = WikiLink.embed(result, xmlDialect) // TODO unfold into the transform above
-
+    
     // Process footnotes
     val footnoteNumbers: Map[String, Int] = footnoteLinks(result, xmlDialect)
       .zipWithIndexFrom(1)

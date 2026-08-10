@@ -7,7 +7,6 @@ object Mermaid extends JSLibrary:
   
   override def isModule: Boolean = true
 
-  // TODO split into `imports` and `script`
   override def inlineJs: Some[Js] = Some:
     val mermaid: String = s"$cdn/mermaid.esm.min.mjs"
     js"""import mermaid from $mermaid;

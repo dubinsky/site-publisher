@@ -77,43 +77,22 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         element.setChildren(element.getChildren.takeWhile(
           _.asElement.fold(true)(!_.getId.contains(stopAtId))
         ))
-
-  // TODO unfold
-  def add(
-    html: Html.Element,
-    hasToc: Boolean,
-    tocDepth: Int,
-    chunkDepth: Option[Int],
+  
+  def html(
     sectionId: Option[String],
-    markup: Markup
+    tocDepth: Int,
+    chunkDepth: Option[Int]
   ): Html.Element =
-    // Add TOC to HTML
-    var tocAdded: Boolean = false
-
-    def tocHtml: Html.Element =
-      div(className := "toc",
-        h3("Table of Contents"),
-        toHtml(
-          sections,
-          sectionId,
-          tocDepth,
-          chunkDepth
-        )
+    div(className := "toc",
+      h3("Table of Contents"),
+      toHtml(
+        sections,
+        sectionId,
+        tocDepth,
+        chunkDepth
       )
-
-    val result: Html.Element = markup.xmlDialect.transform(html, element =>
-      if tocAdded || !markup.isTocPlaceholder(element)
-      then
-        element
-      else
-        tocAdded = true
-        tocHtml
     )
-
-    if hasToc && !tocAdded
-    then result.setChildren(tocHtml +: result.getChildren)
-    else result
-
+    
   private def toHtml(
     sections: Seq[Section],
     selectedSectionId: Option[String],

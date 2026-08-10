@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
-import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, Options}
+import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import com.sun.net.httpserver.HttpServer
@@ -11,21 +11,21 @@ import com.microsoft.playwright.{Browser, Playwright}
 import org.asciidoctor.Asciidoctor
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.File
-import java.net.URI
+import java.net.{URI, URISyntaxException}
 
-final class Site(options: Options) extends JSLibrary:
+final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
   override def cdn: String = ""
   override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
   
   // Directories
-  val sourceDirectory: File = File(options.positional(0)).getAbsoluteFile
+  val sourceDirectory: File = File(options.sourceDirectoryPath).getAbsoluteFile
   Files.requireExists(sourceDirectory)
   Files.requireDirectory(sourceDirectory)
 
   def sourceFile(sourcePath: Path): File = sourcePath.file(sourceDirectory)
 
-  val targetDirectory: File = File(sourceDirectory, options.option("target-directory-name", "_site"))
+  val targetDirectory: File = File(sourceDirectory, options.targetDirectoryName)
   // TODO do not pre-create it on instantiation of Site; maybe just verify that *if* it exists, it is a directory...
   targetDirectory.mkdirs()
   Files.requireExists(targetDirectory)
@@ -34,7 +34,7 @@ final class Site(options: Options) extends JSLibrary:
   // Posts and daily notes directories
   private val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
   def postsDirectoryName: String = "_posts"
-  val draftsDirectoryName: Option[String] = Option.when(options.booleanOption("include-drafts"))("_drafts")
+  val draftsDirectoryName: Option[String] = options.draftsDirectoryName
   def dailyNotesDirectoryName: Option[String] = obsidianConfig.daysFolder
 
   // Configuration
@@ -48,7 +48,18 @@ final class Site(options: Options) extends JSLibrary:
 
   val uri: URI = URI(config.url)
 
-  def isSelf(uri: URI): Boolean =
+  def isInternalLink(
+    href: String,
+    errorReporter: PageErrorReporter
+  ): Boolean =
+    // TODO verify that external link is not broken if the Site is so configured
+    try
+      val uri: URI = URI(href)
+      if isSelf(uri) then errorReporter.error(PageError.SelfLink, href)
+      uri.getScheme == null
+    catch case e: URISyntaxException => true
+
+  private def isSelf(uri: URI): Boolean =
     uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
 
   // TODO make HTML converter configurable.
@@ -68,7 +79,7 @@ final class Site(options: Options) extends JSLibrary:
   val posts: Posts = Posts(this)
 
   // Errors
-  val errors: Errors = Errors(this, treatErrorsAsWarnings = options.booleanOption("treat-errors-as-warnings"))
+  val errors: Errors = Errors(this, treatErrorsAsWarnings = options.treatErrorsAsWarnings)
 
   def error(
     sourcePath: Path,
@@ -78,7 +89,7 @@ final class Site(options: Options) extends JSLibrary:
   ): Unit = errors.error(PageError(sourcePath, kind, message, cause))
 
   // Logging
-  Logging.configureLogBack(level = options.option("log-level", "DEBUG"), useLogStash = false)
+  Logging.configureLogBack(level = options.logLevel, useLogStash = false)
   val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   log.info(s"source directory: $sourceDirectory")
@@ -88,7 +99,7 @@ final class Site(options: Options) extends JSLibrary:
   log.debug(s"ignore rules:\n" + ignore.rules)
 
   // Google Analytics
-  val googleAnalytics: Option[String] = if !options.booleanOption("production") then None else config.googleAnalytics
+  val googleAnalytics: Option[String] = if !options.production then None else config.googleAnalytics
 
   // Social links
   private val socialLinks: Seq[SocialLink] = Seq(
@@ -237,11 +248,8 @@ final class Site(options: Options) extends JSLibrary:
     )
 
 object Site:
-  def main(args: Array[String]): Unit =
-    Site(Options(args, environmentVariablesPrefix = "SITE_PUBLISHER"))
-      .generate()
+  def main(args: Array[String]): Unit = Site(SiteOptions.forArgs(args)).generate()
 
-  // TODO same "unresolved reference" error is now logged multiple times - chunking?
   @main def generate(): Unit = main(Array(
     "--log-level=INFO",
     "--treat-errors-as-warnings=true",

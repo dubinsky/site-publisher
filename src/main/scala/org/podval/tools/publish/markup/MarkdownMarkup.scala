@@ -1,7 +1,9 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.site.Site
 import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
@@ -9,7 +11,6 @@ import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
-import org.podval.tools.publish.site.Site
 import java.io.File
 
 object MarkdownMarkup extends Markup(
@@ -55,7 +56,9 @@ object MarkdownMarkup extends Markup(
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
       result = WikiBlock.convert(result, source).getOrElse(result)
-      result = WikiLink.convert(result).getOrElse(result)
+      if !result.isA then
+        // TODO move to XmlUtils
+        result = result.setChildren(result.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(WikiLink.convert(Chunk.empty, _))))
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)

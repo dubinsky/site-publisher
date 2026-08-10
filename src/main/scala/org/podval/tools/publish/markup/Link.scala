@@ -1,10 +1,9 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{Page, PageContent}
-import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
+import org.podval.tools.publish.site.Path
 import org.podval.tools.publish.util.{Files, Strings}
 import org.podval.xml.{HtmlClass, Xml}
-import java.net.{URI, URISyntaxException}
 
 final class Link(
   val page: Page,
@@ -23,32 +22,12 @@ final class Link(
     fragment.fold("")(fragment => s"#${get(fragment)}")
 
 object Link:
-  private object InternalLinkClass extends HtmlClass("internal-link")
+  object InternalLinkClass extends HtmlClass("internal-link")
 
   object UnresolvedLinkClass extends HtmlClass("unresolved-link")
 
   def isInternal(element: Xml.Element): Boolean = element.isA && element.has(InternalLinkClass)
   
-  // TODO unfold
-  def markInternal(
-    element: Xml.Element,
-    site: Site,
-    errorReporter: PageErrorReporter
-  ): Option[Xml.Element] =
-    if !element.isA then None else
-      element.getHref.flatMap: href =>
-        // TODO verify that external link is not broken if the Site is so configured
-        val isInternal: Boolean =
-          try
-            val uri: URI = URI(href)
-            if site.isSelf(uri) then errorReporter.error(PageError.SelfLink, href)
-            uri.getScheme == null
-          catch case e: URISyntaxException => true
-
-        Option.when(isInternal)(
-          element.add(InternalLinkClass)
-        )
-
   sealed abstract class ToFragment:
     def title: String
     def id: String
