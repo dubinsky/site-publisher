@@ -78,7 +78,7 @@ Scala compiler flags in use:
 - `-language:strictEquality`
 - `-source:future`
 
-Java 21 toolchain.
+Java 25 toolchain.
 
 ## Common Pitfalls
 

@@ -12,7 +12,7 @@ description = 'Generate, serve and publish websites'
 group = 'org.podval.tools'
 version = '0.0.1'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 scala.scalaVersion = '3.8.4'
 project.gradle.startParameter.excludedTaskNames.add('compileJava')
 

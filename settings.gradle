@@ -1,3 +1,8 @@
+plugins {
+  // Auto-provision JDKs for the Java toolchain (e.g. 25 when only 21 is installed).
+  id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name = 'org.podval.tools.publisher'
 
 dependencyResolutionManagement {

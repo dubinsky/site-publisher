@@ -51,7 +51,7 @@ inputs:
   java-version:
     description: JDK version for running site-publisher.
     required: false
-    default: '21'
+    default: '25'
   java-distribution:
     description: actions/setup-java distribution (e.g. temurin, oracle).
     required: false

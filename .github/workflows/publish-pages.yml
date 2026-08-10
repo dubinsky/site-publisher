@@ -68,7 +68,7 @@ on:
         description: JDK version for site-publisher.
         type: string
         required: false
-        default: '21'
+        default: '25'
       java-distribution:
         description: actions/setup-java distribution.
         type: string
