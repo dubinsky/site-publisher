@@ -3,6 +3,9 @@ package org.podval.tools.publish.site
 import zio.blocks.schema.Schema
 import zio.blocks.schema.yaml.{YamlCodec, YamlFormat}
 
+// TODO add favicon:
+// <link rel="icon" type="image/ico" href="/favicon.ico">;
+// use in OpenTorah
 final class Config(
   val title: String,
   val description: String,

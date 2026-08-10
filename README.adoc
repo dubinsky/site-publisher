@@ -104,7 +104,8 @@ Events of 2026:
 - May 07: switched
 - June/July: working on TEI support
 - July/August: Asciidoc support and chunking
-
+- Aug 7: PDF generation (with Grok's help)
+- Aug 9: switching OpenTorah website from Asciidoctor and Jekyll to site generator
 
 First milestone for this project is to replace Jekyll on my personal website.
 In under two month and a little less than 2000 lines of Scala code,

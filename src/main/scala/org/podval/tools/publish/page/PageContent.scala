@@ -47,11 +47,14 @@ final class PageContent private(
         .setChildren(toAdd.map(_.body))
       result = result.setChildren(result.getChildren :+ footnotesDiv)
 
+    // TODO merge the transforms:
+
     // Resolve internal links, including the ones in footnote bodies
-    result = resolveInternalLinks(
-      result,
-      xmlDialect,
-      isChunked
+    result = xmlDialect.transform(result, element => Option
+      .when(Link.isInternal(element))(
+        element.getHref.fold(element)(ref => resolveInternalLink(element, ref, isChunked))
+      )
+      .getOrElse(element)
     )
 
     // Turn footnote links into footnote references
@@ -88,43 +91,34 @@ final class PageContent private(
 
     html
 
-  private def resolveInternalLinks(
-    xml: Xml.Element,
-    xmlDialect: XmlDialect,
+
+  private def resolveInternalLink(
+    element: Xml.Element,
+    ref: String,
     isChunked: Boolean
   ): Xml.Element =
-    def resolveInternalLink(
-      element: Xml.Element,
-      ref: String
-    ): Xml.Element =
-      val kind: Option[LinkKind] = LinkKind.of(element)
-      Link.resolve(ref, kind, source.page) match
-        case None =>
-          // Report error for the full page only, not for chunks.
-          if !isChunked then
-            source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
-          element.add(Link.UnresolvedLinkClass)
-        case Some(linkTo) =>
-          // TODO transclude
+    val kind: Option[LinkKind] = LinkKind.of(element)
+    Link.resolve(ref, kind, source.page) match
+      case None =>
+        // Report error for the full page only, not for chunks.
+        if !isChunked then
+          source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
+        element.add(Link.UnresolvedLinkClass)
+      case Some(linkTo) =>
+        // TODO transclude
 
-          // TODO do the same with section links in Toc - and move this there?
-          val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
-            val id: String = linkTo.fragment.get.id
-            val sectionId: Option[String] = ids.sectionById(id)
-            s"${toc.chunkName(sectionId, source.page.chunkDepth)}#$id"
+        // TODO do the same with section links in Toc - and move this there?
+        val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
+          val id: String = linkTo.fragment.get.id
+          val sectionId: Option[String] = ids.sectionById(id)
+          s"${toc.chunkName(sectionId, source.page.chunkDepth)}#$id"
 
-          val result: Xml.Element = element.setHref(href)
+        val result: Xml.Element = element.setHref(href)
 
-          if result.getText != WikiLink.linkText(element, ref)
-          then result
-          else result.setText(WikiLink.linkText(element, linkTo.title))
+        if result.getText != WikiLink.linkText(element, ref)
+        then result
+        else result.setText(WikiLink.linkText(element, linkTo.title))
 
-    xmlDialect.transform(xml, element => Option
-      .when(Link.isInternal(element))(
-        element.getHref.fold(element)(ref => resolveInternalLink(element, ref))
-      )
-      .getOrElse(element)
-    )
 
 object PageContent:
   private def footnoteLinks(xml: Xml.Element, xmlDialect: XmlDialect): Chunk[String] =
@@ -170,10 +164,10 @@ object PageContent:
       if result.isA && WikiLink.isTranscluded(result) then result.getHref.foreach: href =>
         WikiLink.embed(result, href).foreach: embedded =>
           result = embedded
-        
+
       result
     )
-    
+
     // Process footnotes
     val footnoteNumbers: Map[String, Int] = footnoteLinks(result, xmlDialect)
       .zipWithIndexFrom(1)

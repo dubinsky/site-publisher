@@ -17,9 +17,9 @@ final class Link(
   private def withFragment(
     fromPage: String,
     get: Link.ToFragment => String
-  ): String =
-    (if isIntrapage then "" else fromPage) +
-    fragment.fold("")(fragment => s"#${get(fragment)}")
+  ): String = fragment match
+    case None => s"$fromPage" // TODO and not "#", to deal with chunked
+    case Some(fragment) => (if isIntrapage then "" else fromPage) + s"#${get(fragment)}"
 
 object Link:
   object InternalLinkClass extends HtmlClass("internal-link")
@@ -27,7 +27,7 @@ object Link:
   object UnresolvedLinkClass extends HtmlClass("unresolved-link")
 
   def isInternal(element: Xml.Element): Boolean = element.isA && element.has(InternalLinkClass)
-  
+
   sealed abstract class ToFragment:
     def title: String
     def id: String

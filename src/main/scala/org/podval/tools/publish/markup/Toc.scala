@@ -77,7 +77,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         element.setChildren(element.getChildren.takeWhile(
           _.asElement.fold(true)(!_.getId.contains(stopAtId))
         ))
-  
+
   def html(
     sectionId: Option[String],
     tocDepth: Int,
@@ -92,7 +92,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         chunkDepth
       )
     )
-    
+
   private def toHtml(
     sections: Seq[Section],
     selectedSectionId: Option[String],
@@ -102,7 +102,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     ul(className := "toc", sections.map(section =>
       val sectionId: String = section.id
       li(
-        className := (if selectedSectionId.contains(sectionId) then "toc-section-selected" else "toc-section"),
+        className := (if selectedSectionId.contains(sectionId) then "toc-current" else "toc-section"),
         a(href := s"${chunkName(sectionId, chunkDepth)}#$sectionId", section.title),
         Option.when(section.depth < tocDepth-1 && section.sections.nonEmpty)(
           toHtml(

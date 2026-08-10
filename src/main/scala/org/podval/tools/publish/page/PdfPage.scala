@@ -18,7 +18,7 @@ final class PdfPage(
 
   override def source: Option[PageSource] = None
 
-  override def titleFromPath: String = path.fileName + path.extensionString
+  override def titleFromPath: String = path.fileName
 
   override protected def iconDefault: Icon = Icon.pdf
 
