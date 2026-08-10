@@ -1,0 +1,131 @@
+# Written with Grok ;)
+#
+# Reusable workflow: generate a site with site-publisher and deploy to GitHub Pages.
+#
+# Caller example (content repository):
+#
+#   name: Deploy site
+#   on:
+#     push:
+#       branches: [master]
+#     workflow_dispatch:
+#   permissions:
+#     contents: read
+#     pages: write
+#     id-token: write
+#   jobs:
+#     publish:
+#       uses: dubinsky/site-publisher/.github/workflows/publish-pages.yml@master  # pin a tag when you can
+#       with:
+#         source: docs   # or '.' for repo root
+#         site-publisher-ref: master   # same ref as @ above when possible
+#
+name: Publish site to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        description: >
+          Path to the site source directory (directory with _site_config.yml),
+          relative to the content repository root, or absolute.
+        type: string
+        required: false
+        default: '.'
+      target-directory-name:
+        description: Output directory name under source (default _site).
+        type: string
+        required: false
+        default: '_site'
+      treat-errors-as-warnings:
+        description: Pass --treat-errors-as-warnings=true to site-publisher.
+        type: boolean
+        required: false
+        default: true
+      include-drafts:
+        description: Pass --include-drafts=true to site-publisher.
+        type: boolean
+        required: false
+        default: false
+      production:
+        description: Pass --production=true to site-publisher.
+        type: boolean
+        required: false
+        default: false
+      log-level:
+        description: Optional log level (e.g. INFO). Empty uses site-publisher default.
+        type: string
+        required: false
+        default: ''
+      site-publisher-ref:
+        description: >
+          Git ref of dubinsky/site-publisher to check out for the generate action
+          and the tool itself (tag, branch, or SHA). Prefer matching the workflow_call @ref.
+        type: string
+        required: false
+        default: 'master'
+      java-version:
+        description: JDK version for site-publisher.
+        type: string
+        required: false
+        default: '21'
+      java-distribution:
+        description: actions/setup-java distribution.
+        type: string
+        required: false
+        default: 'temurin'
+
+# Caller must grant pages + id-token (and usually contents: read) for deploy to work.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out content repository
+        uses: actions/checkout@v6
+
+      # uses: cannot take ${{ }} in the @ref for remote actions, so check out the tool
+      # at the chosen ref and invoke the composite action via a local path.
+      - name: Check out site-publisher
+        uses: actions/checkout@v6
+        with:
+          repository: dubinsky/site-publisher
+          ref: ${{ inputs.site-publisher-ref }}
+          path: _site_publisher
+
+      - name: Generate site
+        id: site
+        uses: ./_site_publisher/.github/actions/generate
+        with:
+          source: ${{ inputs.source }}
+          target-directory-name: ${{ inputs.target-directory-name }}
+          treat-errors-as-warnings: ${{ inputs.treat-errors-as-warnings }}
+          include-drafts: ${{ inputs.include-drafts }}
+          production: ${{ inputs.production }}
+          log-level: ${{ inputs.log-level }}
+          java-version: ${{ inputs.java-version }}
+          java-distribution: ${{ inputs.java-distribution }}
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ steps.site.outputs.site-path }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

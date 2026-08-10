@@ -1,0 +1,155 @@
+# Written with Grok ;)
+# Use example:
+#jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v6
+#
+#      - uses: dubinsky/site-publisher/.github/actions/generate@master  # pin a tag when you can
+#        id: site
+#        with:
+#          source: docs                    # or '.' for repo root
+#          treat-errors-as-warnings: true
+#
+#      - uses: actions/upload-pages-artifact@v5
+#        with:
+#          path: ${{ steps.site.outputs.site-path }}
+name: Generate site
+description: >
+  Generate a static site with Podval site-publisher into <source>/<target-directory-name>
+  (default <source>/_site). Uses the site-publisher revision pinned by the action ref
+  (github.action_path); does not nest-checkout the tool again.
+
+inputs:
+  source:
+    description: >
+      Path to the site source directory (must contain _site_config.yml).
+      Relative paths are resolved against GITHUB_WORKSPACE (the content repository checkout).
+    required: false
+    default: '.'
+  target-directory-name:
+    description: Name of the output directory under source (passed as --target-directory-name).
+    required: false
+    default: '_site'
+  treat-errors-as-warnings:
+    description: If true, pass --treat-errors-as-warnings=true.
+    required: false
+    default: 'true'
+  include-drafts:
+    description: If true, pass --include-drafts=true.
+    required: false
+    default: 'false'
+  production:
+    description: If true, pass --production=true.
+    required: false
+    default: 'false'
+  log-level:
+    description: Optional log level (e.g. INFO, DEBUG). Empty means site-publisher default.
+    required: false
+    default: ''
+  java-version:
+    description: JDK version for running site-publisher.
+    required: false
+    default: '21'
+  java-distribution:
+    description: actions/setup-java distribution (e.g. temurin, oracle).
+    required: false
+    default: 'temurin'
+
+outputs:
+  site-path:
+    description: Absolute path to the generated site directory.
+    value: ${{ steps.generate.outputs.site-path }}
+  source-path:
+    description: Absolute path to the site source directory used for generation.
+    value: ${{ steps.generate.outputs.source-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.java-distribution }}
+        java-version: ${{ inputs.java-version }}
+
+    # Configures Gradle User Home caching / wrapper validation for later steps.
+    # No build-root-directory input (that is not a setup-gradle parameter); we cd to
+    # the publisher root in the generate step via github.action_path.
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v5
+
+    - name: Generate site
+      id: generate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # site-publisher root for this action ref (full repo is available next to the action).
+        publisher_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        if [[ ! -x "$publisher_root/gradlew" ]]; then
+          echo "::error::gradlew not found under publisher root: $publisher_root"
+          exit 1
+        fi
+
+        # Resolve source once: absolute path to the content site.
+        source_input="${{ inputs.source }}"
+        if [[ -z "$source_input" ]]; then
+          source_input='.'
+        fi
+        case "$source_input" in
+          /*) source_path="$source_input" ;;
+          *)  source_path="${GITHUB_WORKSPACE%/}/$source_input" ;;
+        esac
+        if [[ ! -d "$source_path" ]]; then
+          echo "::error::Site source directory does not exist: $source_path"
+          exit 1
+        fi
+        source_path="$(cd "$source_path" && pwd)"
+
+        target_name="${{ inputs.target-directory-name }}"
+        if [[ -z "$target_name" ]]; then
+          target_name='_site'
+        fi
+        site_path="$source_path/$target_name"
+
+        # Build CLI args: single positional source, then flags (source appears once).
+        args=("$source_path")
+        args+=("--target-directory-name=$target_name")
+
+        if [[ "${{ inputs.treat-errors-as-warnings }}" == "true" ]]; then
+          args+=(--treat-errors-as-warnings=true)
+        fi
+        if [[ "${{ inputs.include-drafts }}" == "true" ]]; then
+          args+=(--include-drafts=true)
+        fi
+        if [[ "${{ inputs.production }}" == "true" ]]; then
+          args+=(--production=true)
+        fi
+        log_level="${{ inputs.log-level }}"
+        if [[ -n "$log_level" ]]; then
+          args+=("--log-level=$log_level")
+        fi
+
+        # Gradle --args expects one string; quote each token for the app.
+        args_str="$(printf '%q ' "${args[@]}")"
+        args_str="${args_str% }"
+
+        echo "Publisher root: $publisher_root"
+        echo "Source path:    $source_path"
+        echo "Site path:      $site_path"
+        echo "CLI args:       $args_str"
+
+        (
+          cd "$publisher_root"
+          ./gradlew --no-daemon run --args="$args_str"
+        )
+
+        if [[ ! -d "$site_path" ]]; then
+          echo "::error::Expected output directory was not created: $site_path"
+          exit 1
+        fi
+
+        echo "source-path=$source_path" >> "$GITHUB_OUTPUT"
+        echo "site-path=$site_path" >> "$GITHUB_OUTPUT"
