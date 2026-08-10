@@ -6,12 +6,12 @@ import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
-import com.sun.net.httpserver.HttpServer
+import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import com.microsoft.playwright.{Browser, Playwright}
 import org.asciidoctor.Asciidoctor
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.File
-import java.net.{URI, URISyntaxException}
+import java.net.{InetSocketAddress, URI, URISyntaxException}
 
 final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
@@ -26,10 +26,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   def sourceFile(sourcePath: Path): File = sourcePath.file(sourceDirectory)
 
   val targetDirectory: File = File(sourceDirectory, options.targetDirectoryName)
-  // TODO do not pre-create it on instantiation of Site; maybe just verify that *if* it exists, it is a directory...
-  targetDirectory.mkdirs()
-  Files.requireExists(targetDirectory)
-  Files.requireDirectory(targetDirectory)
+  if targetDirectory.exists() then Files.requireDirectory(targetDirectory)
 
   // Posts and daily notes directories
   private val obsidianConfig: ObsidianConfig = ObsidianConfig(sourceDirectory)
@@ -55,12 +52,10 @@ final class Site(options: SiteOptions) extends JSLibrary:
     // TODO verify that external link is not broken if the Site is so configured
     try
       val uri: URI = URI(href)
-      if isSelf(uri) then errorReporter.error(PageError.SelfLink, href)
+      val isSelf: Boolean = uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
+      if isSelf then errorReporter.error(PageError.SelfLink, href)
       uri.getScheme == null
     catch case e: URISyntaxException => true
-
-  private def isSelf(uri: URI): Boolean =
-    uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
 
   // TODO make HTML converter configurable.
 //  private val configurer: Configurer = Configurer.get(options.option("configurer", "Default"))
@@ -108,6 +103,34 @@ final class Site(options: SiteOptions) extends JSLibrary:
     config.social.linkedin.map(SocialLink.LinkedIn(_))
   ).flatten
 
+  def generate(): Unit =
+    try
+      loadAndGenerate()
+    finally
+      stopHttpServer()
+
+  def serve(): Unit =
+    loadAndGenerate()
+    log.info(s"Serving ${targetDirectory} on port $httpServerPort")
+
+  // Note: I do not see any reason to bother with generating into a temporary directory and then renaming it.
+  private def loadAndGenerate(): Unit =
+    try
+      load()
+
+      // Wipe out output directory
+      Files.deleteDirectory(targetDirectory)
+
+      // Write pages
+      pages.pages.foreach: page =>
+        log.debug(s"Writing ${page.path}")
+        page.write()
+
+      // Done
+      log.info("Done generating!")
+    finally
+      stopConverters()
+
   private def load(): Unit =
     // Load all pages
     pages.load()
@@ -139,13 +162,6 @@ final class Site(options: SiteOptions) extends JSLibrary:
       asciidoctorVar = Some(result)
       result
 
-  private var httpServerVar: Option[HttpServer] = None
-  def httpServer: HttpServer = synchronized:
-    httpServerVar.getOrElse:
-      val result: HttpServer = PdfPage.httpServer(this)
-      httpServerVar = Some(result)
-      result
-
   private var playwrightVar: Option[Playwright] = None
   def playwright: Playwright = synchronized:
     playwrightVar.getOrElse:
@@ -160,35 +176,23 @@ final class Site(options: SiteOptions) extends JSLibrary:
       browserVar = Some(result)
       result
 
-  // close what needs to be closed
-  def close(): Unit =
+  private def stopConverters(): Unit =
     asciidoctorVar.foreach(_.close())
     browserVar.foreach(_.close())
     playwrightVar.foreach(_.close())
+
+  private var httpServerVar: Option[HttpServer] = None
+
+  private def httpServer: HttpServer = synchronized:
+    httpServerVar.getOrElse:
+      val result: HttpServer = Site.httpServer(targetDirectory)
+      httpServerVar = Some(result)
+      result
+
+  def httpServerPort: Int = httpServer.getAddress.getPort
+
+  private def stopHttpServer(): Unit =
     httpServerVar.foreach(_.stop(0))
-
-  // TODO from Grok:
-  //- Description: `generate()` deletes the entire target directory, then writes page-by-page.
-  // A crash mid-write leaves a partial site; concurrent readers (local server, CI publish) can observe a wiped tree.
-  // No temp-dir + atomic rename.
-  //- Suggestion: Write to a staging directory (or `_site.tmp`) and atomically replace `_site`.
-  // Optionally preserve mtimes for unchanged assets to speed deploys.
-  def generate(): Unit =
-    try
-      load()
-
-      // Wipe out output directory
-      Files.deleteDirectory(targetDirectory)
-
-      // Write pages
-      pages.pages.foreach: page =>
-        log.debug(s"Writing ${page.path}")
-        page.write()
-
-      // Done
-      log.info("Done!")
-    finally
-      close()
 
   def siteHeader(page: MarkupPage): Html.Element =
     header(className := "site-header",
@@ -248,13 +252,28 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
 object Site:
+  val localhost: String = "127.0.0.1"
+
+  private def httpServer(targetDirectory: File): HttpServer =
+    val result: HttpServer = SimpleFileServer.createFileServer(
+      InetSocketAddress(localhost, 8000), // 0 means any available
+      targetDirectory.getAbsoluteFile.toPath,
+      SimpleFileServer.OutputLevel.NONE
+    )
+    result.start()
+    result
+
   def main(args: Array[String]): Unit = Site(SiteOptions.forArgs(args)).generate()
 
-  @main def generate(): Unit = main(Array(
-    "--log-level=INFO",
-    "--treat-errors-as-warnings=true",
-    "/home/dub/OpenTorah/opentorah.org/docs"
-//  "/home/dub/OpenTorah/alter-rebbe.org"
-//  "/home/dub/Podval/dub.podval.org"
-//  "/home/dub/Podval/www.podval.org"
+  @main def generate(): Unit = Site(SiteOptions(
+    sourceDirectoryPath =
+      "/home/dub/OpenTorah/opentorah.org/docs",
+    //  "/home/dub/OpenTorah/alter-rebbe.org"
+    //  "/home/dub/Podval/dub.podval.org"
+    //  "/home/dub/Podval/www.podval.org"
+    logLevelOpt = Some("INFO"),
+    treatErrorsAsWarnings = true
   ))
+    .serve()
+
+

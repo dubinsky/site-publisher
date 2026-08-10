@@ -88,7 +88,15 @@ object AsciiDocMarkup extends Markup(
   private val spuriousClasses: Set[String] = Set(
     "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
   )
-  
+
+  // TODO deal with
+  // class="bare" means “this anchor’s label is the bare URI”.
+  // Default AsciiDoc print CSS treats non-bare http(s) links specially—e.g. appends the URL after the text.
+  // For bare links that would duplicate the URL, so rules like:
+  //   a.bare, a[href^="#"], a[href^="mailto:"] { text-decoration: none !important }
+  //   a[href^="http:"]:not(.bare)::after, a[href^="https:"]:not(.bare)::after { content: "(" attr(href) ")"; ... }
+  //skip the “print URL after text” decoration when class="bare" is present.
+
   private def removeSpuriousClasses(element: Xml.Element): Xml.Element =
     val classes: Chunk[String] = element.getClasses
     if classes.isEmpty

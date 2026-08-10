@@ -1,12 +1,9 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.{Files, Icon}
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
-import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import java.io.File
-import java.net.{InetSocketAddress, URI}
 
 final class PdfPage(
   markupPage: FullMarkupPage
@@ -30,23 +27,13 @@ final class PdfPage(
       s"PDF source HTML not found (write the HTML page before the PDF): $htmlFile"
     )
 
-    val url: String = URI(
-      "http",
-      null,
-      PdfPage.localhost,
-      markupPage.site.httpServer.getAddress.getPort,
-      markupPage.path.toString,
-      null,
-      null
-    ).toASCIIString
-
     val page: PlaywrightPage = markupPage.site.browser.newPage()
     try
       // Match the printable content box so wrapping/pagination align with page.pdf margins.
       page.setViewportSize(PdfPage.contentWidthPx, PdfPage.contentHeightPx)
       page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
       page.navigate(
-        url,
+        markupPage.uri.toASCIIString,
         PlaywrightPage.NavigateOptions()
           .setWaitUntil(WaitUntilState.LOAD)
           .setTimeout(60_000)
@@ -87,17 +74,6 @@ object PdfPage:
   def browser(playwright: Playwright): Browser = playwright.chromium.launch(
     BrowserType.LaunchOptions().setHeadless(true)
   )
-
-  private val localhost: String = "127.0.0.1"
-
-  def httpServer(site: Site): HttpServer =
-    val result: HttpServer = SimpleFileServer.createFileServer(
-      InetSocketAddress(localhost, 0),
-      site.targetDirectory.getAbsoluteFile.toPath,
-      SimpleFileServer.OutputLevel.NONE
-    )
-    result.start()
-    result
 
   // TOC script (function declaration); arg is printable content height in CSS px.
   private lazy val fillTocPageNumbersJs: String =

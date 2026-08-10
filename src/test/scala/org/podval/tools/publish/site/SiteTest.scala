@@ -15,7 +15,7 @@ final class SiteTest extends AnyFlatSpec with Matchers {
 
   val site: Site = Site(SiteOptions(
     sourceDirectoryPath = "/src/test/site",
-    _logLevel = Some("INFO"),
+    logLevelOpt = Some("INFO"),
     treatErrorsAsWarnings = true
   ))
 

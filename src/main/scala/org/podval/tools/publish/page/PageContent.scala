@@ -47,22 +47,17 @@ final class PageContent private(
         .setChildren(toAdd.map(_.body))
       result = result.setChildren(result.getChildren :+ footnotesDiv)
 
-    // TODO merge the transforms:
+    result = xmlDialect.transform(result, element =>
+      var result = element
+      // Resolve internal links, including the ones in footnote bodies
+      if Link.isInternal(result) then result.getHref.foreach: ref =>
+        result = resolveInternalLink(result, ref, isChunked)
 
-    // Resolve internal links, including the ones in footnote bodies
-    result = xmlDialect.transform(result, element => Option
-      .when(Link.isInternal(element))(
-        element.getHref.fold(element)(ref => resolveInternalLink(element, ref, isChunked))
-      )
-      .getOrElse(element)
-    )
+      // Turn footnote links into footnote references
+      if Footnote.isLink(result) then
+        result = footnotes(Footnote.getCorrelationId(result)).link
 
-    // Turn footnote links into footnote references
-    xmlDialect.transform(result, element => Option
-      .when(Footnote.isLink(element))(
-        footnotes(Footnote.getCorrelationId(element)).link
-      )
-      .getOrElse(element)
+      result
     )
 
     // Convert to HTML

@@ -7,6 +7,7 @@ import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import java.io.File
+import java.net.URI
 import java.time.{Instant, LocalDate}
 
 // TODO move methods appropriate only for Markup pages there.
@@ -30,6 +31,16 @@ abstract class Page(
 
   def write(): Unit
 
+  def uri: URI = URI(
+    "http",
+    null,
+    Site.localhost,
+    site.httpServerPort,
+    path.toString,
+    null,
+    null
+  )
+  
   final def targetFile: File = path.file(site.targetDirectory)
 
   def up: Option[Page] = parent
