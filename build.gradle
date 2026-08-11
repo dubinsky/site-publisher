@@ -41,8 +41,25 @@ dependencies {
   testImplementation 'dev.zio:zio-test-sbt_3:2.1.26'
 }
 
+// JDK 22+ compatibility flags for transitive / ecosystem native & Unsafe use:
+// - AsciidoctorJ → JRuby → jffi calls System.load (restricted native access)
+// - scala.runtime.LazyVals$ (old lazy-val bytecode on the classpath) uses sun.misc.Unsafe
+ext.jdkCompatJvmArgs = [
+  '--enable-native-access=ALL-UNNAMED',
+  '--sun-misc-unsafe-memory-access=allow',
+]
+
 application {
   mainClass = 'org.podval.tools.publish.site.Site'
+  applicationDefaultJvmArgs = jdkCompatJvmArgs
+}
+
+// Cover `run`, custom JavaExec tasks, and tests (not IntelliJ Application runs).
+tasks.withType(JavaExec).configureEach {
+  jvmArgs jdkCompatJvmArgs
+}
+tasks.withType(Test).configureEach {
+  jvmArgs jdkCompatJvmArgs
 }
 
 def isNonStable = { String version ->
