@@ -78,6 +78,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
           _.asElement.fold(true)(!_.getId.contains(stopAtId))
         ))
 
+  // TODO Toc of a chunk should not have subsections of the other chunks listed...
   def html(
     sectionId: Option[String],
     tocDepth: Int,

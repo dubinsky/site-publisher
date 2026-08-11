@@ -54,6 +54,11 @@ final class PdfPage(
           .setPrintBackground(true)
           .setFormat("Letter")
           .setMargin(PdfPage.pdfMargin)
+          // Chromium print header/footer. Special class pageNumber injects the current page.
+          // Templates do not inherit page CSS; font-size defaults to 0 — set it inline.
+          .setDisplayHeaderFooter(true)
+          .setHeaderTemplate(PdfPage.headerTemplate)
+          .setFooterTemplate(PdfPage.footerTemplate)
       )
     finally
       page.close()
@@ -85,16 +90,27 @@ object PdfPage:
   private val cssPxPerIn: Double = 96.0
 
   // Paper margins for page.pdf (CSS length strings accepted by Chromium).
-  private val marginIn: Double = 0.5
-  private val marginCss: String = s"${marginIn}in"
+  // Header/footer are drawn in the margin boxes; keep enough bottom room for the page number.
+  private val marginTopIn: Double = 0.5
+  private val marginSideIn: Double = 0.5
+  private val marginBottomIn: Double = 0.6
   private val pdfMargin: Margin = Margin()
-    .setTop(marginCss)
-    .setRight(marginCss)
-    .setBottom(marginCss)
-    .setLeft(marginCss)
+    .setTop(s"${marginTopIn}in")
+    .setRight(s"${marginSideIn}in")
+    .setBottom(s"${marginBottomIn}in")
+    .setLeft(s"${marginSideIn}in")
+
+  // Empty header (displayHeaderFooter still needs templates set).
+  private val headerTemplate: String = "<span></span>"
+
+  // Centered page number only. Inline styles required (no CSS inheritance; default font-size is 0).
+  private val footerTemplate: String =
+    """<div style="width:100%; font-size:10px; text-align:center; color:#333; font-family:serif; padding-top:4px;">""" +
+      """<span class="pageNumber"></span>""" +
+      """</div>"""
 
   // Content box inside margins — viewport and TOC page math must match this, not full paper.
   private val contentWidthPx: Int =
-    Math.round((letterWidthIn - 2 * marginIn) * cssPxPerIn).toInt // 720
+    Math.round((letterWidthIn - 2 * marginSideIn) * cssPxPerIn).toInt // 720
   private val contentHeightPx: Int =
-    Math.round((letterHeightIn - 2 * marginIn) * cssPxPerIn).toInt // 960
+    Math.round((letterHeightIn - marginTopIn - marginBottomIn) * cssPxPerIn).toInt // 950

@@ -417,6 +417,52 @@ ul.page-list {
     list-style: none;
 }
 
+/* Sections should start on a new page in PDF. */
+/* Written by Grok ;) */
+@media print {
+    /*
+     * Markup wraps the body in a bare <div> (see HtmlMarkup.xmlContent), so structure is:
+     *   .post-content > div > .toc | .section | ...
+     * Use div.toc (not ul.toc) for the TOC block.
+     *
+     * Page break only for sections whose own heading is h1 or h2 (parts/chapters).
+     * h3+ subsections (e.g. under Acknowledgments / Notes) stay continuous.
+     * :has() is fine in Chromium/Playwright PDF.
+     */
+    .post-content div.toc,
+    .post-content .section:has(> h1),
+    .post-content .section:has(> h2) {
+        break-before: page;           /* modern */
+        page-break-before: always;    /* Chromium still respects this well */
+    }
+
+    /*
+     * If the first body child is already an h1/h2 section (no TOC), avoid a blank page.
+     * TOC always keeps its break so it starts after the title header.
+     */
+    .post-content > .section:first-child:has(> h1),
+    .post-content > .section:first-child:has(> h2),
+    .post-content > div > .section:first-child:has(> h1),
+    .post-content > div > .section:first-child:has(> h2) {
+        break-before: auto;
+        page-break-before: auto;
+    }
+
+    /* Keep heading with following content */
+    .section > h1,
+    .section > h2,
+    .section > h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    /* Avoid splitting tables/figures awkwardly */
+    pre, blockquote, table, img, figure {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
 ul.toc {
   list-style: none;
 }

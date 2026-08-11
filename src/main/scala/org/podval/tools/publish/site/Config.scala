@@ -4,8 +4,10 @@ import zio.blocks.schema.Schema
 import zio.blocks.schema.yaml.{YamlCodec, YamlFormat}
 
 // TODO add favicon:
-// <link rel="icon" type="image/ico" href="/favicon.ico">;
-// use in OpenTorah
+// opentorah: <link rel="icon" type="image/ico" href="/favicon.ico">;
+// chumashquestions: <link rel="icon" type="image/png" href="/images/favicon-author.png">
+// TODO add license:
+// chumashquestions: <link rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/" title="CC by-nc-nd">
 final class Config(
   val title: String,
   val description: String,

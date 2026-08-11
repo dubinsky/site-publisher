@@ -7,6 +7,8 @@ import zio.blocks.schema.{NameMapper, Schema}
 import zio.blocks.typeid.TypeId
 import scala.util.control.NonFatal
 
+// TODO look into naming frontmatter property with dots: toc.depth etc.
+// TODO implement some of the DocBook styling parameters.
 final case class FrontMatter(
   title: Option[String] = None,
   description: Option[String] = None,
