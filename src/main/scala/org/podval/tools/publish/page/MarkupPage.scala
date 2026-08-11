@@ -64,6 +64,8 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         meta(httpEquiv := "X-UA-Compatible", contentAttribute := "IE=edge"),
         meta(name := "viewport", contentAttribute := "width=device-width, initial-scale=1"),
         titleElement(title),
+        site.favicon,
+        site.license,
         Sitemap.sitemapLink,
         // TODO {%- seo -%}: https://github.com/jekyll/jekyll-seo-tag
         // TODO {%- feed_meta -%}: https://github.com/jekyll/jekyll-feed

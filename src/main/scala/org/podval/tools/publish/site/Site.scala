@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
-import org.podval.tools.publish.util.{Files, Git, Icon, Logging, ObsidianConfig, SiteOptions}
+import org.podval.tools.publish.util.{Files, Git, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
@@ -95,6 +95,18 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   // Google Analytics
   val googleAnalytics: Option[String] = if !options.production then None else config.googleAnalytics
+
+  lazy val license: Option[Html.Element] = config.license.map: license =>
+    link(rel := "license", titleAttr := license, config.licenseLink.map(licenseLink => href := licenseLink))
+
+  lazy val favicon: Option[Html.Element] =
+    for
+      favicon <- config.favicon
+      (name, extension) = Files.nameAndExtension(favicon)
+      extension <- extension
+      if Media.isImage(extension)
+    yield
+      link(rel:="icon", href:=s"/$favicon", `type`:=s"image/$extension")
 
   // Social links
   private val socialLinks: Seq[SocialLink] = Seq(
@@ -276,3 +288,4 @@ object Site:
     treatErrorsAsWarnings = true
   ))
     .serve()
+
