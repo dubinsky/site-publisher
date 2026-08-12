@@ -7,6 +7,7 @@ import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
 
+// TODO mark markup as asset with `asset: true` in the stand-alone front matter.
 final class Pages(site: Site):
   import Pages.{ForMarkup, ForName}
 

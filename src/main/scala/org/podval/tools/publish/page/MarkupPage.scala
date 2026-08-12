@@ -50,7 +50,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
     val articleBody: Seq[Html.Element] = Seq(markupContent, syntheticContent).flatten
 
     val libraries: List[js.JSLibrary] = List(
-      Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languages)),
+      Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languagesToHighlight)),
       Option.when(math)(js.MathJax),
       Some(js.FontAwesome),
       Option.when(languages.contains("mermaid"))(js.Mermaid),
