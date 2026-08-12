@@ -108,25 +108,19 @@ object AsciiDocMarkup extends Markup(
     "paragraph", "sectionbody", "ulist", "olist", "quoteblock", "openblock", "content"
   )
 
+  private def isSpuriousDiv(element: Xml.Element): Boolean =
+    element.getClasses.exists(spuriousDivClasses.contains) ||
+    element
+      .getChildren
+      .flatMap(_.asElement)
+      .headOption
+      .flatMap(HtmlMarkup.headerLevel)
+      .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
+
   private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = XmlUtil.convertElements(children, element =>
-    if
-      // Remove spurious 'div's.
-      element.getName == "div" && (
-        element
-          .getClasses
-          .exists(cls => spuriousDivClasses.contains(cls))
-        ||
-        element
-          .getChildren
-          .flatMap(_.asElement)
-          .headOption
-          .flatMap(HtmlMarkup.headerLevel)
-          .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
-        )
-    then
-      Some(removeSpuriousDivs(element.getChildren))
-    else
-      None
+    Option.when(element.getName == "div" && isSpuriousDiv(element))(
+      removeSpuriousDivs(element.getChildren)
+    )
   )
 
   // Remove 'p's in 'td's and 'li's.
