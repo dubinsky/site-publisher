@@ -7,7 +7,7 @@ import zio.blocks.html.{Js, js}
 final class GoogleAnalytics(id: String) extends JSLibrary:
   override def cdn: String = "https://www.googletagmanager.com/gtag"
   
-  override def imports: List[String] = List(s"/js?id=$id")
+  override def imports: List[String] = List(s"js?id=$id")
 
   override def inlineJs: Some[Js] = Some:
     js"""window.dataLayer = window.dataLayer || [];

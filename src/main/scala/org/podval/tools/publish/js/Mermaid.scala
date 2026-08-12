@@ -3,7 +3,7 @@ package org.podval.tools.publish.js
 import zio.blocks.html.{Js, js}
 
 object Mermaid extends JSLibrary:
-  override def cdn: String = s"${JSLibrary.jsDelivr}mermaid@11/dist"
+  val version: String = "11.13.0"
   
   override def isModule: Boolean = true
 
@@ -13,3 +13,8 @@ object Mermaid extends JSLibrary:
         |mermaid.initialize({ startOnLoad: false });
         |await mermaid.run({ querySelector: '.language-mermaid', });
         |""".stripMargin
+
+  override def cdn: String =
+    if JSLibrary.preferCloudFlare
+    then s"${JSLibrary.cloudFlare}mermaid/$version"
+    else s"${JSLibrary.jsDelivr}mermaid@$version/dist"

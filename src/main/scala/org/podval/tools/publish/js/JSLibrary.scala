@@ -14,5 +14,9 @@ abstract class JSLibrary:
   def isModule: Boolean = false
 
 object JSLibrary:
-  val jsDelivr: String = "https://cdn.jsdelivr.net/npm/"
+  val preferCloudFlare: Boolean = true
+  
+  // search: https://cdnjs.com/
   val cloudFlare: String = "https://cdnjs.cloudflare.com/ajax/libs/"
+
+  val jsDelivr: String = "https://cdn.jsdelivr.net/npm/"
