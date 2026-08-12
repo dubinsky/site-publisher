@@ -5,7 +5,6 @@ import org.podval.tools.publish.site.{Path, Site, Sitemap}
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
-import zio.blocks.html.Dom.Element.Script
 
 abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
@@ -86,14 +85,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
           ),
         ),
         site.siteFooter,
-        libraries.flatMap(library => library.imports.map(externalJs =>
-          // Note: `defer` here is crucial for MathJax: without it, some math renders incorrectly, with `$`s visible...
-          script(defer := true).externalJs(s"${library.cdn}/$externalJs")
-        )),
-        libraries.flatMap(library => library.inlineJs.map(js =>
-          // Note: `script` does *not* accept optional attributes; TODO bug?
-          val scriptTag: Script = if library.isModule then script(`type` := "module") else script()
-          scriptTag.inlineJs(js)
-        ))
+        // Each library emits imports + inline in its own order ([[js.JSLibrary.inlineBeforeImports]]).
+        libraries.flatMap(_.scripts)
       )
     )

@@ -5,6 +5,9 @@ import zio.blocks.html.{Js, js}
 object MathJax extends JSLibrary:
   val version: String = "4.1.3"
 
+  // Config must be on `window.MathJax` before the library boots, or `$...$` is ignored.
+  override def inlineBeforeImports: Boolean = true
+
   override def imports: List[String] = List(s"tex-mml-chtml.js")
 
   override val inlineJs: Some[Js] = Some(js"MathJax = { tex: { inlineMath: {'[+]': [['$$', '$$']]} } };")

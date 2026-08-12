@@ -142,9 +142,12 @@ object PageContent:
       var result: Xml.Element = element
 
       // This has to happen before calculating Toc.
-      // TODO do section titles from the first element here, not in HtmlMarkdown and TeiMarkdown.
       if Section.is(result) && result.getId.isEmpty then
-        result = result.setId(ids.generate())
+        val title: Option[String] = source
+          .markup
+          .sectionHeader(result)
+          .map(_.getText)
+        result = result.setId(title.map(Xml.toId).getOrElse(ids.generate()))
 
       // This has to happen before calculating backlinks.
       if result.isA && result.getId.isEmpty then
@@ -195,7 +198,7 @@ object PageContent:
       frontMatter = frontMatter,
       title = title,
       xml = result,
-      toc = Toc(result, source),
+      toc = Toc(result, source.markup, source),
       ids = Ids(result, xmlDialect),
       blocks = WikiBlocks(result, xmlDialect, source),
       footnotes = footnotes

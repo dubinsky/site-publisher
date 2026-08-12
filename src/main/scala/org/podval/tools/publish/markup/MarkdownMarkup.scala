@@ -148,6 +148,8 @@ object MarkdownMarkup extends Markup(
         // TODO find the <p> within the body and use its children as body...
         Footnote.body(correlationId, body)
 
+  override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
+
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 

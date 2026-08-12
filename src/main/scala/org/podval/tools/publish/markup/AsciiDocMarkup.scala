@@ -23,6 +23,8 @@ object AsciiDocMarkup extends Markup(
     //      result.requireLibrary(gemName)
     result
 
+  override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
+
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 

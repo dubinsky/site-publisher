@@ -5,8 +5,11 @@ import zio.blocks.html.*
 import zio.blocks.schema.yaml.{Yaml, YamlCodec}
 
 final class Icon(val name: String, val style: Icon.Style):
-  /* TODO! that did not work: className += s"fa-$name"*/
-  def html: Html.Element = span(className := s"icon-span ${style.classNames} fa-$name")
+  def html: Html.Element = span(
+    className += "icon-span",
+    className += style.classNames,
+    className += s"fa-$name"
+  )
 
 object Icon:
   val file = Icon("file", Regular)

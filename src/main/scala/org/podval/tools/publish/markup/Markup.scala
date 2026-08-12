@@ -36,6 +36,14 @@ abstract class Markup(
   // - extract title
   def process(source: PageSource, xml: Xml.Element): (Xml.Element, Option[Xml.Element])
 
+  final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
+    .getChildren
+    .flatMap(_.asElement)
+    .headOption
+    .filter(isSectionHeader)
+
+  def isSectionHeader(element: Xml.Element): Boolean
+
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None

@@ -12,6 +12,8 @@ object HtmlMarkup extends Markup(
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,
 ):
+  override def isSectionHeader(element: Xml.Element): Boolean = headerLevel(element).isDefined
+
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName
     if !qName.startsWith("h") then None else
@@ -66,12 +68,14 @@ object HtmlMarkup extends Markup(
       val (preamble: Xml.Nodes, rest: Xml.Nodes) = nodes.span(
         _.asElement.fold(true)(HtmlMarkup.headerLevel(_).isEmpty)
       )
-      val header: Xml.Element = rest.head.asElement.get
       val (body: Xml.Nodes, tail: Xml.Nodes) = rest.tail.span(
         _.asElement.fold(true)(HtmlMarkup.headerLevel(_).fold(true)(_ > headerLevel))
       )
-      val section: Xml.Element = Section.mark(Xml.element("div"))
-        .setId(header.getId)
-        .setChildren(Chunk(header.setId("")) ++ nestSections(body))
+      val section: Xml.Element =
+        // Transplant the id from the header to the section.
+        val header: Xml.Element = rest.head.asElement.get
+        Section.mark(Xml.element("div"))
+          .setId(header.getId)
+          .setChildren(Chunk(header.setId("")) ++ nestSections(body))
 
       preamble ++ Chunk(section) ++ nestSections(tail)

@@ -14,11 +14,7 @@ final class Highlights(languages: Set[String]) extends JSLibrary:
       .sorted
       .map(language => s"languages/$language.min.js")
 
-  // External scripts are emitted with `defer` (see MarkupPage); a plain inline call
-  // would run during parse, before `hljs` exists. Wait for DOMContentLoaded, which
-  // fires after deferred scripts have executed.
-  override val inlineJs: Some[Js] = Some:
-    js"document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());"
+  override val inlineJs: Some[Js] = Some(js"hljs.highlightAll();")
 
   override def cdn: String =
     if JSLibrary.preferCloudFlare

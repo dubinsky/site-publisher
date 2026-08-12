@@ -117,17 +117,21 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     ))
 
 object Toc:
-  def apply(element: Xml.Element, errorReporter: PageErrorReporter): Toc =
+  def apply(
+    element: Xml.Element,
+    markup: Markup,
+    errorReporter: PageErrorReporter
+  ): Toc =
     def sections(element: Xml.Element): Chunk[Section] =
       if !Section.is(element) then Chunk.empty else element.getId match
         case None =>
           errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
           Chunk.empty
-        case Some(id) =>
-          val headerElement: Option[Xml.Element] = element.getChildren.flatMap(_.asElement).headOption
-          // TODO ask Markup if this is, indeed, a header element
-          // Same when assigning section titles, which should be centralized...
-          val title: String = headerElement.map(_.getText).getOrElse(s"Untitled Section $id") // TODO error
+        case Some(id) =>          
+          val title: String = markup
+            .sectionHeader(element)
+            .map(_.getText)
+            .getOrElse(s"Untitled Section $id") // TODO error
           Chunk(Section(
             id,
             title,

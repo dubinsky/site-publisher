@@ -5,7 +5,7 @@ import org.podval.tools.publish.site.Site
 import org.podval.xml.{Xml, XmlDialect}
 import java.io.File
 
-// Note: this exist only to parse XML to disambiguate the dialect
+// Note: this exists only to parse XML to disambiguate the dialect
 object XmlMarkup extends Markup(
   name = "XML",
   xmlDialect = XmlDialect.Plain,
@@ -13,6 +13,8 @@ object XmlMarkup extends Markup(
   extension = "xml"
 ):
   override def xmlContent(content: String, sourceFile: File, site: Site): String = content
+
+  override def isSectionHeader(element: Xml.Element): Boolean = false
 
   override def process(
     source: PageSource,
