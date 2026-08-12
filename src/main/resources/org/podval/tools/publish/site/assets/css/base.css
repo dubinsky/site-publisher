@@ -291,6 +291,8 @@ blockquote {
     padding-left: var(--spacing-unit-half);
     font-size: 1.05rem;
     font-style: italic;
+    /* Containing block for ::before. A float is painted on the previous printed page. */
+    position: relative;
 
     > :last-child {
         margin-bottom: 0;
@@ -304,7 +306,9 @@ blockquote {
 /* LMD styling block quotes like Asciidoctor. */
 blockquote::before {
     content:"\201c";
-    float:left;
+    position: absolute;
+    left: var(--spacing-unit-half);
+    top: 0;
     font-size:2.75em;
     font-weight:bold;
     line-height:.6em;

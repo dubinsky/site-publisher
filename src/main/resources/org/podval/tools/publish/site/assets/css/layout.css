@@ -461,6 +461,20 @@ ul.page-list {
         break-inside: avoid;
         page-break-inside: avoid;
     }
+
+    /* Contain the decorative quote; clip top/bottom so it cannot paint on the previous page.
+     * rem, not em: em on ::before is the 2.75em quote font. Zero the inner p's
+     * margin-top so padding does not break collapse and leave the mark above the line. */
+    blockquote {
+        padding-top: 0.9rem;
+        clip-path: inset(0 -2em 0 -2em);
+    }
+    blockquote::before {
+        top: 0.9rem;
+    }
+    blockquote > p:first-child {
+        margin-top: 0;
+    }
 }
 
 ul.toc {
