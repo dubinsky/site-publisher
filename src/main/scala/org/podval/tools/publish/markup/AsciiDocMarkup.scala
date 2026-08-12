@@ -3,10 +3,17 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.Site
-import org.podval.xml.{HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import java.io.File
 
+// TODO deal with
+// class="bare" means “this anchor’s label is the bare URI”.
+// Default AsciiDoc print CSS treats non-bare http(s) links specially—e.g. appends the URL after the text.
+// For bare links that would duplicate the URL, so rules like:
+//   a.bare, a[href^="#"], a[href^="mailto:"] { text-decoration: none !important }
+//   a[href^="http:"]:not(.bare)::after, a[href^="https:"]:not(.bare)::after { content: "(" attr(href) ")"; ... }
+//skip the “print URL after text” decoration when class="bare" is present.
 object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
   extension = "adoc",
@@ -72,8 +79,15 @@ object AsciiDocMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = removeSpuriousClasses(result)
-      result = result.setChildren(removeSpuriousElements(result.getChildren)) // TODO unfold
+
+      val classes: Chunk[String] = result.getClasses
+      if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
+
+      var children: Xml.Nodes = result.getChildren
+      children = XmlUtil.convertElements(children, removeSpuriousParagraphs)
+      children = removeSpuriousDivs(children)
+      result = result.setChildren(children)
+
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
       result
@@ -90,59 +104,42 @@ object AsciiDocMarkup extends Markup(
     "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
   )
 
-  // TODO deal with
-  // class="bare" means “this anchor’s label is the bare URI”.
-  // Default AsciiDoc print CSS treats non-bare http(s) links specially—e.g. appends the URL after the text.
-  // For bare links that would duplicate the URL, so rules like:
-  //   a.bare, a[href^="#"], a[href^="mailto:"] { text-decoration: none !important }
-  //   a[href^="http:"]:not(.bare)::after, a[href^="https:"]:not(.bare)::after { content: "(" attr(href) ")"; ... }
-  //skip the “print URL after text” decoration when class="bare" is present.
-
-  private def removeSpuriousClasses(element: Xml.Element): Xml.Element =
-    val classes: Chunk[String] = element.getClasses
-    if classes.isEmpty
-    then element
-    else element.setClasses(classes.filterNot(spuriousClasses.contains))
-
   private val spuriousDivClasses: Set[String] = Set(
     "paragraph", "sectionbody", "ulist", "olist", "quoteblock", "openblock", "content"
   )
 
-  private def removeSpuriousElements(children: Xml.Nodes): Xml.Nodes = children.flatMap: child =>
-    val replacement: Option[Xml.Nodes] = child.asElement.flatMap: element =>
-      if
-        // Remove spurious 'div's.
-        element.getName == "div" && (
-          element
-            .getClasses
-            .exists(cls => spuriousDivClasses.contains(cls))
-          ||
-          element
-            .getChildren
-            .flatMap(_.asElement)
-            .headOption
-            .flatMap(HtmlMarkup.headerLevel)
-            .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
-          )
-      then
-        Some(removeSpuriousElements(element.getChildren))
-      else if element.getName == "td" || element.getName == "li" then
-        // Remove 'p's in 'td's and 'li's.
-        val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
-        for
-          head <- tail.headOption.map(_.asElement.get)
-          if head.getName == "p"
-        yield
-          Chunk(element.setChildren(init ++ head.getChildren ++ tail.tail))
-      else
-        None
+  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = XmlUtil.convertElements(children, element =>
+    if
+      // Remove spurious 'div's.
+      element.getName == "div" && (
+        element
+          .getClasses
+          .exists(cls => spuriousDivClasses.contains(cls))
+        ||
+        element
+          .getChildren
+          .flatMap(_.asElement)
+          .headOption
+          .flatMap(HtmlMarkup.headerLevel)
+          .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
+        )
+    then
+      Some(removeSpuriousDivs(element.getChildren))
+    else
+      None
+  )
 
-    replacement match
-      case None =>
-        Chunk(child)
-      case Some(result) =>
-        result
-  
+  // Remove 'p's in 'td's and 'li's.
+  private def removeSpuriousParagraphs(element: Xml.Element): Option[Xml.Nodes] =
+    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li"
+    if !isElementToConvert then None else
+      val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
+      for
+        head <- tail.headOption.map(_.asElement.get)
+        if head.getName == "p"
+      yield
+        Chunk(element.setChildren(init ++ head.getChildren ++ tail.tail))
+
   // From:
   //   <sup class="footnote">[<a id="_footnoteref_N" class="footnote" href="#_footnotedef_N">N</a>]</sup>
   // To:

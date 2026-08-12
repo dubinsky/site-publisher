@@ -18,7 +18,7 @@ final class Link(
     fromPage: String,
     get: Link.ToFragment => String
   ): String = fragment match
-    case None => s"$fromPage" // TODO and not "#", to deal with chunked
+    case None => s"$fromPage" // Note: not just "#", to deal with the possibility of being chunked
     case Some(fragment) => (if isIntrapage then "" else fromPage) + s"#${get(fragment)}"
 
 object Link:

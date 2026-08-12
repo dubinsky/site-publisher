@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.Site
-import org.podval.xml.{Html, HtmlXmlDialect, Xml}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
@@ -56,8 +56,7 @@ object MarkdownMarkup extends Markup(
       var result: Xml.Element = element
       result = WikiBlock.convert(result, source).getOrElse(result)
       if !result.isA then
-        // TODO move to XmlUtils
-        result = result.setChildren(result.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(WikiLink.convert(Chunk.empty, _))))
+        result = XmlUtil.convertText(result, WikiLink.convert(Chunk.empty, _))
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
@@ -76,8 +75,7 @@ object MarkdownMarkup extends Markup(
 
 //  private def convertMarkdownFootnotes(element: Xml.Element): Option[Xml.Element] =
 //    Option.when(!element.isA)(
-//      // TODO move to XmlUtils
-//      element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Seq(xml))(convertMarkdownFootnotes(Chunk.empty, _))))
+//      XmlUtil.convertText(element, convertMarkdownFootnotes(Chunk.empty, _))
 //    )
 //
 //  private val startsString: String = "[^"

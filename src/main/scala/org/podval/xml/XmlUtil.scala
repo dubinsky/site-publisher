@@ -1,7 +1,20 @@
 package org.podval.xml
 
+import zio.blocks.chunk.Chunk
+
 object XmlUtil:
-  // TODO convertText() should move here too.
+  def convertText(
+    element: Xml.Element,
+    converter: String => Xml.Nodes
+  ): Xml.Element =
+    element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Chunk(xml))(converter)))
+
+  def convertElements(
+    children: Xml.Nodes,
+    converter: Xml.Element => Option[Xml.Nodes]
+  ): Xml.Nodes = children.flatMap(child =>
+    child.asElement.flatMap(converter).getOrElse(Chunk(child))
+  )
 
   def renameElement(
     name: String,
