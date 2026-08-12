@@ -11,13 +11,14 @@ object EmbeddedAsset:
   
   val mainStyleSheet: String = "/assets/css/style.css"
   
-  // TODO list using Files.listResources
+  // Note: it is not worth it writing JAR walker to "discover" six resources ;)
   private val resourcesBase: String = "/org/podval/tools/publish/site"
   private val resourcesList: List[Path] = List(
-    Path("assets", "css", "base").withExtension("css"),
-    Path("assets", "css", "initialize").withExtension("css"),
-    Path("assets", "css", "layout").withExtension("css"),
-    Path("assets", "css", "skin").withExtension("css"),
-    Path("assets", "css", "style").withExtension("css"),
-    Path("assets", "css", "tei").withExtension("css"),
+    "base",
+    "initialize",
+    "layout",
+    "skin",
+    "style",
+    "tei"
   )
+    .map(Path("assets", "css", _).withExtension("css"))

@@ -1,10 +1,8 @@
 package org.podval.tools.publish.util
 
 import java.io.{File, InputStream}
-import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Paths, StandardCopyOption, StandardOpenOption, Files as NFiles, Path as NPath}
-import scala.jdk.CollectionConverters.ListHasAsScala
+import java.nio.file.{StandardCopyOption, StandardOpenOption, Files as NFiles}
 
 object Files:
   def requireExists(file: File): Unit = require(file.exists, s"File does not exist: $file")
@@ -39,11 +37,4 @@ object Files:
       String(stream.readAllBytes(), StandardCharsets.UTF_8)
     finally
       stream.close()
-
-  def listResources(base: String): Unit =
-    val basePath: NPath = Paths.get(getClass.getClassLoader.getResource(base).toURI)
-    val resources: List[URI] = NFiles.walk(basePath).toList.asScala.toList.map(_.toUri).flatMap(uri =>
-      println(uri.toString)
-      Some(uri)
-    )
 
