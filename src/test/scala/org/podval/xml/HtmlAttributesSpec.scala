@@ -27,3 +27,27 @@ final class HtmlAttributesSpec extends AnyFunSuite:
     val el = div(className := "a", className := "b")
     assert(el.getAttributes == zio.blocks.chunk.Chunk(("class", "b")))
   }
+
+  test("last := is the base; earlier += are still appended") {
+    val el = div(className += "x", className := "b", className += "y")
+    assert(el.getAttributes == zio.blocks.chunk.Chunk(("class", "b x y")))
+  }
+
+  test("merged class string matches Dom.render") {
+    def classOf(html: String): String =
+      """class="([^"]*)"""".r.findFirstMatchIn(html).map(_.group(1)).getOrElse("")
+
+    def check(el: Html.Element): Unit =
+      val fromGet = el.getAttributes.find(_._1 == "class").map(_._2).getOrElse("")
+      assert(el.getAttributes.count(_._1 == "class") == 1, el.render)
+      assert(fromGet == classOf(el.render), s"get=$fromGet render=${el.render}")
+      assert(fromGet == classOf(HtmlXmlDialect.render(el)), s"get=$fromGet xml=${HtmlXmlDialect.render(el)}")
+
+    check(span(className += "icon-span", className += "grey fa-classic fa-regular", className += "fa-file"))
+    check(div(className := "base", className += "extra"))
+    check(div(className := "a", className := "b"))
+    check(div(className += "x", className := "b", className += "y"))
+    check(div(className += "a", id := "x", className := "b"))
+    check(div(className := ("a", "b"), className += "c"))
+    check(div(id := "x", hidden := true, className := "a", className += "b"))
+  }
