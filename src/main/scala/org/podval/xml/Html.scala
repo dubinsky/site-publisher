@@ -52,49 +52,38 @@ given Html: XmlAst[XML.Element]:
     /**
      * Merge ZIO Blocks multi-valued attrs (`className += …` is an AppendValue)
      * as Dom.render does: last `:=` is the base, then every `+=` in order.
-     * One pair per name (first-seen order). Boolean attributes pass through.
+     * One pair per name, sorted by name. Boolean attributes pass through.
      */
     override def getAttributes: Chunk[(String, String)] =
-      enum Merged:
-        case Flag(enabled: Boolean)
-        case Text(base: Option[String], extras: Vector[(String, String)])
+      Chunk.from(element.attributes.groupBy(attributeName).view.mapValues(mergeAttribute))
+        .sortBy(_._1)
 
-      val byName = scala.collection.mutable.LinkedHashMap.empty[String, Merged]
+  private def mkAttribute(name: String, value: String) = XML.Attribute.KeyValue(
+    name,
+    XML.AttributeValue.StringValue(value)
+  )
 
-      element.attributes.foreach:
-        case XML.Attribute.BooleanAttribute(name, enabled) =>
-          byName(name) = Merged.Flag(enabled)
+  private def mergeAttribute(attributes: Chunk[XML.Attribute]): String =
+    val base: Option[String] = attributes.collect {
+      case XML.Attribute.KeyValue(_, value) => attributeValue(value)
+    }.lastOption
+    val extras: Chunk[(String, String)] = attributes.collect {
+      case XML.Attribute.AppendValue(_, value, sep) => (sep.render, attributeValue(value))
+    }
+    if base.isDefined || extras.nonEmpty then
+      (base ++ extras.map(_._2)).mkString(extras.headOption.fold("")(_._1))
+    else
+      attributes.collect {
+        case XML.Attribute.BooleanAttribute(_, enabled) => enabled
+      }.last.toString
 
-        case XML.Attribute.KeyValue(name, value) =>
-          byName(name) = Merged.Text(
-            base = Some(attributeValue(value)),
-            extras = byName.get(name) match
-              case Some(Merged.Text(_, extras)) => extras
-              case _                            => Vector.empty
-          )
+  private def attributeName(attribute: XML.Attribute): String = attribute match
+    case XML.Attribute.BooleanAttribute(name, _) => name
+    case XML.Attribute.KeyValue(name, _)         => name
+    case XML.Attribute.AppendValue(name, _, _)   => name
 
-        case XML.Attribute.AppendValue(name, value, sep) =>
-          val extra = (sep.render, attributeValue(value))
-          byName(name) = byName.get(name) match
-            case Some(Merged.Text(base, extras)) =>
-              Merged.Text(base, extras :+ extra)
-            case _ =>
-              Merged.Text(None, Vector(extra))
-
-      Chunk.from:
-        byName.iterator.map:
-          case (name, Merged.Flag(enabled)) =>
-            (name, enabled.toString)
-          case (name, Merged.Text(base, extras)) =>
-            (name, (base ++ extras.map(_._2)).mkString(extras.headOption.fold("")(_._1)))
-
-    private def attributeValue(value: XML.AttributeValue): String = value match
-      case XML.AttributeValue.StringValue(value) => value
-      case XML.AttributeValue.BooleanValue(value) => value.toString
-      case XML.AttributeValue.MultiValue(values, separator) => values.mkString(separator.render)
-      case XML.AttributeValue.JsValue(value) => value.value
-
-    private def mkAttribute(name: String, value: String) = XML.Attribute.KeyValue(
-      name,
-      XML.AttributeValue.StringValue(value)
-    )
+  private def attributeValue(value: XML.AttributeValue): String = value match
+    case XML.AttributeValue.StringValue(value) => value
+    case XML.AttributeValue.BooleanValue(value) => value.toString
+    case XML.AttributeValue.MultiValue(values, separator) => values.mkString(separator.render)
+    case XML.AttributeValue.JsValue(value) => value.value

@@ -51,3 +51,12 @@ final class HtmlAttributesSpec extends AnyFunSuite:
     check(div(className := ("a", "b"), className += "c"))
     check(div(id := "x", hidden := true, className := "a", className += "b"))
   }
+
+  test("attributes are emitted in alphabetical name order") {
+    val el = div(id := "x", hidden := true, className := "a")
+    assert(el.getAttributes == zio.blocks.chunk.Chunk(
+      ("class", "a"),
+      ("hidden", "true"),
+      ("id", "x")
+    ))
+  }
