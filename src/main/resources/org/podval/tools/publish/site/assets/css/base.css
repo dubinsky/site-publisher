@@ -10,6 +10,13 @@
     text-align: left;
 }
 
+/* AsciiDoc [.verse]#…# terms: Latin transliteration or Hebrew in an LTR sentence.
+ * Isolate so a Hebrew run does not reorder neighboring English or punctuation.
+ * Do not set direction — Latin verse stays LTR; Hebrew verse is RTL from its first strong character. */
+.verse {
+    unicode-bidi: isolate;
+}
+
 html {
     font-size: var(--base-font-size);
 }

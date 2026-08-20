@@ -11,7 +11,7 @@ Generate and publish websites.
 
 This here is a static site generator.
 
-It supports HTML, Markdown, and Asciidoc.
+It supports HTML, Markdown, and AsciiDoc.
 
 == Opinionated
 
@@ -107,7 +107,7 @@ Events of 2026:
 - Aug 7: PDF generation (with Grok's help)
 - Aug 9: switching OpenTorah website from Asciidoctor and Jekyll to site generator
 
-First milestone for this project is to replace Jekyll on my personal website.
+The first milestone for this project is to replace Jekyll on my personal website.
 In under two month and a little less than 2000 lines of Scala code,
 I have:
 
@@ -140,13 +140,19 @@ Write about all the plugins I used:
 [#future]
 == Future
 
-=== Style
+=== Features
 
-Get inspiration from `asciidoc.css`:
+Support in a markup-independent way:
 
-- font
-- section title colour
-- section links on roll-over: Asciidoctor produces
+- admonitions
+- asides
+- callouts
+- glossary
+- bibliography
+
+=== Section links
+
+Section links on roll-over: Asciidoctor produces
 
 [source, xml]
 ----
@@ -170,19 +176,13 @@ Get inspiration from `asciidoc.css`:
 - add whatever is needed for the feed to the `<head>`
 - implement SEO - or is just the page title in the `<head>` all I need?
 - whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list
-- generate error report page(s):
-* broken links
-* inconsistent titles
 - handle categories; they can be wiki links?!
 - auto-create category pages
 - auto-create tag pages
 
-=== Chunking and Paging
+=== Paging
 
 - implement paging of the long lists (e.g., list of posts)
-- generate PDF when front-matter says `pdf: true`
-* danfickle/openhtmltopdf: An HTML to PDF library for the JVM. Based on Flying Saucer and Apache PDF-BOX 2. With SVG image support. Now also with accessible PDF support (WCAG, Section 508, PDF/UA)! · GitHub[https://share.google/UiGeZVUcInZur8zNF](https://share.google/UiGeZVUcInZur8zNF)
-* [https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd](https://gist.github.com/rjozefowicz/fa0618fce8e6ae28ff5c46b65ba7defd)
 
 === More Markup Languages
 
@@ -190,18 +190,17 @@ Get inspiration from `asciidoc.css`:
 - ReStructured Text?
 
 === CLI
-- package as a GitHub Action
+- package the CLI
 - serve with filesystem watch
 - publish site into a bucket
 
 === Further Research
 
 - add publishing and updating a page to X once X API supports Articles
-- add admonitions/asides/callouts support in a way that works for both FlexMark and Obsidian.
 - Look at https://stephango.com/vault
 - Look at https://squidfunk.github.io/mkdocs-material/
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
-- Think about serializing the full list of back-links out of the memory
+- Think about serializing the full list of backlinks out of the memory
 - Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
 
 [#motivation]

@@ -45,21 +45,21 @@ final class PdfPage(
           |  ? document.fonts.ready
           |  : Promise.resolve()""".stripMargin
       )
-      // Inject TOC leaders/page numbers; print styling is in layout.css (@media print).
-      // Parenthesize: resource is a function declaration; evaluate needs a function expression.
-      page.evaluate(s"(${PdfPage.fillTocPageNumbersJs})", Int.box(PdfPage.contentHeightPx))
-      page.pdf(
-        PlaywrightPage.PdfOptions()
-          .setPath(targetFile.toPath)
-          .setPrintBackground(true)
-          .setFormat("Letter")
-          .setMargin(PdfPage.pdfMargin)
-          // Chromium print header/footer. Special class pageNumber injects the current page.
-          // Templates do not inherit page CSS; font-size defaults to 0 — set it inline.
-          .setDisplayHeaderFooter(true)
-          .setHeaderTemplate(PdfPage.headerTemplate)
-          .setFooterTemplate(PdfPage.footerTemplate)
-      )
+      // Reserve TOC leader/page-number columns so pagination matches the second print.
+      page.evaluate("(() => { " + PdfPage.tocJs + "; ensureTocLeaders(); })()")
+      val probe: File = File.createTempFile("site-publisher-toc-", ".pdf")
+      try
+        page.pdf(PdfPage.pdfOptions(probe))
+        val pageById = java.util.HashMap[String, Integer]()
+        PdfNamedDestinations.pageByName(probe).foreach: (name, number) =>
+          pageById.put(name, Integer.valueOf(number))
+        page.evaluate(
+          "(pageById => { " + PdfPage.tocJs + "; applyTocPageNumbers(pageById); })",
+          pageById
+        )
+        page.pdf(PdfPage.pdfOptions(targetFile))
+      finally
+        probe.delete()
     finally
       page.close()
 
@@ -80,9 +80,20 @@ object PdfPage:
     BrowserType.LaunchOptions().setHeadless(true)
   )
 
-  // TOC script (function declaration); arg is printable content height in CSS px.
-  private lazy val fillTocPageNumbersJs: String =
+  private lazy val tocJs: String =
     Files.readResource("/org/podval/tools/publish/page/fill-toc-page-numbers.js")
+
+  private def pdfOptions(to: File): PlaywrightPage.PdfOptions =
+    PlaywrightPage.PdfOptions()
+      .setPath(to.toPath)
+      .setPrintBackground(true)
+      .setFormat("Letter")
+      .setMargin(pdfMargin)
+      // Chromium print header/footer. Special class pageNumber injects the current page.
+      // Templates do not inherit page CSS; font-size defaults to 0 — set it inline.
+      .setDisplayHeaderFooter(true)
+      .setHeaderTemplate(headerTemplate)
+      .setFooterTemplate(footerTemplate)
 
   // Letter paper at 96 CSS px / in (Playwright/Chromium default).
   private val letterWidthIn: Double = 8.5

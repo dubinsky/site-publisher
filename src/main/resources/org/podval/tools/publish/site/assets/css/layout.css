@@ -487,7 +487,8 @@ ul.toc {
 
 /**
  * TOC dotted leaders + page numbers for print/PDF.
- * Leaders and page numbers are injected by Pdf.fillTocPageNumbersJs; these rules only apply under print media.
+ * Leaders and page numbers are injected by fill-toc-page-numbers.js from the first print's
+ * named destinations; these rules only apply under print media.
  *
  * Nested ul/ol normally get margin-left (list indent). That would shift whole nested rows — including page
  * numbers — so subsection numbers no longer stack under section numbers. Cancel nested TOC list margins
