@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.Site
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
+import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import java.io.File
 
@@ -77,7 +77,10 @@ object AsciiDocMarkup extends Markup(
     source: PageSource,
     xml: Xml.Element
   ): (Xml.Element, Option[Xml.Element]) =
-    val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
+    HtmlMarkup.process(source, cleanup(xml))
+
+  private[markup] def cleanup(xml: Xml.Element): Xml.Element =
+    xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
 
       val classes: Chunk[String] = result.getClasses
@@ -86,14 +89,11 @@ object AsciiDocMarkup extends Markup(
       var children: Xml.Nodes = result.getChildren
       children = XmlUtil.convertElements(children, removeSpuriousParagraphs)
       children = removeSpuriousDivs(children)
+      if result.getName == "dl" then children = groupDescriptionListItems(children)
       result = result.setChildren(children)
 
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
-      result
-    )
-    HtmlMarkup.process(
-      source,
       result
     )
 
@@ -123,9 +123,69 @@ object AsciiDocMarkup extends Markup(
     )
   )
 
-  // Remove 'p's in 'td's and 'li's.
+  // Note: written by Grok ;)
+  // Asciidoctor emits one <dl> with sibling <dt>/<dd> and [[id]] as an empty <a id>
+  // inside the term. HTML5 groups each name-value pair in a <div>; put the id on that div.
+  private object DlistItemClass extends HtmlClass("dlist-item")
+
+  private def groupDescriptionListItems(nodes: Xml.Nodes): Xml.Nodes =
+    var result: List[Xml.Node] = Nil
+    var group: List[Xml.Node] = Nil
+    var groupId: Option[String] = None
+
+    def flush(): Unit =
+      if group.nonEmpty then
+        result = result :+ Xml
+          .element("div")
+          .add(DlistItemClass)
+          .setId(groupId)
+          .setChildren(Chunk.from(group))
+        group = Nil
+        groupId = None
+
+    nodes.foreach: node =>
+      node.asElement match
+        case Some(element) if element.getName == "dt" =>
+          flush()
+          val (id, dt) = takeTermId(element)
+          groupId = id
+          group = List(dt)
+        case Some(element) if element.getName == "dd" =>
+          if group.isEmpty then result = result :+ element
+          else group = group :+ element
+        case Some(element) =>
+          flush()
+          result = result :+ element
+        case None =>
+          if !isBlankText(node) then
+            flush()
+            result = result :+ node
+
+    flush()
+    Chunk.from(result)
+
+  private def takeTermId(dt: Xml.Element): (Option[String], Xml.Element) =
+    val (leading, rest) = dt.getChildren.span(node =>
+      isBlankText(node) || node.asElement.exists(isEmptyIdAnchor)
+    )
+    val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
+    val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(rest)
+    val id: Option[String] = fromAnchor.orElse(stripped.getId)
+    val term: Xml.Element = if stripped.getId.isEmpty then stripped else stripped.setId("")
+    (id, term)
+
+  private def isEmptyIdAnchor(element: Xml.Element): Boolean =
+    element.isA &&
+    element.getId.nonEmpty &&
+    element.getHref.isEmpty &&
+    element.getChildren.forall(isBlankText)
+
+  private def isBlankText(node: Xml.Node): Boolean =
+    node.asText.exists(_.trim.isEmpty)
+
+  // Remove 'p's in 'td's, 'li's, and 'dd's.
   private def removeSpuriousParagraphs(element: Xml.Element): Option[Xml.Nodes] =
-    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li"
+    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li" || element.getName == "dd"
     if !isElementToConvert then None else
       val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
       for
