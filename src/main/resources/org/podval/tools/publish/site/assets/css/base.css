@@ -10,13 +10,6 @@
     text-align: left;
 }
 
-/* AsciiDoc [.verse]#…# terms: Latin transliteration or Hebrew in an LTR sentence.
- * Isolate so a Hebrew run does not reorder neighboring English or punctuation.
- * Do not set direction — Latin verse stays LTR; Hebrew verse is RTL from its first strong character. */
-.verse {
-    unicode-bidi: isolate;
-}
-
 html {
     font-size: var(--base-font-size);
 }
@@ -169,6 +162,46 @@ dd > p {
 
 dd > p:last-child {
     margin-bottom: 0;
+}
+
+.glossary-ref {
+    position: relative;
+}
+
+.glossary-tip {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.25em);
+    z-index: 10;
+    box-sizing: border-box;
+    min-width: 8em;
+    max-width: min(24em, 80vw);
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border-color-01);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    box-shadow: 0 0.15em 0.4em color-mix(in oklab, var(--brand-color), transparent 70%);
+    font-weight: 400;
+    white-space: normal;
+    unicode-bidi: isolate;
+    text-align: start;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .glossary-ref:hover > .glossary-tip {
+        display: block;
+    }
+}
+
+.glossary-ref:focus-within > .glossary-tip {
+    display: block;
+}
+
+@media print {
+    .glossary-tip {
+        display: none !important;
+    }
 }
 
 /*Lists*/

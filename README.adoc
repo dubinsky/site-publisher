@@ -140,6 +140,8 @@ Write about all the plugins I used:
 [#future]
 == Future
 
+Review all Grok's code and clean it up/simplify...
+
 === Features
 
 Support in a markup-independent way:
@@ -147,8 +149,17 @@ Support in a markup-independent way:
 - admonitions
 - asides
 - callouts
-- glossary
 - bibliography
+
+=== Glossary
+
+Support glossary in all markups, not just AsciiDoc.
+
+Switch between:
+
+- display definition inline, in parentheses;
+- display definition in tooltip;
+- do not display it at all.
 
 === Section links
 

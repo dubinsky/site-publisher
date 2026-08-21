@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.Site
-import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import java.io.File
 
@@ -126,8 +126,6 @@ object AsciiDocMarkup extends Markup(
   // Note: written by Grok ;)
   // Asciidoctor emits one <dl> with sibling <dt>/<dd> and [[id]] as an empty <a id>
   // inside the term. HTML5 groups each name-value pair in a <div>; put the id on that div.
-  private object DlistItemClass extends HtmlClass("dlist-item")
-
   private def groupDescriptionListItems(nodes: Xml.Nodes): Xml.Nodes =
     var result: List[Xml.Node] = Nil
     var group: List[Xml.Node] = Nil
@@ -137,7 +135,7 @@ object AsciiDocMarkup extends Markup(
       if group.nonEmpty then
         result = result :+ Xml
           .element("div")
-          .add(DlistItemClass)
+          .add(Glossary.ItemClass)
           .setId(groupId)
           .setChildren(Chunk.from(group))
         group = Nil

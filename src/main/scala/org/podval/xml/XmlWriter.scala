@@ -88,12 +88,15 @@ object XmlWriter:
         Doc.intercalate(Doc.lineOrSpace, children).tightBracketBy(left = start, right = end, XmlWriter.indent)
       else
         // Mixed content or non-break-off-able attachments on the side(s) cause flow-style;
-        // character content should stick to the opening and closing tags:
+        // character content should stick to the opening and closing tags.
+        // unStack (phrasing): a break after the start tag or before the end tag is a visible
+        // HTML space, e.g. "(<span>\n  <a>posuk</a>" → "( posuk".
+        val breakAtTags: Boolean = !dialect.unStack.contains(name)
         Doc.cat(Seq(
           start,
-          if canBreakLeft && !charactersLeft then Doc.lineOrEmpty else Doc.empty,
+          if breakAtTags && canBreakLeft && !charactersLeft then Doc.lineOrEmpty else Doc.empty,
           Doc.intercalate(Doc.lineOrSpace, children),
-          if canBreakRight && !charactersRight then Doc.lineOrEmpty else Doc.empty,
+          if breakAtTags && canBreakRight && !charactersRight then Doc.lineOrEmpty else Doc.empty,
           end
         ))
   

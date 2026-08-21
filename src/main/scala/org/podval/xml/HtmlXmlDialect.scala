@@ -4,10 +4,15 @@ object HtmlXmlDialect extends XmlDialect(
   stop = Set("code"),
   preformat = Set("pre"),
   stack = Set("nav", "header", "main", "div"),
-  unStack = Set.empty,
+  // Phrasing wrappers: never indent children (that would become a visible HTML space).
+  unStack = Set(
+    "a", "abbr", "b", "bdi", "bdo", "cite", "code", "data", "dfn", "em",
+    "i", "kbd", "mark", "q", "s", "samp", "small", "span", "strong", "sub",
+    "sup", "time", "u", "var"
+  ),
   nest = Set.empty,
   break = Set.empty, // TODO TEI: lb; HTML: br?!
-  cling = Set.empty, // TODO Set("span")?
+  cling = Set("span"),
   // TODO I think the full list of HTML5 void elements is:
   //val voidTags = Set(
   //  "area", "base", "br", "col", "embed", "hr", "img", "input",

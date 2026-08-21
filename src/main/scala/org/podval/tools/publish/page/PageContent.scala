@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Footnote, Ids, Link, LinkKind, Section, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{Footnote, Glossary, Ids, Link, LinkKind, Section, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -15,7 +15,8 @@ final class PageContent private(
   val toc: Toc,
   val ids: Ids,
   val blocks: WikiBlocks,
-  val footnotes: Map[String, Footnote]
+  val footnotes: Map[String, Footnote],
+  val glossaryDefinitions: Map[String, Xml.Nodes]
 ):
   def markupContent(
     sectionId: Option[String],
@@ -47,18 +48,10 @@ final class PageContent private(
         .setChildren(toAdd.map(_.body))
       result = result.setChildren(result.getChildren :+ footnotesDiv)
 
-    result = xmlDialect.transform(result, element =>
-      var result = element
-      // Resolve internal links, including the ones in footnote bodies
-      if Link.isInternal(result) then result.getHref.foreach: ref =>
-        result = resolveInternalLink(result, ref, isChunked)
-
-      // Turn footnote links into footnote references
-      if Footnote.isLink(result) then
-        result = footnotes(Footnote.getCorrelationId(result)).link
-
-      result
-    )
+    // resolveLinks used to be a transform;
+    // this is after Grok did glossary tooltips... can they be merged?
+    result = resolveLinks(result, isChunked, attachTips = true)
+    result = xmlDialect.transform(result, Glossary.wrapRefs)
 
     // Convert to HTML
     var html: Html.Element = Xml2Html.fromXml(result)
@@ -87,10 +80,31 @@ final class PageContent private(
     html
 
 
+  private def resolveLinks(
+    element: Xml.Element,
+    isChunked: Boolean,
+    attachTips: Boolean
+  ): Xml.Element =
+    var result: Xml.Element = element
+
+    // Resolve internal links, including the ones in footnote bodies
+    if Link.isInternal(result) then result.getHref.foreach: ref =>
+      result = resolveInternalLink(result, ref, isChunked, attachTips)
+
+    // Turn footnote links into footnote references
+    if Footnote.isLink(result) then
+      result = footnotes(Footnote.getCorrelationId(result)).link
+
+    result.setChildren(result.getChildren.map(child =>
+      child.asElement.fold(child): child =>
+        resolveLinks(child, isChunked, attachTips && !child.has(Glossary.TipClass))
+    ))
+
   private def resolveInternalLink(
     element: Xml.Element,
     ref: String,
-    isChunked: Boolean
+    isChunked: Boolean,
+    attachTips: Boolean
   ): Xml.Element =
     val kind: Option[LinkKind] = LinkKind.of(element)
     Link.resolve(ref, kind, source.page) match
@@ -108,11 +122,20 @@ final class PageContent private(
           val sectionId: Option[String] = ids.sectionById(id)
           s"${toc.chunkName(sectionId, source.page.chunkDepth)}#$id"
 
-        val result: Xml.Element = element.setHref(href)
+        var result: Xml.Element = element.setHref(href)
 
-        if result.getText != WikiLink.linkText(element, ref)
-        then result
-        else result.setText(WikiLink.linkText(element, linkTo.title))
+        if result.getText == WikiLink.linkText(element, ref) then
+          result = result.setText(WikiLink.linkText(element, linkTo.title))
+
+        if attachTips then glossaryTip(linkTo).foreach: definition =>
+          result = Glossary.attachTip(result, definition)
+
+        result
+
+  private def glossaryTip(linkTo: Link): Option[Xml.Nodes] =
+    linkTo.fragment.flatMap: fragment =>
+      val from: Option[PageContent] = if linkTo.isIntrapage then Some(this) else linkTo.page.content
+      from.flatMap(_.glossaryDefinitions.get(fragment.id))
 
 
 object PageContent:
@@ -201,5 +224,6 @@ object PageContent:
       toc = Toc(result, source.markup, source),
       ids = Ids(result, xmlDialect),
       blocks = WikiBlocks(result, xmlDialect, source),
-      footnotes = footnotes
+      footnotes = footnotes,
+      glossaryDefinitions = Glossary.definitions(result, xmlDialect)
     )
