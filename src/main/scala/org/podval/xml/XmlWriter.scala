@@ -42,10 +42,10 @@ object XmlWriter:
 
     val chunks: Seq[Seq[ast.Node]] = chunkify(Seq.empty, List.empty, nodes, flush = false)
     val noText: Boolean = chunks.forall(_.forall(_.asAtom.isEmpty))
-    val whitespaceLeft: Boolean = nodes.headOption.exists(isWhitespace)
-    val whitespaceRight: Boolean = nodes.lastOption.exists(isWhitespace)
-    val charactersLeft: Boolean = nodes.headOption.exists(isCharacters)
-    val charactersRight: Boolean = nodes.lastOption.exists(isCharacters)
+    val whitespaceLeft: Boolean = nodes.headOption.exists(_.isWhitespace)
+    val whitespaceRight: Boolean = nodes.lastOption.exists(_.isWhitespace)
+    val charactersLeft: Boolean = nodes.headOption.exists(_.isCharacters)
+    val charactersRight: Boolean = nodes.lastOption.exists(_.isCharacters)
     
     val children: Seq[Doc] = if chunks.isEmpty then Seq.empty else
       val canBreakLeft1 = canBreakLeft || whitespaceLeft
@@ -130,7 +130,7 @@ object XmlWriter:
     text: String
   ): Seq[ast.Node] = if text.isEmpty then result else
     val (spaces: String, tail: String) = text.span(_ == ' ')
-    val resultNew: Seq[ast.Node] = if spaces.isEmpty then result else result :+ space
+    val resultNew: Seq[ast.Node] = if spaces.isEmpty then result else result :+ ast.text(" ")
     val (word: String, tail2: String) = tail.span(_ != ' ')
     if word.isEmpty
     then resultNew
@@ -151,19 +151,19 @@ object XmlWriter:
       else
         val node = nodes.head
         val tail = nodes.tail
-        if isWhitespace(node)
+        if node.isWhitespace
         then chunkify(result, current, tail, flush = current.nonEmpty)
         else
           if current.isEmpty
           then chunkify(result, node :: current, tail, flush = false)
           else
             val c = current.head
-            if isWhitespace(c)
+            if c.isWhitespace
             then chunkify(result, current, nodes, flush = true)
             else
               val cling: Boolean =
                 c.asElement.isEmpty ||
-                c.asElement.nonEmpty && node.asElement.isEmpty && !isWhitespace(node) ||
+                c.asElement.nonEmpty && node.asElement.isEmpty && !node.isWhitespace ||
                 node.asElement.isDefined && dialect.cling.contains(node.asElement.get.getName)
               if cling
               then chunkify(result, node :: current, tail, flush = false)
@@ -197,7 +197,7 @@ object XmlWriter:
         // Note: suppressing extra hardLine when lb is in a stack is non-trivial - and not worth it :)
         if canBreakRight && dialect.break.contains(name) then result + Doc.hardLine else result
     .orElse(node.asAtom.map(text => Doc.text(encodeXmlSpecials(text))))
-    .getOrElse(Doc.paragraph(toString(node)))
+    .getOrElse(Doc.paragraph(node.getText))
 
   private def preformatElement[Element: XmlAst](element: Element): Seq[String] =
     val attributeValues: Chunk[(String, String)] = element.getAttributes
@@ -217,7 +217,7 @@ object XmlWriter:
     .asElement
     .map(preformatElement)
     .orElse(node.asAtom.map(preformat))
-    .getOrElse(preformat(toString(node)))
+    .getOrElse(preformat(node.getText))
 
   private def preformat(string: String): Seq[String] =
     XmlEncode.encodeXmlSpecials(string).split("\n").toSeq
@@ -232,9 +232,3 @@ object XmlWriter:
   private def encodeXmlSpecials(using dialect: XmlDialect)(string: String): String =
     if dialect.encodeXmlSpecials then XmlEncode.encodeXmlSpecials(string) else string
 
-  private def space(using ast: XmlAst[?]): ast.Node = ast.text(" ")
-
-  private def toString(using ast: XmlAst[?])(node: ast.Node): String = node.getText
-
-  private def isCharacters(using xml: XmlAst[?])(node: xml.Node): Boolean = node.asAtom.fold(false)(_.trim.nonEmpty)
-  private def isWhitespace(using xml: XmlAst[?])(node: xml.Node): Boolean = node.asAtom.fold(false)(_.trim.isEmpty)

@@ -4,7 +4,7 @@ import org.podval.tools.publish.markup.{Footnote, Glossary, Ids, Link, LinkKind,
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
+import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect, XmlUtil}
 import zio.blocks.chunk.Chunk
 
 final class PageContent private(
@@ -51,7 +51,9 @@ final class PageContent private(
     // resolveLinks used to be a transform;
     // this is after Grok did glossary tooltips... can they be merged?
     result = resolveLinks(result, isChunked, attachTips = true)
-    result = xmlDialect.transform(result, Glossary.wrapRefs)
+    result = xmlDialect.transform(result, element =>
+      element.setChildren(XmlUtil.convertElements(element.getChildren, Glossary.wrapRef))
+    )
 
     // Convert to HTML
     var html: Html.Element = Xml2Html.fromXml(result)

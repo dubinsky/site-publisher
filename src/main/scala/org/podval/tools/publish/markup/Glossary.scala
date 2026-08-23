@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlDialect, XmlUtil}
+import org.podval.xml.{HtmlClass, Xml, XmlDialect}
 import zio.blocks.chunk.Chunk
 
 // Note: written by Grok ;)
@@ -26,7 +26,7 @@ object Glossary:
           id <- element.getId
           if element.has(ItemClass)
           dd <- element.getChildren.flatMap(_.asElement).find(_.getName == "dd")
-          children = dd.getChildren.filterNot(isBlankText)
+          children = dd.getChildren.filterNot(_.isWhitespace)
           if children.nonEmpty
         yield id -> children
     ).toMap
@@ -56,11 +56,5 @@ object Glossary:
             .setChildren(link +: tips)
         )
 
-  def wrapRefs(element: Xml.Element): Xml.Element =
-    element.setChildren(XmlUtil.convertElements(element.getChildren, wrapRef))
-
   private def isTip(node: Xml.Node): Boolean =
     node.asElement.exists(_.has(TipClass))
-
-  private def isBlankText(node: Xml.Node): Boolean =
-    node.asText.exists(_.trim.isEmpty)

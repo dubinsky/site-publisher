@@ -155,7 +155,7 @@ object AsciiDocMarkup extends Markup(
           flush()
           result = result :+ element
         case None =>
-          if !isBlankText(node) then
+          if !node.isWhitespace then
             flush()
             result = result :+ node
 
@@ -164,7 +164,7 @@ object AsciiDocMarkup extends Markup(
 
   private def takeTermId(dt: Xml.Element): (Option[String], Xml.Element) =
     val (leading, rest) = dt.getChildren.span(node =>
-      isBlankText(node) || node.asElement.exists(isEmptyIdAnchor)
+      node.isWhitespace || node.asElement.exists(isEmptyIdAnchor)
     )
     val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
     val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(rest)
@@ -176,10 +176,7 @@ object AsciiDocMarkup extends Markup(
     element.isA &&
     element.getId.nonEmpty &&
     element.getHref.isEmpty &&
-    element.getChildren.forall(isBlankText)
-
-  private def isBlankText(node: Xml.Node): Boolean =
-    node.asText.exists(_.trim.isEmpty)
+    element.getChildren.forall(_.isWhitespace)
 
   // Remove 'p's in 'td's, 'li's, and 'dd's.
   private def removeSpuriousParagraphs(element: Xml.Element): Option[Xml.Nodes] =
