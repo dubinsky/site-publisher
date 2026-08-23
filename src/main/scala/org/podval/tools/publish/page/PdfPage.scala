@@ -3,6 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.util.{Files, Icon}
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
+import scala.jdk.CollectionConverters.MapHasAsJava
 import java.io.File
 
 final class PdfPage(
@@ -20,6 +21,7 @@ final class PdfPage(
   override protected def iconDefault: Icon = Icon.pdf
 
   // Write a PDF of an HTML page already written.
+  // Note: written by Grok ;)
   override def write(): Unit =
     val htmlFile: File = markupPage.targetFile
     require(
@@ -46,16 +48,13 @@ final class PdfPage(
           |  : Promise.resolve()""".stripMargin
       )
       // Reserve TOC leader/page-number columns so pagination matches the second print.
-      page.evaluate("(() => { " + PdfPage.tocJs + "; ensureTocLeaders(); })()")
+      page.evaluate(s"(() => { ${PdfPage.tocJs}; ensureTocLeaders(); })()")
       val probe: File = File.createTempFile("site-publisher-toc-", ".pdf")
       try
         page.pdf(PdfPage.pdfOptions(probe))
-        val pageById = java.util.HashMap[String, Integer]()
-        PdfNamedDestinations.pageByName(probe).foreach: (name, number) =>
-          pageById.put(name, Integer.valueOf(number))
         page.evaluate(
-          "(pageById => { " + PdfPage.tocJs + "; applyTocPageNumbers(pageById); })",
-          pageById
+          s"(pageById => { ${PdfPage.tocJs}; applyTocPageNumbers(pageById); })",
+          PdfNamedDestinations.pageByName(probe).asJava
         )
         page.pdf(PdfPage.pdfOptions(targetFile))
       finally
@@ -64,7 +63,6 @@ final class PdfPage(
       page.close()
 
 
-// Note: written by Grok ;)
 // Arch (and other non-Ubuntu hosts) often trip Playwright's Debian-oriented
 // dependency check even when headless Chromium works. Skip the check for the driver.
 object PdfPage:
