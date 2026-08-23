@@ -31,7 +31,7 @@ final class PdfPageNumbersSpec extends AnyFunSuite:
     finally
       document.close()
 
-    PdfPageNumbers.stampOuterEdge(pdf)
+    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter)
 
     val stamped = Loader.loadPDF(pdf)
     try

@@ -32,7 +32,7 @@ final class PdfPage(
     val page: PlaywrightPage = markupPage.site.browser.newPage()
     try
       // Match the printable content box so wrapping/pagination align with page.pdf margins.
-      page.setViewportSize(PdfPage.contentWidthPx, PdfPage.contentHeightPx)
+      page.setViewportSize(PdfPage.pageSize.contentWidthPx, PdfPage.pageSize.contentHeightPx)
       page.emulateMedia(PlaywrightPage.EmulateMediaOptions().setMedia(Media.PRINT))
       page.navigate(
         markupPage.uri.toASCIIString,
@@ -43,9 +43,7 @@ final class PdfPage(
       // LOAD does not wait for webfonts (Google Fonts, Font Awesome, …).
       // document.fonts.ready resolves once faces used by the document have loaded (or failed).
       page.evaluate(
-        """() => (document.fonts && document.fonts.ready)
-          |  ? document.fonts.ready
-          |  : Promise.resolve()""".stripMargin
+        "() => (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()"
       )
       // Reserve TOC leader/page-number columns so pagination matches the second print.
       page.evaluate(s"(() => { ${PdfPage.tocJs}; ensureTocLeaders(); })()")
@@ -58,7 +56,7 @@ final class PdfPage(
         )
         page.pdf(PdfPage.pdfOptions(targetFile))
         // Physical 1-based Arabic, same values as the TOC leaders just applied.
-        PdfPageNumbers.stampOuterEdge(targetFile)
+        PdfPageNumbers.stampOuterEdge(targetFile, PdfPage.pageSize)
       finally
         probe.delete()
     finally
@@ -83,35 +81,21 @@ object PdfPage:
   private lazy val tocJs: String =
     Files.readResource("/org/podval/tools/publish/page/fill-toc-page-numbers.js")
 
+  private val pageSize: PdfPageSize = PdfPageSize.letter
+
   private def pdfOptions(to: File): PlaywrightPage.PdfOptions =
     PlaywrightPage.PdfOptions()
       .setPath(to.toPath)
       .setPrintBackground(true)
-      .setFormat("Letter")
-      .setMargin(pdfMargin)
+      .setWidth(s"${pageSize.widthIn}in")
+      .setHeight(s"${pageSize.heightIn}in")
+      .setMargin(Margin()
+        .setTop(s"${pageSize.marginTopIn}in")
+        .setRight(s"${pageSize.marginSideIn}in")
+        .setBottom(s"${pageSize.marginBottomIn}in")
+        .setLeft(s"${pageSize.marginSideIn}in")
+      )
       // Folios are stamped by PdfPageNumbers after print. Chromium headers/footers
       // cannot switch left/right per page. Keep these margins so the probe and
       // final paginate the same way and so there is room for the outer-edge stamp.
       .setDisplayHeaderFooter(false)
-
-  // Letter paper at 96 CSS px / in (Playwright/Chromium default).
-  private val letterWidthIn: Double = 8.5
-  private val letterHeightIn: Double = 11.0
-  private val cssPxPerIn: Double = 96.0
-
-  // Paper margins for page.pdf (CSS length strings accepted by Chromium).
-  // Bottom/side inset is also the folio stamp area (see PdfPageNumbers).
-  private val marginTopIn: Double = 0.5
-  private[page] val marginSideIn: Double = 0.5
-  private val marginBottomIn: Double = 0.6
-  private val pdfMargin: Margin = Margin()
-    .setTop(s"${marginTopIn}in")
-    .setRight(s"${marginSideIn}in")
-    .setBottom(s"${marginBottomIn}in")
-    .setLeft(s"${marginSideIn}in")
-
-  // Content box inside margins — viewport and TOC page math must match this, not full paper.
-  private val contentWidthPx: Int =
-    Math.round((letterWidthIn - 2 * marginSideIn) * cssPxPerIn).toInt // 720
-  private val contentHeightPx: Int =
-    Math.round((letterHeightIn - marginTopIn - marginBottomIn) * cssPxPerIn).toInt // 950

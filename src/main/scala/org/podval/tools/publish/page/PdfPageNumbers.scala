@@ -23,12 +23,14 @@ import java.nio.file.{Files as NFiles, StandardCopyOption}
  * Note: written by Grok ;)
  */
 object PdfPageNumbers:
-  def stampOuterEdge(pdf: File): Unit =
+  def stampOuterEdge(pdf: File, pageSize: PdfPageSize): Unit =
     val tmp: File = File.createTempFile("site-publisher-folios-", ".pdf", pdf.getParentFile)
     try
       val document: PDDocument = Loader.loadPDF(pdf)
       try
-        applyFolios(document)
+        val font: PDType1Font = PDType1Font(Standard14Fonts.FontName.TIMES_ROMAN)
+        val pages: PDPageTree = document.getPages
+        for i <- 0 until pages.getCount do stampPage(document, pages.get(i), i + 1, pageSize, font)
         document.save(tmp)
       finally
         document.close()
@@ -36,25 +38,21 @@ object PdfPageNumbers:
     finally
       if tmp.exists then tmp.delete()
 
-  private def applyFolios(document: PDDocument): Unit =
-    val font: PDType1Font = PDType1Font(Standard14Fonts.FontName.TIMES_ROMAN)
-    val pages: PDPageTree = document.getPages
-    for i <- 0 until pages.getCount do
-      stampPage(document, pages.get(i), i + 1, font)
-
   private def stampPage(
     document: PDDocument,
     page: PDPage,
     number: Int,
+    pageSize: PdfPageSize,
     font: PDType1Font
   ): Unit =
     val box = page.getCropBox
     val text: String = number.toString
     val textWidth: Float = font.getStringWidth(text) / 1000f * fontSize
     val x: Float =
-      if number % 2 == 0 then box.getLowerLeftX + sideInset
-      else box.getLowerLeftX + box.getWidth - sideInset - textWidth
-    val y: Float = box.getLowerLeftY + baselineFromBottom
+      if number % 2 == 0
+      then box.getLowerLeftX + pageSize.sideInset
+      else box.getLowerLeftX + box.getWidth - pageSize.sideInset - textWidth
+    val y: Float = box.getLowerLeftY + pageSize.baselineFromBottom
     val stream: PDPageContentStream =
       PDPageContentStream(document, page, AppendMode.APPEND, true, true)
     try
@@ -67,10 +65,5 @@ object PdfPageNumbers:
     finally
       stream.close()
 
-  // TODO unify sizing code from PdfPage and this
-  // Match PdfPage.pdfMargin: 0.5in sides, folio in the 0.6in bottom margin.
-  private val pointsPerInch: Float = 72f
-  private val sideInset: Float = (PdfPage.marginSideIn * pointsPerInch).toFloat
-  private val baselineFromBottom: Float = 0.35f * pointsPerInch
   private val fontSize: Float = 10f
   private val ink: Color = Color(0x33, 0x33, 0x33)
