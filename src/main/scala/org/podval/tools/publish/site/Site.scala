@@ -10,8 +10,8 @@ import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import com.microsoft.playwright.{Browser, Playwright}
 import org.asciidoctor.Asciidoctor
 import org.slf4j.{Logger, LoggerFactory}
-import java.io.File
-import java.net.{InetSocketAddress, URI, URISyntaxException}
+import java.io.{File, UncheckedIOException}
+import java.net.{BindException, InetSocketAddress, URI, URISyntaxException}
 
 final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
@@ -197,7 +197,10 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   private def httpServer: HttpServer = synchronized:
     httpServerVar.getOrElse:
-      val result: HttpServer = Site.httpServer(targetDirectory)
+      val result: HttpServer = Site.startHttpServer(targetDirectory)
+      val port: Int = result.getAddress.getPort
+      if port != Site.defaultHttpPort then
+        log.info(s"Port ${Site.defaultHttpPort} in use; HTTP server on $port")
       httpServerVar = Some(result)
       result
 
@@ -265,11 +268,23 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
 object Site:
   val localhost: String = "127.0.0.1"
+  val defaultHttpPort: Int = 8000
 
-  private def httpServer(targetDirectory: File): HttpServer =
+  // Prefer 8000 so `serve()` has a stable URL. If it is taken (another serve,
+  // CI sibling, …), bind an ephemeral port; callers read the real port from
+  // `httpServerPort` / `Page.uri`.
+  private[site] def startHttpServer(targetDirectory: File): HttpServer =
+    val root: java.nio.file.Path = targetDirectory.getAbsoluteFile.toPath
+    try
+      startHttpServerOn(root, defaultHttpPort)
+    catch
+      case e: UncheckedIOException if e.getCause.isInstanceOf[BindException] =>
+        startHttpServerOn(root, 0)
+
+  private def startHttpServerOn(root: java.nio.file.Path, port: Int): HttpServer =
     val result: HttpServer = SimpleFileServer.createFileServer(
-      InetSocketAddress(localhost, 8000), // 0 means any available
-      targetDirectory.getAbsoluteFile.toPath,
+      InetSocketAddress(localhost, port),
+      root,
       SimpleFileServer.OutputLevel.NONE
     )
     result.start()
