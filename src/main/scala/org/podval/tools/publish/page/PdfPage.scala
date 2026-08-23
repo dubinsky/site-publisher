@@ -57,6 +57,8 @@ final class PdfPage(
           PdfNamedDestinations.pageByName(probe).asJava
         )
         page.pdf(PdfPage.pdfOptions(targetFile))
+        // Physical 1-based Arabic, same values as the TOC leaders just applied.
+        PdfPageNumbers.stampOuterEdge(targetFile)
       finally
         probe.delete()
     finally
@@ -87,11 +89,10 @@ object PdfPage:
       .setPrintBackground(true)
       .setFormat("Letter")
       .setMargin(pdfMargin)
-      // Chromium print header/footer. Special class pageNumber injects the current page.
-      // Templates do not inherit page CSS; font-size defaults to 0 — set it inline.
-      .setDisplayHeaderFooter(true)
-      .setHeaderTemplate(headerTemplate)
-      .setFooterTemplate(footerTemplate)
+      // Folios are stamped by PdfPageNumbers after print. Chromium headers/footers
+      // cannot switch left/right per page. Keep these margins so the probe and
+      // final paginate the same way and so there is room for the outer-edge stamp.
+      .setDisplayHeaderFooter(false)
 
   // Letter paper at 96 CSS px / in (Playwright/Chromium default).
   private val letterWidthIn: Double = 8.5
@@ -99,24 +100,15 @@ object PdfPage:
   private val cssPxPerIn: Double = 96.0
 
   // Paper margins for page.pdf (CSS length strings accepted by Chromium).
-  // Header/footer are drawn in the margin boxes; keep enough bottom room for the page number.
+  // Bottom/side inset is also the folio stamp area (see PdfPageNumbers).
   private val marginTopIn: Double = 0.5
-  private val marginSideIn: Double = 0.5
+  private[page] val marginSideIn: Double = 0.5
   private val marginBottomIn: Double = 0.6
   private val pdfMargin: Margin = Margin()
     .setTop(s"${marginTopIn}in")
     .setRight(s"${marginSideIn}in")
     .setBottom(s"${marginBottomIn}in")
     .setLeft(s"${marginSideIn}in")
-
-  // Empty header (displayHeaderFooter still needs templates set).
-  private val headerTemplate: String = "<span></span>"
-
-  // Centered page number only. Inline styles required (no CSS inheritance; default font-size is 0).
-  private val footerTemplate: String =
-    """<div style="width:100%; font-size:10px; text-align:center; color:#333; font-family:serif; padding-top:4px;">""" +
-      """<span class="pageNumber"></span>""" +
-      """</div>"""
 
   // Content box inside margins — viewport and TOC page math must match this, not full paper.
   private val contentWidthPx: Int =
