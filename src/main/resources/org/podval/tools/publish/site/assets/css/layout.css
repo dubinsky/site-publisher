@@ -486,6 +486,39 @@ ul.toc {
 }
 
 /**
+ * Folio (PDF margin page numbers). Chromium does not paint these; PdfPageNumbers
+ * stamps them after print from computed `.folio`. body::after forces Chrome to
+ * subset ASCII digits of this face: display:none / visibility:hidden omit glyphs;
+ * opacity:0 still paints.
+ * position:fixed repeats on every printed page so per-page subsets keep 0-9.
+ * font-variant-numeric:normal on the embedder (not tabular-nums) so the default
+ * cmap digits are the ones embedded.
+ */
+.folio {
+    font-family: var(--base-font-family);
+    font-weight: var(--base-font-weight);
+    font-size: var(--small-font-size);
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+}
+
+@media print {
+    body::after {
+        content: "0123456789";
+        font-family: var(--base-font-family);
+        font-weight: var(--base-font-weight);
+        font-size: var(--small-font-size);
+        font-style: normal;
+        font-variant-numeric: normal;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/**
  * TOC dotted leaders + page numbers for print/PDF.
  * Leaders and page numbers are injected by fill-toc-page-numbers.js from the first print's
  * named destinations; these rules only apply under print media.

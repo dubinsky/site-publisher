@@ -1,4 +1,4 @@
-package org.podval.tools.publish.page
+package org.podval.tools.publish.util
 
 final class PdfPageSize(
   val widthIn: Double,

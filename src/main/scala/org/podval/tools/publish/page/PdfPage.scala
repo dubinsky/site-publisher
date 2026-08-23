@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.util.{Files, Icon}
+import org.podval.tools.publish.util.{Files, PdfFolioStyle, Icon, PdfNamedDestinations, PdfPageNumbers, PdfPageSize}
 import com.microsoft.playwright.{Browser, BrowserType, Playwright, Page as PlaywrightPage}
 import com.microsoft.playwright.options.{Margin, Media, WaitUntilState}
 import scala.jdk.CollectionConverters.MapHasAsJava
@@ -41,10 +41,7 @@ final class PdfPage(
           .setTimeout(60_000)
       )
       // LOAD does not wait for webfonts (Google Fonts, Font Awesome, …).
-      // document.fonts.ready resolves once faces used by the document have loaded (or failed).
-      page.evaluate(
-        "() => (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()"
-      )
+      page.evaluate(s"(() => { ${PdfPage.waitForFonts}; return waitForFonts(); })()")
       // Reserve TOC leader/page-number columns so pagination matches the second print.
       page.evaluate(s"(() => { ${PdfPage.tocJs}; ensureTocLeaders(); })()")
       val probe: File = File.createTempFile("site-publisher-toc-", ".pdf")
@@ -56,7 +53,7 @@ final class PdfPage(
         )
         page.pdf(PdfPage.pdfOptions(targetFile))
         // Physical 1-based Arabic, same values as the TOC leaders just applied.
-        PdfPageNumbers.stampOuterEdge(targetFile, PdfPage.pageSize)
+        PdfPageNumbers.stampOuterEdge(targetFile, PdfPage.pageSize, PdfFolioStyle.forPage(page))
       finally
         probe.delete()
     finally
@@ -78,24 +75,24 @@ object PdfPage:
     BrowserType.LaunchOptions().setHeadless(true)
   )
 
-  private lazy val tocJs: String =
-    Files.readResource("/org/podval/tools/publish/page/fill-toc-page-numbers.js")
+  private lazy val tocJs: String = Files.readResource("/org/podval/tools/publish/page/fill-toc-page-numbers.js")
+
+  private lazy val waitForFonts: String = Files.readResource("/org/podval/tools/publish/page/waitForFonts.js")
 
   private val pageSize: PdfPageSize = PdfPageSize.letter
 
-  private def pdfOptions(to: File): PlaywrightPage.PdfOptions =
-    PlaywrightPage.PdfOptions()
-      .setPath(to.toPath)
-      .setPrintBackground(true)
-      .setWidth(s"${pageSize.widthIn}in")
-      .setHeight(s"${pageSize.heightIn}in")
-      .setMargin(Margin()
-        .setTop(s"${pageSize.marginTopIn}in")
-        .setRight(s"${pageSize.marginSideIn}in")
-        .setBottom(s"${pageSize.marginBottomIn}in")
-        .setLeft(s"${pageSize.marginSideIn}in")
-      )
-      // Folios are stamped by PdfPageNumbers after print. Chromium headers/footers
-      // cannot switch left/right per page. Keep these margins so the probe and
-      // final paginate the same way and so there is room for the outer-edge stamp.
-      .setDisplayHeaderFooter(false)
+  private def pdfOptions(to: File): PlaywrightPage.PdfOptions = PlaywrightPage.PdfOptions()
+    .setPath(to.toPath)
+    .setPrintBackground(true)
+    .setWidth(s"${pageSize.widthIn}in")
+    .setHeight(s"${pageSize.heightIn}in")
+    .setMargin(Margin()
+      .setTop(s"${pageSize.marginTopIn}in")
+      .setRight(s"${pageSize.marginSideIn}in")
+      .setBottom(s"${pageSize.marginBottomIn}in")
+      .setLeft(s"${pageSize.marginSideIn}in")
+    )
+    // Folios are stamped by PdfPageNumbers after print. Chromium headers/footers
+    // cannot switch left/right per page. Keep these margins so the probe and
+    // final paginate the same way and so there is room for the outer-edge stamp.
+    .setDisplayHeaderFooter(false)

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.page
+package org.podval.tools.publish.util
 
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPageTree}

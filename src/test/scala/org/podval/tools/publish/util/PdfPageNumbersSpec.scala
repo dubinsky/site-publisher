@@ -1,4 +1,4 @@
-package org.podval.tools.publish.page
+package org.podval.tools.publish.util
 
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
@@ -31,7 +31,7 @@ final class PdfPageNumbersSpec extends AnyFunSuite:
     finally
       document.close()
 
-    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter)
+    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter, PdfFolioStyle.fallback)
 
     val stamped = Loader.loadPDF(pdf)
     try
@@ -55,6 +55,53 @@ final class PdfPageNumbersSpec extends AnyFunSuite:
       stamped.close()
   }
 
+  test("stampOuterEdge uses the FolioStyle face and size from the page fonts") {
+    val pdf: File = File.createTempFile("folios-style-", ".pdf")
+    pdf.deleteOnExit()
+    val font: PDType1Font = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+    val document = PDDocument()
+    try
+      val page = PDPage()
+      document.addPage(page)
+      val stream = PDPageContentStream(document, page)
+      try
+        stream.beginText()
+        stream.setFont(font, 12f)
+        stream.newLineAtOffset(100, 400)
+        stream.showText("body-1")
+        stream.endText()
+      finally
+        stream.close()
+      document.save(pdf)
+    finally
+      document.close()
+
+    val style: PdfFolioStyle = PdfFolioStyle(
+      fontFamily = "Helvetica",
+      fontSizePt = 18f,
+      fontWeight = 400,
+      italic = false,
+      color = java.awt.Color(0x33, 0x33, 0x33)
+    )
+    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter, style)
+
+    val stamped = Loader.loadPDF(pdf)
+    try
+      val glyphs: Seq[Glyph] = glyphsOn(stamped, 1)
+      val folio: Glyph = glyphs.find(_.text == "1").getOrElse:
+        fail(s"no folio; got ${glyphs.map(_.text)}")
+      assert(
+        folio.fontName.contains("Helvetica"),
+        s"expected Helvetica folio, got ${folio.fontName}"
+      )
+      assert(
+        math.abs(folio.fontSizePt - 18f) < 0.5f,
+        s"expected 18pt folio, got ${folio.fontSizePt}"
+      )
+    finally
+      stamped.close()
+  }
+
 private final class GlyphStripper extends PDFTextStripper:
   var glyphs: Seq[Glyph] = Seq.empty
   setSortByPosition(true)
@@ -64,10 +111,12 @@ private final class GlyphStripper extends PDFTextStripper:
       glyphs = glyphs :+ Glyph(
         textPositions.asScala.map(_.getUnicode).mkString,
         first.getXDirAdj,
-        first.getYDirAdj
+        first.getYDirAdj,
+        first.getFont.getName,
+        first.getFontSizeInPt
       )
 
-private final case class Glyph(text: String, x: Float, y: Float)
+private final case class Glyph(text: String, x: Float, y: Float, fontName: String, fontSizePt: Float)
 
 private def glyphsOn(document: PDDocument, pageNumber: Int): Seq[Glyph] =
   val stripper = GlyphStripper()
