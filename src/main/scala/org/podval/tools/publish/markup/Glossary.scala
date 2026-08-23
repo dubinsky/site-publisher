@@ -1,15 +1,12 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml, XmlDialect}
-import zio.blocks.chunk.Chunk
 
 // Note: written by Grok ;)
 object Glossary:
   object ItemClass extends HtmlClass("dlist-item")
 
-  object RefClass extends HtmlClass("glossary-ref")
-
-  object TipClass extends HtmlClass("glossary-tip")
+  val tip: Tip = Tip("glossary")
 
   def definitions(
     xml: Xml.Element,
@@ -30,31 +27,3 @@ object Glossary:
           if children.nonEmpty
         yield id -> children
     ).toMap
-
-  def attachTip(link: Xml.Element, definition: Xml.Nodes): Xml.Element =
-    var tip: Xml.Element = Xml
-      .element("span")
-      .add(TipClass)
-      .setChildren(definition)
-    var result: Xml.Element = link
-    link.getId.foreach: id =>
-      val tipId: String = s"$id-tip"
-      tip = tip.setId(tipId).set("role", "tooltip")
-      result = result.set("aria-describedby", tipId)
-    result.setChildren(result.getChildren :+ tip)
-
-  def wrapRef(element: Xml.Element): Option[Xml.Nodes] =
-    if !element.isA then None else
-      val children: Xml.Nodes = element.getChildren
-      val tips: Xml.Nodes = children.filter(isTip)
-      Option.when(tips.nonEmpty):
-        val link: Xml.Element = element.setChildren(children.filterNot(isTip))
-        Chunk(
-          Xml
-            .element("span")
-            .add(RefClass)
-            .setChildren(link +: tips)
-        )
-
-  private def isTip(node: Xml.Node): Boolean =
-    node.asElement.exists(_.has(TipClass))

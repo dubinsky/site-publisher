@@ -164,11 +164,11 @@ dd > p:last-child {
     margin-bottom: 0;
 }
 
-.glossary-ref {
+.glossary-ref, .footnote-ref {
     position: relative;
 }
 
-.glossary-tip {
+.glossary-tip, .footnote-tip {
     display: none;
     position: absolute;
     left: 0;
@@ -189,17 +189,19 @@ dd > p:last-child {
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .glossary-ref:hover > .glossary-tip {
+    .glossary-ref:hover > .glossary-tip,
+    .footnote-ref:hover > .footnote-tip {
         display: block;
     }
 }
 
-.glossary-ref:focus-within > .glossary-tip {
+.glossary-ref:focus-within > .glossary-tip,
+.footnote-ref:focus-within > .footnote-tip {
     display: block;
 }
 
 @media print {
-    .glossary-tip {
+    .glossary-tip, .footnote-tip {
         display: none !important;
     }
 }

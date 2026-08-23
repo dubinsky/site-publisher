@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Footnote, Glossary, Ids, Link, LinkKind, Section, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -18,6 +18,8 @@ final class PageContent private(
   val footnotes: Map[String, Footnote],
   val glossaryDefinitions: Map[String, Xml.Nodes]
 ):
+  private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip)
+
   def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
@@ -52,7 +54,9 @@ final class PageContent private(
     // this is after Grok did glossary tooltips... can they be merged?
     result = resolveLinks(result, isChunked, attachTips = true)
     result = xmlDialect.transform(result, element =>
-      element.setChildren(XmlUtil.convertElements(element.getChildren, Glossary.wrapRef))
+      element.setChildren(XmlUtil.convertElements(element.getChildren,
+        element => tips.map(_.wrapRef(element)).collectFirst { case Some(nodes) => nodes }
+      ))
     )
 
     // Convert to HTML
@@ -80,8 +84,7 @@ final class PageContent private(
       html = html.setChildren(tocHtml +: html.getChildren)
 
     html
-
-
+  
   private def resolveLinks(
     element: Xml.Element,
     isChunked: Boolean,
@@ -95,13 +98,18 @@ final class PageContent private(
 
     // Turn footnote links into footnote references
     if Footnote.isLink(result) then
-      result = footnotes(Footnote.getCorrelationId(result)).link
+      val footnote: Footnote = footnotes(Footnote.getCorrelationId(result))
+      result = footnote.link
+      if attachTips then
+        val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
+        if content.nonEmpty then
+          result = Footnote.tip.attachTip(result, content)
 
     result.setChildren(result.getChildren.map(child =>
       child.asElement.fold(child): child =>
-        resolveLinks(child, isChunked, attachTips && !child.has(Glossary.TipClass))
+        resolveLinks(child, isChunked, attachTips && !tips.exists(_.isTip(child)))
     ))
-
+  
   private def resolveInternalLink(
     element: Xml.Element,
     ref: String,
@@ -130,7 +138,7 @@ final class PageContent private(
           result = result.setText(WikiLink.linkText(element, linkTo.title))
 
         if attachTips then glossaryTip(linkTo).foreach: definition =>
-          result = Glossary.attachTip(result, definition)
+          result = Glossary.tip.attachTip(result, definition)
 
         result
 

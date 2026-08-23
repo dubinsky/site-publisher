@@ -12,6 +12,8 @@ object Footnote:
 
   private object BackLinkClass extends HtmlClass("footnote-backlink")
 
+  val tip: Tip = Tip("footnote")
+
   def isLink(element: Xml.Element): Boolean = element.has(LinkClass)
 
   def isBody(element: Xml.Element): Boolean = element.has(BodyClass)
