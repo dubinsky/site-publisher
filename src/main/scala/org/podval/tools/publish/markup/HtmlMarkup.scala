@@ -75,7 +75,7 @@ object HtmlMarkup extends Markup(
         // Transplant the id from the header to the section.
         val header: Xml.Element = rest.head.asElement.get
         val id: Option[String] = header.getId.filter(_.nonEmpty)
-        val headed: Xml.Element = id.fold(header.setId(""))(Section.addAnchor(header.setId(""), _))
+        val headed: Xml.Element = id.fold(header.setId(""))(Section.addLinks(header.setId(""), _))
         Section.mark(Xml.element("div"))
           .setId(id)
           .setChildren(Chunk(headed) ++ nestSections(body))

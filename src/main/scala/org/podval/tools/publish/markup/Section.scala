@@ -20,7 +20,8 @@ final class Section(
 
 object Section:
   private object SectionClass extends HtmlClass("section")
-  private object AnchorClass extends HtmlClass("anchor")
+  object AnchorClass extends HtmlClass("anchor")
+  object LinkClass extends HtmlClass("link")
 
   def mark(element: Xml.Element): Xml.Element =
     require(element.getName == "div")
@@ -30,15 +31,30 @@ object Section:
     element.getName == "div" && element.has(SectionClass)
 
   def isPermalink(element: Xml.Element): Boolean =
-    element.has(AnchorClass)
+    element.has(AnchorClass) || element.has(LinkClass)
 
-  // AsciiDoctor-style sectanchors: empty hover permalink; heading text stays plain.
-  def addAnchor(header: Xml.Element, id: String): Xml.Element =
+  // AsciiDoctor sectanchors + sectlinks: hover §, heading text is a self-link.
+  // If the heading already contains an <a> (e.g. a glossary term), only add the hover anchor.
+  def addLinks(header: Xml.Element, id: String): Xml.Element =
+    val href: String = s"#$id"
     val anchor: Xml.Element = Xml
       .element("a")
       .add(AnchorClass)
-      .setHref(s"#$id")
+      .setHref(href)
       .set("aria-hidden", "true")
-    header.setChildren(Chunk(anchor) ++ header.getChildren)
+    val children: Xml.Nodes =
+      if containsAnchor(header) then Chunk(anchor) ++ header.getChildren
+      else
+        val link: Xml.Element = Xml
+          .element("a")
+          .add(LinkClass)
+          .setHref(href)
+          .setChildren(header.getChildren)
+        Chunk(anchor, link)
+    header.setChildren(children)
+
+  private def containsAnchor(element: Xml.Element): Boolean =
+    element.getChildren.exists: node =>
+      node.asElement.exists(child => child.isA || containsAnchor(child))
 
 

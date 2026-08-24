@@ -340,7 +340,7 @@
 
     h1, h2, h3, h4, h5, h6 { margin-top: var(--spacing-unit) }
 
-    /* AsciiDoctor sectanchors: § permalink on hover. */
+    /* AsciiDoctor sectanchors + sectlinks: § on hover; heading text is a permalink. */
     .section > :is(h1, h2, h3, h4, h5, h6) {
         position: relative;
     }
@@ -369,9 +369,22 @@
         visibility: visible;
     }
 
+    a.link {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    a.link:hover,
+    a.link:focus {
+        text-decoration: underline;
+    }
+
     @media print {
         a.anchor {
             display: none !important;
+        }
+        a.link {
+            text-decoration: none;
         }
     }
 
