@@ -1,6 +1,14 @@
 package org.podval.xml
 
 object Xml2Html:
+  // Names that cannot be reused as-is when TEI (or similar) is serialized as HTML:
+  // - `head`/`body`/`title` are HTML document chrome.
+  // - HTML `p` is phrasing-content only. The parser auto-closes it before any block
+  //   (`p`, `div`, `ul`/`ol`/`dl`, `table`, `blockquote`, `figure`, headings, …).
+  //   TEI `p` may contain those, and footnote/glossary tips copy body nodes that may
+  //   too, so it is renamed (`tei-p`). TEI `div` stays `div`.
+  private val reservedHtmlElements: Set[String] = Set("head", "body", "title", "p")
+
   // Note: I do not see any reason to recognize elements (like 'script') or attributes (like 'hidden')...
   def fromXml(element: Xml.Element): Html.Element = Html
     .element(element.getName)
@@ -22,10 +30,8 @@ It seems that in browser DOM all elements are in the HTML5 xhtml namespace
 unless xmlns attribute is present on that element;
 why are the namespace declarations not inherited is not clear.
 
-So, I prefix the names of the elements from non-HTML namespaces with the namespace prefix
-if their names clash with the HTML namespace in a way that makes CSS styling difficult.
-E.g.: HTML disallows tables within paragraphs, so to have a tooltip inside a TEI paragraph,
-it needs to not be an HTML <p> (and of course, namespace is ignored...)
+So, I prefix names that clash with HTML (see Xml2Html.reservedHtmlElements).
+In particular HTML `p` cannot contain blocks; TEI `p` can, so it becomes `tei-p`.
 */
 // Prefix attribute and element names that collide with the HTML ones
 final class Xml2Html(prefix: String):
@@ -42,6 +48,6 @@ final class Xml2Html(prefix: String):
 
     val name: String = element.getName
 
-    if !HtmlElement.reservedElements.contains(name)
+    if !Xml2Html.reservedHtmlElements.contains(name)
     then attributesConverted
     else XmlUtil.renameElement(withPrefix(name), attributesConverted)

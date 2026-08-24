@@ -170,9 +170,7 @@ gi:after {
   content: ">";
 }
 /* h */
-div.textpart { // TODO WTF?
-  display: none;
-}
+/* Was a no-op while TEI divs were emitted as tei-div. Do not hide HTML div.textpart. */
 
 hi[rend~="caps"] {
   font-weight:bold;

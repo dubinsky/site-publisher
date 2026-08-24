@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
 final class HtmlMarkupSpec extends AnyFunSuite:
-  test("section headers get permalink anchor and link from the section id") {
+  test("nestSections wraps headings and transplants id off the header") {
     val xml: Xml.Element = XmlParser.parseXml(
       """<div><h2 id="colophon">Colophon</h2><p>body</p></div>"""
     ).toOption.get
@@ -13,11 +13,9 @@ final class HtmlMarkupSpec extends AnyFunSuite:
     val rendered: String = HtmlXmlDialect.render(nested)
     assert(rendered.contains("""class="section""""))
     assert(rendered.contains("""id="colophon""""))
-    assert(rendered.contains("""class="anchor""""))
-    assert(rendered.contains("""class="link""""))
-    assert(rendered.contains("""href="#colophon""""))
     assert(rendered.contains("Colophon"))
     assert(!rendered.contains("""<h2 id="colophon""""))
+    assert(!rendered.contains("""class="anchor""""))
   }
 
   test("addLinks wraps heading children in a self-link") {
@@ -27,6 +25,7 @@ final class HtmlMarkupSpec extends AnyFunSuite:
     assert(rendered.contains("Notes"))
     assert(rendered.contains("""aria-hidden="true""""))
     assert(rendered.contains("""class="link""""))
+    assert(rendered.contains("""class="heading""""))
   }
 
   test("addLinks does not nest anchors when the heading already contains a link") {

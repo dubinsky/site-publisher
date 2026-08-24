@@ -27,7 +27,7 @@ object TeiMarkup extends Markup(
   //  <head>Methodology</head>
   //  <p>...</p>
   //</div>
-  override def isSectionHeader(element: Xml.Element): Boolean = element.getName == "head"
+  override def isSectionHeader(element: Xml.Element): Boolean = element.getName == "tei-head"
 
   override def pageHeader(page: MarkupPage): Html.Element =
     super.pageHeader(page) // TODO
@@ -55,7 +55,15 @@ object TeiMarkup extends Markup(
       result
     )
 
-    (result, None)
+    (markHeadedDivs(result), None)
+
+  // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
+  private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =
+    xmlDialect.transform(xml, element =>
+      if element.getName == "div" && sectionHeader(element).isDefined
+      then Section.mark(element)
+      else element
+    )
 
   private def convertSpecial(element: Xml.Element): Xml.Element = element.getName match
     case "row" =>
@@ -77,9 +85,6 @@ object TeiMarkup extends Markup(
     case "pb" =>
       // TODO convert 'n' attribute?
       renameElement("a", element.setText(facsimileSymbol))
-
-    case "div" =>
-      Section.mark(element)
 
     case _ =>
       element

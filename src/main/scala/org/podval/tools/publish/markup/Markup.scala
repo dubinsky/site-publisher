@@ -39,8 +39,7 @@ abstract class Markup(
   final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
     .getChildren
     .flatMap(_.asElement)
-    .headOption
-    .filter(isSectionHeader)
+    .find(isSectionHeader)
 
   def isSectionHeader(element: Xml.Element): Boolean
 

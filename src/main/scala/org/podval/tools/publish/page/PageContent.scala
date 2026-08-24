@@ -172,15 +172,8 @@ object PageContent:
     // since they are neither sections nor links at this point.
     val ids: IdGenerator = IdGenerator("_generated_id")
     var result: Xml.Element = xmlDialect.transform(xmlProcessed, element =>
-      var result: Xml.Element = element
-
       // This has to happen before calculating Toc.
-      if Section.is(result) && result.getId.isEmpty then
-        val title: Option[String] = source
-          .markup
-          .sectionHeader(result)
-          .map(_.getText)
-        result = result.setId(title.map(Xml.toId).getOrElse(ids.generate()))
+      var result: Xml.Element = Section.normalize(element, source.markup, ids)
 
       // This has to happen before calculating backlinks.
       if result.isA && result.getId.isEmpty && !Section.isPermalink(result) then

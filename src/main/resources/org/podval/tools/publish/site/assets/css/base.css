@@ -561,7 +561,7 @@ table[rendition="borderless"] {
 }
 
 
-tei-div > tei-head {
+.section > tei-head {
     text-indent: -0.5em;
 }
 

@@ -340,9 +340,16 @@
 
     h1, h2, h3, h4, h5, h6 { margin-top: var(--spacing-unit) }
 
-    /* AsciiDoctor sectanchors + sectlinks: § on hover; heading text is a permalink. */
-    .section > :is(h1, h2, h3, h4, h5, h6) {
+    /* Sectanchors + sectlinks: § on hover; heading text is a permalink.
+     * Heading rank is section nesting, not hN vs tei-head. */
+    .section > .heading {
         position: relative;
+        margin-top: var(--spacing-unit);
+        font-size: 1.75rem;
+
+        @media screen and (min-width: var(--on-large)) {
+            font-size: 2rem;
+        }
     }
 
     a.anchor {
@@ -363,8 +370,8 @@
         font-size: 0.85em;
     }
 
-    .section > :is(h1, h2, h3, h4, h5, h6):hover > a.anchor,
-    .section > :is(h1, h2, h3, h4, h5, h6):focus-within > a.anchor,
+    .section > .heading:hover > a.anchor,
+    .section > .heading:focus-within > a.anchor,
     a.anchor:focus {
         visibility: visible;
     }
@@ -392,15 +399,7 @@
         margin-top: 0; /* TODO LMD */
     }
 
-    h2, tei-div > tei-head {
-        font-size: 1.75rem;
-
-        @media screen and (min-width: var(--on-large)) {
-            font-size: 2rem;
-        }
-    }
-
-    h3, tei-div > tei-div > tei-head {
+    .section > .section > .heading {
         font-size: 1.375rem;
 
         @media screen and (min-width: var(--on-large)) {
@@ -408,14 +407,15 @@
         }
     }
 
-    h4, tei-div > tei-div > tei-div > tei-head {
+    .section > .section > .section > .heading {
         font-size: 1.25rem;
     }
 
-    h5 {
+    .section > .section > .section > .section > .heading {
         font-size: 1.125rem;
     }
-    h6 {
+
+    .section > .section > .section > .section > .section > .heading {
         font-size: 1.0625rem;
     }
 }
@@ -508,33 +508,26 @@ ul.page-list {
      *   .post-content > div > .toc | .section | ...
      * Use div.toc (not ul.toc) for the TOC block.
      *
-     * Page break only for sections whose own heading is h1 or h2 (parts/chapters).
-     * h3+ subsections (e.g. under Acknowledgments / Notes) stay continuous.
-     * :has() is fine in Chromium/Playwright PDF.
+     * Page break for top-level sections (parent is not a section). Nested sections stay continuous.
      */
     .post-content div.toc,
-    .post-content .section:has(> h1),
-    .post-content .section:has(> h2) {
+    .post-content :not(.section) > .section {
         break-before: page;           /* modern */
         page-break-before: always;    /* Chromium still respects this well */
     }
 
     /*
-     * If the first body child is already an h1/h2 section (no TOC), avoid a blank page.
+     * If the first body child is already a section (no TOC), avoid a blank page.
      * TOC always keeps its break so it starts after the title header.
      */
-    .post-content > .section:first-child:has(> h1),
-    .post-content > .section:first-child:has(> h2),
-    .post-content > div > .section:first-child:has(> h1),
-    .post-content > div > .section:first-child:has(> h2) {
+    .post-content > .section:first-child,
+    .post-content > div > .section:first-child {
         break-before: auto;
         page-break-before: auto;
     }
 
     /* Keep heading with following content */
-    .section > h1,
-    .section > h2,
-    .section > h3 {
+    .section > .heading {
         break-after: avoid;
         page-break-after: avoid;
     }

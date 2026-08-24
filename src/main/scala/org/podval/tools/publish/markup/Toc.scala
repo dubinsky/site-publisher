@@ -123,14 +123,15 @@ object Toc:
     errorReporter: PageErrorReporter
   ): Toc =
     def sections(element: Xml.Element): Chunk[Section] =
-      if !Section.is(element) then Chunk.empty else element.getId match
+      if !Section.is(element) then element.flatMapElements(sections) else element.getId match
         case None =>
           errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
-          Chunk.empty
-        case Some(id) =>          
+          element.flatMapElements(sections)
+        case Some(id) =>
           val title: String = markup
             .sectionHeader(element)
-            .map(_.getText)
+            .map(Section.headingText)
+            .filter(_.nonEmpty)
             .getOrElse(s"Untitled Section $id") // TODO error
           Chunk(Section(
             id,
@@ -138,4 +139,4 @@ object Toc:
             element.flatMapElements(sections)
           ))
 
-    new Toc(element.flatMapElements(sections))
+    new Toc(sections(element))

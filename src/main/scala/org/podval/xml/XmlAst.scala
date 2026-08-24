@@ -106,6 +106,11 @@ trait XmlAst[ELEMENT]:
 
     def setId(value: String): Element = set(XmlAttribute.Id, value)
     def setId(value: Option[String]): Element = set(XmlAttribute.Id, value)
+
+    def copyXmlId: Element =
+      if element.getId.exists(_.nonEmpty)
+      then element
+      else element.setId(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
     
     def getHref: Option[String] = get(HtmlAttribute.Href)
     
