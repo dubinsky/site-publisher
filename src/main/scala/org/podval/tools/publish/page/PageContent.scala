@@ -183,11 +183,11 @@ object PageContent:
         result = result.setId(title.map(Xml.toId).getOrElse(ids.generate()))
 
       // This has to happen before calculating backlinks.
-      if result.isA && result.getId.isEmpty then
+      if result.isA && result.getId.isEmpty && !Section.isPermalink(result) then
         result = result.setId(ids.generate())
 
       // This has to happen before calculating backlinks.
-      if result.isA then result.getHref.foreach: href =>
+      if result.isA && !Section.isPermalink(result) then result.getHref.foreach: href =>
         if source.page.site.isInternalLink(href, source) then
           result = result.add(Link.InternalLinkClass)
 

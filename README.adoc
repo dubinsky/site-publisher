@@ -140,8 +140,6 @@ Write about all the plugins I used:
 [#future]
 == Future
 
-Review all Grok's code and clean it up/simplify...
-
 === Features
 
 Support in a markup-independent way:
@@ -149,7 +147,6 @@ Support in a markup-independent way:
 - admonitions
 - asides
 - callouts
-- bibliography
 
 === Glossary
 
@@ -168,18 +165,6 @@ Handle bibliography in a markup-independent way.
 MarkDown: https://pandoc.org/MANUAL.html#citations
 
 Is there some Java library for citation formatting?
-
-=== Section links
-
-Section links on roll-over: Asciidoctor produces
-
-[source, xml]
-----
-<hN>
-  <a class="anchor" href="#id"/> // ::before - paragraph sign
-  <a class="link" href="#id">original header content</a>
-</hN>
-----
 
 === TEI
 

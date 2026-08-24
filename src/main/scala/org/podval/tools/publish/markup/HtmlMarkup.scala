@@ -61,7 +61,7 @@ object HtmlMarkup extends Markup(
   //     <h2>Colophon</h2>
   //     <p>...</p>
   //   </div>
-  private def nestSections(nodes: Xml.Nodes): Xml.Nodes =
+  private[markup] def nestSections(nodes: Xml.Nodes): Xml.Nodes =
     val headerLevels: Chunk[Int] = nodes.flatMap(_.asElement).flatMap(HtmlMarkup.headerLevel)
     if headerLevels.isEmpty then nodes else
       val headerLevel: Int = headerLevels.head
@@ -74,8 +74,10 @@ object HtmlMarkup extends Markup(
       val section: Xml.Element =
         // Transplant the id from the header to the section.
         val header: Xml.Element = rest.head.asElement.get
+        val id: Option[String] = header.getId.filter(_.nonEmpty)
+        val headed: Xml.Element = id.fold(header.setId(""))(Section.addAnchor(header.setId(""), _))
         Section.mark(Xml.element("div"))
-          .setId(header.getId)
-          .setChildren(Chunk(header.setId("")) ++ nestSections(body))
+          .setId(id)
+          .setChildren(Chunk(headed) ++ nestSections(body))
 
       preamble ++ Chunk(section) ++ nestSections(tail)

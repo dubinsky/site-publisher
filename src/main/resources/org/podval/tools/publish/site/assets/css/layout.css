@@ -340,6 +340,41 @@
 
     h1, h2, h3, h4, h5, h6 { margin-top: var(--spacing-unit) }
 
+    /* AsciiDoctor sectanchors: § permalink on hover. */
+    .section > :is(h1, h2, h3, h4, h5, h6) {
+        position: relative;
+    }
+
+    a.anchor {
+        position: absolute;
+        z-index: 1;
+        width: 1.5ex;
+        margin-left: -1.5ex;
+        display: block;
+        text-decoration: none;
+        visibility: hidden;
+        font-weight: 400;
+        text-align: center;
+        color: inherit;
+    }
+
+    a.anchor::before {
+        content: "\00A7";
+        font-size: 0.85em;
+    }
+
+    .section > :is(h1, h2, h3, h4, h5, h6):hover > a.anchor,
+    .section > :is(h1, h2, h3, h4, h5, h6):focus-within > a.anchor,
+    a.anchor:focus {
+        visibility: visible;
+    }
+
+    @media print {
+        a.anchor {
+            display: none !important;
+        }
+    }
+
     h3.post-link {
         margin-top: 0; /* TODO LMD */
     }
