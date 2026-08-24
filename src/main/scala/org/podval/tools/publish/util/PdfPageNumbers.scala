@@ -3,8 +3,9 @@ package org.podval.tools.publish.util
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream, PDPageTree}
 import org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode
-import org.apache.pdfbox.pdmodel.font.{PDFont, PDType1Font, Standard14Fonts}
+import org.apache.pdfbox.pdmodel.font.{PDFont, PDType1Font, PDType3Font, Standard14Fonts}
 import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.util.control.NonFatal
 import java.io.{File, IOException}
 import java.nio.file.{Files as NFiles, StandardCopyOption}
 
@@ -75,6 +76,9 @@ object PdfPageNumbers:
     "bold", "italic", "oblique", "bolditalic", "boldoblique"
   )
 
+  // Chromium embeds the `.folio` webfont as Type3; PDFBox cannot encode into that.
+  // TODO stamp with a loaded TTF/OTF of the chosen family (PDType0Font) so folios
+  // match body type. Then layout.css body::after digit-embedding can go.
   private def fontFor(page: PDPage, style: PdfFolioStyle): PDFont =
     val available: Seq[PDFont] = fontsOn(page)
     cssFamilies(style.fontFamily)
@@ -122,11 +126,13 @@ object PdfPageNumbers:
       then (style.fontWeight >= 600) == compacted.contains("bold")
       else math.abs(weight - style.fontWeight) < 150
 
-  private def canEncodeDigits(font: PDFont): Boolean =
-    try
-      font.getStringWidth("0123456789")
-      true
-    catch case _: IOException => false
+  private def canEncodeDigits(font: PDFont): Boolean = font match
+    case _: PDType3Font => false
+    case _ =>
+      try
+        font.getStringWidth("0123456789")
+        true
+      catch case NonFatal(_) => false
 
   private def compact(name: String): String =
     name.replaceFirst("^[A-Za-z]{6}\\+", "").toLowerCase.replaceAll("[^a-z0-9]", "")

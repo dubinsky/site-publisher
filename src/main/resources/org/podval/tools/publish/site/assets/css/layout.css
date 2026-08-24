@@ -488,8 +488,8 @@ ul.toc {
 /**
  * Folio (PDF margin page numbers). Chromium does not paint these; PdfPageNumbers
  * stamps them after print from computed `.folio`. body::after forces Chrome to
- * subset ASCII digits of this face: display:none / visibility:hidden omit glyphs;
- * opacity:0 still paints.
+ * subset ASCII digits of this face (skipped if the stamp loads its own TTF).
+ * display:none / visibility:hidden omit glyphs; opacity:0 still paints.
  * position:fixed repeats on every printed page so per-page subsets keep 0-9.
  * font-variant-numeric:normal on the embedder (not tabular-nums) so the default
  * cmap digits are the ones embedded.

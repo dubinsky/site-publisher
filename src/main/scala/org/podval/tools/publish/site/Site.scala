@@ -133,8 +133,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
       // Wipe out output directory
       Files.deleteDirectory(targetDirectory)
 
-      // Write pages
-      pages.pages.foreach: page =>
+      // PDFs print via HTTP from already-written HTML/assets; write them last
+      // so any assets used are already written.
+      val (pdfPages, otherPages) = pages.pages.partition:
+        case _: PdfPage => true
+        case _ => false
+      (otherPages ++ pdfPages).foreach: page =>
         log.debug(s"Writing ${page.path}")
         page.write()
 
