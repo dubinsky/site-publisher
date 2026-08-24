@@ -26,6 +26,15 @@ final class HtmlXmlDialectSpec extends AnyFunSuite:
     assert(!""">\s+<a""".r.findFirstIn(inner).isDefined)
   }
 
+  test("void elements self-close; empty non-void elements do not") {
+    assert(render(Xml.element("br")).contains("<br/>"))
+    assert(render(Xml.element("img").set("src", "x")).contains("/>"))
+    val script: String = render(Xml.element("script"))
+    assert(script.contains("<script>"))
+    assert(script.contains("</script>"))
+    assert(!script.contains("<script/>"))
+  }
+
   test("span still preserves a real space before an inner element") {
     val span: Xml.Element = Xml
       .element("span")

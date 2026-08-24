@@ -561,6 +561,10 @@ ul.toc {
     font-weight: bold;
 }
 
+.toc-ancestor > a {
+    font-weight: 600;
+}
+
 /**
  * Folio (PDF margin page numbers). Chromium does not paint these; PdfPageNumbers
  * stamps them after print from computed `.folio`. body::after forces Chrome to

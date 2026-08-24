@@ -19,6 +19,8 @@ final class Section(
   
   lazy val depth: Int = parentVar.fold(0)(_.depth + 1)
 
+  lazy val path: Seq[Section] = parent.fold(Seq(this))(p => p.path :+ this)
+
 object Section:
   private object SectionClass extends HtmlClass("section")
   object HeadingClass extends HtmlClass("heading")

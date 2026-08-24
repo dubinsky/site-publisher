@@ -4,7 +4,7 @@ import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlAttribute, XmlDialect, XmlParser}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlDialect, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -234,4 +234,38 @@ final class SectionSpec extends AnyFunSuite:
     val top: Section = Toc(normalized, TeiMarkup, silent).sections.head
     assert(top.id == "meth")
     assert(top.sections.map(_.id) == Seq("notes"))
+  }
+
+  private def tocHtml(toc: Toc, current: Option[String], tocDepth: Int = 2): String =
+    HtmlXmlDialect.render(toc.html(current, tocDepth, chunkDepth = Some(2)))
+
+  test("chunked TOC expands current path and leaves other branches as titles") {
+    val a1: Section = Section("a1", "A1", Seq.empty)
+    val a2: Section = Section("a2", "A2", Seq.empty)
+    val b1: Section = Section("b1", "B1", Seq.empty)
+    val b2: Section = Section("b2", "B2", Seq.empty)
+    val a: Section = Section("a", "A", Seq(a1, a2))
+    val b: Section = Section("b", "B", Seq(b1, b2))
+    val toc: Toc = new Toc(Seq(a, b))
+    val full: String = tocHtml(toc, None)
+    assert(full.contains("A1"))
+    assert(full.contains("B1"))
+    assert(!full.contains("toc-current"))
+    val chunk: String = tocHtml(toc, Some("a1"))
+    assert(chunk.contains("A1"))
+    assert(chunk.contains("A2"))
+    assert(chunk.contains("""class="toc-section toc-current""""))
+    assert(chunk.contains("""class="toc-section toc-ancestor""""))
+    assert(chunk.contains(">B<") || chunk.contains(">B</a>"))
+    assert(!chunk.contains("B1"), chunk)
+    assert(!chunk.contains("B2"), chunk)
+  }
+
+  test("unchunked TOC still lists every branch to tocDepth") {
+    val a1: Section = Section("a1", "A1", Seq.empty)
+    val b1: Section = Section("b1", "B1", Seq.empty)
+    val toc: Toc = new Toc(Seq(Section("a", "A", Seq(a1)), Section("b", "B", Seq(b1))))
+    val rendered: String = HtmlXmlDialect.render(toc.html(None, tocDepth = 2, chunkDepth = None))
+    assert(rendered.contains("A1"))
+    assert(rendered.contains("B1"))
   }

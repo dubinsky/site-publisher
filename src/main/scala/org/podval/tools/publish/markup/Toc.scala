@@ -27,17 +27,23 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
   private def tocChunkName(markupPage: FullMarkupPage): String = markupPage.path.fileName
 
   def chunks(page: FullMarkupPage): Seq[ChunkedMarkupPage] =
-    def chunks(depth: Int, isTerminal: Boolean): Seq[ChunkedMarkupPage] =
-      for section <- flatten.filter(_.depth == depth) yield ChunkedMarkupPage(
+    val root: ChunkedMarkupPage = ChunkedMarkupPage(
+      page,
+      sectionId = None,
+      isTerminal = false,
+      name = tocChunkName(page)
+    )
+    val rest: Seq[ChunkedMarkupPage] =
+      for section <- flatten if section.depth == page.chunkDepth - 2 || section.depth == page.chunkDepth - 1
+      yield ChunkedMarkupPage(
         page,
         sectionId = Some(section.id),
-        isTerminal = isTerminal,
+        isTerminal = section.depth == page.chunkDepth - 1,
         name = section.id
       )
+    root +: rest
 
-    Seq(ChunkedMarkupPage(page, sectionId = None, isTerminal = false, name = tocChunkName(page))) ++
-    chunks(depth = page.chunkDepth-2, isTerminal = false) ++
-    chunks(depth = page.chunkDepth-1, isTerminal = true)
+  def getSection(id: String): Section = getById(id)
 
   def chunkName(sectionId: String, chunkDepth: Option[Int]): String = chunkDepth match
     case None => ""
@@ -78,37 +84,56 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
           _.asElement.fold(true)(!_.getId.contains(stopAtId))
         ))
 
-  // TODO Toc of a chunk should not have subsections of the other chunks listed...
   def html(
     sectionId: Option[String],
     tocDepth: Int,
     chunkDepth: Option[Int]
   ): Html.Element =
+    val current: Option[Section] = sectionId.map(getById)
     div(className := "toc",
       h3("Table of Contents"),
       toHtml(
         sections,
-        sectionId,
+        current,
         tocDepth,
         chunkDepth
       )
     )
 
+  // Full outline when there is no current chunk (root chunk, unchunked, print).
+  // Content chunks: expand ancestors and the current subtree; siblings and other branches are titles only.
+  private def showChildren(section: Section, current: Option[Section], tocDepth: Int): Boolean =
+    section.sections.nonEmpty && {
+      current match
+        case None =>
+          section.depth < tocDepth - 1
+        case Some(current) =>
+          if current.path.init.exists(_.id == section.id) then true
+          else if section.path.exists(_.id == current.id) then
+            section.depth < current.depth + tocDepth - 1
+          else false
+    }
+
+  private def itemClass(section: Section, current: Option[Section]): String =
+    if current.exists(_.id == section.id) then "toc-section toc-current"
+    else if current.exists(_.path.init.exists(_.id == section.id)) then "toc-section toc-ancestor"
+    else "toc-section"
+
   private def toHtml(
     sections: Seq[Section],
-    selectedSectionId: Option[String],
+    current: Option[Section],
     tocDepth: Int,
     chunkDepth: Option[Int]
   ): Html.Element =
     ul(className := "toc", sections.map(section =>
       val sectionId: String = section.id
       li(
-        className := (if selectedSectionId.contains(sectionId) then "toc-current" else "toc-section"),
+        className := itemClass(section, current),
         a(href := s"${chunkName(sectionId, chunkDepth)}#$sectionId", section.title),
-        Option.when(section.depth < tocDepth-1 && section.sections.nonEmpty)(
+        Option.when(showChildren(section, current, tocDepth))(
           toHtml(
             section.sections,
-            selectedSectionId,
+            current,
             tocDepth,
             chunkDepth
           )
