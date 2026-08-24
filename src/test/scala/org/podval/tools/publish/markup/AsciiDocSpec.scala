@@ -8,11 +8,11 @@ final class AsciiDocSpec extends AnyFunSuite:
     val parsed = XmlParser.parseXml(input).toOption.get
     HtmlXmlDialect.render(AsciiDocMarkup.cleanup(parsed))
 
-  private def isItem(rendered: String, id: String): Boolean =
-    rendered.contains(s"""<div class="dlist-item" id="$id">""") ||
-    rendered.contains(s"""<div id="$id" class="dlist-item">""")
+  private def isItem(rendered: String, id: String, cssClass: String): Boolean =
+    rendered.contains(s"""<div class="$cssClass" id="$id">""") ||
+    rendered.contains(s"""<div id="$id" class="$cssClass">""")
 
-  test("glossary term ids are hoisted onto dlist-item and each term is grouped") {
+  test("glossary term ids are hoisted onto glossary-item and each term is grouped") {
     val rendered: String = cleanup(
       """<div class="dlist glossary">
         |<dl>
@@ -25,9 +25,12 @@ final class AsciiDocSpec extends AnyFunSuite:
         |</div>
         |""".stripMargin
     )
-    assert(isItem(rendered, "posuk"))
-    assert(isItem(rendered, "akdamus"))
-    assert(isItem(rendered, "rasha"))
+    assert(isItem(rendered, "posuk", "glossary-item"))
+    assert(isItem(rendered, "akdamus", "glossary-item"))
+    assert(isItem(rendered, "rasha", "glossary-item"))
+    assert(rendered.contains("""class="glossary""""))
+    assert(!rendered.contains("dlist"))
+    assert(!rendered.contains("dlist-item"))
     assert(rendered.contains("<dt>posuk</dt>"))
     assert(rendered.contains("<dt>akdamus</dt>"))
     assert(rendered.contains("<dt>rasha</dt>"))
@@ -39,6 +42,24 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(!rendered.contains("""<a id="rasha">"""))
     assert(!rendered.contains("""<dt id="posuk">"""))
     assert(!rendered.contains("""<dt id="rasha">"""))
+  }
+
+  test("non-glossary description lists are left as Asciidoctor emitted them") {
+    val rendered: String = cleanup(
+      """<div class="dlist">
+        |<dl>
+        |<dt><a id="cpu"></a>CPU</dt>
+        |<dd><p>processor</p></dd>
+        |</dl>
+        |</div>
+        |""".stripMargin
+    )
+    assert(rendered.contains("""<a id="cpu">"""))
+    assert(rendered.contains("<dt>"))
+    assert(rendered.contains("<dd>processor</dd>"))
+    assert(!rendered.contains("glossary-item"))
+    assert(!rendered.contains("dlist-item"))
+    assert(!isItem(rendered, "cpu", "glossary-item"))
   }
 
   test("empty id anchors with href are left in place") {
@@ -55,5 +76,5 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(rendered.contains("<dd>def</dd>"))
     assert(!rendered.contains("<dd><p>"))
     assert(!rendered.contains("""<dt id="stay">"""))
-    assert(!isItem(rendered, "stay"))
+    assert(!isItem(rendered, "stay", "glossary-item"))
   }

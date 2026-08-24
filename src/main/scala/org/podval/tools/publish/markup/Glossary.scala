@@ -2,28 +2,42 @@ package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml, XmlDialect}
 
-// Note: written by Grok ;)
+// Details of the glossary internal representation.
+// Markup processors convert their HTML into this shape; definitions() does not
+// know about AsciiDoc `div.dlist.glossary` wrappers or empty `<a id>` term anchors.
 object Glossary:
-  object ItemClass extends HtmlClass("dlist-item")
+  object ListClass extends HtmlClass("glossary")
+
+  object ItemClass extends HtmlClass("glossary-item")
 
   val tip: Tip = Tip("glossary")
+
+  def isList(element: Xml.Element): Boolean = element.has(ListClass)
+
+  def isItem(element: Xml.Element): Boolean = element.has(ItemClass)
+
+  def item(id: Option[String], children: Xml.Nodes): Xml.Element = Xml
+    .element("div")
+    .add(ItemClass)
+    .setId(id)
+    .setChildren(children)
 
   def definitions(
     xml: Xml.Element,
     xmlDialect: XmlDialect
   ): Map[String, Xml.Nodes] =
-    xmlDialect.gatherWithContext(
-      xml,
-      // TODO this looks like an AsciiDoc-specific class;
-      // I should define - and convert to - a markup-independent internal representation for glossary...
-      isContext = _.hasClass("glossary"),
-      gatherElement = (element, glossary) =>
-        for
-          _ <- glossary
-          id <- element.getId
-          if element.has(ItemClass)
-          dd <- element.getChildren.flatMap(_.asElement).find(_.getName == "dd")
-          children = dd.getChildren.filterNot(_.isWhitespace)
-          if children.nonEmpty
-        yield id -> children
+    xmlDialect.gather(xml, element =>
+      for
+        id <- element.getId
+        if isItem(element)
+        nodes <- definitionNodes(element)
+      yield id -> nodes
     ).toMap
+
+  private def definitionNodes(item: Xml.Element): Option[Xml.Nodes] =
+    item
+      .getChildren
+      .flatMap(_.asElement)
+      .find(_.getName == "dd")
+      .map(_.getChildren.filterNot(_.isWhitespace))
+      .filter(_.nonEmpty)

@@ -6,6 +6,7 @@ import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
+import com.vladsch.flexmark.ext.definition.DefinitionExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
@@ -20,6 +21,7 @@ object MarkdownMarkup extends Markup(
   xmlDialect = HtmlXmlDialect,
 ):
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
+    DefinitionExtension.create,
     FootnoteExtension.create,
     TablesExtension.create,
     TaskListExtension.create
@@ -64,8 +66,56 @@ object MarkdownMarkup extends Markup(
     )
     HtmlMarkup.process(
       source,
-      result
+      convert(result)
     )
+
+  private[markup] def convert(xml: Xml.Element): Xml.Element =
+    xmlDialect.transform(xml, (element: Xml.Element) =>
+      val children: Xml.Nodes = XmlUtil.convertElements(element.getChildren, HtmlMarkup.unwrapSpuriousParagraph)
+      element.setChildren(convertDescriptionLists(children))
+    )
+
+  private val glossaryIal = """\{:\s*\.glossary\s*\}""".r
+
+  private def convertDescriptionLists(nodes: Xml.Nodes): Xml.Nodes =
+    var result: List[Xml.Node] = Nil
+    var rest: List[Xml.Node] = nodes.toList
+    while rest.nonEmpty do
+      val node: Xml.Node = rest.head
+      rest = rest.tail
+      node.asElement.filter(_.getName == "dl") match
+        case Some(dl) =>
+          val (isGlossary, remaining) = consumeGlossaryMarker(dl, rest)
+          rest = remaining
+          result = result :+ (if isGlossary then convertDl(dl) else dl)
+        case None =>
+          result = result :+ node
+    Chunk.from(result)
+
+  private def consumeGlossaryMarker(
+    dl: Xml.Element,
+    rest: List[Xml.Node]
+  ): (Boolean, List[Xml.Node]) =
+    val markedOnDl: Boolean = dl.hasClass("glossary")
+    val (_, remaining) = rest.span(_.isWhitespace)
+    remaining.headOption.flatMap(_.asElement).filter(isGlossaryIal) match
+      case Some(_) => (true, remaining.tail)
+      case None => (markedOnDl, rest)
+
+  private def isGlossaryIal(element: Xml.Element): Boolean =
+    element.getName == "p" && glossaryIal.matches(element.getText.trim)
+
+  private def convertDl(dl: Xml.Element): Xml.Element =
+    dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, takeTermId))
+      .setClasses(dl.getClasses.filterNot(_ == "glossary"))
+      .add(Glossary.ListClass)
+
+  private def takeTermId(dt: Xml.Element): (Option[String], Xml.Element) =
+    val (explicit, term) = DescriptionList.stripExplicitTermId(dt)
+    val id: Option[String] = explicit.orElse:
+      val text: String = term.getText.trim
+      Option.when(text.nonEmpty)(Xml.toId(text))
+    (id, term)
 
   // Note: without FootnotesExtension, FlexMark treats footnotes as links,
   // and by the time we get to `convertFootnotes()` footnotes are gone -

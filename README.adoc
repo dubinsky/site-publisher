@@ -69,6 +69,34 @@ Obsidian supports them natively.
 Site generator supports Markdown task lists via FlexMark Task List Extension;
 Obsidian supports them natively.
 
+=== Glossary
+
+Glossary entries are harvested from a markup-neutral HTML shape
+(`class="glossary"` on the list, `class="glossary-item"` with an `id` on each term).
+Links to those ids get inline definition tooltips.
+
+AsciiDoc: set `[glossary]` on the description list; term ids come from `[[id]]`.
+Reference a term with `<<id>>`.
+
+Markdown: PHP Extra definition lists
+(https://michelf.ca/projects/php-markdown/extra/#def-list),
+via FlexMark's
+https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
+Mark a list with `{:.glossary}` after it
+(a Kramdown https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[inline attribute list],
+same family of marker as `{:toc}`).
+A definition list without that marker is left as FlexMark emitted it:
+not a glossary, no term ids, no tooltips.
+The marker also separates adjacent lists.
+
+Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens
+(`Alter Rebbe` → `Alter-Rebbe`).
+Reference a term with `[[#id]]` or `[text](#id)`.
+
+A lone `:` after a Markdown term is not a reliable empty definition:
+FlexMark can take the next term as that definition.
+Write a real definition line, or omit the term.
+
 === Chunking
 
 Previously, I used `asciidoctor-multipage` Asciidoctor
@@ -147,16 +175,6 @@ Support in a markup-independent way:
 - admonitions
 - asides
 - callouts
-
-=== Glossary
-
-Support glossary in all markups, not just AsciiDoc.
-
-MarkDown:
-
-- https://github.com/vsch/flexmark-java/wiki/Extensions#definition-lists
-- https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension
-- https://michelf.ca/projects/php-markdown/extra/#def-list
 
 === Bibliography
 

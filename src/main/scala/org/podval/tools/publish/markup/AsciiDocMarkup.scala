@@ -36,6 +36,13 @@ object AsciiDocMarkup extends Markup(
     element.getName == "div" && element.getId.contains("footnotes")
 
   override def xmlContent(content: String, sourceFile: File, site: Site): String =
+    convert(content, sourceFile, site.asciidoctor)
+
+  private[markup] def convert(
+    content: String,
+    sourceFile: File,
+    asciidoctor: Asciidoctor
+  ): String =
     val attributes: Attributes = Attributes
       .builder()
       // Suppress the TOC.
@@ -68,7 +75,7 @@ object AsciiDocMarkup extends Markup(
       .attributes(attributes)
       .build()
 
-    val result: String = site.asciidoctor.convert(content, options)
+    val result: String = asciidoctor.convert(content, options)
 
     // Wrap AsciiDoc rendered as HTML in a 'div'.
     s"<div>$result</div>"
@@ -87,9 +94,13 @@ object AsciiDocMarkup extends Markup(
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
-      children = XmlUtil.convertElements(children, removeSpuriousParagraphs)
+      children = XmlUtil.convertElements(children, HtmlMarkup.unwrapSpuriousParagraph)
       children = removeSpuriousDivs(children)
-      if result.getName == "dl" then children = groupDescriptionListItems(children)
+      if asciidoctorGlossaryClasses.forall(result.hasClass) then
+        children = convertGlossaryLists(children)
+        result = result
+          .setClasses(result.getClasses.filterNot(asciidoctorGlossaryClasses.contains))
+          .add(Glossary.ListClass)
       result = result.setChildren(children)
 
       result = convertFootnoteLink(result).getOrElse(result)
@@ -123,71 +134,16 @@ object AsciiDocMarkup extends Markup(
     )
   )
 
-  // Note: written by Grok ;)
-  // Asciidoctor emits one <dl> with sibling <dt>/<dd> and [[id]] as an empty <a id>
-  // inside the term. HTML5 groups each name-value pair in a <div>; put the id on that div.
-  private def groupDescriptionListItems(nodes: Xml.Nodes): Xml.Nodes =
-    var result: List[Xml.Node] = Nil
-    var group: List[Xml.Node] = Nil
-    var groupId: Option[String] = None
+  // Asciidoctor: <div class="dlist glossary"><dl> sibling dt/dd.
+  // Convert to Glossary IR (class="glossary" wrapper, glossary-item children).
+  private val asciidoctorGlossaryClasses: Set[String] = Set("dlist", "glossary")
 
-    def flush(): Unit =
-      if group.nonEmpty then
-        result = result :+ Xml
-          .element("div")
-          .add(Glossary.ItemClass)
-          .setId(groupId)
-          .setChildren(Chunk.from(group))
-        group = Nil
-        groupId = None
-
-    nodes.foreach: node =>
+  private def convertGlossaryLists(nodes: Xml.Nodes): Xml.Nodes =
+    nodes.map: node =>
       node.asElement match
-        case Some(element) if element.getName == "dt" =>
-          flush()
-          val (id, dt) = takeTermId(element)
-          groupId = id
-          group = List(dt)
-        case Some(element) if element.getName == "dd" =>
-          if group.isEmpty then result = result :+ element
-          else group = group :+ element
-        case Some(element) =>
-          flush()
-          result = result :+ element
-        case None =>
-          if !node.isWhitespace then
-            flush()
-            result = result :+ node
-
-    flush()
-    Chunk.from(result)
-
-  private def takeTermId(dt: Xml.Element): (Option[String], Xml.Element) =
-    val (leading, rest) = dt.getChildren.span(node =>
-      node.isWhitespace || node.asElement.exists(isEmptyIdAnchor)
-    )
-    val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
-    val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(rest)
-    val id: Option[String] = fromAnchor.orElse(stripped.getId)
-    val term: Xml.Element = if stripped.getId.isEmpty then stripped else stripped.setId("")
-    (id, term)
-
-  private def isEmptyIdAnchor(element: Xml.Element): Boolean =
-    element.isA &&
-    element.getId.nonEmpty &&
-    element.getHref.isEmpty &&
-    element.getChildren.forall(_.isWhitespace)
-
-  // Remove 'p's in 'td's, 'li's, and 'dd's.
-  private def removeSpuriousParagraphs(element: Xml.Element): Option[Xml.Nodes] =
-    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li" || element.getName == "dd"
-    if !isElementToConvert then None else
-      val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
-      for
-        head <- tail.headOption.map(_.asElement.get)
-        if head.getName == "p"
-      yield
-        Chunk(element.setChildren(init ++ head.getChildren ++ tail.tail))
+        case Some(dl) if dl.getName == "dl" =>
+          dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, DescriptionList.stripExplicitTermId))
+        case _ => node
 
   // From:
   //   <sup class="footnote">[<a id="_footnoteref_N" class="footnote" href="#_footnotedef_N">N</a>]</sup>

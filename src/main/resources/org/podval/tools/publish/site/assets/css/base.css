@@ -134,7 +134,7 @@ li {
 }
 
 /**
- * Definition lists (e.g. Asciidoc [glossary]).
+ * Definition lists (including glossary).
  * Styled like Asciidoctor default stylesheet so dt/dd read as glossary entries
  * rather than unstyled browser HTML.
  */
@@ -149,8 +149,8 @@ dd {
 }
 
 /* Last item of the list only — not every dd in a per-term grouping div. */
-.dlist-item:last-child,
-.dlist-item:last-child > :last-child {
+.glossary-item:last-child,
+.glossary-item:last-child > :last-child {
     margin-bottom: 0;
 }
 

@@ -14,6 +14,17 @@ object HtmlMarkup extends Markup(
 ):
   override def isSectionHeader(element: Xml.Element): Boolean = headerLevel(element).isDefined
 
+  // Unwrap a lone leading <p> in td/li/dd (Asciidoctor and FlexMark both emit these).
+  private[markup] def unwrapSpuriousParagraph(element: Xml.Element): Option[Xml.Nodes] =
+    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li" || element.getName == "dd"
+    if !isElementToConvert then None else
+      val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
+      for
+        head <- tail.headOption.map(_.asElement.get)
+        if head.getName == "p"
+      yield
+        Chunk(element.setChildren(init ++ head.getChildren ++ tail.tail))
+
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName
     if !qName.startsWith("h") then None else
