@@ -12,6 +12,9 @@ abstract class JSLibrary:
 
   def inlineJs: Option[Js] = None
 
+  /** Inline script in `<head>` (e.g. apply a stored preference before paint). */
+  def headInlineJs: Option[Js] = None
+
   def isModule: Boolean = false
 
   def inlineBeforeImports: Boolean = false

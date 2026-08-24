@@ -155,11 +155,19 @@ Support in a markup-independent way:
 
 Support glossary in all markups, not just AsciiDoc.
 
-Switch between:
+MarkDown:
 
-- display definition inline, in parentheses;
-- display definition in tooltip;
-- do not display it at all.
+- https://github.com/vsch/flexmark-java/wiki/Extensions#definition-lists
+- https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension
+- https://michelf.ca/projects/php-markdown/extra/#def-list
+
+=== Bibliography
+
+Handle bibliography in a markup-independent way.
+
+MarkDown: https://pandoc.org/MANUAL.html#citations
+
+Is there some Java library for citation formatting?
 
 === Section links
 

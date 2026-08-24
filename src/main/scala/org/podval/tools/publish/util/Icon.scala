@@ -23,6 +23,7 @@ object Icon:
   val list = Icon("list", Solid)
   val errors = Icon("circle-xmark", Regular)
   val pdf = Icon("file-pdf", Regular)
+  val book = Icon("book", Solid)
   val arrowUp = Icon("arrow-up", Solid)
   val arrowLeft = Icon("arrow-left", Solid)
   val arrowRight = Icon("arrow-right", Solid)

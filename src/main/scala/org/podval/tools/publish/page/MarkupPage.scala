@@ -70,7 +70,8 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         // TODO {%- feed_meta -%}: https://github.com/jekyll/jekyll-feed
         libraries.flatMap(library => library.stylesheet.map(ref =>
           link(rel := "stylesheet", href := s"${library.cdn}$ref")
-        ))
+        )),
+        libraries.flatMap(_.headInlineJs.map(code => script().inlineJs(code)))
       ),
       body(
         site.siteHeader(this),

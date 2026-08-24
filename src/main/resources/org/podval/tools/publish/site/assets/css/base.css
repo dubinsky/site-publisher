@@ -200,9 +200,55 @@ dd > p:last-child {
     display: block;
 }
 
+html.glossary-expand .glossary-tip,
+html.glossary-expand .glossary-ref:hover > .glossary-tip,
+html.glossary-expand .glossary-ref:focus-within > .glossary-tip {
+    display: inline;
+    position: static;
+    left: auto;
+    top: auto;
+    z-index: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    white-space: inherit;
+}
+
+html.glossary-expand .glossary-tip::before {
+    content: " (";
+}
+
+html.glossary-expand .glossary-tip::after {
+    content: ")";
+}
+
 @media print {
-    .glossary-tip, .footnote-tip {
+    .footnote-tip {
         display: none !important;
+    }
+    /* Always inline in PDF/print; the header toggle is screen-only. */
+    .glossary-tip {
+        display: inline;
+        position: static;
+        left: auto;
+        top: auto;
+        z-index: auto;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border: none;
+        background: none;
+        box-shadow: none;
+        white-space: inherit;
+    }
+    .glossary-tip::before {
+        content: " (";
+    }
+    .glossary-tip::after {
+        content: ")";
     }
 }
 

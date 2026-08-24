@@ -17,6 +17,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
   override def cdn: String = ""
   override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
+
+  override def headInlineJs: Some[Js] = Some:
+    js"""try{if(localStorage.getItem('glossary-expand')==='1')document.documentElement.classList.add('glossary-expand')}catch(e){}"""
+
+  override def inlineJs: Some[Js] = Some(Site.glossaryExpandJs)
   
   // Directories
   val sourceDirectory: File = File(options.sourceDirectoryPath).getAbsoluteFile
@@ -232,6 +237,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
             page.prev.map(_.navRef(Icon.arrowLeft)),
             page.next.map(_.navRef(Icon.arrowRight))
           )
+        ),
+        button(
+          `type` := "button",
+          id := "glossary-expand-toggle",
+          className := "glossary-expand-toggle",
+          aria("pressed") := "false",
+          titleAttr := "Show glossary definitions in the text",
+          Icon.book.html,
+          span(className := "glossary-expand-label", "Glossary")
         )
       )
     )
@@ -271,6 +285,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
 object Site:
+  private lazy val glossaryExpandJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/glossaryExpand.js"))
+
   val localhost: String = "127.0.0.1"
   val defaultHttpPort: Int = 8000
 

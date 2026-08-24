@@ -23,12 +23,47 @@
     float: left;
 
     @media screen and (max-width: var(--on-palm)) {
-        padding-right: 45px;
+        padding-right: 90px;
     }
 
     &,
     &:visited {
         color: var(--site-title-color);
+    }
+}
+
+.glossary-expand-toggle {
+    float: right;
+    margin: 0 var(--spacing-unit-half) 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-color);
+    font: inherit;
+    cursor: pointer;
+    line-height: inherit;
+
+    &[aria-pressed="true"] {
+        font-weight: 600;
+    }
+
+    @media screen and (max-width: var(--on-medium)) {
+        position: relative;
+        z-index: 1;
+        margin-right: 48px;
+        width: 36px;
+        height: 36px;
+        overflow: hidden;
+    }
+}
+
+.glossary-expand-label {
+    @media screen and (max-width: var(--on-medium)) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
     }
 }
 
