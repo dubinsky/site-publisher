@@ -64,9 +64,10 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 
 ## IntelliJ + Grok Build Tips
 
+- Semantic Scala work (rename, find symbol/usages, inspections) goes through IntelliJ MCP. Procedure, including prompting to start the IDE and open this project: `~/.grok/rules/intellij-mcp.md`.
 - Run `grok` directly inside the IntelliJ terminal (it is detected as a JetBrains terminal).
 - Run `/terminal-setup` inside Grok for diagnostics (clipboard, colors, key handling, etc.).
-- JetBrains full ACP integration is "Coming soon". Until then the terminal experience is the supported way.
+- JetBrains full ACP integration is "Coming soon". Until then the terminal plus MCP is the supported way.
 - Attach files with `@path` (e.g. `@src/main/scala/org/podval/tools/publish/site/Site.scala`).
 - Use the project root as the working directory when starting Grok so it picks up `AGENTS.md` and `.gitignore`.
 

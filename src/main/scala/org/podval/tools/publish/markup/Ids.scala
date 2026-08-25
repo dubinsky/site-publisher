@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.xml.Xml
 
 final class Ids private(anchors: Seq[Ids.Id]):
   private def getById(id: String): Option[Ids.Id] = anchors.find(_.id == id)
@@ -14,12 +14,10 @@ object Ids:
   )
   
   def apply(
-    xml: Xml.Element,
-    xmlDialect: XmlDialect
+    xml: Xml.Element
   ): Ids = new Ids(
-    xmlDialect.gatherWithContext(
-      xml,
-      isContext = Section.is,
-      gatherElement = (element, section) => element.getId.map(id => Id(id, section.map(_.getId.get)))
+    xml.gatherWithContext(
+      gatherElement = (element, section) => element.getId.map(id => Id(id, section.map(_.getId.get))),
+      isContext = Section.is
     )
   )

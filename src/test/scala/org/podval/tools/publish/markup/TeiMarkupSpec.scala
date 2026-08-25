@@ -26,14 +26,14 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("""tei-class="footnote-link""""), dumped)
     assert(dumped.contains("""class="footnote""""), dumped)
     assert(dumped.contains("A note"), dumped)
-    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    val ids: Seq[String] = Footnote.linkIds(xml).toSeq
     assert(ids.size == 1, dumped)
-    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val bodies: Seq[Xml.Element] = xml.gather( element =>
       Option.when(Footnote.isBody(element))(element)
     ).toSeq
     assert(bodies.size == 1, dumped)
     assert(Footnote.getCorrelationId(bodies.head) == ids.head, dumped)
-    val leftover: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val leftover: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "note")(element)
     ).toSeq
     assert(leftover.size == 1, dumped)
@@ -53,7 +53,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("""colspan="2""""), dumped)
     assert(!dumped.contains("<row"), dumped)
     assert(!dumped.contains("<cell"), dumped)
-    val cells: Seq[String] = HtmlXmlDialect.gather(xml, element =>
+    val cells: Seq[String] = xml.gather( element =>
       Option.when(element.getName == "td" || element.getName == "th")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
@@ -90,23 +90,23 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("""tei-class="glossary-item""""), dumped)
     assert(dumped.contains("""href="#posuk""""), dumped)
     assert(dumped.contains("""href="#mud""""), dumped)
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk", "rasha", "custom", "mud"), dumped)
     assert(Xml.toString(defs("posuk")).trim == "verse")
     assert(Xml.toString(defs("rasha")).trim == "sinner")
     assert(Xml.toString(defs("custom")).trim == "the first Lubavitcher Rebbe")
     assert(Xml.toString(defs("mud")).trim == "wet dirt")
-    val items: Set[String] = HtmlXmlDialect.gather(xml, element =>
+    val items: Set[String] = xml.gather( element =>
       Option.when(Glossary.isItem(element))(element.getId)
     ).flatten.toSet
     assert(items == Set("posuk", "akdamus", "rasha", "custom", "mud"), dumped)
     assert(dumped.contains("plain"), dumped)
-    val glossLists: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val glossLists: Seq[Xml.Element] = xml.gather( element =>
       Option.when(Glossary.isList(element))(element)
     ).toSeq
     assert(glossLists.size == 2, dumped)
     assert(glossLists.forall(_.getName == "dl"), dumped)
-    val leftoverLists: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val leftoverLists: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "list")(element)
     ).toSeq
     assert(leftoverLists.size == 1, dumped)
@@ -128,11 +128,11 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("<pre"), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
     assert(dumped.contains("not code"), dumped)
-    val codes: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val codes: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "code")(element)
     ).toSeq
     assert(codes.exists(c => c.hasClass("language-scala") && !c.getText.contains('\n')), dumped)
-    val pres: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val pres: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "pre")(element)
     ).toSeq
     assert(pres.size == 1, dumped)
@@ -141,7 +141,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(preCode.getText.contains("Width"), dumped)
     val plain: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
     assert(plain.getText.contains("plain"), dumped)
-    val egs: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val egs: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "eg")(element)
     ).toSeq
     assert(egs.size == 1, dumped)

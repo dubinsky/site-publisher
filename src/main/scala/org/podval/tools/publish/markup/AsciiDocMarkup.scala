@@ -90,7 +90,7 @@ object AsciiDocMarkup extends Markup(
     HtmlMarkup.process(cleanup(xml), errorReporter)
 
   private[markup] def cleanup(xml: Xml.Element): Xml.Element =
-    val cleaned: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
+    val cleaned: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
 
       val classes: Chunk[String] = result.getClasses
@@ -112,7 +112,7 @@ object AsciiDocMarkup extends Markup(
       result = convertCalloutList(result)
       result
     )
-    // HtmlXmlDialect.transform does not recurse into `<code>`, where listing callouts live.
+    // Default transform does not recurse into `<code>`, where listing callouts live.
     rewriteCalloutMarks(cleaned)
 
   private def rewriteCalloutMarks(element: Xml.Element): Xml.Element =

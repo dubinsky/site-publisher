@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlDialect, XmlParser}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -23,10 +23,10 @@ final class CalloutSpec extends AnyFunSuite:
     )._1
 
   private def marks(xml: Xml.Element): Seq[Xml.Element] =
-    XmlDialect.Plain.gather(xml, element => Option.when(Callout.isMark(element))(element)).toSeq
+    xml.gather(element => Option.when(Callout.isMark(element))(element), stopAtCode = false).toSeq
 
   private def lists(xml: Xml.Element): Seq[Xml.Element] =
-    XmlDialect.Plain.gather(xml, element => Option.when(Callout.isList(element))(element)).toSeq
+    xml.gather(element => Option.when(Callout.isList(element))(element), stopAtCode = false).toSeq
 
   test("AsciiDoc <1> markers and colist become callout IR") {
     val xml: Xml.Element = fromAsciiDoc(

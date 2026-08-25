@@ -26,7 +26,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     HtmlXmlDialect.render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    Footnote.harvest(xml, HtmlXmlDialect, AsciiDocMarkup.isSpuriousFootnotesDiv)
+    Footnote.harvest(xml, AsciiDocMarkup.isSpuriousFootnotesDiv)
 
   private def isItem(rendered: String, id: String, cssClass: String): Boolean =
     rendered.contains(s"""<div class="$cssClass" id="$id">""") ||
@@ -102,9 +102,9 @@ final class AsciiDocSpec extends AnyFunSuite:
   test("footnote:[A note.] becomes footnote IR") {
     val xml: Xml.Element = process("See this footnote:[A note.]\n")
     val dumped: String = render(xml)
-    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    val ids: Seq[String] = Footnote.linkIds(xml).toSeq
     assert(ids.size == 1, dumped)
-    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val bodies: Seq[Xml.Element] = xml.gather( element =>
       Option.when(Footnote.isBody(element))(element)
     ).toSeq
     assert(bodies.size == 1, dumped)
@@ -124,10 +124,10 @@ final class AsciiDocSpec extends AnyFunSuite:
         |""".stripMargin
     )
     val dumped: String = render(xml)
-    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    val ids: Seq[String] = Footnote.linkIds(xml).toSeq
     assert(ids.size == 2, dumped)
     assert(ids.toSet.size == 1, dumped)
-    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val bodies: Seq[Xml.Element] = xml.gather( element =>
       Option.when(Footnote.isBody(element))(element)
     ).toSeq
     assert(bodies.size == 1, dumped)
@@ -149,7 +149,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(dumped.contains("<table"), dumped)
     assert(!dumped.contains("tableblock"), dumped)
-    val cells: Seq[String] = HtmlXmlDialect.gather(xml, element =>
+    val cells: Seq[String] = xml.gather( element =>
       Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
@@ -169,7 +169,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
-    val codes: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val codes: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "code")(element)
     ).toSeq
     assert(codes.exists(_.hasClass("language-scala")), dumped)

@@ -14,8 +14,9 @@ import java.io.File
 // unless we actually calculate the set of markup languages used in a page ;)
 abstract class Markup(
   final val name: String,
-  // TODO use xmlDialect.plus(HtmlXmlDialect) for processing/printing
-  // and xmlDialect for pretty-printing.
+  // Write policy (`render`, `plus`).
+  // TODO use xmlDialect.plus(HtmlXmlDialect) for printing mixed HTML
+  // and xmlDialect for pretty-printing native.
   final val xmlDialect: XmlDialect,
   final val extension: String,
   additionalExtensions: Set[String] = Set.empty,

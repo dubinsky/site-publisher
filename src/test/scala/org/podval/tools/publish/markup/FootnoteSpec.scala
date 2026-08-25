@@ -35,12 +35,12 @@ final class FootnoteSpec extends AnyFunSuite:
       Footnote.link("b"),
       Footnote.body("a", Chunk(Xml.text("first")))
     ))
-    val (notes, stripped) = Footnote.harvest(xml, HtmlXmlDialect)
+    val (notes, stripped) = Footnote.harvest(xml)
     assert(notes("a").number == 1)
     assert(notes("b").number == 2)
     assert(notes("a").nodes.map(_.getText).mkString == "first")
     assert(stripped.getChildren.flatMap(_.asElement).forall(!Footnote.isBody(_)))
-    assert(Footnote.linkIds(stripped, HtmlXmlDialect).toSeq == Seq("a", "b"))
+    assert(Footnote.linkIds(stripped).toSeq == Seq("a", "b"))
   }
 
   test("harvest drops spurious footnote containers") {
@@ -50,7 +50,6 @@ final class FootnoteSpec extends AnyFunSuite:
     val xml: Xml.Element = Xml.element("div").setChildren(Chunk(Footnote.link("a"), inner))
     val (notes, stripped) = Footnote.harvest(
       xml,
-      HtmlXmlDialect,
       isSpuriousFootnotesDiv = element => element.getName == "div" && element.hasClass("footnotes")
     )
     assert(notes("a").number == 1)
@@ -66,14 +65,14 @@ final class FootnoteSpec extends AnyFunSuite:
       Footnote.body("a", Chunk(Xml.text("first"))),
       Footnote.body("b", Chunk(Xml.text("second")))
     ))
-    val (notes, stripped) = Footnote.harvest(xml, HtmlXmlDialect)
+    val (notes, stripped) = Footnote.harvest(xml)
     val onlyA: Xml.Element = stripped.setChildren(stripped.getChildren.take(1))
-    val appended: Xml.Element = Footnote.appendReferenced(onlyA, notes, HtmlXmlDialect)
+    val appended: Xml.Element = Footnote.appendReferenced(onlyA, notes)
     val dumped: String = render(appended)
     assert(dumped.contains("""class="footnotes""""), dumped)
     assert(dumped.contains("first"), dumped)
     assert(!dumped.contains("second"), dumped)
-    assert(Footnote.appendReferenced(Xml.element("div"), notes, HtmlXmlDialect).getChildren.isEmpty)
+    assert(Footnote.appendReferenced(Xml.element("div"), notes).getChildren.isEmpty)
   }
 
   test("resolveLink turns a stub into a numbered reference") {

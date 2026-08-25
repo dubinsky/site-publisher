@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{ChunkedMarkupPage, FullMarkupPage}
-import org.podval.xml.{Html, Xml, XmlDialect, XmlUtil}
+import org.podval.xml.{Html, Xml, XmlUtil}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import zio.blocks.chunk.Chunk
@@ -66,15 +66,14 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
   def select(
     xml: Xml.Element,
     sectionId: Option[String],
-    isTerminal: Boolean,
-    xmlDialect: XmlDialect
+    isTerminal: Boolean
   ): Xml.Element =
     val (element, sections) = sectionId match
       case None =>
         (xml, this)
 
       case Some(sectionId) =>
-        (XmlUtil.elementById(xml, sectionId, xmlDialect), getById(sectionId))
+        (XmlUtil.elementById(xml, sectionId), getById(sectionId))
 
     if isTerminal then element else sections.sections.headOption.map(_.id) match
       case None =>

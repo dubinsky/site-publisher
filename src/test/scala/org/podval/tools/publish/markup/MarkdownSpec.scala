@@ -16,7 +16,7 @@ final class MarkdownSpec extends AnyFunSuite:
     HtmlXmlDialect.render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    Footnote.harvest(xml, HtmlXmlDialect, MarkdownMarkup.isSpuriousFootnotesDiv)
+    Footnote.harvest(xml, MarkdownMarkup.isSpuriousFootnotesDiv)
 
   test("nested lists") {
     val xml: Xml.Element = parse(
@@ -35,10 +35,10 @@ final class MarkdownSpec extends AnyFunSuite:
         |""".stripMargin
     )
     val dumped: String = render(xml)
-    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    val ids: Seq[String] = Footnote.linkIds(xml).toSeq
     assert(ids.size == 2, dumped)
     assert(ids.toSet.size == 1, dumped)
-    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val bodies: Seq[Xml.Element] = xml.gather( element =>
       Option.when(Footnote.isBody(element))(element)
     ).toSeq
     assert(bodies.size == 1, dumped)
@@ -59,7 +59,7 @@ final class MarkdownSpec extends AnyFunSuite:
     )
     val dumped: String = render(xml)
     assert(dumped.contains("<table"), dumped)
-    val cells: Seq[String] = HtmlXmlDialect.gather(xml, element =>
+    val cells: Seq[String] = xml.gather( element =>
       Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
@@ -80,12 +80,12 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
-    val codes: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val codes: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "code")(element)
     ).toSeq
     val inline: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
     assert(inline.getText.contains("map"), dumped)
-    val pres: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val pres: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "pre")(element)
     ).toSeq
     assert(pres.size == 1, dumped)

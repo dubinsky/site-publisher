@@ -1,7 +1,6 @@
 package org.podval.xml
 
 object HtmlXmlDialect extends XmlDialect(
-  stop = Set("code"),
   preformat = Set("pre"),
   stack = Set("nav", "header", "main", "div"),
   // Phrasing wrappers: never indent children (that would become a visible HTML space).

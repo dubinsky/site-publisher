@@ -42,7 +42,7 @@ final class GlossarySpec extends AnyFunSuite:
         |</div>
         |""".stripMargin
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk", "rasha"))
     assert(definitionText(defs, "posuk") == "verse")
     assert(definitionText(defs, "rasha") == "sinner")
@@ -52,7 +52,7 @@ final class GlossarySpec extends AnyFunSuite:
     val xml: Xml.Element = parse(
       """<div class="glossary-item" id="html-term"><dl><dt>html-term</dt><dd>defined in HTML</dd></dl></div>"""
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("html-term"))
     assert(definitionText(defs, "html-term") == "defined in HTML")
   }
@@ -74,7 +74,7 @@ final class GlossarySpec extends AnyFunSuite:
         |</div>
         |""".stripMargin
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk", "mud", "rain"))
     assert(definitionText(defs, "posuk") == "verse")
     assert(definitionText(defs, "mud") == "wet dirt")
@@ -114,7 +114,7 @@ final class GlossarySpec extends AnyFunSuite:
         |[[term-b]]term-b:: definition b
         |""".stripMargin
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk", "rasha", "mud", "rain", "term-a", "term-b"))
     assert(definitionText(defs, "posuk") == "verse")
     assert(definitionText(defs, "rasha") == "sinner")
@@ -122,11 +122,11 @@ final class GlossarySpec extends AnyFunSuite:
     assert(definitionText(defs, "rain") == "water falling from the sky")
     assert(definitionText(defs, "term-a") == "definition a")
     assert(definitionText(defs, "term-b") == "definition b")
-    val glossaryLists = HtmlXmlDialect.gather(xml, element =>
+    val glossaryLists = xml.gather( element =>
       Option.when(Glossary.isList(element))(element)
     )
     assert(glossaryLists.size == 4)
-    val glossaryItems = HtmlXmlDialect.gather(xml, element =>
+    val glossaryItems = xml.gather( element =>
       Option.when(Glossary.isItem(element))(element.getId)
     ).flatten
     assert(glossaryItems.toSet == Set("posuk", "akdamus", "rasha", "mud", "rain", "term-a", "term-b"))
@@ -152,7 +152,7 @@ final class GlossarySpec extends AnyFunSuite:
     assert(rendered.contains("""id="posuk""""))
     assert(!rendered.contains("dlist-item"))
     assert(!rendered.contains("{:.glossary}"))
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk"))
     assert(definitionText(defs, "posuk") == "verse")
     assert(!defs.contains("CPU"))
@@ -168,7 +168,7 @@ final class GlossarySpec extends AnyFunSuite:
         |</div>
         |""".stripMargin
     ))
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("mud"))
     assert(definitionText(defs, "mud") == "wet dirt")
     assert(Glossary.isList(xml.getChildren.flatMap(_.asElement).find(_.getName == "dl").get))
@@ -182,7 +182,7 @@ final class GlossarySpec extends AnyFunSuite:
         |{:.glossary}
         |""".stripMargin
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("Alter-Rebbe"), render(xml))
     assert(definitionText(defs, "Alter-Rebbe") == "the first Lubavitcher Rebbe")
   }
@@ -198,7 +198,7 @@ final class GlossarySpec extends AnyFunSuite:
         |</div>
         |""".stripMargin
     ))
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("custom"))
     assert(definitionText(defs, "custom") == "the first Lubavitcher Rebbe")
   }
@@ -229,13 +229,13 @@ final class GlossarySpec extends AnyFunSuite:
         |{:.glossary}
         |""".stripMargin
     )
-    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("posuk", "rasha", "mud", "rain"))
     assert(definitionText(defs, "posuk") == "verse")
     assert(definitionText(defs, "rasha") == "sinner")
     assert(definitionText(defs, "mud") == "wet, cold dirt")
     assert(definitionText(defs, "rain") == "water falling from the sky")
-    val glossaryLists = HtmlXmlDialect.gather(xml, element =>
+    val glossaryLists = xml.gather( element =>
       Option.when(Glossary.isList(element))(element)
     )
     assert(glossaryLists.size == 2)

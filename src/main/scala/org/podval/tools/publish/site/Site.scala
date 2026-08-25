@@ -170,8 +170,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
       content <- page.content
     do
       backLinks.addBackLinks(
-        content.source.markup.xmlDialect.gatherWithParent(
-          element = content.xml,
+        content.xml.gatherWithParent(
           gatherElement = (element: Xml.Element, parent: Option[Xml.Element]) =>
             if !Link.isInternal(element) then None else BackLink(
               element,

@@ -32,8 +32,7 @@ object XmlUtil:
 
   def elementById(
     xml: Xml.Element,
-    id: String,
-    xmlDialect: XmlDialect
-  ): Xml.Element = xmlDialect
-    .gather(xml, element => Option.when(element.getId.contains(id))(element))
+    id: String
+  ): Xml.Element = xml
+    .gather(element => Option.when(element.getId.contains(id))(element))
     .head

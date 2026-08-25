@@ -53,7 +53,7 @@ object MarkdownMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
-    val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
+    val result: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
       result = WikiBlock.convert(result, errorReporter).getOrElse(result)
       if !result.isA then
@@ -69,7 +69,7 @@ object MarkdownMarkup extends Markup(
     )
 
   private[markup] def convert(xml: Xml.Element): Xml.Element =
-    xmlDialect.transform(xml, (element: Xml.Element) =>
+    xml.transform((element: Xml.Element) =>
       val children: Xml.Nodes = XmlUtil.convertElements(element.getChildren, HtmlMarkup.unwrapSpuriousParagraph)
       convertTaskList(element.setChildren(convertDescriptionLists(children)))
     )

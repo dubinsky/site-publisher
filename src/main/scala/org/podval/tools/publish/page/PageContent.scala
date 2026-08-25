@@ -5,7 +5,7 @@ import org.podval.tools.publish.markup.{Bibliography, Footnote, Glossary, Ids, L
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, Xml, Xml2Html, XmlDialect}
+import org.podval.xml.{Html, Xml, Xml2Html}
 import java.io.File
 
 /** Prepared once per document (`PageContent.apply`); resolved per chunk in `markupContent`. */
@@ -27,21 +27,19 @@ final class PageContent private(
     isTerminal: Boolean
   ): Html.Element =
     val isChunked: Boolean = sectionId.isDefined || !isTerminal
-    val xmlDialect: XmlDialect = source.markup.xmlDialect
 
     // Select XML to include
     val selected: Xml.Element = toc.select(
       xml = xml,
       sectionId = sectionId,
-      isTerminal = isTerminal,
-      xmlDialect = xmlDialect
+      isTerminal = isTerminal
     )
 
     // Add bodies of the footnotes referenced in the selected XML
-    val withFootnotes: Xml.Element = Footnote.appendReferenced(selected, footnotes, xmlDialect)
+    val withFootnotes: Xml.Element = Footnote.appendReferenced(selected, footnotes)
 
     // Resolve citations
-    val (withCitations: Xml.Element, unknownCitations: Seq[String]) = bibliography.resolve(withFootnotes, xmlDialect)
+    val (withCitations: Xml.Element, unknownCitations: Seq[String]) = bibliography.resolve(withFootnotes)
     // Report unknown citations on the full page only, not for chunks
     // (the cited keys may live on another chunk).
     if !isChunked then unknownCitations.foreach: label =>
@@ -50,7 +48,7 @@ final class PageContent private(
     val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
 
     // Convert to HTML
-    insertToc(Xml2Html.fromXml(withLinks), sectionId, isChunked, xmlDialect)
+    insertToc(Xml2Html.fromXml(withLinks), sectionId, isChunked)
 
   private lazy val bibliography: Bibliography =
     val sourceFile: File = source.page.site.sourceFile(source.sourcePath)
@@ -64,8 +62,7 @@ final class PageContent private(
   private def insertToc(
     html: Html.Element,
     sectionId: Option[String],
-    isChunked: Boolean,
-    xmlDialect: XmlDialect
+    isChunked: Boolean
   ): Html.Element =
     var tocAdded: Boolean = false
     def tocHtml: Html.Element = toc.html(
@@ -73,7 +70,7 @@ final class PageContent private(
       tocDepth = source.page.tocDepth,
       chunkDepth = Option.when(isChunked)(source.page.chunkDepth)
     )
-    val withPlaceholder: Html.Element = xmlDialect.transform(html, element =>
+    val withPlaceholder: Html.Element = Html.transform(html)(element =>
       if tocAdded || !source.markup.isTocPlaceholder(element) then element else
         tocAdded = true
         tocHtml
@@ -151,8 +148,6 @@ object PageContent:
     frontMatter: FrontMatter,
     xml: Xml.Element
   ): PageContent =
-    val xmlDialect: XmlDialect = source.markup.xmlDialect
-
     // Run markup-specific processors and extract title
     val (xmlProcessed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
 
@@ -161,10 +156,9 @@ object PageContent:
     // Prepare to calculate Toc and backlinks.
     // Footnote *links* stay in the tree; bodies are harvested then stripped.
     val ids: IdGenerator = IdGenerator("_generated_id")
-    val prepared: Xml.Element = xmlDialect.transform(xmlProcessed, prepareElement(_, source, ids))
+    val prepared: Xml.Element = xmlProcessed.transform(prepareElement(_, source, ids))
     val (footnotes: Map[String, Footnote], harvested: Xml.Element) = Footnote.harvest(
       xml = prepared,
-      xmlDialect = xmlDialect,
       isSpuriousFootnotesDiv = source.markup.isSpuriousFootnotesDiv
     )
 
@@ -174,10 +168,10 @@ object PageContent:
       title = title,
       xml = harvested,
       toc = Toc(harvested, source.markup, source),
-      ids = Ids(harvested, xmlDialect),
-      blocks = WikiBlocks(harvested, xmlDialect, source),
+      ids = Ids(harvested),
+      blocks = WikiBlocks(harvested, source),
       footnotes = footnotes,
-      glossaryDefinitions = Glossary.definitions(harvested, xmlDialect)
+      glossaryDefinitions = Glossary.definitions(harvested)
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */

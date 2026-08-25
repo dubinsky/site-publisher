@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlDialect}
+import org.podval.xml.{HtmlClass, Xml}
 
 // Details of the glossary internal representation.
 // Markup processors convert their HTML into this shape; definitions() does not
@@ -23,10 +23,9 @@ object Glossary:
     .setChildren(children)
 
   def definitions(
-    xml: Xml.Element,
-    xmlDialect: XmlDialect
+    xml: Xml.Element
   ): Map[String, Xml.Nodes] =
-    xmlDialect.gather(xml, element =>
+    xml.gather(element =>
       for
         id <- element.getId
         if isItem(element)

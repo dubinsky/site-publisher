@@ -90,7 +90,7 @@ final class TaskListSpec extends AnyFunSuite:
   }
 
   private def assertMixed(xml: Xml.Element, dumped: String): Unit =
-    val lists: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+    val lists: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.getName == "ul" || element.getName == "ol")(element)
     ).toSeq
     val list: Xml.Element = lists.find(_.has(TaskList.ListClass)).getOrElse:

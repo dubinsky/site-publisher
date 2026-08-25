@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlDialect}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
 import zio.blocks.chunk.Chunk
 
 // Details of the footnote internal representation.
@@ -34,8 +34,8 @@ object Footnote:
     .set(CorrelationId, correlationId)
     .setChildren(content)
 
-  def linkIds(xml: Xml.Element, xmlDialect: XmlDialect): Chunk[String] =
-    xmlDialect.gather(xml, element =>
+  def linkIds(xml: Xml.Element): Chunk[String] =
+    xml.gather(element =>
       Option.when(isLink(element))(getCorrelationId(element))
     )
 
@@ -43,12 +43,11 @@ object Footnote:
     * leftover footnote containers) from the tree. */
   def harvest(
     xml: Xml.Element,
-    xmlDialect: XmlDialect,
     isSpuriousFootnotesDiv: Xml.Element => Boolean = _ => false
   ): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = linkIds(xml, xmlDialect).zipWithIndexFrom(1).toMap
-    val footnotes: Map[String, Footnote] = xmlDialect
-      .gather(xml, element =>
+    val numbers: Map[String, Int] = linkIds(xml).zipWithIndexFrom(1).toMap
+    val footnotes: Map[String, Footnote] = xml
+      .gather(element =>
         Option.when(isBody(element)):
           val correlationId: String = getCorrelationId(element)
           correlationId -> Footnote(
@@ -58,7 +57,7 @@ object Footnote:
           )
       )
       .toMap
-    val stripped: Xml.Element = xmlDialect.transform(xml, element =>
+    val stripped: Xml.Element = xml.transform(element =>
       element.setChildren(element
         .getChildren
         .filterNot(_.asElement.fold(false)(child =>
@@ -73,10 +72,9 @@ object Footnote:
   // TODO how do multi-level footnotes look?
   def appendReferenced(
     xml: Xml.Element,
-    footnotes: Map[String, Footnote],
-    xmlDialect: XmlDialect
+    footnotes: Map[String, Footnote]
   ): Xml.Element =
-    val toAdd: Chunk[Footnote] = linkIds(xml, xmlDialect).map(footnotes)
+    val toAdd: Chunk[Footnote] = linkIds(xml).map(footnotes)
     if toAdd.isEmpty then xml
     else
       val footnotesDiv: Xml.Element = Xml

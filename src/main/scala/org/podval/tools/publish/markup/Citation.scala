@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlAttribute, XmlDialect}
+import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlAttribute}
 import zio.blocks.chunk.Chunk
 
 object Citation:
@@ -66,8 +66,8 @@ object Citation:
       .filter(_.key.nonEmpty)
       .toSeq
 
-  def gather(xml: Xml.Element, xmlDialect: XmlDialect): Chunk[Xml.Element] =
-    xmlDialect.gather(xml, element => Option.when(isCite(element))(element))
+  def gather(xml: Xml.Element): Chunk[Xml.Element] =
+    xml.gather(element => Option.when(isCite(element))(element))
 
   /** AsciiDoc `cite:[key]`, `cite:[key, 33]`, `cite:[key1, key2]`. */
   def parseAsciiDocTarget(raw: String): Seq[Item] =

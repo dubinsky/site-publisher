@@ -133,10 +133,12 @@ object Tei:
   def parse(content: String): Either[Throwable, TEI] = XmlParser.parseXml(content).flatMap: xml =>
     // TODO working around ZIO Blocks XML bug where attributes are discarded if the element does not have sub-elements;
     // report it!
-    val xmlEffective = TeiXmlDialect.transform(xml, element =>
-      if element.attributes.isEmpty || element.children.exists(_.isInstanceOf[Xml.Element]) // TODO compiler warning!
-      then element
-      else element.copy(children = element.children :+ Xml.element(WithRawXml.dummyElement))
+    val xmlEffective = xml.transform(
+      element =>
+        if element.attributes.isEmpty || element.children.exists(_.isInstanceOf[Xml.Element]) // TODO compiler warning!
+        then element
+        else element.copy(children = element.children :+ Xml.element(WithRawXml.dummyElement)),
+      stopAtCode = false
     )
     try Right(codec.decodeValue(xmlEffective))
     catch case error: XmlCodecError => Left(error)

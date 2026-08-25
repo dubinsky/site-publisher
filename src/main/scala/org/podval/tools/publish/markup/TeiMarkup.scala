@@ -45,29 +45,34 @@ object TeiMarkup extends Markup(
 
     // Xml2Html prefixes reserved HTML attributes (`class` → `tei-class`, `lang` → `tei-lang`).
     // Convert footnotes, glossary, and code in a second pass so IR `class` values are kept.
-    val converted: Xml.Element = xmlDialect.transform(xml, element =>
-      convertSpecial(tei2Html.convert(element))
+    val converted: Xml.Element = xml.transform(
+      element => convertSpecial(tei2Html.convert(element)),
+      stopAtCode = false
     )
     // TODO does it really need to be a separate pass?
-    val withIr: Xml.Element = xmlDialect.transform(converted, element =>
-      var result: Xml.Element = element.setChildren(
-        XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
-      )
-      result = convertGlossary(result).getOrElse(result)
-      // Do not re-wrap `<code>` already inside `<pre>`.
-      if result.getName != "pre" then
-        result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
-      result
+    val withIr: Xml.Element = converted.transform(
+      element =>
+        var result: Xml.Element = element.setChildren(
+          XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
+        )
+        result = convertGlossary(result).getOrElse(result)
+        // Do not re-wrap `<code>` already inside `<pre>`.
+        if result.getName != "pre" then
+          result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
+        result,
+      stopAtCode = false
     )
 
     (markHeadedDivs(withIr), None)
 
   // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =
-    xmlDialect.transform(xml, element =>
-      if element.getName == "div" && sectionHeader(element).isDefined
-      then Section.mark(element)
-      else element
+    xml.transform(
+      element =>
+        if element.getName == "div" && sectionHeader(element).isDefined
+        then Section.mark(element)
+        else element,
+      stopAtCode = false
     )
 
   private def convertSpecial(element: Xml.Element): Xml.Element = element.getName match

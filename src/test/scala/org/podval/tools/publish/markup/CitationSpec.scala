@@ -44,7 +44,7 @@ final class CitationSpec extends AnyFunSuite:
   private def parse(xml: String): Xml.Element = XmlParser.parseXml(xml).toOption.get
 
   private def cites(xml: Xml.Element): Seq[Xml.Element] =
-    Citation.gather(xml, HtmlXmlDialect).toSeq
+    Citation.gather(xml).toSeq
 
   private def citeItems(xml: Xml.Element): Seq[(Citation.Mode, Citation.Item)] =
     cites(xml).flatMap(c => Citation.itemsOf(c).map(Citation.modeOf(c) -> _))
@@ -242,7 +242,7 @@ final class CitationSpec extends AnyFunSuite:
       Xml.element("p").setChildren(Chunk(unknown)),
       Citation.listPlaceholder
     )
-    val (resolved, labels) = bib.resolve(xml, HtmlXmlDialect)
+    val (resolved, labels) = bib.resolve(xml)
     val dumped: String = render(resolved)
     assert(labels == Seq("missing"), labels)
     assert(dumped.toLowerCase.contains("knuth"), dumped)
@@ -258,7 +258,7 @@ final class CitationSpec extends AnyFunSuite:
     val bib: Bibliography = bibliography("apa")
     val stub: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("knuth79")))
     val xml: Xml.Element = wrap(Xml.element("p").setChildren(Chunk(stub)))
-    val (resolved, labels) = bib.resolve(xml, HtmlXmlDialect)
+    val (resolved, labels) = bib.resolve(xml)
     assert(labels.isEmpty)
     val last: Xml.Element = resolved.getChildren.flatMap(_.asElement).last
     assert(Citation.isList(last), render(resolved))

@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlDialect, XmlParser}
+import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -13,7 +13,7 @@ final class SectionSpec extends AnyFunSuite:
 
   private def normalizeTree(xml: Xml.Element, markup: Markup): Xml.Element =
     val ids: IdGenerator = IdGenerator("_id")
-    XmlDialect.Plain.transform(xml, Section.normalize(_, markup, ids))
+    xml.transform(Section.normalize(_, markup, ids))
 
   test("normalize copies xml:id to id") {
     val xml: Xml.Element = XmlParser.parseXml(
@@ -64,7 +64,7 @@ final class SectionSpec extends AnyFunSuite:
     val xml: Xml.Element = XmlParser.parseXml(
       """<div xml:id="meth"><pb n="1"/><fw type="pageNum">3</fw><head>Methodology</head><p>body</p></div>"""
     ).toOption.get
-    val converted: Xml.Element = XmlDialect.Plain.transform(xml, element =>
+    val converted: Xml.Element = xml.transform(element =>
       if element.getName == "head" then element.rename("tei-head") else element
     )
     val header: Xml.Element = TeiMarkup.sectionHeader(converted).get
@@ -81,7 +81,7 @@ final class SectionSpec extends AnyFunSuite:
         |  </div>
         |</div>"""
     ).toOption.get
-    val converted: Xml.Element = XmlDialect.Plain.transform(xml, element =>
+    val converted: Xml.Element = xml.transform(element =>
       if element.getName == "head" then element.rename("tei-head") else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)

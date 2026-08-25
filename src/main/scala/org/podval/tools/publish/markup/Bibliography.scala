@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import de.undercouch.citeproc.CSL
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItemBuilder}
-import org.podval.xml.{HtmlElement, Xml, XmlDialect, XmlParser}
+import org.podval.xml.{HtmlElement, Xml, XmlParser}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import java.io.{File, FileInputStream}
@@ -60,15 +60,14 @@ final class Bibliography(
       )
 
   def resolve(
-    xml: Xml.Element,
-    xmlDialect: XmlDialect
+    xml: Xml.Element
   ): (Xml.Element, Seq[String]) =
-    val stubs: Seq[Xml.Element] = Citation.gather(xml, xmlDialect)
+    val stubs: Seq[Xml.Element] = Citation.gather(xml)
     if stubs.isEmpty then (xml, Seq.empty)
     else
       val (replacements: Map[Xml.Element, Xml.Element], list: Option[Xml.Element]) = format(stubs)
       var replacedList: Boolean = false
-      var result: Xml.Element = xmlDialect.transform(xml, element =>
+      var result: Xml.Element = xml.transform(element =>
         if Citation.isCite(element) then replacements.getOrElse(element, element)
         else if Citation.isList(element) then
           replacedList = true

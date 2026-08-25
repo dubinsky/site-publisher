@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.xml.Xml
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 
 final class WikiBlocks private(blocks: Seq[WikiBlock]):
@@ -9,10 +9,9 @@ final class WikiBlocks private(blocks: Seq[WikiBlock]):
 object WikiBlocks:
   def apply(
     xml: Xml.Element,
-    xmlDialect: XmlDialect,
     errorReporter: PageErrorReporter
   ): WikiBlocks = new WikiBlocks(
-    xmlDialect.gather(xml, element =>
+    xml.gather(element =>
       if !WikiBlock.is(element) then None else element
         .getId
         .map(WikiBlock(_))

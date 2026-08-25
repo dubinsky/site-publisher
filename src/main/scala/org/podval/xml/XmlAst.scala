@@ -68,6 +68,50 @@ trait XmlAst[ELEMENT]:
       .flatMap(_.asElement)
       .flatMap(element => f(element))
 
+    def transform(
+      transformElement: Element => Element,
+      stopAtCode: Boolean = true
+    ): Element =
+      def loop(element: Element): Element =
+        if stopAtCode && element.getName == "code" then element
+        else
+          val result: Element = transformElement(element)
+          result.setChildren(result.getChildren.map(xml => xml.asElement.fold(xml)(loop)))
+      loop(element)
+
+    def gather[A](
+      gatherElement: Element => Option[A],
+      stopAtCode: Boolean = true
+    ): Chunk[A] =
+      def loop(element: Element): Chunk[A] =
+        val fromElement: Option[A] = gatherElement(element)
+        val fromChildren: Chunk[A] =
+          if stopAtCode && element.getName == "code" then Chunk.empty
+          else element.flatMapElements(loop)
+        Chunk.from(fromElement) ++ fromChildren
+      loop(element)
+
+    def gatherWithContext[A](
+      gatherElement: (Element, Option[Element]) => Option[A],
+      isContext: Element => Boolean,
+      stopAtCode: Boolean = true
+    ): Seq[A] =
+      def loop(element: Element, context: Option[Element]): Chunk[A] =
+        val fromElement: Option[A] = gatherElement(element, context)
+        val fromChildren: Chunk[A] =
+          if stopAtCode && element.getName == "code" then Chunk.empty
+          else
+            val contextNew: Option[Element] = if isContext(element) then Some(element) else context
+            element.flatMapElements(loop(_, contextNew))
+        Chunk.from(fromElement) ++ fromChildren
+      loop(element, None)
+
+    def gatherWithParent[A](
+      gatherElement: (Element, Option[Element]) => Option[A],
+      stopAtCode: Boolean = true
+    ): Seq[A] =
+      element.gatherWithContext(gatherElement, _ => true, stopAtCode)
+
   // For ScalaXML, I had to deal with the namespace, and had getAttributes(parent) parameter:
   //    val parentNamespaces: Seq[Namespace] = parent.fold[Seq[Namespace]](Seq.empty)(Namespace.getAll)
   //    Namespace.getAll(element).filterNot(parentNamespaces.contains).map(_.attributeValue) ++
