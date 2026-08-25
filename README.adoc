@@ -155,6 +155,49 @@ Chunked TOC shows ancestors plus the current subtree; sibling branches are title
 
 Markdown tables via FlexMark Tables Extension (Obsidian supports them natively).
 
+Markdown::
++
+[source,markdown]
+----
+| A | B |
+|---|---|
+| 1 | 2 |
+----
+
+AsciiDoc tables via Asciidoctor.
+
+AsciiDoc::
++
+[source,asciidoc]
+----
+|===
+| A | B
+
+| 1 | 2
+|===
+----
+
+HTML::
++
+[source,html]
+----
+<table>
+  <thead><tr><th>A</th><th>B</th></tr></thead>
+  <tbody><tr><td>1</td><td>2</td></tr></tbody>
+</table>
+----
+
+TEI::
++
+[source,xml]
+----
+<table>
+  <row role="label"><cell>A</cell><cell>B</cell></row>
+  <row><cell>1</cell><cell>2</cell></row>
+</table>
+----
+
+
 [#task-lists]
 == Task Lists
 
