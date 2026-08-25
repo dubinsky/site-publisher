@@ -48,7 +48,7 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 - Content pipeline: dialect `Markup` (md / adoc / html / tei) → `FrontMatter` + `Xml.Element` → dialect converters emit shared IR → `PageContent` (sections, links, footnotes, glossary, citations) → Minima-inspired HTML → write.
 - Special source directories: `_posts/`, `_drafts/`, Obsidian daily-notes folder (configured via `.obsidian`).
 - Links: wiki-style `[[...]]`, internal link resolution, backlinks, TOC.
-- Citations: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`.
+- Citations: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`. `.bib` files are ignored at scan (not published); citeproc still reads them from source.
 - Chunking (`chunk` / `chunk-depth` in front matter) and PDF are markup-independent.
 - Every real page writes its `textContent` (or copies assets).
 

@@ -1,5 +1,5 @@
 ---
-bibliography: _bibliography.bib
+bibliography: library.bib
 csl: apa
 ---
 See [@knuth79] and [@knuth79, p. 12] and @lamport94.

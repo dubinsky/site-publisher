@@ -122,6 +122,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val errors: String = html("errors.html")
     assert(errors.contains("unknown citation"), errors)
     assert(errors.contains("missing-key"), errors)
+    assert(!File(targetDirectory, "library.bib").exists, "library.bib must not be published")
+    assert(!File(targetDirectory, "_bibliography.bib").exists)
   }
 
   test("chunked Markdown writes a TOC chunk and per-section pages") {

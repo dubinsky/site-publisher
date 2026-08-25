@@ -66,5 +66,6 @@ object Ignore:
       |_*
       |~*
       |\#*
+      |*.bib
       |
       |""".stripMargin

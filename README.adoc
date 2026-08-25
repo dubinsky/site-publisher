@@ -364,7 +364,7 @@ HTML:: the IR shape (`class="glossary"`; each term is `class="glossary-item"` wi
 
 Per document (no site-wide file or style). Front matter:
 
-- `bibliography` — path to a `.bib` file, relative to this source file
+- `bibliography` — path to a `.bib` file, relative to this source file (`.bib` files are not copied to the site; un-ignore with `_site_ignore` if you want one published)
 - `csl` — CSL style name from the bundled styles (for example `apa`, `ieee`)
 - `lang` — CSL locale; falls back to the site `lang`, then `en-US`
 
@@ -734,7 +734,6 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
 == TODO
 
 === Pages
-- ignore `bib`s;
 - chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
 - treat `<img>` as a link element also?
 - sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions;
