@@ -67,7 +67,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!page.contains("unresolved-link"), page)
   }
 
-  test("Markdown notes: table, task-list IR, footnotes") {
+  test("Markdown notes: table, task-list IR, footnotes, fenced scala") {
     val page: String = html("notes.html")
     assert(page.contains("<table"), page)
     assert(page.contains(">1</td>") || page.contains(">1</th>") || page.contains(">1<"), page)
@@ -80,6 +80,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="footnote-tip""""), page)
     assert(page.contains("Markdown footnote body"), page)
     assert(page.contains("""class="footnotes""""), page)
+    assert(page.contains("language-scala"), page)
+    assert(page.contains("xs.map(f)"), page)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
@@ -138,6 +140,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""id="posuk""""), page)
     assert(page.contains("verse"), page)
     assert(page.contains("""class="glossary-ref""""), page)
+    assert(page.contains("""class="callout""""), page)
+    assert(page.contains("""class="callout-list""""), page)
+    assert(page.contains("Library import"), page)
   }
 
   test("HTML about: table, task-list IR, glossary, header nav, citation IR") {

@@ -15,3 +15,9 @@ Tasks:
 See this [^note] and again [^note].
 
 [^note]: Markdown footnote body.
+
+Use `map` in
+
+```scala
+xs.map(f)
+```

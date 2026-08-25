@@ -41,6 +41,7 @@ This here is a static site generator. It:
 - supports <<glossary>>;
 - supports <<bibliography>>;
 - supports <<code-blocks>>;
+- supports <<callouts>>;
 
 [#opinionated]
 == Opinionated
@@ -433,6 +434,15 @@ xs.map(f)
 ----
 ------
 
+TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:lang`). A newline in the content is treated as a block and wrapped in `<pre>`. `<eg>` / `<egXML>` are not converted.
++
+[source,xml]
+----
+<p>Use <code lang="scala">map</code> in</p>
+<code lang="scala">xs.map(f)
+</code>
+----
+
 HTML::
 +
 [source,html]
@@ -440,6 +450,32 @@ HTML::
 <p>Use <code>map</code> in</p>
 <pre><code class="language-scala">xs.map(f)
 </code></pre>
+----
+
+[#callouts]
+== Callouts
+
+Numbered annotations on lines of *verbatim* (listing, literal, or source), plus a list of those annotations. Not a general footnote mechanism.
+
+AsciiDoc:: `<1>` (or `<.>` for automatic numbering) at the end of a line; repeat the numbers in a callout list below. Hide a marker in the raw source behind a line comment (`// <1>`, `# <1>`, `<!--1-->`).
++
+[source,asciidoc]
+------
+[source,ruby]
+----
+require 'sinatra' <1>
+----
+<1> Library import
+------
+
+HTML:: the IR shape:
++
+[source,html]
+----
+<pre><code>require 'sinatra' <span class="callout" data-value="1">1</span></code></pre>
+<ol class="callout-list">
+  <li>Library import</li>
+</ol>
 ----
 
 
@@ -451,7 +487,6 @@ Support in a markup-independent way:
 
 - admonitions
 - asides
-- callouts
 
 === TEI
 

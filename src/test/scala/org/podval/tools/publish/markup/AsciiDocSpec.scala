@@ -157,3 +157,20 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(cells.contains("1"), dumped)
     assert(cells.contains("2"), dumped)
   }
+
+  test("[source,scala] becomes language-scala") {
+    val xml: Xml.Element = process(
+      """[source,scala]
+        |----
+        |xs.map(f)
+        |----
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("""class="language-scala""""), dumped)
+    assert(dumped.contains("xs.map(f)"), dumped)
+    val codes: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "code")(element)
+    ).toSeq
+    assert(codes.exists(_.hasClass("language-scala")), dumped)
+  }

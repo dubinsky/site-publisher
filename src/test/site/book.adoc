@@ -17,6 +17,12 @@ cite:[knuth79]
 | 1 | 2
 |===
 
+[source,ruby]
+----
+require 'sinatra' <1>
+----
+<1> Library import
+
 [glossary]
 [[posuk]]posuk:: verse
 

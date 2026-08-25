@@ -90,7 +90,7 @@ object AsciiDocMarkup extends Markup(
     HtmlMarkup.process(cleanup(xml), errorReporter)
 
   private[markup] def cleanup(xml: Xml.Element): Xml.Element =
-    xmlDialect.transform(xml, (element: Xml.Element) =>
+    val cleaned: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
 
       val classes: Chunk[String] = result.getClasses
@@ -104,12 +104,21 @@ object AsciiDocMarkup extends Markup(
         result = result
           .setClasses(result.getClasses.filterNot(asciidoctorGlossaryClasses.contains))
           .add(Glossary.ListClass)
+      children = convertCalloutMarks(children)
       result = result.setChildren(children)
       result = convertTaskList(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
+      result = convertCalloutList(result)
       result
     )
+    // HtmlXmlDialect.transform does not recurse into `<code>`, where listing callouts live.
+    rewriteCalloutMarks(cleaned)
+
+  private def rewriteCalloutMarks(element: Xml.Element): Xml.Element =
+    val children: Xml.Nodes = convertCalloutMarks(element.getChildren).map: node =>
+      node.asElement.fold(node)(rewriteCalloutMarks)
+    element.setChildren(children)
 
   // Distill the soup of meaningless `div`s that Asciidoctor emits;
   // see, for example, https://tiffnix.com/soupault#html-de-uglifier-plugin.
@@ -136,6 +145,70 @@ object AsciiDocMarkup extends Markup(
       removeSpuriousDivs(element.getChildren)
     )
   )
+
+  // Asciidoctor html5 without `icons`: `<b class="conum">(1)</b>` in the listing;
+  // `div.colist > ol > li`. With `icons=font`: `<i class="conum" data-value="1"></i><b>(1)</b>`
+  // and a table in the colist. Convert both to Callout IR.
+  private def convertCalloutMarks(nodes: Xml.Nodes): Xml.Nodes =
+    var skipGuardBold: Boolean = false
+    val result: List[Xml.Node] = nodes.toList.flatMap: node =>
+      if skipGuardBold then
+        skipGuardBold = false
+        node.asElement.filter(isGuardBold).fold(List(node))(_ => Nil)
+      else
+        node.asElement match
+          case Some(element) =>
+            convertCalloutMark(element) match
+              case Some(mark) =>
+                skipGuardBold = isConumIcon(element)
+                List(mark)
+              case None =>
+                List(node)
+          case None =>
+            List(node)
+    Chunk.from(result)
+
+  private def convertCalloutMark(element: Xml.Element): Option[Xml.Element] =
+    val fromIcon: Option[String] =
+      Option.when(isConumIcon(element) || element.hasClass("conum"))(
+        element.get("data-value").flatMap(calloutNumber).orElse(calloutNumber(element.getText))
+      ).flatten
+    val fromImg: Option[String] =
+      Option.when(element.getName == "img" && element.get("src").exists(_.contains("callout")))(
+        element.get("alt").flatMap(calloutNumber)
+      ).flatten
+    fromIcon.orElse(fromImg).map(Callout.marker)
+
+  private def calloutNumber(text: String): Option[String] =
+    val trimmed: String = text.trim
+    val digits: String =
+      if trimmed.startsWith("(") && trimmed.endsWith(")") && trimmed.length >= 3
+      then trimmed.substring(1, trimmed.length - 1)
+      else trimmed
+    Option.when(digits.nonEmpty && digits.forall(_.isDigit))(digits)
+
+  private def isConumIcon(element: Xml.Element): Boolean =
+    element.getName == "i" && element.hasClass("conum")
+
+  private def isGuardBold(element: Xml.Element): Boolean =
+    element.getName == "b" && calloutNumber(element.getText).isDefined
+
+  private def convertCalloutList(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("colist") then element
+    else
+      val innerOl: Option[Xml.Element] =
+        element.getChildren.flatMap(_.asElement).find(_.getName == "ol")
+      val fromTable: Option[Xml.Element] =
+        element.getChildren.flatMap(_.asElement).find(_.getName == "table").map: table =>
+          val rows: Seq[Xml.Element] = table.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
+            if child.getName == "tr" then Seq(child)
+            else child.getChildren.flatMap(_.asElement).filter(_.getName == "tr").toSeq
+          val items: Seq[Xml.Element] = rows.map: tr =>
+            val cells: Seq[Xml.Element] =
+              tr.getChildren.flatMap(_.asElement).filter(_.getName == "td").toSeq
+            Xml.element("li").setChildren(cells.lift(1).fold(Chunk.empty[Xml.Node])(_.getChildren))
+          Xml.element("ol").setChildren(Chunk.from(items))
+      innerOl.orElse(fromTable).fold(element)(_.add(Callout.ListClass))
 
   // Asciidoctor: <div class="dlist glossary"><dl> sibling dt/dd.
   // Convert to Glossary IR (class="glossary" wrapper, glossary-item children).

@@ -67,3 +67,29 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(cells.contains("1"), dumped)
     assert(cells.contains("2"), dumped)
   }
+
+  test("fenced ```scala becomes language-scala; inline `map` is code") {
+    val xml: Xml.Element = process(
+      """Use `map` in
+        |
+        |```scala
+        |xs.map(f)
+        |```
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("""class="language-scala""""), dumped)
+    assert(dumped.contains("xs.map(f)"), dumped)
+    val codes: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "code")(element)
+    ).toSeq
+    val inline: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
+    assert(inline.getText.contains("map"), dumped)
+    val pres: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "pre")(element)
+    ).toSeq
+    assert(pres.size == 1, dumped)
+    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.getName == "code").get
+    assert(preCode.hasClass("language-scala"), dumped)
+    assert(preCode.getText.contains("xs.map(f)"), dumped)
+  }
