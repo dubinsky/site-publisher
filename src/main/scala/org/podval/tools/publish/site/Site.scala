@@ -29,7 +29,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   def sourceFile(sourcePath: Path): File = sourcePath.file(sourceDirectory)
 
-  val targetDirectory: File = File(sourceDirectory, options.targetDirectoryName)
+  // Absolute `--target-directory-name` is used as-is: `File(parent, child)` on Unix
+  // would otherwise treat `/abs` as a path under the source tree.
+  val targetDirectory: File =
+    val named: File = File(options.targetDirectoryName)
+    (if named.isAbsolute then named else File(sourceDirectory, options.targetDirectoryName)).getAbsoluteFile
   if targetDirectory.exists() then Files.requireDirectory(targetDirectory)
 
   // Posts and daily notes directories
@@ -139,10 +143,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
       // PDFs print via HTTP from already-written HTML/assets; write them last
       // so any assets used are already written.
+      // Errors is written after other HTML so diagnostics from rendering
+      // (unknown citations, unresolved links) appear on the Errors page.
       val (pdfPages, otherPages) = pages.pages.partition:
         case _: PdfPage => true
         case _ => false
-      (otherPages ++ pdfPages).foreach: page =>
+      val (errorPages, rest) = otherPages.partition:
+        case _: Errors => true
+        case _ => false
+      (rest ++ errorPages ++ pdfPages).foreach: page =>
         log.debug(s"Writing ${page.path}")
         page.write()
 

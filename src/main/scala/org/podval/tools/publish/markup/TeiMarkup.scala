@@ -43,19 +43,17 @@ object TeiMarkup extends Markup(
     val tei2Html: Xml2Html = Xml2Html("tei")
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
-    val result: Xml.Element = xmlDialect.transform(xml, element =>
-      var result: Xml.Element = element
-
-      result = tei2Html.convert(result)
-
-      result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertFootnote(_, footnoteCorrelationIds)))
-
-      result = convertSpecial(result)
-
-      result
+    // Xml2Html prefixes reserved HTML attributes (`class` → `tei-class`). Convert
+    // footnotes in a second pass so the Footnote IR keeps `class="footnote-link"`.
+    val converted: Xml.Element = xmlDialect.transform(xml, element =>
+      convertSpecial(tei2Html.convert(element))
+    )
+    // TODO does it really need to be a separate pass?
+    val withFootnotes: Xml.Element = xmlDialect.transform(converted, element =>
+      element.setChildren(XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds)))
     )
 
-    (markHeadedDivs(result), None)
+    (markHeadedDivs(withFootnotes), None)
 
   // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =

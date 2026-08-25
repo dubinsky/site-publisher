@@ -8,7 +8,8 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.{PDN
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
-/** PDFBox round-trip of named dests on link annotations. Does not cover Chromium/Skia PDFs. */
+/** PDFBox round-trip of named dests on link annotations.
+    * Chromium/Skia dests from a real print are covered by SiteSpec on glossary.pdf. */
 final class PdfNamedDestinationsSpec extends AnyFunSuite:
   test("pageByName reads named destinations from link annotations") {
     val pdf: File = File.createTempFile("named-dests-", ".pdf")

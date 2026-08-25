@@ -1,0 +1,21 @@
+---
+title: TEI Sample
+---
+<TEI>
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>TEI Sample</title>
+      </titleStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p>See this<note place="end">TEI endnote body.</note>.</p>
+      <table>
+        <row role="label"><cell>A</cell><cell>B</cell></row>
+        <row><cell>1</cell><cell>2</cell></row>
+      </table>
+    </body>
+  </text>
+</TEI>

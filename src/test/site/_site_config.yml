@@ -1,0 +1,6 @@
+title: Site Publisher Fixture
+description: End-to-end fixture for site-publisher tests
+url: http://fixture.test
+author: Test Author
+email: test@fixture.test
+lang: en

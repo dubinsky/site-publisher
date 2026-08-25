@@ -48,6 +48,15 @@ final class GlossarySpec extends AnyFunSuite:
     assert(definitionText(defs, "rasha") == "sinner")
   }
 
+  test("definitions see dd wrapped in a dl inside the glossary-item") {
+    val xml: Xml.Element = parse(
+      """<div class="glossary-item" id="html-term"><dl><dt>html-term</dt><dd>defined in HTML</dd></dl></div>"""
+    )
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    assert(defs.keySet == Set("html-term"))
+    assert(definitionText(defs, "html-term") == "defined in HTML")
+  }
+
   test("definitions are collected from every glossary-item, including across lists") {
     val xml: Xml.Element = parse(
       """<div>

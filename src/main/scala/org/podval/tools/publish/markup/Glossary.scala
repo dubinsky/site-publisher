@@ -34,10 +34,11 @@ object Glossary:
       yield id -> nodes
     ).toMap
 
+  // Direct `dd`, or TagSoup's wrapper `<dl>` around `dt`/`dd` inside a `div`.
   private def definitionNodes(item: Xml.Element): Option[Xml.Nodes] =
-    item
-      .getChildren
-      .flatMap(_.asElement)
-      .find(_.getName == "dd")
+    def dds(element: Xml.Element): Seq[Xml.Element] =
+      element.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
+        if child.getName == "dd" then Seq(child) else dds(child)
+    dds(item).headOption
       .map(_.getChildren.filterNot(_.isWhitespace))
       .filter(_.nonEmpty)

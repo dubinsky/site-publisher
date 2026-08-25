@@ -1,0 +1,20 @@
+---
+bibliography: _bibliography.bib
+csl: apa
+---
+= Book
+
+See this footnote:[AsciiDoc footnote body.]
+
+cite:[knuth79]
+
+* [ ] open the chapter
+* [x] done the chapter
+
+|===
+| A | B
+
+| 1 | 2
+|===
+
+bibliography::[]

@@ -343,6 +343,7 @@ Support in a markup-independent way:
 - raw TEI
 
 === Pages
+- ignore `bib`s;
 - chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
 - do PDF embedding - with `<object>`, `<iframe>` or?
 - do video embedding?

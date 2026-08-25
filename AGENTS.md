@@ -12,7 +12,8 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `org.podval.xml` — dialect-aware XML (parsing, writing, transform/gather, Xml2Html)
   - `org.podval.tei` — TEI XML dialect + entity handling
 - Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
-- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite` (and `SiteTest` as `AnyFlatSpec`)
+- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`
+- Fixture site: `src/test/site` (committed). `SiteSpec` generates into `build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
 
 ## Build & Run Commands
 
@@ -85,4 +86,6 @@ Compiler flags:
 - Posts and daily notes have strict filename conventions (`YYYY-MM-DD-title`).
 - Directories that should not produce pages (e.g. `_posts`) are specially handled by `Posts.isDirectoryEmptiedOut`.
 - XML dialects are disambiguated by root element for `.xml` files.
+- `Site.targetDirectory` is `sourceDirectory / name` unless `target-directory-name` is absolute; Java `File(parent, "/abs")` on Unix does *not* ignore the parent.
+- The Errors page is written after other HTML so unknown citations and unresolved links found while rendering appear on it.
 - AsciiDoc `cite:[key]` needs a custom inline-macro regexp (empty target); `cite:[k1, k2]` must join all positional attributes, not just `1`.
