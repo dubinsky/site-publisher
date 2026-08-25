@@ -71,8 +71,33 @@ object MarkdownMarkup extends Markup(
   private[markup] def convert(xml: Xml.Element): Xml.Element =
     xmlDialect.transform(xml, (element: Xml.Element) =>
       val children: Xml.Nodes = XmlUtil.convertElements(element.getChildren, HtmlMarkup.unwrapSpuriousParagraph)
-      element.setChildren(convertDescriptionLists(children))
+      convertTaskList(element.setChildren(convertDescriptionLists(children)))
     )
+
+  // FlexMark: <li class="task-list-item"><input class="task-list-item-checkbox" …/>&nbsp;text
+  private def convertTaskList(element: Xml.Element): Xml.Element =
+    if element.getName != "ul" && element.getName != "ol" then element
+    else
+      val children: Xml.Nodes = element.getChildren.map: node =>
+        node.asElement.filter(_.getName == "li").fold(node)(convertFlexMarkItem)
+      TaskList.asList(element.setChildren(children))
+
+  private def convertFlexMarkItem(li: Xml.Element): Xml.Element =
+    val rest: Xml.Nodes = li.getChildren.dropWhile(isIgnorablePrefix)
+    rest.headOption.flatMap(_.asElement).filter(TaskList.isCheckbox) match
+      case Some(box) => TaskList.asItem(li, box, stripLeadingNbsp(rest.tail))
+      case None => li
+
+  private def isIgnorablePrefix(node: Xml.Node): Boolean =
+    node.asText.exists(_.forall(c => c.isWhitespace || c == '\u00a0'))
+
+  private def stripLeadingNbsp(nodes: Xml.Nodes): Xml.Nodes =
+    nodes.headOption.flatMap(_.asText) match
+      case Some(text) if text.nonEmpty && (text.charAt(0) == '\u00a0' || text.charAt(0).isWhitespace) =>
+        val trimmed: String = text.dropWhile(c => c == '\u00a0' || c.isWhitespace)
+        if trimmed.isEmpty then nodes.tail
+        else Xml.text(trimmed) +: nodes.tail
+      case _ => nodes
 
   private val glossaryIal = """\{:\s*\.glossary\s*\}""".r
 

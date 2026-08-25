@@ -105,7 +105,7 @@ object AsciiDocMarkup extends Markup(
           .setClasses(result.getClasses.filterNot(asciidoctorGlossaryClasses.contains))
           .add(Glossary.ListClass)
       result = result.setChildren(children)
-
+      result = convertTaskList(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
       result
@@ -140,6 +140,62 @@ object AsciiDocMarkup extends Markup(
   // Asciidoctor: <div class="dlist glossary"><dl> sibling dt/dd.
   // Convert to Glossary IR (class="glossary" wrapper, glossary-item children).
   private val asciidoctorGlossaryClasses: Set[String] = Set("dlist", "glossary")
+
+  // Asciidoctor html5: ul.checklist; default glyphs &#10003;/&#10063;, %interactive inputs,
+  // icons=font Font Awesome.
+  private def convertTaskList(element: Xml.Element): Xml.Element =
+    if element.getName != "ul" && element.getName != "ol" then element
+    else
+      val acceptMarkers: Boolean = element.hasClass("checklist")
+      val children: Xml.Nodes = element.getChildren.map: node =>
+        node.asElement.filter(_.getName == "li").fold(node)(convertChecklistItem(_, acceptMarkers))
+      var list: Xml.Element = element.setChildren(children)
+      if acceptMarkers then
+        list = list.setClasses(list.getClasses.filterNot(_ == "checklist"))
+      TaskList.asList(list)
+
+  private def convertChecklistItem(li: Xml.Element, acceptMarkers: Boolean): Xml.Element =
+    val rest: Xml.Nodes = li.getChildren.dropWhile(node => node.asText.exists(_.forall(_.isWhitespace)))
+    rest.headOption.flatMap(_.asElement).filter(isInteractiveCheckbox) match
+      case Some(box) =>
+        val done: Boolean = box.get("checked").isDefined || box.get("data-item-complete").contains("1")
+        TaskList.asItem(li, done, rest.tail)
+      case None if acceptMarkers =>
+        rest.headOption.flatMap(_.asElement).filter(isFaCheckbox) match
+          case Some(icon) =>
+            TaskList.asItem(li, icon.hasClass("fa-check-square-o"), rest.tail)
+          case None =>
+            rest.headOption.flatMap(_.asText).flatMap(markerState) match
+              case Some((done, remainder)) =>
+                val after: Xml.Nodes =
+                  if remainder.isEmpty then rest.tail
+                  else Xml.text(remainder) +: rest.tail
+                TaskList.asItem(li, done, after)
+              case None => li
+      case None => li
+
+  private def isInteractiveCheckbox(element: Xml.Element): Boolean =
+    element.getName == "input" && (
+      element.get("type").contains("checkbox") || element.get("data-item-complete").isDefined
+    )
+
+  private def isFaCheckbox(element: Xml.Element): Boolean =
+    element.getName == "i" && (
+      element.hasClass("fa-check-square-o") || element.hasClass("fa-square-o")
+    )
+
+  private val checkedMarkers: Set[Char] = Set('\u2713', '\u2714', '\u2611')
+  private val uncheckedMarkers: Set[Char] = Set('\u274f', '\u2610', '\u25a1')
+
+  private def markerState(text: String): Option[(Boolean, String)] =
+    val trimmed: String = text.dropWhile(_.isWhitespace)
+    if trimmed.isEmpty then None
+    else
+      val mark: Char = trimmed.charAt(0)
+      val rest: String = trimmed.substring(1).dropWhile(_.isWhitespace)
+      if checkedMarkers.contains(mark) then Some(true, rest)
+      else if uncheckedMarkers.contains(mark) then Some(false, rest)
+      else None
 
   private def convertGlossaryLists(nodes: Xml.Nodes): Xml.Nodes =
     nodes.map: node =>

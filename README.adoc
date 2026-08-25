@@ -201,7 +201,38 @@ TEI::
 [#task-lists]
 == Task Lists
 
-Markdown task lists via FlexMark Task List Extension (Obsidian supports them natively).
+Unchecked `[ ]` and checked `[x]` items in a list. The static site shows disabled checkboxes.
+
+Markdown:: GFM / (FlexMark Task List Extension), (Obsidian supports them natively):
++
+[source,markdown]
+----
+- [ ] open
+- [x] done
+----
+
+AsciiDoc:: native checklists:
++
+[source,asciidoc]
+----
+* [ ] open
+* [x] done
+----
+
+HTML:: the IR shape (already a task list; no conversion):
++
+[source,html]
+----
+<ul class="task-list">
+  <li class="task-list-item">
+    <input type="checkbox" class="task-list-item-checkbox" disabled> open
+  </li>
+  <li class="task-list-item">
+    <input type="checkbox" class="task-list-item-checkbox" disabled checked> done
+  </li>
+</ul>
+----
+
 
 [#footnotes]
 == Footnotes
