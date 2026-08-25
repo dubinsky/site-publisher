@@ -543,6 +543,11 @@ ul.page-list {
         display: none !important;
     }
 
+    video.video,
+    iframe.video-embed {
+        display: none !important;
+    }
+
     /* Contain the decorative quote; clip top/bottom so it cannot paint on the previous page.
      * rem, not em: em on ::before is the 2.75em quote font. Zero the inner p's
      * margin-top so padding does not break collapse and leave the mark above the line. */

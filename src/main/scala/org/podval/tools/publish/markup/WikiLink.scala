@@ -87,6 +87,8 @@ object WikiLink:
           .set("src", path)
           .set("controls", true.toString)
         )
+      case Some(extension) if Media.isVideo(extension) =>
+        Some(Video.make(path, embedLabel(element, path)))
       case Some("pdf") =>
         Some(PdfEmbed.fromRef(ref, embedLabel(element, path)))
       case _ =>
@@ -96,5 +98,9 @@ object WikiLink:
     val inner: String = element.getText.trim.stripPrefix("![[").stripSuffix("]]").trim
     val name: String = Strings.splitFirst(inner, '#')._1.trim
     val fileName: String = path.split('/').lastOption.getOrElse(path)
-    if name.isEmpty || name == path || name.toLowerCase.endsWith(".pdf") then fileName
+    val ext: Option[String] = Files.nameAndExtension(name)._2.map(_.toLowerCase)
+    if name.isEmpty || name == path || ext.exists(isMediaExtension) then fileName
     else name
+
+  private def isMediaExtension(extension: String): Boolean =
+    Media.isImage(extension) || Media.isAudio(extension) || Media.isVideo(extension) || extension == "pdf"

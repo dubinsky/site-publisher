@@ -114,6 +114,7 @@ object AsciiDocMarkup extends Markup(
       result = convertSidebar(result)
       result = convertQuote(result)
       result = convertImageBlock(result)
+      result = convertVideoBlock(result)
       result
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
@@ -253,6 +254,24 @@ object AsciiDocMarkup extends Markup(
               (children, None)
       val extra: Chunk[String] = element.getClasses.filterNot(_ == "imageblock")
       extra.foldLeft(Figure.make(caption, body).setId(element.getId))(_.addClass(_))
+
+  // Asciidoctor: <div class="videoblock"> optional div.title, then video or youtube/vimeo iframe.
+  private def convertVideoBlock(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("videoblock") then element
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val (title, rest): (Option[String], Xml.Nodes) =
+        children.headOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) =>
+              (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
+            case None =>
+              (None, children)
+      val inner: Option[Xml.Element] = rest.flatMap(_.asElement).find: child =>
+        child.getName == "video" || child.getName == "iframe"
+      inner.fold(element): media =>
+        val normalized: Xml.Element = Video.normalize(media).setId(element.getId.filter(_ => title.isEmpty))
+        title.fold(normalized)(caption => Figure.make(Some(caption), Chunk(normalized)).setId(element.getId))
 
   private def isQuoteAttribution(node: Xml.Node): Boolean =
     node.asElement.exists(el => el.getName == "div" && el.hasClass("attribution"))

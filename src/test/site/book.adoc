@@ -45,6 +45,8 @@ image::pixel.svg[A square]
 <object data="sample.pdf" type="application/pdf"></object>
 ++++
 
+video::clip.mp4[]
+
 [glossary]
 [[posuk]]posuk:: verse
 

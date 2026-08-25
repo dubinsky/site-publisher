@@ -48,6 +48,7 @@ This here is a static site generator. It:
 - supports <<strikethrough>>;
 - supports <<figures>>;
 - supports <<pdf-embed>>;
+- supports <<video>>;
 
 [#opinionated]
 == Opinionated
@@ -702,21 +703,42 @@ HTML:: `<object type="application/pdf">` (IR wraps it) or the IR:
 
 The sibling link is always visible and is what remains in print (the inner viewer is hidden).
 
+[#video]
+== Video
+
+A local video file, or a YouTube/Vimeo player. Local files use HTML `<video>` (like `<audio>`).
+
+Markdown:: Obsidian `![[file.mp4]]` (also `webm`, `ogv`, `m4v`). Alias `![[file.mp4|Title]]` is the fallback link label.
++
+[source,markdown]
+----
+![[clip.mp4]]
+----
+
+AsciiDoc:: `video::file.mp4[]` (optional `.Title` becomes a figure caption). YouTube/Vimeo: `video::id[youtube]` / `video::id[vimeo]`.
++
+[source,asciidoc]
+----
+video::clip.mp4[]
+----
+
+HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `<iframe>` gets `class="video-embed"`:
++
+[source,html]
+----
+<video class="video" src="clip.mp4" controls="controls">
+  <a href="clip.mp4">Open video: clip.mp4</a>
+</video>
+----
+
 == TODO
-
-=== TEI
-
-- footnotes should cling to preceding elements, not just text
-- facsimiles
-- raw TEI
-- look later into handling TEI bibliographies using *internal* (in-document) records (`listBibl` / `bibl` / `biblStruct` and `ref`/`ptr` pointers), not the external `.bib` file
 
 === Pages
 - ignore `bib`s;
 - chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
-- do video embedding?
 - treat `<img>` as a link element also?
-- sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
+- sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions;
+- Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
 - add whatever is needed for the feed to the `<head>`
 - implement SEO - or is just the page title in the `<head>` all I need?
 - whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list
@@ -724,6 +746,13 @@ The sibling link is always visible and is what remains in print (the inner viewe
 - auto-create category pages
 - auto-create tag pages
 - implement paging of the long lists (e.g., list of posts)
+
+=== TEI
+
+- footnotes should cling to preceding elements, not just text
+- facsimiles
+- raw TEI
+- look later into handling TEI bibliographies using *internal* (in-document) records (`listBibl` / `bibl` / `biblStruct` and `ref`/`ptr` pointers), not the external `.bib` file
 
 === CLI
 - package the CLI
@@ -737,4 +766,4 @@ The sibling link is always visible and is what remains in print (the inner viewe
 - Look at https://squidfunk.github.io/mkdocs-material/
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
 - Think about serializing the full list of backlinks out of the memory
-- Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
+

@@ -116,6 +116,25 @@ figure.figure > img {
     margin-top: 0.4em;
 }
 
+/**
+ * Video (local file and YouTube/Vimeo iframe).
+ */
+video.video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1em 0;
+}
+
+iframe.video-embed {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    margin: 1em 0;
+    border: 0;
+}
+
 figure:not(.figure) { /* leftover TEI figure without IR class */
     display: inline-block;
 }
