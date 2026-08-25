@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{Bibliography, Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -50,6 +50,8 @@ final class PageContent private(
         .setChildren(toAdd.map(_.body))
       result = result.setChildren(result.getChildren :+ footnotesDiv)
 
+    result = resolveCitations(result, isChunked)
+
     // resolveLinks used to be a transform;
     // this is after Grok did glossary tooltips... can they be merged?
     result = resolveLinks(result, isChunked, attachTips = true)
@@ -85,6 +87,22 @@ final class PageContent private(
 
     html
   
+  private lazy val bibliography: Bibliography =
+    val sourceFile: java.io.File = source.page.site.sourceFile(source.sourcePath)
+    Bibliography.load(
+      documentDirectory = sourceFile.getParentFile,
+      bibliography = frontMatter.bibliography,
+      csl = frontMatter.csl,
+      lang = frontMatter.lang.orElse(source.page.site.config.lang)
+    )
+
+  private def resolveCitations(xml: Xml.Element, isChunked: Boolean): Xml.Element =
+    val (result: Xml.Element, unknown: Seq[String]) =
+      bibliography.resolve(xml, source.markup.xmlDialect)
+    PageContent.unknownCitationMessages(unknown, isChunked).foreach: message =>
+      source.error(PageError.UnknownCitation, message)
+    result
+
   private def resolveLinks(
     element: Xml.Element,
     isChunked: Boolean,
@@ -149,6 +167,11 @@ final class PageContent private(
 
 
 object PageContent:
+  /** Unknown-citation page errors; chunks skip them because the cited keys may live on another chunk. */
+  private[publish] def unknownCitationMessages(labels: Seq[String], isChunked: Boolean): Seq[String] =
+    if isChunked then Seq.empty
+    else labels.map(label => s"unknown citation '$label'")
+
   private def footnoteLinks(xml: Xml.Element, xmlDialect: XmlDialect): Chunk[String] =
     xmlDialect.gather(xml, element =>
       Option.when(Footnote.isLink(element))(Footnote.getCorrelationId(element))

@@ -39,8 +39,10 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.18'
   implementation 'ch.qos.logback:logback-classic:1.6.3'
   compileOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
+  implementation 'de.undercouch:citeproc-java:3.5.2'
+  implementation 'org.citationstyles:styles:26.8'
+  implementation 'org.citationstyles:locales:26.8'
   testImplementation 'org.scalatest:scalatest_3:3.2.20'
-  testImplementation 'dev.zio:zio-test-sbt_3:2.1.26'
 }
 
 // JDK 22+ compatibility flags for transitive / ecosystem native & Unsafe use:

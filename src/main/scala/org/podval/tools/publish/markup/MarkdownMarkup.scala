@@ -66,7 +66,7 @@ object MarkdownMarkup extends Markup(
     )
     HtmlMarkup.process(
       source,
-      convert(result)
+      convert(MarkdownCite.convertElement(result))
     )
 
   private[markup] def convert(xml: Xml.Element): Xml.Element =

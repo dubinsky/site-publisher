@@ -22,6 +22,7 @@ object PageError:
   case object NoDate extends Kind("no date")
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
+  case object UnknownCitation extends Kind("unknown citation")
 
   val all: List[Kind] = List(
     MalformedFrontMatter, 
@@ -31,5 +32,6 @@ object PageError:
     NoId,
     NoDate,
     SelfLink, 
-    Unresolved
+    Unresolved,
+    UnknownCitation
   )

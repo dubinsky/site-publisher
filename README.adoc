@@ -6,13 +6,28 @@
 
 Generate and publish websites.
 
+It supports various
+
 [#summary]
 == Summary
 
-This here is a static site generator.
+This here is a static site generator. It:
 
-It supports HTML, Markdown, and AsciiDoc.
+- is <<opinionated>>;
+- recognizes various <<markup>> languages;
+- interprets <<frontmatter>>;
+- resolves various <<page-names>>;
+- lists <<directories>>;
+- supports <<blog-posts>>;
+- supports <<chunking>>;
+- supports <<pdf>> generation;
+- supports <<tables>>;
+- supports <<task-lists>>;
+- supports <<footnotes>>;
+- supports <<glossary>>;
+- supports <<bibliography>>;
 
+[#opinionated]
 == Opinionated
 
 Since I am writing this site generator for my own use,
@@ -26,10 +41,38 @@ it is going to be opinionated:
 
 TODO expound
 
-[#features]
-== Features
+[#markup]
+== Markup
 
-=== Titles and File Names
+Markup languages are supported:
+
+- Markdown
+- AsciiDoc
+- HTML
+- TEI (TODO)
+
+Support considered for:
+
+- DocBook
+- ReStructured Text
+
+[#frontmatter]
+== Frontmatter
+
+Frontmatter can be:
+
+- internal, in the file with markup
+- external, in the file with the same name and extension `.yaml` or `.yml`
+
+Files are recognized as markup:
+
+- if their extension is associated with a markup language (`.md`, `.adoc`)
+- if their extension is `.xml` and their root XML element is associated with a markup language (`TEI`)
+
+TODO add frontmatter boolean `asset` to declare that a file is *not* markup.
+
+[#page-names]
+== Page Names
 Jekyll relies on page titles being given explicitly in the front matter
 and ignores the file names; I had to use a TODO Obsidian plugin to set the
 titles from the file names to communicate them to Jekyll;
@@ -47,6 +90,8 @@ Obsidian uses file names exclusively and ignores the front matter title;
 for link resolution to use front matter titles also,
 TODO Obsidian plugin needs to be installed.
 
+TODO aliases
+
 Wiki links in Obsidian:
 
 - are they case-sensitive?
@@ -55,21 +100,64 @@ Wiki links in Obsidian:
 - can they be split between the lines?
 - do they support any kind of agglutination?
 
-=== Notes and Posts
+[#directories]
+== Directories
 
 - home page: directory
 - directory structure
+- navigation
+- header pages
+- icons
+
+[#blog-posts]
+== Blog Posts
+
+- directory
 - auto-post (same file name)
 - permalink (any file name)
 
-=== Markdown extensions
+[#chunking]
+== Chunking
+
+Previously, I used `asciidoctor-multipage` Asciidoctor
+[extension](https://github.com/owenh000/asciidoctor-multipage)
+to split an HTML file into per-section pages.
+
+That extension has long-known
+[issues](https://github.com/owenh000/asciidoctor-multipage/issues/46),
+for example, it does not handle footnotes.
+
+Even if those issues get fixed (which seems extremely unlikely),
+this extension only works with AsciiDoc files;
+site generator can chunk files in any markup language it supports.
+
+I use the term `chunking` as did DocBook XSLT stylesheets
+and not `multi-page` as does AsciiDoctor extension.
+
+Chunking is enabled by setting `chunk` to `true` in the file's front-matter.
+
+Chunking depth is controlled by the `chunk-depth` front-matter field.
+
+[#pdf]
+== PDF
+
+TODO
+
+[#tables]
+== Tables
 Site generator supports Markdown tables via FlexMark Tables Extension;
 Obsidian supports them natively.
 
+[#task-lists]
+== Task Lists
 Site generator supports Markdown task lists via FlexMark Task List Extension;
 Obsidian supports them natively.
 
-=== Glossary
+[#footnotes]
+== Footnotes
+
+[#glossary]
+== Glossary
 
 Glossary entries are harvested from a markup-neutral HTML shape
 (`class="glossary"` on the list, `class="glossary-item"` with an `id` on each term).
@@ -97,26 +185,38 @@ A lone `:` after a Markdown term is not a reliable empty definition:
 FlexMark can take the next term as that definition.
 Write a real definition line, or omit the term.
 
-=== Chunking
+[#bibliography]
+== Bibliography
 
-Previously, I used `asciidoctor-multipage` Asciidoctor
-[extension](https://github.com/owenh000/asciidoctor-multipage)
-to split an HTML file into per-section pages.
+Citations become a markup-neutral IR (`span.citation` / `span.citation-item` with `data-key`,
+optional `data-locator`, and `data-mode`; `div.bibliography` for the list placeholder).
+A per-document BibTeX file plus citeproc-java (CSL) resolve those stubs after footnotes.
 
-That extension has long-known
-[issues](https://github.com/owenh000/asciidoctor-multipage/issues/46),
-for example, it does not handle footnotes.
+Front matter on the document (no site config, no default file or style):
 
-Even if those issues get fixed (which seems extremely unlikely),
-this extension only works with AsciiDoc files;
-site generator can chunk files in any markup language it supports.
+- `bibliography` — path to a `.bib` file, relative to the source file
+- `csl` — CSL style name from the bundled Citation Style Language styles (for example `apa`, `ieee`)
+- `lang` — CSL locale; falls back to the site `lang`, then `en-US`
 
-I use the term `chunking` as did DocBook XSLT stylesheets
-and not `multi-page` as does AsciiDoctor extension.
+Both `bibliography` and `csl` are required to resolve citations.
+Only works cited on the page appear in the list.
+Resolved in-text cites become `a.citation` links to `#bibl-{key}` on the matching `csl-entry`
+(first key if a cite has several).
+Unknown keys become `span.unresolved-citation` and a page error.
 
-Chunking is enabled by setting `chunk` to `true` in the file's front-matter.
+AsciiDoc (Java extensions; no `asciidoctor-bibliography` gem):
 
-Chunking depth is controlled by the `chunk-depth` front-matter field.
+- `cite:[key]`, `cite:[key, p. 12]`, `cite:[key1, key2]` — parenthetical
+- `cite:key[]`, `cite:key[p. 12]` — same, standard inline-macro form
+- `citenp:[key]` — narrative (author in the sentence)
+- `bibliography::[]` — list placeholder (otherwise the list is appended)
+
+Markdown (Pandoc citation syntax, scanned after FlexMark; no extra extension):
+
+- `[@key]`, `[@key, p. 12]`, `[@key1; @key2]` — parenthetical
+- `@key` — narrative (`me@host.com` is left as an email)
+- `[-@key]` — suppress author
+- `:::bibliography` — list placeholder
 
 == Farewell, Jekyll
 
@@ -165,8 +265,7 @@ Write about all the plugins I used:
 - jekyll-avatar
 - jekyll-wikirefs
 
-[#future]
-== Future
+== TODO
 
 === Features
 
@@ -175,14 +274,6 @@ Support in a markup-independent way:
 - admonitions
 - asides
 - callouts
-
-=== Bibliography
-
-Handle bibliography in a markup-independent way.
-
-MarkDown: https://pandoc.org/MANUAL.html#citations
-
-Is there some Java library for citation formatting?
 
 === TEI
 
@@ -205,11 +296,6 @@ Is there some Java library for citation formatting?
 === Paging
 
 - implement paging of the long lists (e.g., list of posts)
-
-=== More Markup Languages
-
-- DocBook??
-- ReStructured Text?
 
 === CLI
 - package the CLI

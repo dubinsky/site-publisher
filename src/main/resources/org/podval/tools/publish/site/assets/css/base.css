@@ -596,3 +596,18 @@ tei-title[level=m] {
 tei-head {
     display: block;
 }
+
+.csl-bib-body {
+    margin-top: var(--spacing-unit);
+}
+
+.csl-entry {
+    display: block;
+    margin-top: 0.4em;
+    padding-left: 2em;
+    text-indent: -2em;
+}
+
+.unresolved-citation {
+    color: var(--brand-color, #c00);
+}

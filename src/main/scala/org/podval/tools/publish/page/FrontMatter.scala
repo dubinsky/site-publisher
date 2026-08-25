@@ -33,6 +33,8 @@ final case class FrontMatter(
   chunk: Boolean = false,
   chunkDepth: Option[Int] = None,
   pdf: Boolean = false,
+  bibliography: Option[String] = None,
+  csl: Option[String] = None,
 ):
   private var extraKeys: Chunk[(Yaml, Yaml)] = Chunk.empty
   
