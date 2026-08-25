@@ -40,6 +40,28 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(leftover.head.getText.contains("keep me"), dumped)
   }
 
+  test("note after text or a preceding element has no separating HTML space") {
+    def published(input: String, width: Int = 40): String =
+      val xml: Xml.Element = process(input)
+      val (notes, harvested) = Footnote.harvest(xml)
+      val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
+      HtmlXmlDialect.render(resolved, width)
+
+    def compact(html: String): String = html.replaceAll("\\s+", " ").replace("= ", "=")
+
+    def clings(html: String, before: String): Unit =
+      val c: String = compact(html)
+      assert(c.contains(s"""$before<span class="footnote-ref""""), html)
+      assert(!c.contains(s"""$before <span class="footnote-ref""""), html)
+
+    clings(published("""<p>See this<note place="end">A note.</note>.</p>"""), "this")
+    clings(published("""<p>See <hi>this</hi><note place="end">A note.</note>.</p>"""), "</hi>")
+    clings(
+      published("""<p>See <ref target="#x">this</ref><note place="end">A note.</note>.</p>"""),
+      "</a>"
+    )
+  }
+
   test("row/cell become tr/td and cols becomes colspan") {
     val xml: Xml.Element = process(
       """<table>

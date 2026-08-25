@@ -137,6 +137,16 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(Xml.toString(notes.values.head.nodes).contains("Same note"))
   }
 
+  test("footnote after unconstrained emphasis with no source space has no separating HTML space") {
+    val xml: Xml.Element = process("**this**footnote:[A note.]\n")
+    val (notes, harvested) = harvest(xml)
+    val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
+    val dumped: String = HtmlXmlDialect.render(resolved, 40)
+    val compact: String = dumped.replaceAll("\\s+", " ").replace("= ", "=")
+    assert(compact.contains("""</strong><span class="footnote-ref""""), dumped)
+    assert(!compact.contains("""</strong> <span class="footnote-ref""""), dumped)
+  }
+
   test("|=== table survives cleanup without tableblock") {
     val xml: Xml.Element = process(
       """#|===

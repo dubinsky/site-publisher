@@ -13,7 +13,7 @@ csl: apa
   </teiHeader>
   <text>
     <body>
-      <p>See this<note place="end">TEI endnote body.</note> and <ref target="#posuk">posuk</ref>
+      <p>See this<note place="end">TEI endnote body.</note> and <hi>clung</hi><note place="end">Clinging note.</note> and <ref target="#posuk">posuk</ref>
       and <code lang="scala">xs.map(f)</code> and <del>TEI struck</del>
       and <ref target="#knuth79">Knuth 1979</ref>
       and <ptr target="#lamport94"/>

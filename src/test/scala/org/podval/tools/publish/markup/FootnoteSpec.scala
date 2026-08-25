@@ -8,6 +8,11 @@ final class FootnoteSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String =
     HtmlXmlDialect.render(element)
 
+  private def published(xml: Xml.Element, width: Int = 40): String =
+    val (notes, harvested) = Footnote.harvest(xml)
+    val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
+    HtmlXmlDialect.render(resolved, width)
+
   test("attachTip wraps the link and tip as siblings") {
     val footnote = Footnote(
       correlationId = "1",
@@ -88,4 +93,34 @@ final class FootnoteSpec extends AnyFunSuite:
     val withTip: String = render(withTipEl)
     assert(withTip.contains("footnote-tip"), withTip)
     assert(Footnote.resolveLink(Xml.element("p"), notes, attachTip = true).getName == "p")
+  }
+
+  test("footnote after text or a preceding element has no separating HTML space") {
+    val afterText: Xml.Element = Xml.element("p").setChildren(Chunk(
+      Xml.text("this"),
+      Footnote.link("n"),
+      Footnote.body("n", Chunk(Xml.text("a note"))),
+      Xml.text(".")
+    ))
+    val afterEm: Xml.Element = Xml.element("p").setChildren(Chunk(
+      Xml.element("em").setText("this"),
+      Footnote.link("n"),
+      Footnote.body("n", Chunk(Xml.text("a note"))),
+      Xml.text(".")
+    ))
+    val afterA: Xml.Element = Xml.element("p").setChildren(Chunk(
+      Xml.element("a").setHref("#x").setText("this"),
+      Footnote.link("n"),
+      Footnote.body("n", Chunk(Xml.text("a note"))),
+      Xml.text(".")
+    ))
+    for (xml, before) <- Seq(
+      afterText -> "this",
+      afterEm -> "</em>",
+      afterA -> "</a>"
+    ) do
+      val dumped: String = published(xml)
+      val compact: String = dumped.replaceAll("\\s+", " ").replace("= ", "=")
+      assert(compact.contains(s"""$before<span class="footnote-ref""""), dumped)
+      assert(!compact.contains(s"""$before <span class="footnote-ref""""), dumped)
   }

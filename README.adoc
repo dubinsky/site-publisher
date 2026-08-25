@@ -35,20 +35,23 @@ This here is a static site generator. It:
 - supports <<blog-posts>>;
 - supports <<chunking>>;
 - supports <<pdf>> generation;
-- supports <<tables>>;
-- supports <<task-lists>>;
-- supports <<footnotes>>;
-- supports <<glossary>>;
-- supports <<bibliography>>;
-- supports <<code-blocks>>;
-- supports <<callouts>>;
-- supports <<admonitions>>;
-- supports <<asides>>;
-- supports <<quotes>>;
-- supports <<strikethrough>>;
-- supports <<figures>>;
-- supports <<pdf-embed>>;
-- supports <<video>>;
+
+Supported markup constructs:
+
+- <<tables>>;
+- <<task-lists>>;
+- <<footnotes>>;
+- <<glossary>>;
+- <<bibliography>>;
+- <<code-blocks>>;
+- <<callouts>>;
+- <<admonitions>>;
+- <<asides>>;
+- <<quotes>>;
+- <<strikethrough>>;
+- <<figures>>;
+- <<pdf-embed>>;
+- <<video>>;
 
 [#opinionated]
 == Opinionated
@@ -250,6 +253,7 @@ HTML:: the IR shape (already a task list; no conversion):
 == Footnotes
 
 Hovering a footnote number shows the note; the numbered list is at the end of the (chunk of the) page.
+A note written with no space after the preceding word or element stays adjacent in the HTML.
 
 AsciiDoc:: inline note, or a named definition reused with an empty macro:
 +
@@ -327,7 +331,7 @@ posuk
 
 Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens
 (`Alter Rebbe` → `Alter-Rebbe`).
-Reference a term with `[[#id]]` or `[text](#id)`.
+Reference a term with `+++[[#id]]+++` or `[text](#id)`.
 
 A lone `:` after a Markdown term is not a reliable empty definition:
 FlexMark can take the next term as that definition.
@@ -427,7 +431,7 @@ Authored entries stay on the page (not cited-only). Links to an entry id get a h
 Entry ids are as written (`#knuth79`); they do not use the `#bibl-` prefix of the CSL list,
 so the same key can be cited both ways in one document.
 
-AsciiDoc:: `[bibliography]` list with `[[[id]]]` / `[[[id,xreftext]]]` anchors; cite with `<<id>>`.
+AsciiDoc:: `[bibliography]` list with `+++[[[id]]]+++` / `+++[[[id,xreftext]]]+++` anchors; cite with `<<id>>`.
 +
 [source,asciidoc]
 ----
@@ -688,7 +692,7 @@ HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become 
 
 A block image (or other graphic) with an optional caption. Inline images stay `<img>`.
 
-Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. Obsidian `![[image]]` embeds stay `<img>` (resolved later).
+Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later).
 +
 [source,markdown]
 ----
@@ -728,7 +732,7 @@ HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`
 
 A PDF file shown on the page. Not <<pdf,PDF generation>> of a page.
 
-Markdown:: Obsidian `![[file.pdf]]`; optional `#page=N` and `&height=H` (pixels if H is digits). Alias `![[file.pdf|Title]]` is the link label.
+Markdown:: Obsidian `+++![[file.pdf]]+++`; optional `#page=N` and `&height=H` (pixels if H is digits). Alias `+++![[file.pdf|Title]]+++` is the link label.
 +
 [source,markdown]
 ----
@@ -756,7 +760,7 @@ The sibling link is always visible and is what remains in print (the inner viewe
 
 A local video file, or a YouTube/Vimeo player. Local files use HTML `<video>` (like `<audio>`).
 
-Markdown:: Obsidian `![[file.mp4]]` (also `webm`, `ogv`, `m4v`). Alias `![[file.mp4|Title]]` is the fallback link label.
+Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`). Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
 +
 [source,markdown]
 ----
@@ -778,38 +782,3 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
   <a href="clip.mp4">Open video: clip.mp4</a>
 </video>
 ----
-
-== TODO
-
-=== Pages
-- chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
-- treat `<img>` as a link element also?
-- sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions;
-- Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
-- add whatever is needed for the feed to the `<head>`
-- implement SEO - or is just the page title in the `<head>` all I need?
-- whatever the feed post summaries end up being, conditionally add same as post excerpt to the post list
-- handle categories; they can be wiki links?!
-- auto-create category pages
-- auto-create tag pages
-- implement paging of the long lists (e.g., list of posts)
-
-=== TEI
-
-- footnotes should cling to preceding elements, not just text
-- facsimiles
-- raw TEI
-
-=== CLI
-- package the CLI
-- serve with filesystem watch
-- publish site into a bucket
-
-=== Further Research
-
-- add publishing and updating a page to X once X API supports Articles
-- Look at https://stephango.com/vault
-- Look at https://squidfunk.github.io/mkdocs-material/
-- Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
-- Think about serializing the full list of backlinks out of the memory
-

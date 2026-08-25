@@ -50,6 +50,21 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(!render(stripped).contains("""class="footnotes""""), render(stripped))
   }
 
+  test("footnote after emphasis with no source space has no separating HTML space") {
+    val xml: Xml.Element = process(
+      """**this**[^note]
+        |
+        |[^note]: A note.
+        |""".stripMargin
+    )
+    val (notes, harvested) = harvest(xml)
+    val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
+    val dumped: String = HtmlXmlDialect.render(resolved, 40)
+    val compact: String = dumped.replaceAll("\\s+", " ").replace("= ", "=")
+    assert(compact.contains("""</strong><span class="footnote-ref""""), dumped)
+    assert(!compact.contains("""</strong> <span class="footnote-ref""""), dumped)
+  }
+
   test("| A | B | table survives convert") {
     val xml: Xml.Element = process(
       """#| A | B |

@@ -15,7 +15,8 @@ object Footnote:
 
   val tip: Tip = Tip("footnote")
 
-  def isLink(element: Xml.Element): Boolean = element.has(LinkClass)
+  def isLink(element: Xml.Element): Boolean =
+    element.has(LinkClass) && element.get(CorrelationId).isDefined
 
   def isBody(element: Xml.Element): Boolean = element.has(BodyClass)
 

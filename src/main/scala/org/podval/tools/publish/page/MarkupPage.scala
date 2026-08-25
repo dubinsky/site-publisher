@@ -86,7 +86,6 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
           ),
         ),
         site.siteFooter,
-        // Each library emits imports + inline in its own order ([[js.JSLibrary.inlineBeforeImports]]).
         libraries.flatMap(_.scripts)
       )
     )

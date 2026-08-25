@@ -4,7 +4,7 @@ csl: apa
 ---
 = Book
 
-See this footnote:[AsciiDoc footnote body.] and <<posuk>>.
+See this footnote:[AsciiDoc footnote body.] and **clung**footnote:[Clinging AsciiDoc.] and <<posuk>>.
 
 cite:[knuth79] and <<knuth-book>>.
 
