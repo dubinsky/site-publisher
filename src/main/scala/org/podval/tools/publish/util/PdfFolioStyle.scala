@@ -4,7 +4,9 @@ import com.microsoft.playwright.Page
 import scala.jdk.CollectionConverters.MapHasAsScala
 import java.awt.Color
 
-/** Computed `.folio` used by PdfPageNumbers. `fontFamily` is the CSS stack. */
+/** Computed `.folio` used by PdfPageNumbers (`font-family` stack, size, weight,
+  * italic, color). Defaults to body type in layout.css; override `.folio` in CSS.
+  * Outer-edge position is not taken from CSS. */
 final class PdfFolioStyle(
   val fontFamily: String,
   val fontSizePt: Float,

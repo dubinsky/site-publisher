@@ -102,6 +102,70 @@ final class PdfPageNumbersSpec extends AnyFunSuite:
       stamped.close()
   }
 
+  test("Google Fonts CSS with wget UA yields a TrueType Noto Serif") {
+    val bytes: Option[Array[Byte]] = FolioFont.googleTtf("Noto Serif", 400, false)
+    assume(bytes.isDefined, "Google Fonts TTF not reachable")
+    assert(FolioFont.isSfnt(bytes.get), s"not sfnt, ${bytes.get.take(8).mkString(",")}")
+  }
+
+  test("stampOuterEdge embeds a loaded TTF of the CSS family") {
+    val style: PdfFolioStyle = PdfFolioStyle(
+      fontFamily = "Noto Serif",
+      fontSizePt = 11f,
+      fontWeight = 400,
+      italic = false,
+      color = java.awt.Color(0x33, 0x33, 0x33)
+    )
+    assume(
+      PdfPageNumbers.fontBytesFor(style).isDefined,
+      "Noto Serif TTF not available (Google Fonts or system)"
+    )
+    val pdf: File = emptyPdf()
+    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter, style)
+    val stamped = Loader.loadPDF(pdf)
+    try
+      val folio: Glyph = glyphsOn(stamped, 1).find(_.text == "1").getOrElse:
+        fail(s"no folio; got ${glyphsOn(stamped, 1).map(_.text)}")
+      assert(
+        folio.fontName.toLowerCase.contains("noto"),
+        s"expected Noto TTF folio, got ${folio.fontName}"
+      )
+      assert(math.abs(folio.fontSizePt - 11f) < 0.5f, s"expected 11pt, got ${folio.fontSizePt}")
+    finally
+      stamped.close()
+  }
+
+  test("stampOuterEdge falls back to Standard 14 Times when no TTF matches") {
+    val style: PdfFolioStyle = PdfFolioStyle(
+      fontFamily = "NoSuchFont-xyzzy",
+      fontSizePt = 10f,
+      fontWeight = 400,
+      italic = false,
+      color = java.awt.Color(0x33, 0x33, 0x33)
+    )
+    assume(PdfPageNumbers.fontBytesFor(style).isEmpty, s"unexpected TTF ${PdfPageNumbers.fontBytesFor(style)}")
+    val pdf: File = emptyPdf()
+    PdfPageNumbers.stampOuterEdge(pdf, PdfPageSize.letter, style)
+    val stamped = Loader.loadPDF(pdf)
+    try
+      val folio: Glyph = glyphsOn(stamped, 1).find(_.text == "1").getOrElse:
+        fail(s"no folio; got ${glyphsOn(stamped, 1).map(_.text)}")
+      assert(folio.fontName.contains("Times"), s"expected Times folio, got ${folio.fontName}")
+    finally
+      stamped.close()
+  }
+
+private def emptyPdf(): File =
+  val pdf: File = File.createTempFile("folios-empty-", ".pdf")
+  pdf.deleteOnExit()
+  val document = PDDocument()
+  try
+    document.addPage(PDPage())
+    document.save(pdf)
+  finally
+    document.close()
+  pdf
+
 private final class GlyphStripper extends PDFTextStripper:
   var glyphs: Seq[Glyph] = Seq.empty
   setSortByPosition(true)

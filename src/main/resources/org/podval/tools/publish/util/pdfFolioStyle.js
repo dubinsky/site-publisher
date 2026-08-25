@@ -1,5 +1,6 @@
 /**
  * Computed `.folio` (print media, webfonts loaded). Size is CSS px.
+ * Chromium does not paint this class; the span is a probe for the stamp.
  * Invoked by Playwright page.evaluate (caller wraps this declaration).
  */
 function pdfFolioStyle() {

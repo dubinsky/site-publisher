@@ -576,13 +576,14 @@ ul.toc {
 }
 
 /**
- * Folio (PDF margin page numbers). Chromium does not paint these; PdfPageNumbers
- * stamps them after print from computed `.folio`. body::after forces Chrome to
- * subset ASCII digits of this face (skipped if the stamp loads its own TTF).
- * display:none / visibility:hidden omit glyphs; opacity:0 still paints.
- * position:fixed repeats on every printed page so per-page subsets keep 0-9.
- * font-variant-numeric:normal on the embedder (not tabular-nums) so the default
- * cmap digits are the ones embedded.
+ * Folio (PDF margin page numbers). Not painted by Chromium; a probe `span.folio`
+ * is measured after print and PdfPageNumbers stamps from that computed style
+ * (family, weight, italic, size, color). Defaults to body type via the variables
+ * below; override `.folio` (e.g. in custom-styles.css) to use a different face.
+ * Position (outer edge, below the text block) is not CSS.
+ * `font-family` must be loadable as TrueType: a Google Fonts family, a font on
+ * the machine, or Times/Helvetica/Courier. WOFF2-only webfonts are skipped
+ * (Chromium print embeds those as Type3, which PDFBox cannot encode into).
  */
 .folio {
     font-family: var(--base-font-family);
@@ -590,22 +591,6 @@ ul.toc {
     font-size: var(--small-font-size);
     color: var(--text-color);
     font-variant-numeric: tabular-nums;
-}
-
-@media print {
-    body::after {
-        content: "0123456789";
-        font-family: var(--base-font-family);
-        font-weight: var(--base-font-weight);
-        font-size: var(--small-font-size);
-        font-style: normal;
-        font-variant-numeric: normal;
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        opacity: 0;
-        pointer-events: none;
-    }
 }
 
 /**
