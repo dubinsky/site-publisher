@@ -21,3 +21,6 @@ Use `map` in
 ```scala
 xs.map(f)
 ```
+
+> [!tip] Save time
+> Use the shortcut.

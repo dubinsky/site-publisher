@@ -172,6 +172,55 @@ code .callout {
 }
 
 /**
+ * Admonitions (AsciiDoc NOTE/TIP/… and Obsidian `> [!type]`).
+ * Type colour is `data-type`; fold is a native `<details>`.
+ */
+.admonition {
+    --admonition-accent: var(--link-base-color);
+    margin: 1em 0;
+    padding: 0.75em 1em;
+    border-left: 4px solid var(--admonition-accent);
+    background-color: color-mix(in oklab, var(--admonition-accent), var(--background-color) 88%);
+}
+
+.admonition[data-type="tip"],
+.admonition[data-type="hint"] {
+    --admonition-accent: #0f9d58;
+}
+
+.admonition[data-type="important"] {
+    --admonition-accent: #7c4dff;
+}
+
+.admonition[data-type="warning"],
+.admonition[data-type="caution"],
+.admonition[data-type="attention"] {
+    --admonition-accent: #e65100;
+}
+
+.admonition[data-type="danger"],
+.admonition[data-type="error"],
+.admonition[data-type="bug"],
+.admonition[data-type="failure"] {
+    --admonition-accent: #c62828;
+}
+
+.admonition-title {
+    margin: 0 0 0.4em;
+    font-weight: 600;
+}
+
+details.admonition > summary.admonition-title {
+    cursor: pointer;
+}
+
+@media print {
+    details.admonition > :not(summary) {
+        display: block !important;
+    }
+}
+
+/**
  * Definition lists (including glossary).
  * Styled like Asciidoctor default stylesheet so dt/dd read as glossary entries
  * rather than unstyled browser HTML.

@@ -42,6 +42,7 @@ This here is a static site generator. It:
 - supports <<bibliography>>;
 - supports <<code-blocks>>;
 - supports <<callouts>>;
+- supports <<admonitions>>;
 
 [#opinionated]
 == Opinionated
@@ -478,6 +479,45 @@ HTML:: the IR shape:
 </ol>
 ----
 
+[#admonitions]
+== Admonitions
+
+Typed notices (note, tip, warning, …). Not listing <<callouts>> and not asides/sidebars.
+
+Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]`; optional title; `+`/`-` to fold). No plugin.
++
+[source,markdown]
+----
+> [!tip] Save time
+> Use the shortcut.
+
+> [!faq]- Hidden
+> Secret.
+----
+
+AsciiDoc:: `NOTE:` / `TIP:` / `IMPORTANT:` / `CAUTION:` / `WARNING:` (paragraph or `[NOTE]====` block; optional `.Title`).
++
+[source,asciidoc]
+----
+NOTE: Auxiliary information.
+
+.Watch out
+[WARNING]
+====
+Multi-paragraph body.
+====
+----
+
+HTML:: the IR shape (`details` when folded):
++
+[source,html]
+----
+<div class="admonition" data-type="tip">
+  <div class="admonition-title">Save time</div>
+  <p>Use the shortcut.</p>
+</div>
+----
+
 
 == TODO
 
@@ -485,7 +525,6 @@ HTML:: the IR shape:
 
 Support in a markup-independent way:
 
-- admonitions
 - asides
 
 === TEI

@@ -82,6 +82,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="footnotes""""), page)
     assert(page.contains("language-scala"), page)
     assert(page.contains("xs.map(f)"), page)
+    assert(page.contains("""class="admonition""""), page)
+    assert(page.contains("""data-type="tip""""), page)
+    assert(page.contains("Save time"), page)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
@@ -143,6 +146,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="callout""""), page)
     assert(page.contains("""class="callout-list""""), page)
     assert(page.contains("Library import"), page)
+    assert(page.contains("""class="admonition""""), page)
+    assert(page.contains("""data-type="note""""), page)
+    assert(page.contains("Auxiliary information"), page)
   }
 
   test("HTML about: table, task-list IR, glossary, header nav, citation IR") {

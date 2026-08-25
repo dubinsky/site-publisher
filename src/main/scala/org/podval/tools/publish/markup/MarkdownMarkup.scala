@@ -71,7 +71,7 @@ object MarkdownMarkup extends Markup(
   private[markup] def convert(xml: Xml.Element): Xml.Element =
     xml.transform((element: Xml.Element) =>
       val children: Xml.Nodes = XmlUtil.convertElements(element.getChildren, HtmlMarkup.unwrapSpuriousParagraph)
-      convertTaskList(element.setChildren(convertDescriptionLists(children)))
+      convertAdmonition(convertTaskList(element.setChildren(convertDescriptionLists(children))))
     )
 
   // FlexMark: <li class="task-list-item"><input class="task-list-item-checkbox" …/>&nbsp;text
@@ -81,6 +81,47 @@ object MarkdownMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.map: node =>
         node.asElement.filter(_.getName == "li").fold(node)(convertFlexMarkItem)
       TaskList.asList(element.setChildren(children))
+
+  // Obsidian core callouts: `> [!type] Title` (optional `+`/`-` fold). FlexMark emits a blockquote.
+  private val admonitionMarker = """\[!([A-Za-z0-9_-]+)\]([+-])?[ \t]*""".r
+
+  private def convertAdmonition(element: Xml.Element): Xml.Element =
+    if element.getName != "blockquote" then element
+    else obsidianAdmonition(element).getOrElse(element)
+
+  private def obsidianAdmonition(quote: Xml.Element): Option[Xml.Element] =
+    val children: List[Xml.Node] = quote.getChildren.filterNot(_.isWhitespace).toList
+    for
+      first <- children.headOption.flatMap(_.asElement).filter(_.getName == "p")
+      (typeName, fold, title, firstBody) <- splitObsidianMarker(first)
+    yield Admonition.make(typeName, title, firstBody ++ Chunk.from(children.tail), fold)
+
+  private def splitObsidianMarker(
+    paragraph: Xml.Element
+  ): Option[(String, Option[Boolean], Option[String], Xml.Nodes)] =
+    val nodes: List[Xml.Node] = paragraph.getChildren.toList
+    nodes.headOption.flatMap(_.asText).flatMap: text =>
+      val nl: Int = text.indexOf('\n')
+      val firstLine: String = if nl < 0 then text else text.substring(0, nl)
+      val afterNewline: String = if nl < 0 then "" else text.substring(nl + 1)
+      admonitionMarker.findPrefixMatchOf(firstLine).map: matched =>
+        val typeName: String = matched.group(1).toLowerCase
+        val fold: Option[Boolean] = Option(matched.group(2)).map(_ == "+")
+        val title: Option[String] = Option(firstLine.substring(matched.end).trim).filter(_.nonEmpty)
+        val leftover: List[Xml.Node] =
+          val fromText: List[Xml.Node] =
+            if afterNewline.isEmpty then Nil else List(Xml.text(afterNewline))
+          dropLeadingBreaks(fromText ++ nodes.tail)
+        val firstBody: Xml.Nodes =
+          if leftover.isEmpty then Chunk.empty
+          else Chunk(paragraph.setChildren(Chunk.from(leftover)))
+        (typeName, fold, title, firstBody)
+
+  private def dropLeadingBreaks(nodes: List[Xml.Node]): List[Xml.Node] =
+    nodes match
+      case head :: tail if head.isWhitespace => dropLeadingBreaks(tail)
+      case head :: tail if head.asElement.exists(_.getName == "br") => dropLeadingBreaks(tail)
+      case other => other
 
   private def convertFlexMarkItem(li: Xml.Element): Xml.Element =
     val rest: Xml.Nodes = li.getChildren.dropWhile(isIgnorablePrefix)

@@ -110,6 +110,7 @@ object AsciiDocMarkup extends Markup(
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
       result = convertCalloutList(result)
+      result = convertAdmonition(result)
       result
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
@@ -192,6 +193,38 @@ object AsciiDocMarkup extends Markup(
 
   private def isGuardBold(element: Xml.Element): Boolean =
     element.getName == "b" && calloutNumber(element.getText).isDefined
+
+  private val asciidocAdmonitionTypes: Set[String] =
+    Set("note", "tip", "important", "caution", "warning")
+
+  // Asciidoctor: <div class="admonitionblock note"><table> icon + content cells.
+  private def convertAdmonition(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("admonitionblock") then element
+    else
+      val typeName: String =
+        element.getClasses.find(asciidocAdmonitionTypes.contains).getOrElse("note")
+      val cells: Seq[Xml.Element] = element.gather(el =>
+        Option.when(el.getName == "td")(el)
+      ).toSeq
+      val icon: Option[Xml.Element] = cells.find(_.hasClass("icon"))
+      val content: Option[Xml.Element] = cells.find(_.hasClass("content"))
+      val contentChildren: Xml.Nodes =
+        content.fold(Chunk.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
+      val (titleFromContent, body): (Option[String], Xml.Nodes) =
+        contentChildren.headOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) =>
+              (Some(heading.getText.trim).filter(_.nonEmpty), contentChildren.drop(1))
+            case None =>
+              (None, contentChildren)
+      val titleFromIcon: Option[String] =
+        icon.flatMap: cell =>
+          val labelled: Option[String] = cell
+            .gather(el => el.get("title"))
+            .headOption
+            .orElse(Some(cell.getText.trim).filter(_.nonEmpty))
+          labelled.map(_.trim).filter(_.nonEmpty)
+      Admonition.make(typeName, titleFromContent.orElse(titleFromIcon), body)
 
   private def convertCalloutList(element: Xml.Element): Xml.Element =
     if element.getName != "div" || !element.hasClass("colist") then element
