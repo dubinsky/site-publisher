@@ -320,11 +320,11 @@ dd > p:last-child {
     margin-bottom: 0;
 }
 
-.glossary-ref, .footnote-ref {
+.glossary-ref, .footnote-ref, .citation-ref {
     position: relative;
 }
 
-.glossary-tip, .footnote-tip {
+.glossary-tip, .footnote-tip, .citation-tip {
     display: none;
     position: absolute;
     left: 0;
@@ -346,19 +346,24 @@ dd > p:last-child {
 
 @media (hover: hover) and (pointer: fine) {
     .glossary-ref:hover > .glossary-tip,
-    .footnote-ref:hover > .footnote-tip {
+    .footnote-ref:hover > .footnote-tip,
+    .citation-ref:hover > .citation-tip {
         display: block;
     }
 }
 
 .glossary-ref:focus-within > .glossary-tip,
-.footnote-ref:focus-within > .footnote-tip {
+.footnote-ref:focus-within > .footnote-tip,
+.citation-ref:focus-within > .citation-tip {
     display: block;
 }
 
 html.glossary-expand .glossary-tip,
+html.glossary-expand .citation-tip,
 html.glossary-expand .glossary-ref:hover > .glossary-tip,
-html.glossary-expand .glossary-ref:focus-within > .glossary-tip {
+html.glossary-expand .glossary-ref:focus-within > .glossary-tip,
+html.glossary-expand .citation-ref:hover > .citation-tip,
+html.glossary-expand .citation-ref:focus-within > .citation-tip {
     display: inline;
     position: static;
     left: auto;
@@ -373,11 +378,13 @@ html.glossary-expand .glossary-ref:focus-within > .glossary-tip {
     white-space: inherit;
 }
 
-html.glossary-expand .glossary-tip::before {
+html.glossary-expand .glossary-tip::before,
+html.glossary-expand .citation-tip::before {
     content: " (";
 }
 
-html.glossary-expand .glossary-tip::after {
+html.glossary-expand .glossary-tip::after,
+html.glossary-expand .citation-tip::after {
     content: ")";
 }
 
@@ -386,7 +393,8 @@ html.glossary-expand .glossary-tip::after {
         display: none !important;
     }
     /* Always inline in PDF/print; the header toggle is screen-only. */
-    .glossary-tip {
+    .glossary-tip,
+    .citation-tip {
         display: inline;
         position: static;
         left: auto;
@@ -400,10 +408,12 @@ html.glossary-expand .glossary-tip::after {
         box-shadow: none;
         white-space: inherit;
     }
-    .glossary-tip::before {
+    .glossary-tip::before,
+    .citation-tip::before {
         content: " (";
     }
-    .glossary-tip::after {
+    .glossary-tip::after,
+    .citation-tip::after {
         content: ")";
     }
 }

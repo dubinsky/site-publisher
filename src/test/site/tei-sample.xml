@@ -12,7 +12,9 @@ title: TEI Sample
   <text>
     <body>
       <p>See this<note place="end">TEI endnote body.</note> and <ref target="#posuk">posuk</ref>
-      and <code lang="scala">xs.map(f)</code> and <del>TEI struck</del>.</p>
+      and <code lang="scala">xs.map(f)</code> and <del>TEI struck</del>
+      and <ref target="#knuth79">Knuth 1979</ref>
+      and <ptr target="#lamport94"/>.</p>
       <cit>
         <quote>A TEI quotation.</quote>
         <bibl>Jefferson, <title>Papers</title></bibl>
@@ -25,6 +27,17 @@ title: TEI Sample
         <label xml:id="posuk">posuk</label>
         <item>verse</item>
       </list>
+      <listBibl>
+        <head>References</head>
+        <bibl xml:id="knuth79">Knuth, Donald E. <title>TeX and Metafont</title>. 1979.</bibl>
+        <biblStruct xml:id="lamport94">
+          <monogr>
+            <author>Lamport, Leslie</author>
+            <title>LaTeX</title>
+            <imprint><date>1994</date></imprint>
+          </monogr>
+        </biblStruct>
+      </listBibl>
       <table>
         <row role="label"><cell>A</cell><cell>B</cell></row>
         <row><cell>1</cell><cell>2</cell></row>

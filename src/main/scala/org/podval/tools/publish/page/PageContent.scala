@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Bibliography, Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc,
-  WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids, Link,
+  LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -18,9 +18,10 @@ final class PageContent private(
   val ids: Ids,
   val blocks: WikiBlocks,
   val footnotes: Map[String, Footnote],
-  val glossaryDefinitions: Map[String, Xml.Nodes]
+  val glossaryDefinitions: Map[String, Xml.Nodes],
+  val bibliographyDefinitions: Map[String, Xml.Nodes]
 ):
-  private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip)
+  private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
   def markupContent(
     sectionId: Option[String],
@@ -132,14 +133,29 @@ final class PageContent private(
         var result: Xml.Element = element.setHref(href)
         if result.getText == WikiLink.linkText(element, ref) then
           result = result.setText(WikiLink.linkText(element, linkTo.title))
-        if attachTips then glossaryTip(linkTo).foreach: definition =>
-          result = Glossary.tip.attachTip(result, definition)
+        if attachTips then
+          glossaryTip(linkTo) match
+            case Some(definition) =>
+              result = Glossary.tip.attachTip(result, definition)
+            case None =>
+              bibliographyTip(linkTo).foreach: definition =>
+                result = result.add(Citation.CiteClass)
+                result = BibliographyItem.tip.attachTip(result, definition)
         result
 
   private def glossaryTip(linkTo: Link): Option[Xml.Nodes] =
+    definitionFrom(linkTo, _.glossaryDefinitions)
+
+  private def bibliographyTip(linkTo: Link): Option[Xml.Nodes] =
+    definitionFrom(linkTo, _.bibliographyDefinitions)
+
+  private def definitionFrom(
+    linkTo: Link,
+    defs: PageContent => Map[String, Xml.Nodes]
+  ): Option[Xml.Nodes] =
     linkTo.fragment.flatMap: fragment =>
       val from: Option[PageContent] = if linkTo.isIntrapage then Some(this) else linkTo.page.content
-      from.flatMap(_.glossaryDefinitions.get(fragment.id))
+      from.flatMap(page => defs(page).get(fragment.id))
 
 
 object PageContent:
@@ -171,7 +187,8 @@ object PageContent:
       ids = Ids(harvested),
       blocks = WikiBlocks(harvested, source),
       footnotes = footnotes,
-      glossaryDefinitions = Glossary.definitions(harvested)
+      glossaryDefinitions = Glossary.definitions(harvested),
+      bibliographyDefinitions = BibliographyItem.definitions(harvested)
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */

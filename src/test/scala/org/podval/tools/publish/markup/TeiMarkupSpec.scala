@@ -146,3 +146,71 @@ final class TeiMarkupSpec extends AnyFunSuite:
     ).toSeq
     assert(egs.size == 1, dumped)
   }
+
+  test("listBibl entries get id and bibliography-item; empty ptr is labeled") {
+    val xml: Xml.Element = process(
+      """<div>
+        |<p>See <ref target="#knuth79">Knuth 1979</ref> and <ptr target="#lamport94"/>.</p>
+        |<listBibl>
+        |  <head>References</head>
+        |  <bibl xml:id="knuth79">Knuth, Donald E.</bibl>
+        |  <biblStruct xml:id="lamport94"><title>LaTeX</title></biblStruct>
+        |</listBibl>
+        |</div>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val lists: Seq[Xml.Element] = xml.gather(el => Option.when(BibliographyItem.isList(el))(el)).toSeq
+    assert(lists.size == 1, dumped)
+    val items: Seq[Xml.Element] = xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId).toSet == Set(Some("knuth79"), Some("lamport94")), dumped)
+    assert(!dumped.contains("""tei-class="bibliography""""), dumped)
+    assert(!dumped.contains("""tei-class="bibliography-item""""), dumped)
+    assert(dumped.contains("""href="#knuth79""""), dumped)
+    assert(dumped.contains("Knuth 1979"), dumped)
+    val ptr: Xml.Element = xml.gather(el =>
+      Option.when(el.isA && el.getHref.contains("#lamport94"))(el)
+    ).head
+    assert(ptr.getText.trim == "lamport94", dumped)
+    assert(xml.gather(el => Option.when(Citation.isCite(el))(el)).isEmpty, dumped)
+  }
+
+  test("standalone bibl and quote attribution are not bibliography items") {
+    val xml: Xml.Element = process(
+      """<div>
+        |<p>See <bibl>Jefferson</bibl>.</p>
+        |<cit><quote>quoted</quote><bibl xml:id="jeff">Jefferson</bibl></cit>
+        |<listBibl><bibl xml:id="knuth79">Knuth</bibl></listBibl>
+        |</div>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val items: Seq[Xml.Element] = xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId) == Seq(Some("knuth79")), dumped)
+    assert(xml.gather(el => Option.when(Quote.is(el))(el)).size == 1, dumped)
+  }
+
+  test("cit without a quote is not a block quote") {
+    val xml: Xml.Element = process(
+      """<div><cit><ref target="#knuth79">Knuth</ref></cit>
+        |<listBibl><bibl xml:id="knuth79">Knuth</bibl></listBibl></div>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(Quote.is(el))(el)).isEmpty, dumped)
+    assert(dumped.contains("Knuth"), dumped)
+  }
+
+  test("listBibl in teiHeader is not document bibliography") {
+    val xml: Xml.Element = process(
+      """<TEI>
+        |<teiHeader><fileDesc><sourceDesc>
+        |<listBibl><bibl xml:id="header-only">Catalogue</bibl></listBibl>
+        |</sourceDesc></fileDesc></teiHeader>
+        |<text><body>
+        |<listBibl><bibl xml:id="knuth79">Knuth</bibl></listBibl>
+        |</body></text>
+        |</TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val items: Seq[Xml.Element] = xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId) == Seq(Some("knuth79")), dumped)
+    assert(!items.exists(_.getId.contains("header-only")), dumped)
+  }

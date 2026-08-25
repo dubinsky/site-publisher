@@ -240,6 +240,15 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="figure""""), page)
     assert(page.contains("pixel.svg"), page)
     assert(page.contains("A TEI figure"), page)
+    assert(page.contains("""class="bibliography""""), page)
+    assert(page.contains("""id="knuth79""""), page)
+    assert(page.contains("""id="lamport94""""), page)
+    assert(page.contains("""href="#knuth79""""), page)
+    assert(page.contains("Knuth 1979"), page)
+    assert(page.contains("""class="citation-ref""""), page)
+    assert(page.contains("""class="citation-tip""""), page)
+    assert(page.contains("lamport94"), page)
+    assert(!page.contains("""class="csl-entry""""), page)
   }
 
   test("dated post is published and listed") {

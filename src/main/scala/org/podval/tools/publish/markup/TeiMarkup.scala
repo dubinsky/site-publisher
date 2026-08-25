@@ -49,6 +49,8 @@ object TeiMarkup extends Markup(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
     )
+    val headerBiblIds: Set[String] = headerListBiblEntryIds(converted)
+    val biblIds: Set[String] = listBiblIds(converted, headerBiblIds)
     // TODO does it really need to be a separate pass?
     val withIr: Xml.Element = converted.transform(
       element =>
@@ -56,6 +58,8 @@ object TeiMarkup extends Markup(
           XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
         )
         result = convertGlossary(result).getOrElse(result)
+        result = convertListBibl(result, headerBiblIds)
+        result = fillEmptyPointer(result, biblIds)
         result = convertQuote(result)
         result = convertFigure(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
@@ -150,13 +154,60 @@ object TeiMarkup extends Markup(
   private def convertCit(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
     val quoted: Xml.Nodes = children.filter(isQuoted)
-    val body: Xml.Nodes =
-      if quoted.nonEmpty then quoted.flatMap(unwrapQuoted)
-      else children.filterNot(isCitAttribution)
-    val attribution: Xml.Nodes = children.filter(isCitAttribution).flatMap(asAttribution)
-    val id: Option[String] =
-      xmlId(element).orElse(quoted.flatMap(_.asElement).find(el => xmlId(el).isDefined).flatMap(xmlId))
-    Quote.make(None, attribution, body).setId(id)
+    // cit without a quote is a bibliographic pointer, not a block quotation.
+    if quoted.isEmpty then element
+    else
+      val body: Xml.Nodes = quoted.flatMap(unwrapQuoted)
+      val attribution: Xml.Nodes = children.filter(isCitAttribution).flatMap(asAttribution)
+      val id: Option[String] =
+        xmlId(element).orElse(quoted.flatMap(_.asElement).find(el => xmlId(el).isDefined).flatMap(xmlId))
+      Quote.make(None, attribution, body).setId(id)
+
+  // listBibl in teiHeader / fileDesc is catalogue metadata, not the document bibliography.
+  // Identity of the list element is not stable across transform copies; skip by entry xml:id.
+  private def headerListBiblEntryIds(xml: Xml.Element): Set[String] =
+    xml.gather(el => Option.when(el.getName == "teiHeader")(el), stopAtCode = false)
+      .flatMap(header =>
+        header.gather(el => Option.when(el.getName == "listBibl")(el), stopAtCode = false)
+      )
+      .flatMap(entryIds)
+      .toSet
+
+  private def entryIds(list: Xml.Element): Chunk[String] =
+    list.getChildren.flatMap(_.asElement)
+      .filter(el => BibliographyItem.isEntryName(el.getName))
+      .flatMap(xmlId)
+
+  private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] =
+    xml.gather(el => Option.when(el.getName == "listBibl")(el), stopAtCode = false)
+      .flatMap(entryIds)
+      .filterNot(headerBiblIds.contains)
+      .toSet
+
+  private def convertListBibl(element: Xml.Element, headerBiblIds: Set[String]): Xml.Element =
+    if element.getName != "listBibl" || BibliographyItem.isList(element) then element
+    else if entryIds(element).exists(headerBiblIds.contains) then element
+    else
+      val children: Xml.Nodes = element.getChildren.map: node =>
+        node.asElement.filter(el => BibliographyItem.isEntryName(el.getName)) match
+          case Some(entry) =>
+            val withId: Xml.Element = xmlId(entry).fold(entry)(entry.setId)
+            withId.add(BibliographyItem.ItemClass)
+          case None =>
+            node
+      element.add(Citation.ListClass).setChildren(children)
+
+  private def fillEmptyPointer(element: Xml.Element, biblIds: Set[String]): Xml.Element =
+    if !element.isA || biblIds.isEmpty then element
+    else
+      val fragment: Option[String] = element.getHref.filter(_.startsWith("#")).map(_.substring(1))
+      val empty: Boolean = element.getChildren.filterNot(_.isWhitespace).isEmpty
+      fragment.filter(biblIds.contains).filter(_ => empty) match
+        case Some(id) =>
+          val label: String = element.get("n").map(_.trim).filter(_.nonEmpty).getOrElse(id)
+          element.setText(label)
+        case None =>
+          element
 
   private def convertBareQuote(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)

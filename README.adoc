@@ -408,6 +408,20 @@ and
 <div class="bibliography"></div>
 ----
 
+TEI:: in-document records, not a `.bib` file and not CSL. `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl`. Empty `ptr` shows `@n` or the id. `cit` with a `quote` is a <<quotes,quote>>, not this.
++
+[source,xml]
+----
+<p>See <ref target="#knuth79">Knuth 1979</ref>
+and <ptr target="#lamport94"/>.</p>
+<listBibl>
+  <bibl xml:id="knuth79">Knuth, Donald E. <title>TeX and Metafont</title>. 1979.</bibl>
+  <biblStruct xml:id="lamport94">
+    <monogr><author>Lamport, Leslie</author><title>LaTeX</title></monogr>
+  </biblStruct>
+</listBibl>
+----
+
 [#code-blocks]
 == Code Blocks
 
@@ -751,7 +765,6 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
 - footnotes should cling to preceding elements, not just text
 - facsimiles
 - raw TEI
-- look later into handling TEI bibliographies using *internal* (in-document) records (`listBibl` / `bibl` / `biblStruct` and `ref`/`ptr` pointers), not the external `.bib` file
 
 === CLI
 - package the CLI
