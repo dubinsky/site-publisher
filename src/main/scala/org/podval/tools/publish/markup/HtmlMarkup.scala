@@ -47,7 +47,9 @@ object HtmlMarkup extends Markup(
 
     // Nest HTML sections once the title ('h1') is removed.
     val nested: Xml.Element = result.setChildren(nestSections(result.getChildren))
-    (nested.transform(element => Quote.normalize(Aside.normalize(element))), title)
+    (nested.transform(element =>
+      Figure.normalize(Strike.normalize(Quote.normalize(Aside.normalize(element))))
+    ), title)
 
   // Wrap each HTML section at the top level in a 'div' with class 'section'.
   // Transplant id from the header element to the section element.

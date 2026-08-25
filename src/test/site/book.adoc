@@ -36,6 +36,11 @@ ____
 A little rebellion now and then is a good thing.
 ____
 
+See [line-through]#obsolete phrase# here.
+
+.A figure caption
+image::pixel.svg[A square]
+
 [glossary]
 [[posuk]]posuk:: verse
 

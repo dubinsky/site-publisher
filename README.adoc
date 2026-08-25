@@ -45,6 +45,8 @@ This here is a static site generator. It:
 - supports <<admonitions>>;
 - supports <<asides>>;
 - supports <<quotes>>;
+- supports <<strikethrough>>;
+- supports <<figures>>;
 
 [#opinionated]
 == Opinionated
@@ -596,6 +598,79 @@ TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution). A `<bibl>` 
   <quote>A TEI quotation.</quote>
   <bibl>Jefferson, <title>Papers</title></bibl>
 </cit>
+----
+
+[#strikethrough]
+== Strikethrough
+
+Deleted or superseded text. HTML `<del>` (browser line-through).
+
+Markdown:: GFM `~~text~~` (Obsidian native; FlexMark strikethrough extension).
++
+[source,markdown]
+----
+See ~~struck out~~ here.
+----
+
+AsciiDoc:: `[line-through]#text#`.
++
+[source,asciidoc]
+----
+See [line-through]#obsolete phrase# here.
+----
+
+TEI:: `<del>`.
++
+[source,xml]
+----
+<p>See <del>TEI struck</del>.</p>
+----
+
+HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become `<del>`:
++
+[source,html]
+----
+<p>See <del>HTML struck</del>.</p>
+----
+
+[#figures]
+== Figures
+
+A block image (or other graphic) with an optional caption. Inline images stay `<img>`.
+
+Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. Obsidian `![[image]]` embeds stay `<img>` (resolved later).
++
+[source,markdown]
+----
+![A square](pixel.svg "A Markdown figure")
+----
+
+AsciiDoc:: block `image::` (optional `.Title`). Inline `image:src[]` is not a figure.
++
+[source,asciidoc]
+----
+.A figure caption
+image::pixel.svg[A square]
+----
+
+TEI:: `<figure>` with `<graphic url>` and optional `<head>` (caption). `<graphic>` becomes `<img>`.
++
+[source,xml]
+----
+<figure>
+  <head>A TEI figure</head>
+  <graphic url="pixel.svg"/>
+</figure>
+----
+
+HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`:
++
+[source,html]
+----
+<figure class="figure">
+  <img src="pixel.svg" alt="A square"/>
+  <figcaption class="figure-caption">HTML figure</figcaption>
+</figure>
 ----
 
 == TODO

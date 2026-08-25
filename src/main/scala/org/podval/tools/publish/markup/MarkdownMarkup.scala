@@ -7,6 +7,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
 import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -22,6 +23,7 @@ object MarkdownMarkup extends Markup(
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
     DefinitionExtension.create,
     FootnoteExtension.create,
+    StrikethroughExtension.create,
     TablesExtension.create,
     TaskListExtension.create
   )

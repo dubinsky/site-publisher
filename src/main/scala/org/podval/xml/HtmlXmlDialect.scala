@@ -5,7 +5,7 @@ object HtmlXmlDialect extends XmlDialect(
   stack = Set("nav", "header", "main", "div"),
   // Phrasing wrappers: never indent children (that would become a visible HTML space).
   unStack = Set(
-    "a", "abbr", "b", "bdi", "bdo", "cite", "code", "data", "dfn", "em",
+    "a", "abbr", "b", "bdi", "bdo", "cite", "code", "data", "del", "dfn", "em",
     "i", "kbd", "mark", "q", "s", "samp", "small", "span", "strong", "sub",
     "sup", "time", "u", "var"
   ),

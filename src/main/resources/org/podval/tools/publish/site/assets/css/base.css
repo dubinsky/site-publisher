@@ -82,8 +82,23 @@ figcaption {
     font-size: var(--small-font-size);
 }
 
+figure.figure {
+    display: block;
+    margin: 1em 0;
+}
 
-figure { /*TEI*/
+figure.figure > img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.figure-caption {
+    margin-top: 0.4em;
+    text-align: center;
+}
+
+figure:not(.figure) { /* leftover TEI figure without IR class */
     display: inline-block;
 }
 

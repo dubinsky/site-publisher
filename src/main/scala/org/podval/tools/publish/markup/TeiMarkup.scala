@@ -57,6 +57,7 @@ object TeiMarkup extends Markup(
         )
         result = convertGlossary(result).getOrElse(result)
         result = convertQuote(result)
+        result = convertFigure(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if result.getName != "pre" then
           result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
@@ -84,7 +85,7 @@ object TeiMarkup extends Markup(
       renameElement("td", copyAttribute("cols", "colspan", element))
 
     case "graphic" =>
-      renameElement("image", copyAttribute("url", "src", element))
+      renameElement("img", copyAttribute("url", "src", element))
 
     case "ref" | "ptr" =>
       teiHref(element).fold(renameElement("a", element))(value =>
@@ -114,6 +115,28 @@ object TeiMarkup extends Markup(
 
   private def xmlId(element: Xml.Element): Option[String] =
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
+
+  // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
+  // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.
+  private def convertFigure(element: Xml.Element): Xml.Element =
+    if element.getName != "figure" || Figure.is(element) then element
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val heads: Xml.Nodes = children.filter(isTeiCaption)
+      val descs: Xml.Nodes = children.filter(isFigDesc)
+      val captionSource: Xml.Nodes = if heads.nonEmpty then heads else descs
+      val body: Xml.Nodes =
+        children.filterNot: node =>
+          heads.exists(_ eq node) || (heads.isEmpty && descs.exists(_ eq node))
+      val caption: Seq[Xml.Node] = captionSource.toSeq.flatMap: node =>
+        node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace).toSeq)
+      Figure.make(caption, body).setId(xmlId(element))
+
+  private def isTeiCaption(node: Xml.Node): Boolean =
+    node.asElement.exists(el => el.getName == "head" || el.getName == "tei-head")
+
+  private def isFigDesc(node: Xml.Node): Boolean =
+    node.asElement.exists(el => el.getName.equalsIgnoreCase("figDesc"))
 
   // Quote in TEI: <quote>, or <cit> grouping quote/q with bibl/biblStruct/ref.
   // Convert after Xml2Html so Quote IR classes are not prefixed to tei-class.

@@ -89,6 +89,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("From Markdown"), page)
     assert(page.contains("""class="quote""""), page)
     assert(page.contains("A Markdown quotation"), page)
+    assert(page.contains("<del"), page)
+    assert(page.contains("struck out"), page)
+    assert(page.contains("""class="figure""""), page)
+    assert(page.contains("pixel.svg"), page)
+    assert(page.contains("A Markdown figure"), page)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
@@ -162,6 +167,13 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="quote-attribution""""), page)
     assert(page.contains("Jefferson"), page)
     assert(page.contains("Papers"), page)
+    assert(page.contains("<del"), page)
+    assert(page.contains("obsolete phrase"), page)
+    assert(!page.contains("line-through"), page)
+    assert(page.contains("""class="figure""""), page)
+    assert(page.contains("pixel.svg"), page)
+    assert(page.contains("A figure caption"), page)
+    assert(!page.contains("imageblock"), page)
   }
 
   test("HTML about: table, task-list IR, glossary, header nav, citation IR") {
@@ -181,6 +193,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("HTML quotation"), page)
     assert(page.contains("""class="quote-attribution""""), page)
     assert(page.contains("Work"), page)
+    assert(page.contains("<del"), page)
+    assert(page.contains("HTML struck"), page)
+    assert(page.contains("""class="figure""""), page)
+    assert(page.contains("pixel.svg"), page)
+    assert(page.contains("HTML figure"), page)
     val home: String = html("index.html")
     assert(home.contains("""href="/about.html""""), home)
   }
@@ -202,6 +219,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="quote-attribution""""), page)
     assert(page.contains("Jefferson"), page)
     assert(page.contains("Papers"), page)
+    assert(page.contains("<del"), page)
+    assert(page.contains("TEI struck"), page)
+    assert(page.contains("""class="figure""""), page)
+    assert(page.contains("pixel.svg"), page)
+    assert(page.contains("A TEI figure"), page)
   }
 
   test("dated post is published and listed") {

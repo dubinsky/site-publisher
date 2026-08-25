@@ -5,7 +5,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ## Project Layout
 
 - Main logic: `src/main/scala/org/podval/tools/publish/`
-  - `markup/` — `Markup` dialects, shared IR (`Citation`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
+  - `markup/` — `Markup` dialects, shared IR (`Citation`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
   - `page/` — `PageContent`, front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages`, config, sitemap, errors
 - Supporting libraries in the same repo:

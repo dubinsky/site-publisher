@@ -113,6 +113,7 @@ object AsciiDocMarkup extends Markup(
       result = convertAdmonition(result)
       result = convertSidebar(result)
       result = convertQuote(result)
+      result = convertImageBlock(result)
       result
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
@@ -236,6 +237,22 @@ object AsciiDocMarkup extends Markup(
         inner.fold(rest.filterNot(isQuoteAttribution)): quote =>
           removeSpuriousDivs(quote.getChildren)
       Quote.make(title, attribution, body).setId(element.getId)
+
+  // Asciidoctor: <div class="imageblock"><div class="content">img</div> optional div.title.
+  // `content` is unwrapped first; title is a sibling after the image.
+  private def convertImageBlock(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("imageblock") then element
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val (body, caption): (Xml.Nodes, Option[String]) =
+        children.lastOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) =>
+              (children.dropRight(1), Some(heading.getText.trim).filter(_.nonEmpty))
+            case None =>
+              (children, None)
+      val extra: Chunk[String] = element.getClasses.filterNot(_ == "imageblock")
+      extra.foldLeft(Figure.make(caption, body).setId(element.getId))(_.addClass(_))
 
   private def isQuoteAttribution(node: Xml.Node): Boolean =
     node.asElement.exists(el => el.getName == "div" && el.hasClass("attribution"))
