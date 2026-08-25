@@ -538,6 +538,11 @@ ul.page-list {
         page-break-inside: avoid;
     }
 
+    /* Inner PDF viewer must not become the printed page; the sibling link stays. */
+    .pdf-embed object {
+        display: none !important;
+    }
+
     /* Contain the decorative quote; clip top/bottom so it cannot paint on the previous page.
      * rem, not em: em on ::before is the 2.75em quote font. Zero the inner p's
      * margin-top so padding does not break collapse and leave the mark above the line. */

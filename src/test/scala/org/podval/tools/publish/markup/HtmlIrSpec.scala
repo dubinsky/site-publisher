@@ -34,3 +34,12 @@ final class HtmlIrSpec extends AnyFunSuite:
     assert(dumped.contains("old"), dumped)
     assert(!dumped.contains("<s"), dumped)
   }
+
+  test("pdf object becomes pdf-embed") {
+    val xml: Xml.Element = HtmlIr.normalize(
+      parse("""<div><object data="sample.pdf" type="application/pdf"></object></div>""")
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(PdfEmbed.is(el))(el)).size == 1, dumped)
+    assert(dumped.contains("""class="pdf-embed-link""""), dumped)
+  }

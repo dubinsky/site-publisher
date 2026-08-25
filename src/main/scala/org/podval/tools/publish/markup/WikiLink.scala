@@ -67,26 +67,34 @@ object WikiLink:
   // see https://obsidian.md/help/embeds
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
   def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
-    Files.nameAndExtension(ref)._2.fold(None): extension =>
-      if Media.isImage(extension) then
+    val (path, _): (String, Option[String]) = Strings.splitFirst(ref, '#')
+    Files.nameAndExtension(path)._2.map(_.toLowerCase) match
+      case Some(extension) if Media.isImage(extension) =>
         val (width: Option[Int], height: Option[Int]) =
           // TODO Embed image, potentially with sizes WIDTHxHEIGHT or just WIDTH or nothing in the text
           (None, None)
 
         Some(Xml
           .element("img")
-          .set("src", ref)
-          .set("alt", s"Image: $ref")
+          .set("src", path)
+          .set("alt", s"Image: $path")
           .set("width", width.map(_.toString))
           .set("height", height.map(_.toString))
         )
-      else if Media.isAudio(extension) then Some(Xml
-        .element("audio")
-        .set("src", ref)
-        .set("controls", true.toString)
-      )
-      else if extension == "pdf" then
-        // TODO Embed PDF viewer, with potentially page=PAGE&height=HEIGHT or one or none in the text
+      case Some(extension) if Media.isAudio(extension) =>
+        Some(Xml
+          .element("audio")
+          .set("src", path)
+          .set("controls", true.toString)
+        )
+      case Some("pdf") =>
+        Some(PdfEmbed.fromRef(ref, embedLabel(element, path)))
+      case _ =>
         None
-      else
-        None
+
+  private def embedLabel(element: Xml.Element, path: String): String =
+    val inner: String = element.getText.trim.stripPrefix("![[").stripSuffix("]]").trim
+    val name: String = Strings.splitFirst(inner, '#')._1.trim
+    val fileName: String = path.split('/').lastOption.getOrElse(path)
+    if name.isEmpty || name == path || name.toLowerCase.endsWith(".pdf") then fileName
+    else name

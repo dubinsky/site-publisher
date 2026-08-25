@@ -5,7 +5,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ## Project Layout
 
 - Main logic: `src/main/scala/org/podval/tools/publish/`
-  - `markup/` — `Markup` dialects, shared IR (`Citation`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
+  - `markup/` — `Markup` dialects, shared IR (`Citation`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
   - `page/` — `PageContent`, front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages`, config, sitemap, errors
 - Supporting libraries in the same repo:
@@ -55,7 +55,7 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 ## When Working on the Code
 
 - Prefer making changes that keep the core small and plugin-free (the project's stated philosophy).
-- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, …). Shared IR and resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). HTML-shaped leftovers (bare `<aside>` / `<blockquote>`, `<s>`, standalone `p>img`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`. TEI does not use that pass yet. There is no `feature/` package.
+- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, …). Shared IR and resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). HTML-shaped leftovers (bare `<aside>` / `<blockquote>`, `<s>`, standalone `p>img`, PDF `<object>`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`. TEI does not use that pass yet. There is no `feature/` package.
 - Keep existing comments when moving or refactoring (TODOs, ordering constraints, "why" notes). Move them with the code they describe. Drop or rewrite a comment only if it is factually wrong; do not delete comments to tidy a diff.
 - Documentation split: **design** (pipeline, IR, why) goes in the Obsidian note `dub.podval.org/notes/Publishing/Site Publisher.md` under **Design**, with a per-feature subsection when a feature has IR or non-obvious architecture. **User documentation** (how to run the generator; syntax of each construct in each markup) stays in this repo’s `README.adoc`. Some overlap is expected (IR HTML shape in the note vs HTML/author syntax in the README). Do not put design essays in the README or author syntax in the Design section.
 - Run `./gradlew test` before considering a change complete.

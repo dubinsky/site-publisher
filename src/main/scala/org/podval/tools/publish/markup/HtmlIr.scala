@@ -11,7 +11,8 @@ object HtmlIr:
     Aside.normalize,
     Quote.normalize,
     Strike.normalize,
-    Figure.normalize
+    Figure.normalize,
+    PdfEmbed.normalize
   )
 
   def normalize(xml: Xml.Element): Xml.Element =

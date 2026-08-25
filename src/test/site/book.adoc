@@ -41,6 +41,10 @@ See [line-through]#obsolete phrase# here.
 .A figure caption
 image::pixel.svg[A square]
 
+++++
+<object data="sample.pdf" type="application/pdf"></object>
+++++
+
 [glossary]
 [[posuk]]posuk:: verse
 

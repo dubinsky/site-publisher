@@ -94,6 +94,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="figure""""), page)
     assert(page.contains("pixel.svg"), page)
     assert(page.contains("A Markdown figure"), page)
+    assert(page.contains("""class="pdf-embed""""), page)
+    assert(page.contains("sample.pdf"), page)
+    assert(page.contains("""type="application/pdf""""), page)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
@@ -174,6 +177,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("pixel.svg"), page)
     assert(page.contains("A figure caption"), page)
     assert(!page.contains("imageblock"), page)
+    assert(page.contains("""class="pdf-embed""""), page)
+    assert(page.contains("sample.pdf"), page)
   }
 
   test("HTML about: table, task-list IR, glossary, header nav, citation IR") {
@@ -198,6 +203,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="figure""""), page)
     assert(page.contains("pixel.svg"), page)
     assert(page.contains("HTML figure"), page)
+    assert(page.contains("""class="pdf-embed""""), page)
+    assert(page.contains("sample.pdf"), page)
     val home: String = html("index.html")
     assert(home.contains("""href="/about.html""""), home)
   }

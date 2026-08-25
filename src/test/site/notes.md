@@ -34,3 +34,5 @@ xs.map(f)
 See ~~struck out~~ here.
 
 ![A square](pixel.svg "A Markdown figure")
+
+![[sample.pdf]]

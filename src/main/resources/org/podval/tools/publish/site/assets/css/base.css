@@ -98,6 +98,24 @@ figure.figure > img {
     text-align: center;
 }
 
+/**
+ * PDF embeds (`object` plus a sibling download link).
+ */
+.pdf-embed {
+    margin: 1em 0;
+}
+
+.pdf-embed > object {
+    display: block;
+    width: 100%;
+    height: var(--pdf-embed-height, 80vh);
+    border: 1px solid var(--border-color-01);
+}
+
+.pdf-embed-link {
+    margin-top: 0.4em;
+}
+
 figure:not(.figure) { /* leftover TEI figure without IR class */
     display: inline-block;
 }

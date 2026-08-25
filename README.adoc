@@ -47,6 +47,7 @@ This here is a static site generator. It:
 - supports <<quotes>>;
 - supports <<strikethrough>>;
 - supports <<figures>>;
+- supports <<pdf-embed>>;
 
 [#opinionated]
 == Opinionated
@@ -673,6 +674,34 @@ HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`
 </figure>
 ----
 
+[#pdf-embed]
+== PDF embeds
+
+A PDF file shown on the page. Not <<pdf,PDF generation>> of a page.
+
+Markdown:: Obsidian `![[file.pdf]]`; optional `#page=N` and `&height=H` (pixels if H is digits). Alias `![[file.pdf|Title]]` is the link label.
++
+[source,markdown]
+----
+![[sample.pdf]]
+----
+
+AsciiDoc:: no native block; write the HTML IR (passthrough `++++`).
+
+HTML:: `<object type="application/pdf">` (IR wraps it) or the IR:
++
+[source,html]
+----
+<div class="pdf-embed">
+  <object data="sample.pdf" type="application/pdf" aria-label="sample.pdf">
+    <a href="sample.pdf">Open PDF: sample.pdf</a>
+  </object>
+  <p class="pdf-embed-link"><a href="sample.pdf">Open PDF: sample.pdf</a></p>
+</div>
+----
+
+The sibling link is always visible and is what remains in print (the inner viewer is hidden).
+
 == TODO
 
 === TEI
@@ -685,7 +714,6 @@ HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`
 === Pages
 - ignore `bib`s;
 - chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
-- do PDF embedding - with `<object>`, `<iframe>` or?
 - do video embedding?
 - treat `<img>` as a link element also?
 - sort the pages in transclusion order, extract sections and blocks,  transclude, and style the transclusions
