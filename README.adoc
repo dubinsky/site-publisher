@@ -343,6 +343,7 @@ Support in a markup-independent way:
 - raw TEI
 
 === Pages
+- chunked root: index.html; issues with: naming, parents, suppress listing (needed for TEI too), landing page choice
 - do PDF embedding - with `<object>`, `<iframe>` or?
 - do video embedding?
 - treat `<img>` as a link element also?
@@ -353,9 +354,6 @@ Support in a markup-independent way:
 - handle categories; they can be wiki links?!
 - auto-create category pages
 - auto-create tag pages
-
-=== Paging
-
 - implement paging of the long lists (e.g., list of posts)
 
 === CLI
