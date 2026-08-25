@@ -112,6 +112,67 @@ final class CitationSpec extends AnyFunSuite:
     assert(cleaned.contains("""class="bibliography""""))
   }
 
+  test("AsciiDoc [bibliography] [[[id]]] and <<id>> become native items, not citeproc stubs") {
+    val xml: Xml.Element = parse(AsciiDocMarkup.convert(
+      """See <<knuth-book>> and <<lamport94>> and cite:[knuth79].
+        |
+        |[bibliography]
+        |* [[[knuth-book]]] Knuth, Donald E. _The Art of Computer Programming_. 1968.
+        |* [[[lamport94,Lamport 94]]] Lamport. _LaTeX_. 1994.
+        |
+        |bibliography::[]
+        |""".stripMargin,
+      File("t.adoc").getAbsoluteFile,
+      asciidoctor
+    ))
+    val cleaned: Xml.Element = AsciiDocMarkup.cleanup(xml)
+    val dumped: String = render(cleaned)
+    val items: Seq[Xml.Element] =
+      cleaned.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId).toSet == Set(Some("knuth-book"), Some("lamport94")), dumped)
+    assert(cleaned.gather(el => Option.when(BibliographyItem.isList(el))(el)).nonEmpty, dumped)
+    assert(dumped.contains("""href="#knuth-book""""), dumped)
+    assert(dumped.contains("""href="#lamport94""""), dumped)
+    assert(dumped.contains("Lamport 94"), dumped)
+    assert(!dumped.contains("""<a id="knuth-book""""), dumped)
+    val stubs: Seq[(Citation.Mode, Citation.Item)] = citeItems(cleaned)
+    assert(stubs.exists((_, item) => item.key == "knuth79"), dumped)
+    assert(!stubs.exists((_, item) => item.key == "knuth-book"), dumped)
+    val placeholders: Seq[Xml.Element] =
+      cleaned.gather(el => Option.when(Citation.isPlaceholder(el))(el)).toSeq
+    assert(placeholders.size == 1, dumped)
+    val defs: Map[String, Xml.Nodes] = BibliographyItem.definitions(cleaned)
+    assert(defs.keySet == Set("knuth-book", "lamport94"), dumped)
+    assert(Xml.toString(defs("knuth-book")).contains("Knuth"), dumped)
+  }
+
+  test("resolve fills citeproc placeholder and leaves a native bibliography list") {
+    val bib: Bibliography = bibliography("apa")
+    val stub: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("knuth79")))
+    val nativeItem: Xml.Element =
+      Xml.element("li").add(BibliographyItem.ItemClass).setId("knuth-book").setText("Knuth book")
+    val nativeList: Xml.Element =
+      Xml.element("ul").add(Citation.ListClass).setChildren(Chunk(nativeItem))
+    val xml: Xml.Element = wrap(
+      Xml.element("p").setChildren(Chunk(stub)),
+      nativeList,
+      Citation.listPlaceholder
+    )
+    val (resolved, labels) = bib.resolve(xml)
+    val dumped: String = render(resolved)
+    assert(labels.isEmpty, labels)
+    val native: Seq[Xml.Element] =
+      resolved.gather(el => Option.when(BibliographyItem.isList(el))(el)).toSeq
+    assert(native.size == 1, dumped)
+    assert(native.head.getChildren.flatMap(_.asElement).exists(_.getId.contains("knuth-book")), dumped)
+    val generated: Seq[Xml.Element] =
+      resolved.gather(el => Option.when(Citation.isList(el))(el)).toSeq
+    assert(generated.size == 1, dumped)
+    assert(dumped.contains(s"""id="${Citation.entryId("knuth79")}""""), dumped)
+    assert(dumped.contains("""id="knuth-book""""), dumped)
+    assert(dumped.contains(s"""href="${Citation.entryHref("knuth79")}""""), dumped)
+  }
+
   test("Markdown [@key], locator, narrative @key; email left alone") {
     val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
       """See [@knuth79] and [@knuth79, p. 12] and @lamport94.

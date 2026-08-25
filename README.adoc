@@ -362,7 +362,11 @@ HTML:: the IR shape (`class="glossary"`; each term is `class="glossary-item"` wi
 [#bibliography]
 == Bibliography
 
-Per document (no site-wide file or style). Front matter:
+Two kinds, per document (no site-wide file or style). They can appear in the same document.
+
+=== External (`.bib` + CSL)
+
+Front matter:
 
 - `bibliography` — path to a `.bib` file, relative to this source file (`.bib` files are not copied to the site; un-ignore with `_site_ignore` if you want one published)
 - `csl` — CSL style name from the bundled styles (for example `apa`, `ieee`)
@@ -408,7 +412,35 @@ and
 <div class="bibliography"></div>
 ----
 
-TEI:: in-document records, not a `.bib` file and not CSL. `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl`. Empty `ptr` shows `@n` or the id. `cit` with a `quote` is a <<quotes,quote>>, not this.
+TEI:: `@cRef` on `ref` / `ptr` is the citeproc key. `@n` is an optional locator.
+Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list is appended).
++
+[source,xml]
+----
+<p>See <ref cRef="knuth79"/> and <ptr cRef="lamport94" n="p. 12"/>.</p>
+<div type="bibliography"/>
+----
+
+=== Internal (in-document list)
+
+Authored entries stay on the page (not cited-only). Links to an entry id get a hover tip.
+Entry ids are as written (`#knuth79`); they do not use the `#bibl-` prefix of the CSL list,
+so the same key can be cited both ways in one document.
+
+AsciiDoc:: `[bibliography]` list with `[[[id]]]` / `[[[id,xreftext]]]` anchors; cite with `<<id>>`.
++
+[source,asciidoc]
+----
+See <<knuth79>> and <<lamport94>>.
+
+[bibliography]
+* [[[knuth79]]] Knuth, Donald E. _TeX and Metafont_. 1979.
+* [[[lamport94,Lamport 94]]] Lamport, Leslie. _LaTeX_. 1994.
+----
+
+TEI:: `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl`
+(not in `teiHeader`). Empty `ptr` shows `@n` or the id. `cit` with a `quote` is a <<quotes,quote>>, not this.
+A bare `@target` that matches a `listBibl` id is treated as `#id`.
 +
 [source,xml]
 ----
@@ -421,6 +453,8 @@ and <ptr target="#lamport94"/>.</p>
   </biblStruct>
 </listBibl>
 ----
+
+Markdown has no native in-document bibliography list.
 
 [#code-blocks]
 == Code Blocks

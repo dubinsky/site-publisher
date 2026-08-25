@@ -155,6 +155,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("AsciiDoc footnote body"), page)
     assert(page.contains("""href="#bibl-knuth79""""), page)
     assert(page.contains("""id="bibl-knuth79""""), page)
+    assert(page.contains("""id="knuth-book""""), page)
+    assert(page.contains("""href="#knuth-book""""), page)
+    assert(page.contains("Art of Computer Programming"), page)
+    assert(page.contains("""class="citation-ref""""), page)
+    assert(page.contains("""class="citation-tip""""), page)
     assert(page.contains("glossary-item"), page)
     assert(page.contains("""id="posuk""""), page)
     assert(page.contains("verse"), page)
@@ -248,7 +253,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="citation-ref""""), page)
     assert(page.contains("""class="citation-tip""""), page)
     assert(page.contains("lamport94"), page)
-    assert(!page.contains("""class="csl-entry""""), page)
+    assert(page.contains("""href="#bibl-knuth79""""), page)
+    assert(page.contains("""id="bibl-knuth79""""), page)
+    assert(page.contains("""class="csl-entry""""), page)
   }
 
   test("dated post is published and listed") {

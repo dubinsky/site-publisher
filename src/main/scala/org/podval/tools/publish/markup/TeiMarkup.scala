@@ -59,7 +59,9 @@ object TeiMarkup extends Markup(
         )
         result = convertGlossary(result).getOrElse(result)
         result = convertListBibl(result, headerBiblIds)
+        result = convertCite(result, biblIds)
         result = fillEmptyPointer(result, biblIds)
+        result = convertBibliographyPlaceholder(result)
         result = convertQuote(result)
         result = convertFigure(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
@@ -208,6 +210,42 @@ object TeiMarkup extends Markup(
           element.setText(label)
         case None =>
           element
+
+  // Front-matter `.bib` keys: `@cRef`, or a bare `@target` that is not a native listBibl id.
+  // `#id` to a listBibl entry stays an internal link (tips). Same key can be used both ways
+  // (`#knuth79` vs citeproc `#bibl-knuth79`).
+  private def convertCite(element: Xml.Element, biblIds: Set[String]): Xml.Element =
+    if !element.isA || Citation.isCite(element) then element
+    else
+      val href: Option[String] = element.getHref.map(_.trim).filter(_.nonEmpty)
+      val fragment: Option[String] =
+        href.filter(_.startsWith("#")).map(_.substring(1)).filter(_.nonEmpty)
+      if fragment.exists(biblIds.contains) then element
+      else if href.exists(biblIds.contains) then
+        element.setHref(s"#${href.get}")
+      else
+        val fromCref: Option[String] =
+          element.get("cRef").orElse(element.get("cref")).map(_.trim).filter(Citation.isBibKey)
+        val fromBare: Option[String] =
+          href.filter(h => !h.startsWith("#") && !h.contains("/") && Citation.isBibKey(h))
+        val key: Option[String] = fromCref.orElse(fromBare)
+        val locator: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
+        key.fold(element)(k =>
+          Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item(k, locator)))
+        )
+
+  // Empty `div type="bibliography"` (or `tei-class="bibliography"`) is the citeproc placeholder.
+  private def convertBibliographyPlaceholder(element: Xml.Element): Xml.Element =
+    if Citation.isList(element) || !element.getName.equalsIgnoreCase("div") then element
+    else if !isTeiBibliographyPlaceholder(element) then element
+    else Citation.listPlaceholder.setId(xmlId(element))
+
+  private def isTeiBibliographyPlaceholder(element: Xml.Element): Boolean =
+    val empty: Boolean = element.getChildren.forall(_.isWhitespace)
+    val typed: Boolean = element.get("type").contains("bibliography")
+    val classed: Boolean =
+      element.get("tei-class").exists(_.split(" ").exists(_ == "bibliography"))
+    empty && (typed || classed)
 
   private def convertBareQuote(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)

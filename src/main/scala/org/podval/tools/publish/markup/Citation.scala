@@ -33,6 +33,9 @@ object Citation:
 
   def isCite(element: Xml.Element): Boolean = element.has(CiteClass)
   def isList(element: Xml.Element): Boolean = element.getName == "div" && element.has(ListClass)
+  /** Empty `div.bibliography` for citeproc to fill. Native lists are `ul` / `listBibl`, not this. */
+  def isPlaceholder(element: Xml.Element): Boolean =
+    isList(element) && element.getChildren.forall(_.isWhitespace)
 
   def entryId(key: String): String = s"bibl-$key"
   def entryHref(key: String): String = s"#${entryId(key)}"

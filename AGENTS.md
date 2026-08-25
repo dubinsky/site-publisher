@@ -5,7 +5,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ## Project Layout
 
 - Main logic: `src/main/scala/org/podval/tools/publish/`
-  - `markup/` — `Markup` dialects, shared IR (`Citation`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
+  - `markup/` — `Markup` dialects, shared IR (`Citation`, `BibliographyItem`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
   - `page/` — `PageContent`, front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages`, config, sitemap, errors
 - Supporting libraries in the same repo:
@@ -48,7 +48,7 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 - Content pipeline: dialect `Markup` (md / adoc / html / tei) → `FrontMatter` + `Xml.Element` → dialect converters emit shared IR → `PageContent` (sections, links, footnotes, glossary, citations) → Minima-inspired HTML → write.
 - Special source directories: `_posts/`, `_drafts/`, Obsidian daily-notes folder (configured via `.obsidian`).
 - Links: wiki-style `[[...]]`, internal link resolution, backlinks, TOC.
-- Citations: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`. `.bib` files are ignored at scan (not published); citeproc still reads them from source. TEI uses in-document `listBibl` / `bibl` and `ref`/`ptr` instead (no citeproc).
+- Citations: two kinds, usable together. External: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`; list ids are `bibl-{key}`. `.bib` files are ignored at scan (not published); citeproc still reads them from source. Internal: native lists (`BibliographyItem`) — AsciiDoc `[bibliography]` / `[[[id]]]` / `<<id>>`, TEI `listBibl` / `bibl` and `ref`/`ptr` `@target="#id"` — authored ids, hover tips. TEI `@cRef` is the external citeproc key. Markdown has no native in-document list.
 - Chunking (`chunk` / `chunk-depth` in front matter) and PDF are markup-independent.
 - Every real page writes its `textContent` (or copies assets).
 

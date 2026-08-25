@@ -69,7 +69,7 @@ final class Bibliography(
       var replacedList: Boolean = false
       var result: Xml.Element = xml.transform(element =>
         if Citation.isCite(element) then replacements.getOrElse(element, element)
-        else if Citation.isList(element) then
+        else if Citation.isPlaceholder(element) then
           replacedList = true
           list.getOrElse(element)
         else element

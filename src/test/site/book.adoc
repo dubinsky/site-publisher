@@ -6,7 +6,7 @@ csl: apa
 
 See this footnote:[AsciiDoc footnote body.] and <<posuk>>.
 
-cite:[knuth79]
+cite:[knuth79] and <<knuth-book>>.
 
 * [ ] open the chapter
 * [x] done the chapter
@@ -49,5 +49,8 @@ video::clip.mp4[]
 
 [glossary]
 [[posuk]]posuk:: verse
+
+[bibliography]
+* [[[knuth-book]]] Knuth, Donald E. _The Art of Computer Programming_. 1968.
 
 bibliography::[]

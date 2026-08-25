@@ -198,6 +198,44 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("Knuth"), dumped)
   }
 
+  test("cRef and bare target become citeproc stubs; #id to listBibl stays a link") {
+    val xml: Xml.Element = process(
+      """<div>
+        |<p>See <ref target="#knuth79">Knuth 1979</ref>
+        |and <ref cRef="lamport94"/>
+        |and <ptr cRef="knuth79" n="p. 12"/>
+        |and <ref target="missing-key"/>.</p>
+        |<listBibl><bibl xml:id="knuth79">Knuth</bibl></listBibl>
+        |<div type="bibliography"/>
+        |</div>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val items: Seq[Xml.Element] = xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId) == Seq(Some("knuth79")), dumped)
+    assert(dumped.contains("""href="#knuth79""""), dumped)
+    assert(dumped.contains("Knuth 1979"), dumped)
+    val stubs: Seq[Xml.Element] = xml.gather(el => Option.when(Citation.isCite(el))(el)).toSeq
+    val stubItems: Seq[Citation.Item] = stubs.flatMap(Citation.itemsOf)
+    assert(stubItems.map(_.key).toSet == Set("lamport94", "knuth79", "missing-key"), dumped)
+    assert(stubItems.exists(item => item.key == "knuth79" && item.locator.contains("p. 12")), dumped)
+    val placeholders: Seq[Xml.Element] =
+      xml.gather(el => Option.when(Citation.isPlaceholder(el))(el)).toSeq
+    assert(placeholders.size == 1, dumped)
+  }
+
+  test("bare target that matches a listBibl id becomes an internal #href") {
+    val xml: Xml.Element = process(
+      """<div><p><ptr target="knuth79"/></p>
+        |<listBibl><bibl xml:id="knuth79">Knuth</bibl></listBibl></div>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(Citation.isCite(el))(el)).isEmpty, dumped)
+    val ptr: Xml.Element = xml.gather(el =>
+      Option.when(el.isA && el.getHref.contains("#knuth79"))(el)
+    ).head
+    assert(ptr.getText.trim == "knuth79", dumped)
+  }
+
   test("listBibl in teiHeader is not document bibliography") {
     val xml: Xml.Element = process(
       """<TEI>

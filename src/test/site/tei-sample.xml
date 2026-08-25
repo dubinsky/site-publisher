@@ -1,5 +1,7 @@
 ---
 title: TEI Sample
+bibliography: library.bib
+csl: apa
 ---
 <TEI>
   <teiHeader>
@@ -14,7 +16,8 @@ title: TEI Sample
       <p>See this<note place="end">TEI endnote body.</note> and <ref target="#posuk">posuk</ref>
       and <code lang="scala">xs.map(f)</code> and <del>TEI struck</del>
       and <ref target="#knuth79">Knuth 1979</ref>
-      and <ptr target="#lamport94"/>.</p>
+      and <ptr target="#lamport94"/>
+      and <ref cRef="knuth79"/>.</p>
       <cit>
         <quote>A TEI quotation.</quote>
         <bibl>Jefferson, <title>Papers</title></bibl>
@@ -38,6 +41,7 @@ title: TEI Sample
           </monogr>
         </biblStruct>
       </listBibl>
+      <div type="bibliography"/>
       <table>
         <row role="label"><cell>A</cell><cell>B</cell></row>
         <row><cell>1</cell><cell>2</cell></row>

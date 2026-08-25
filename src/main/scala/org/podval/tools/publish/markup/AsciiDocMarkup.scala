@@ -97,6 +97,7 @@ object AsciiDocMarkup extends Markup(
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
+      children = XmlUtil.convertElements(children, convertBibliographyWrapper)
       children = XmlUtil.convertElements(children, HtmlMarkup.unwrapSpuriousParagraph)
       children = removeSpuriousDivs(children)
       if asciidoctorGlossaryClasses.forall(result.hasClass) then
@@ -146,10 +147,35 @@ object AsciiDocMarkup extends Markup(
       .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
 
   private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = XmlUtil.convertElements(children, element =>
-    Option.when(element.getName == "div" && isSpuriousDiv(element))(
-      removeSpuriousDivs(element.getChildren)
+    convertBibliographyWrapper(element).orElse(
+      Option.when(element.getName == "div" && isSpuriousDiv(element))(
+        removeSpuriousDivs(element.getChildren)
+      )
     )
   )
+
+  // Asciidoctor: <div class="ulist bibliography"> optional div.title, ul > li
+  // with <a id="key"></a>[key] from `[[[key]]]`. Convert before `ulist` is unwrapped
+  // so the bibliography class is not lost. Citeproc's empty `div.bibliography` is
+  // left for Bibliography.resolve (`Citation.isPlaceholder`).
+  private def convertBibliographyWrapper(element: Xml.Element): Option[Xml.Nodes] =
+    if element.getName != "div" || !element.hasClass("bibliography") then None
+    else if Citation.isPlaceholder(element) then None
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val (title, rest): (Option[Xml.Element], Xml.Nodes) =
+        children.headOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) => (Some(heading), children.drop(1))
+            case None => (None, children)
+      val list: Option[Xml.Element] =
+        rest.flatMap(_.asElement).find(el => el.getName == "ul" || el.getName == "ol")
+      list.map: ul =>
+        val items: Xml.Nodes = ul.getChildren.map: node =>
+          node.asElement.filter(_.getName == "li").fold(node)(BibliographyItem.asItem)
+        val converted: Xml.Element =
+          ul.add(Citation.ListClass).setId(element.getId).setChildren(items)
+        title.fold(Chunk[Xml.Node](converted))(heading => Chunk(heading, converted))
 
   // Asciidoctor html5 without `icons`: `<b class="conum">(1)</b>` in the listing;
   // `div.colist > ol > li`. With `icons=font`: `<i class="conum" data-value="1"></i><b>(1)</b>`

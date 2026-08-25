@@ -795,6 +795,18 @@ tei-head {
     text-indent: -2em;
 }
 
+ul.bibliography, ol.bibliography {
+    padding-left: 1.5em;
+}
+
+listBibl.bibliography, .bibliography-item {
+    display: block;
+}
+
+.bibliography-item {
+    margin-top: 0.4em;
+}
+
 .unresolved-citation {
     color: var(--brand-color, #c00);
 }
