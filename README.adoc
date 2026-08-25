@@ -239,9 +239,38 @@ HTML:: the IR shape (already a task list; no conversion):
 
 Hovering a footnote number shows the note; the numbered list is at the end of the (chunk of the) page.
 
-AsciiDoc:: `footnote:[text]` (Asciidoctor).
+AsciiDoc:: inline note, or a named definition reused with an empty macro:
++
+[source,asciidoc]
+----
+See this footnote:[A note.]
+and again footnote:fn[Same note.] later footnote:fn[].
+----
 
-Markdown:: FlexMark footnotes: `[^id]` in the text and `[^id]: body` for the definition.
+Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later; Obsidian supports it natively.
++
+[source,markdown]
+----
+See this [^note] and again [^note].
+
+[^note]: A note.
+----
+
+HTML:: IR stubs (same `footnoteCorrelationId` on the call site and the body):
++
+[source,html]
+----
+<p>See this<span class="footnote-link" footnoteCorrelationId="note"></span>.</p>
+<span class="footnote" footnoteCorrelationId="note">A note.</span>
+----
+
+TEI:: definition and use are the same element at the point of reference (`n` is currently ignored):
++
+[source,xml]
+----
+<p>See this<note place="end">A note.</note>.</p>
+----
+
 
 [#glossary]
 == Glossary
