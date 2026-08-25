@@ -85,6 +85,10 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="admonition""""), page)
     assert(page.contains("""data-type="tip""""), page)
     assert(page.contains("Save time"), page)
+    assert(page.contains("""class="aside""""), page)
+    assert(page.contains("From Markdown"), page)
+    assert(page.contains("""class="quote""""), page)
+    assert(page.contains("A Markdown quotation"), page)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
@@ -149,6 +153,15 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="admonition""""), page)
     assert(page.contains("""data-type="note""""), page)
     assert(page.contains("Auxiliary information"), page)
+    assert(page.contains("""class="aside""""), page)
+    assert(page.contains("Auxiliary content"), page)
+    assert(page.contains("""class="quote""""), page)
+    assert(page.contains("""class="quote-title""""), page)
+    assert(page.contains("A title"), page)
+    assert(page.contains("A little rebellion"), page)
+    assert(page.contains("""class="quote-attribution""""), page)
+    assert(page.contains("Jefferson"), page)
+    assert(page.contains("Papers"), page)
   }
 
   test("HTML about: table, task-list IR, glossary, header nav, citation IR") {
@@ -162,11 +175,17 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="glossary-ref""""), page)
     assert(page.contains("""href="#bibl-knuth79""""), page)
     assert(page.contains("""id="bibl-knuth79""""), page)
+    assert(page.contains("""class="aside""""), page)
+    assert(page.contains("already"), page)
+    assert(page.contains("""class="quote""""), page)
+    assert(page.contains("HTML quotation"), page)
+    assert(page.contains("""class="quote-attribution""""), page)
+    assert(page.contains("Work"), page)
     val home: String = html("index.html")
     assert(home.contains("""href="/about.html""""), home)
   }
 
-  test("TEI sample: endnote, table, glossary, and code") {
+  test("TEI sample: endnote, table, glossary, code, and quote") {
     val page: String = html("tei-sample.html")
     assert(page.contains("TEI endnote body"), page)
     assert(page.contains("""class="footnote-ref""""), page)
@@ -178,6 +197,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""class="glossary-ref""""), page)
     assert(page.contains("language-scala"), page)
     assert(page.contains("xs.map(f)"), page)
+    assert(page.contains("""class="quote""""), page)
+    assert(page.contains("A TEI quotation"), page)
+    assert(page.contains("""class="quote-attribution""""), page)
+    assert(page.contains("Jefferson"), page)
+    assert(page.contains("Papers"), page)
   }
 
   test("dated post is published and listed") {

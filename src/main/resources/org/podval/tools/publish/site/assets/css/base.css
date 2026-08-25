@@ -221,6 +221,23 @@ details.admonition > summary.admonition-title {
 }
 
 /**
+ * Asides (AsciiDoc sidebar, HTML `<aside>`). Untyped auxiliary panel.
+ */
+.aside {
+    margin: 1em 0;
+    padding: 1em 1.25em;
+    border: 1px solid var(--border-color-01);
+    background-color: color-mix(in oklab, var(--brand-color), var(--background-color) 90%);
+    border-radius: 4px;
+}
+
+.aside-title {
+    margin: 0 0 0.5em;
+    font-weight: 600;
+    text-align: center;
+}
+
+/**
  * Definition lists (including glossary).
  * Styled like Asciidoctor default stylesheet so dt/dd read as glossary entries
  * rather than unstyled browser HTML.
@@ -491,6 +508,27 @@ blockquote::before {
     margin-left:-.6em;
     color:#7a2518;
     text-shadow:0 1px 2px rgba(0,0,0,.1)
+}
+
+.quote-title {
+    margin: 0 0 0.5em;
+    font-weight: 400;
+}
+
+.quote-attribution {
+    margin-top: 0.5em;
+    font-size: 0.9375em;
+    text-align: right;
+}
+
+.quote-attribution br {
+    display: none;
+}
+
+.quote-attribution cite {
+    display: block;
+    font-style: normal;
+    color: color-mix(in oklab, currentColor, transparent 40%);
 }
 
 /**

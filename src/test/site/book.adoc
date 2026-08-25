@@ -25,6 +25,17 @@ require 'sinatra' <1>
 
 NOTE: Auxiliary information.
 
+.Optional Title
+****
+Auxiliary content.
+****
+
+.A title
+[quote, Jefferson, Papers]
+____
+A little rebellion now and then is a good thing.
+____
+
 [glossary]
 [[posuk]]posuk:: verse
 

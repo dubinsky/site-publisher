@@ -44,7 +44,7 @@ object TeiMarkup extends Markup(
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
     // Xml2Html prefixes reserved HTML attributes (`class` → `tei-class`, `lang` → `tei-lang`).
-    // Convert footnotes, glossary, and code in a second pass so IR `class` values are kept.
+    // Convert footnotes, glossary, quotes, and code in a second pass so IR `class` values are kept.
     val converted: Xml.Element = xml.transform(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
@@ -56,6 +56,7 @@ object TeiMarkup extends Markup(
           XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
         )
         result = convertGlossary(result).getOrElse(result)
+        result = convertQuote(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if result.getName != "pre" then
           result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
@@ -111,6 +112,58 @@ object TeiMarkup extends Markup(
       .orElse(element.get("target"))
       .orElse(element.get("tei-target"))
 
+  private def xmlId(element: Xml.Element): Option[String] =
+    element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
+
+  // Quote in TEI: <quote>, or <cit> grouping quote/q with bibl/biblStruct/ref.
+  // Convert after Xml2Html so Quote IR classes are not prefixed to tei-class.
+  // Bare <q> stays HTML <q> (inline). Do not invent attribution from @who/@source.
+  private def convertQuote(element: Xml.Element): Xml.Element =
+    element.getName match
+      case "cit" => convertCit(element)
+      case "quote" => convertBareQuote(element)
+      case _ => element
+
+  private def convertCit(element: Xml.Element): Xml.Element =
+    val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+    val quoted: Xml.Nodes = children.filter(isQuoted)
+    val body: Xml.Nodes =
+      if quoted.nonEmpty then quoted.flatMap(unwrapQuoted)
+      else children.filterNot(isCitAttribution)
+    val attribution: Xml.Nodes = children.filter(isCitAttribution).flatMap(asAttribution)
+    val id: Option[String] =
+      xmlId(element).orElse(quoted.flatMap(_.asElement).find(el => xmlId(el).isDefined).flatMap(xmlId))
+    Quote.make(None, attribution, body).setId(id)
+
+  private def convertBareQuote(element: Xml.Element): Xml.Element =
+    val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+    val (bibl, body): (Xml.Nodes, Xml.Nodes) = children.partition(isBibl)
+    Quote.make(None, bibl.flatMap(asAttribution), body).setId(xmlId(element))
+
+  private def isQuoted(node: Xml.Node): Boolean =
+    node.asElement.exists(el => el.getName == "quote" || el.getName == "q")
+
+  private def isBibl(node: Xml.Node): Boolean =
+    node.asElement.exists(el =>
+      el.getName == "bibl" || el.getName == "biblStruct" || el.getName == "listBibl"
+    )
+
+  private def isCitAttribution(node: Xml.Node): Boolean =
+    isBibl(node) || node.asElement.exists(el =>
+      el.getName == "ref" || el.getName == "ptr" || el.getName == "a"
+    )
+
+  private def unwrapQuoted(node: Xml.Node): Xml.Nodes =
+    node.asElement.filter(el => el.getName == "quote" || el.getName == "q")
+      .fold(Chunk(node))(_.getChildren.filterNot(_.isWhitespace))
+
+  private def asAttribution(node: Xml.Node): Xml.Nodes =
+    node.asElement.filter(el => el.getName == "bibl" || el.getName == "biblStruct") match
+      case Some(el) =>
+        Chunk(Xml.element("cite").setChildren(el.getChildren.filterNot(_.isWhitespace)))
+      case None =>
+        Chunk(node)
+
   // Glossary in TEI: <list type="gloss"> (also type="glossary") of <label>/<item>.
   // Convert after Xml2Html so Glossary IR classes are not prefixed to tei-class.
   private def convertGlossary(element: Xml.Element): Option[Xml.Element] =
@@ -126,9 +179,6 @@ object TeiMarkup extends Markup(
   private def groupGlossEntries(nodes: Xml.Nodes): Xml.Nodes =
     var result: List[Xml.Node] = Nil
     var pendingLabel: Option[Xml.Element] = None
-
-    def xmlId(element: Xml.Element): Option[String] =
-      element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
 
     def asDt(label: Xml.Element): Xml.Element =
       Xml.element("dt").setChildren(label.getChildren.filterNot(_.isWhitespace))

@@ -43,6 +43,8 @@ This here is a static site generator. It:
 - supports <<code-blocks>>;
 - supports <<callouts>>;
 - supports <<admonitions>>;
+- supports <<asides>>;
+- supports <<quotes>>;
 
 [#opinionated]
 == Opinionated
@@ -518,14 +520,85 @@ HTML:: the IR shape (`details` when folded):
 </div>
 ----
 
+[#asides]
+== Asides
+
+Untyped auxiliary content next to the main flow. Not an <<admonitions,admonition>>.
+
+AsciiDoc:: `[sidebar]` or a `****` block (optional `.Title`).
++
+[source,asciidoc]
+----
+.Optional Title
+****
+Auxiliary content.
+****
+----
+
+Markdown:: no native syntax; Obsidian has none. Write an HTML `+++<aside>+++` block.
++
+[source,markdown]
+----
+<aside>
+<p>From Markdown.</p>
+</aside>
+----
+
+HTML:: `<aside>` (IR adds `class="aside"` if missing); optional title:
++
+[source,html]
+----
+<aside class="aside">
+  <div class="aside-title">Optional Title</div>
+  <p>Auxiliary content.</p>
+</aside>
+----
+
+[#quotes]
+== Quotes
+
+Block quotations. Not <<admonitions>> (`> [!tip]`) and not <<asides>>.
+
+AsciiDoc:: `[quote]` (or a `____` block); optional `.Title`; attribution and citation title as `[quote, Author, Source]`.
++
+[source,asciidoc]
+----
+.A title
+[quote, Jefferson, Papers]
+____
+A little rebellion now and then is a good thing.
+____
+----
+
+Markdown:: a CommonMark blockquote (`>`). No attribution syntax (an em-dash line is still quote body). Obsidian `> [!type]` is an <<admonitions,admonition>>, not a quote.
++
+[source,markdown]
+----
+> A Markdown quotation.
+----
+
+HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `<footer>` attribution (`cite` kept as-is):
++
+[source,html]
+----
+<blockquote class="quote">
+  <div class="quote-title">A title</div>
+  <p>A little rebellion now and then is a good thing.</p>
+  <footer class="quote-attribution">— Jefferson<br/><cite>Papers</cite></footer>
+</blockquote>
+----
+
+TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution). A `<bibl>` directly in `<quote>` is attribution too. `<q>` stays inline.
++
+[source,xml]
+----
+<cit>
+  <quote>A TEI quotation.</quote>
+  <bibl>Jefferson, <title>Papers</title></bibl>
+</cit>
+----
 
 == TODO
-
-=== Features
-
-Support in a markup-independent way:
-
-- asides
 
 === TEI
 

@@ -13,6 +13,10 @@ title: TEI Sample
     <body>
       <p>See this<note place="end">TEI endnote body.</note> and <ref target="#posuk">posuk</ref>
       and <code lang="scala">xs.map(f)</code>.</p>
+      <cit>
+        <quote>A TEI quotation.</quote>
+        <bibl>Jefferson, <title>Papers</title></bibl>
+      </cit>
       <list type="gloss">
         <label xml:id="posuk">posuk</label>
         <item>verse</item>

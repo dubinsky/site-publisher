@@ -111,6 +111,8 @@ object AsciiDocMarkup extends Markup(
       result = convertFootnoteBody(result).getOrElse(result)
       result = convertCalloutList(result)
       result = convertAdmonition(result)
+      result = convertSidebar(result)
+      result = convertQuote(result)
       result
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
@@ -129,7 +131,7 @@ object AsciiDocMarkup extends Markup(
   )
 
   private val spuriousDivClasses: Set[String] = Set(
-    "paragraph", "sectionbody", "ulist", "olist", "quoteblock", "openblock", "content"
+    "paragraph", "sectionbody", "ulist", "olist", "openblock", "content"
   )
 
   private def isSpuriousDiv(element: Xml.Element): Boolean =
@@ -196,6 +198,47 @@ object AsciiDocMarkup extends Markup(
 
   private val asciidocAdmonitionTypes: Set[String] =
     Set("note", "tip", "important", "caution", "warning")
+
+  // Asciidoctor: <div class="sidebarblock"><div class="content">…; `content` is unwrapped first.
+  private def convertSidebar(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("sidebarblock") then element
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val (title, body): (Option[String], Xml.Nodes) =
+        children.headOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) =>
+              (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
+            case None =>
+              (None, children)
+      Aside.make(title, body)
+
+  // Asciidoctor: <div class="quoteblock"> optional div.title, blockquote, optional div.attribution.
+  // Inner paragraph/content wrappers are still on the blockquote; unwrap them into the IR body.
+  private def convertQuote(element: Xml.Element): Xml.Element =
+    if element.getName != "div" || !element.hasClass("quoteblock") then element
+    else
+      val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
+      val (title, rest): (Option[String], Xml.Nodes) =
+        children.headOption.flatMap(_.asElement)
+          .filter(child => child.getName == "div" && child.hasClass("title")) match
+            case Some(heading) =>
+              (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
+            case None =>
+              (None, children)
+      val inner: Option[Xml.Element] =
+        rest.flatMap(_.asElement).find(_.getName == "blockquote")
+      val attribution: Xml.Nodes =
+        rest.flatMap(_.asElement)
+          .find(el => el.getName == "div" && el.hasClass("attribution"))
+          .fold(Chunk.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
+      val body: Xml.Nodes =
+        inner.fold(rest.filterNot(isQuoteAttribution)): quote =>
+          removeSpuriousDivs(quote.getChildren)
+      Quote.make(title, attribution, body).setId(element.getId)
+
+  private def isQuoteAttribution(node: Xml.Node): Boolean =
+    node.asElement.exists(el => el.getName == "div" && el.hasClass("attribution"))
 
   // Asciidoctor: <div class="admonitionblock note"><table> icon + content cells.
   private def convertAdmonition(element: Xml.Element): Xml.Element =

@@ -24,3 +24,9 @@ xs.map(f)
 
 > [!tip] Save time
 > Use the shortcut.
+
+<aside>
+<p>From Markdown.</p>
+</aside>
+
+> A Markdown quotation.
