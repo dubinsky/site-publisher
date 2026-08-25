@@ -40,6 +40,7 @@ This here is a static site generator. It:
 - supports <<footnotes>>;
 - supports <<glossary>>;
 - supports <<bibliography>>;
+- supports <<code-blocks>>;
 
 [#opinionated]
 == Opinionated
@@ -75,6 +76,8 @@ Support considered for:
 
 Internal (YAML between `---` lines in the markup file) or external (same basename, `.yaml` / `.yml`). Do not use both.
 
+Obsidian treats internal YAML as https://help.obsidian.md/properties[Properties]; it stores extra keys but does not interpret this publisher's fields (`chunk`, `bibliography`, `csl`, …).
+
 Set `title` in front matter only when it differs from the file name. Both the file name and the title are used for link resolution.
 
 Useful fields:
@@ -108,6 +111,8 @@ for link resolution to use front matter titles also,
 TODO Obsidian plugin needs to be installed.
 
 TODO aliases
+
+Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian.
 
 Wiki links in Obsidian:
 
@@ -153,7 +158,7 @@ Chunked TOC shows ancestors plus the current subtree; sibling branches are title
 [#tables]
 == Tables
 
-Markdown tables via FlexMark Tables Extension (Obsidian supports them natively).
+Markdown tables via FlexMark Tables Extension (GFM; Obsidian supports them natively).
 
 Markdown::
 +
@@ -177,16 +182,6 @@ AsciiDoc::
 |===
 ----
 
-HTML::
-+
-[source,html]
-----
-<table>
-  <thead><tr><th>A</th><th>B</th></tr></thead>
-  <tbody><tr><td>1</td><td>2</td></tr></tbody>
-</table>
-----
-
 TEI::
 +
 [source,xml]
@@ -197,13 +192,22 @@ TEI::
 </table>
 ----
 
+HTML::
++
+[source,html]
+----
+<table>
+  <thead><tr><th>A</th><th>B</th></tr></thead>
+  <tbody><tr><td>1</td><td>2</td></tr></tbody>
+</table>
+----
 
 [#task-lists]
 == Task Lists
 
 Unchecked `[ ]` and checked `[x]` items in a list. The static site shows disabled checkboxes.
 
-Markdown:: GFM / (FlexMark Task List Extension), (Obsidian supports them natively):
+Markdown:: GFM / FlexMark Task List Extension (Obsidian supports them natively):
 +
 [source,markdown]
 ----
@@ -247,13 +251,20 @@ See this footnote:[A note.]
 and again footnote:fn[Same note.] later footnote:fn[].
 ----
 
-Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later; Obsidian supports it natively.
+Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later. Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]). Obsidian also has inline `^[…]` footnotes; this publisher does not.
 +
 [source,markdown]
 ----
 See this [^note] and again [^note].
 
 [^note]: A note.
+----
+
+TEI:: definition and use are the same element at the point of reference (`n` is currently ignored):
++
+[source,xml]
+----
+<p>See this<note place="end">A note.</note>.</p>
 ----
 
 HTML:: IR stubs (same `footnoteCorrelationId` on the call site and the body):
@@ -264,20 +275,20 @@ HTML:: IR stubs (same `footnoteCorrelationId` on the call site and the body):
 <span class="footnote" footnoteCorrelationId="note">A note.</span>
 ----
 
-TEI:: definition and use are the same element at the point of reference (`n` is currently ignored):
-+
-[source,xml]
-----
-<p>See this<note place="end">A note.</note>.</p>
-----
-
-
 [#glossary]
 == Glossary
 
 A glossary is a description list marked as such. Term links get hover definitions (print inlines them in parentheses).
 
 AsciiDoc:: `[glossary]` on the description list; term ids from `[[id]]`. Reference a term with `<<id>>`.
++
+[source,asciidoc]
+----
+See <<posuk>>.
+
+[glossary]
+[[posuk]]posuk:: verse
+----
 
 Markdown:: PHP Extra definition lists
 (https://michelf.ca/projects/php-markdown/extra/#def-list)
@@ -289,6 +300,23 @@ same family as `{:toc}`).
 Without that marker the list is not a glossary (no term ids, no tooltips).
 The marker also separates adjacent lists.
 
+Obsidian does not render PHP Extra definition lists natively
+(https://www.markdownguide.org/tools/obsidian/[Markdown Guide: Obsidian]).
+Community plugin https://obsidian.md/plugins?id=pandoc-extended-markdown[Pandoc Extended Markdown]
+renders Pandoc/PHP Extra `term` / `: definition` lists.
+`{:.glossary}` is Kramdown IAL, not Obsidian; it shows as a paragraph in the note.
+`+++[[#id]]+++` heading links are native Obsidian.
++
+[source,markdown]
+----
+See [[#posuk]].
+
+posuk
+: verse
+
+{:.glossary}
+----
+
 Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens
 (`Alter Rebbe` → `Alter-Rebbe`).
 Reference a term with `[[#id]]` or `[text](#id)`.
@@ -297,7 +325,31 @@ A lone `:` after a Markdown term is not a reliable empty definition:
 FlexMark can take the next term as that definition.
 Write a real definition line, or omit the term.
 
-In HTML the list is `class="glossary"`; each term is `class="glossary-item"` with an `id`.
+TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`. Term id from `xml:id` on the label, else on the item, else the label text with spaces turned into hyphens. Reference a term with `<ref target="#id">` or `<term ref="#id">`.
++
+[source,xml]
+----
+<p>See <ref target="#posuk">posuk</ref>.</p>
+<list type="gloss">
+  <label xml:id="posuk">posuk</label>
+  <item>verse</item>
+</list>
+----
+
+HTML:: the IR shape (`class="glossary"`; each term is `class="glossary-item"` with an `id`):
++
+[source,html]
+----
+<p>See <a href="#posuk">posuk</a>.</p>
+<div class="glossary">
+  <div class="glossary-item" id="posuk">
+    <dt>posuk</dt>
+    <dd>verse</dd>
+  </div>
+</div>
+----
+
+
 
 [#bibliography]
 == Bibliography
@@ -312,19 +364,84 @@ Both `bibliography` and `csl` are required. Only works cited on the page appear 
 In-text cites become links to `#bibl-{key}` on the matching list entry
 (first key if a cite names several). Unknown keys are highlighted and recorded as a page error.
 
-AsciiDoc (no `asciidoctor-bibliography` gem)::
-
-- `cite:[key]`, `cite:[key, p. 12]`, `cite:[key1, key2]` — parenthetical
-- `cite:key[]`, `cite:key[p. 12]` — same, standard inline-macro form
-- `citenp:[key]` — narrative (author in the sentence)
+AsciiDoc:: no `asciidoctor-bibliography` gem. Also `cite:key[]` / `cite:key[p. 12]` (standard inline-macro form).
++
+[source,asciidoc]
+----
+- `cite:[knuth79]`, `cite:[knuth79, p. 12]`, `cite:[knuth79, lamport94]` — parenthetical
+- `cite:knuth79[]`, `cite:knuth79[p. 12]` — same, standard inline-macro form
+- `citenp:[lamport94]` — narrative (author in the sentence)
 - `bibliography::[]` — list placeholder (otherwise the list is appended)
+----
 
-Markdown (Pandoc citation syntax; no extra FlexMark extension)::
-
-- `[@key]`, `[@key, p. 12]`, `[@key1; @key2]` — parenthetical
-- `@key` — narrative (`me@host.com` is left as an email)
-- `[-@key]` — suppress author
+Markdown:: Pandoc citation syntax (no extra FlexMark extension). `me@host.com` is left as an email.
+Obsidian does not format `[@key]` natively.
+Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List]
+recognizes Pandoc citekeys in the note (sidebar; optional inline).
+https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations] inserts `[@key]` from a `.bib` file.
++
+[source,markdown]
+----
+- `[@knuth79]`, `[@knuth79, p. 12]`, `[@knuth79; @lamport94]` — parenthetical
+- `@knuth79` — narrative (`me@host.com` is left as an email)
+- `[-@lamport94]` — suppress author
 - `:::bibliography` — list placeholder
+See [@knuth79] and [@knuth79, p. 12] and [@knuth79; @lamport94]
+----
+
+HTML:: the IR shape:
++
+[source,html]
+----
+<p>See
+<span class="citation" data-mode="parenthetical"><span class="citation-item" data-key="knuth79"></span></span>
+and
+<span class="citation" data-mode="parenthetical"><span class="citation-item" data-key="knuth79" data-locator="p. 12"></span></span>.</p>
+<div class="bibliography"></div>
+----
+
+[#code-blocks]
+== Code Blocks
+
+Inline code and fenced blocks. A language class on `<code>` (`language-scala`, …) loads highlight.js; `language-mermaid` loads Mermaid instead.
+
+Markdown:: CommonMark inline `` `code` `` and fenced blocks.
+Obsidian supports both natively, including a language identifier
+(https://help.obsidian.md/syntax#Code[Help: Code]).
+Fenced `+++```mermaid+++` diagrams are native in Obsidian too
+(https://help.obsidian.md/syntax#Diagram[Help: Diagram]);
+this publisher loads Mermaid for `language-mermaid`.
++
+[source,markdown]
+----
+Use `map` in
+
+```scala
+xs.map(f)
+```
+----
+
+AsciiDoc:: inline `` `code` ``; `[source]` listing (optional language).
++
+[source,asciidoc]
+------
+Use `map` in
+
+[source,scala]
+----
+xs.map(f)
+----
+------
+
+HTML::
++
+[source,html]
+----
+<p>Use <code>map</code> in</p>
+<pre><code class="language-scala">xs.map(f)
+</code></pre>
+----
+
 
 == TODO
 
@@ -341,6 +458,7 @@ Support in a markup-independent way:
 - footnotes should cling to preceding elements, not just text
 - facsimiles
 - raw TEI
+- look later into handling TEI bibliographies using *internal* (in-document) records (`listBibl` / `bibl` / `biblStruct` and `ref`/`ptr` pointers), not the external `.bib` file
 
 === Pages
 - ignore `bib`s;

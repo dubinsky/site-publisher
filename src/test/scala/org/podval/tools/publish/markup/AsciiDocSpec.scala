@@ -1,12 +1,32 @@
 package org.podval.tools.publish.markup
 
+import org.asciidoctor.Asciidoctor
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
+import java.io.File
 
 final class AsciiDocSpec extends AnyFunSuite:
+  private lazy val asciidoctor: Asciidoctor =
+    val result: Asciidoctor = Asciidoctor.Factory.create()
+    AsciiDocCiteExtension.register(result)
+    result
+
   private def cleanup(input: String): String =
     val parsed = XmlParser.parseXml(input).toOption.get
     HtmlXmlDialect.render(AsciiDocMarkup.cleanup(parsed))
+
+  private def process(source: String): Xml.Element =
+    AsciiDocMarkup.process(
+      XmlParser.parseXml(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)).toOption.get,
+      PageErrorReporter.Silent
+    )._1
+
+  private def render(element: Xml.Element): String =
+    HtmlXmlDialect.render(element)
+
+  private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
+    Footnote.harvest(xml, HtmlXmlDialect, AsciiDocMarkup.isSpuriousFootnotesDiv)
 
   private def isItem(rendered: String, id: String, cssClass: String): Boolean =
     rendered.contains(s"""<div class="$cssClass" id="$id">""") ||
@@ -77,4 +97,63 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(!rendered.contains("<dd><p>"))
     assert(!rendered.contains("""<dt id="stay">"""))
     assert(!isItem(rendered, "stay", "glossary-item"))
+  }
+
+  test("footnote:[A note.] becomes footnote IR") {
+    val xml: Xml.Element = process("See this footnote:[A note.]\n")
+    val dumped: String = render(xml)
+    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    assert(ids.size == 1, dumped)
+    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(Footnote.isBody(element))(element)
+    ).toSeq
+    assert(bodies.size == 1, dumped)
+    assert(Footnote.getCorrelationId(bodies.head) == ids.head, dumped)
+    assert(dumped.contains("A note"), dumped)
+    assert(!dumped.contains("_footnoteref"), dumped)
+    assert(!dumped.contains("_footnotedef"), dumped)
+    val (notes, stripped) = harvest(xml)
+    assert(notes.size == 1)
+    assert(Xml.toString(notes.values.head.nodes).contains("A note"))
+    assert(!render(stripped).contains("""id="footnotes""""), render(stripped))
+  }
+
+  test("footnote:fn[] reuses one body for two links") {
+    val xml: Xml.Element = process(
+      """See this footnote:fn[Same note.] later footnote:fn[].
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    assert(ids.size == 2, dumped)
+    assert(ids.toSet.size == 1, dumped)
+    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(Footnote.isBody(element))(element)
+    ).toSeq
+    assert(bodies.size == 1, dumped)
+    assert(dumped.contains("Same note"), dumped)
+    val (notes, _) = harvest(xml)
+    assert(notes.size == 1)
+    assert(Xml.toString(notes.values.head.nodes).contains("Same note"))
+  }
+
+  test("|=== table survives cleanup without tableblock") {
+    val xml: Xml.Element = process(
+      """#|===
+        #| A | B
+        #
+        #| 1 | 2
+        #|===
+        #""".stripMargin('#')
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("<table"), dumped)
+    assert(!dumped.contains("tableblock"), dumped)
+    val cells: Seq[String] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
+    ).toSeq.filter(_.nonEmpty)
+    assert(cells.contains("A"), dumped)
+    assert(cells.contains("B"), dumped)
+    assert(cells.contains("1"), dumped)
+    assert(cells.contains("2"), dumped)
   }

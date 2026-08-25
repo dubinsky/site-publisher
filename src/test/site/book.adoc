@@ -4,7 +4,7 @@ csl: apa
 ---
 = Book
 
-See this footnote:[AsciiDoc footnote body.]
+See this footnote:[AsciiDoc footnote body.] and <<posuk>>.
 
 cite:[knuth79]
 
@@ -16,5 +16,8 @@ cite:[knuth79]
 
 | 1 | 2
 |===
+
+[glossary]
+[[posuk]]posuk:: verse
 
 bibliography::[]

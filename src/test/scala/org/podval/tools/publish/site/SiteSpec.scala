@@ -123,7 +123,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(beta.contains("Beta has no children"), beta)
   }
 
-  test("AsciiDoc book: checklist IR, table, footnote, citation") {
+  test("AsciiDoc book: checklist IR, table, footnote, citation, glossary") {
     val page: String = html("book.html")
     assert(page.contains("""class="task-list""""), page)
     assert(page.contains("open the chapter"), page)
@@ -134,9 +134,13 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("AsciiDoc footnote body"), page)
     assert(page.contains("""href="#bibl-knuth79""""), page)
     assert(page.contains("""id="bibl-knuth79""""), page)
+    assert(page.contains("glossary-item"), page)
+    assert(page.contains("""id="posuk""""), page)
+    assert(page.contains("verse"), page)
+    assert(page.contains("""class="glossary-ref""""), page)
   }
 
-  test("HTML about: table, task-list IR, glossary, header nav") {
+  test("HTML about: table, task-list IR, glossary, header nav, citation IR") {
     val page: String = html("about.html")
     assert(page.contains("<table"), page)
     assert(page.contains("""class="task-list""""), page)
@@ -145,16 +149,24 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""id="html-term""""), page)
     assert(page.contains("defined in HTML"), page)
     assert(page.contains("""class="glossary-ref""""), page)
+    assert(page.contains("""href="#bibl-knuth79""""), page)
+    assert(page.contains("""id="bibl-knuth79""""), page)
     val home: String = html("index.html")
     assert(home.contains("""href="/about.html""""), home)
   }
 
-  test("TEI sample: endnote and table") {
+  test("TEI sample: endnote, table, glossary, and code") {
     val page: String = html("tei-sample.html")
     assert(page.contains("TEI endnote body"), page)
     assert(page.contains("""class="footnote-ref""""), page)
     assert(page.contains("<table"), page)
     assert(page.contains(">A<") || page.contains(">A</"), page)
+    assert(page.contains("glossary-item"), page)
+    assert(page.contains("""id="posuk""""), page)
+    assert(page.contains("verse"), page)
+    assert(page.contains("""class="glossary-ref""""), page)
+    assert(page.contains("language-scala"), page)
+    assert(page.contains("xs.map(f)"), page)
   }
 
   test("dated post is published and listed") {

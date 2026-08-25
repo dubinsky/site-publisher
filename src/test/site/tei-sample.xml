@@ -11,7 +11,12 @@ title: TEI Sample
   </teiHeader>
   <text>
     <body>
-      <p>See this<note place="end">TEI endnote body.</note>.</p>
+      <p>See this<note place="end">TEI endnote body.</note> and <ref target="#posuk">posuk</ref>
+      and <code lang="scala">xs.map(f)</code>.</p>
+      <list type="gloss">
+        <label xml:id="posuk">posuk</label>
+        <item>verse</item>
+      </list>
       <table>
         <row role="label"><cell>A</cell><cell>B</cell></row>
         <row><cell>1</cell><cell>2</cell></row>

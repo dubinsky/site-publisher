@@ -1,12 +1,22 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlParser}
+import org.podval.tools.publish.site.PageErrorReporter
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
+import java.io.File
 
 final class MarkdownSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
-    val xmlString: String = MarkdownMarkup.xmlContent(input, java.io.File("t.md"))
-    XmlParser.parseXml(xmlString).toOption.get
+    XmlParser.parseXml(MarkdownMarkup.xmlContent(input, File("t.md"))).toOption.get
+
+  private def process(source: String): Xml.Element =
+    MarkdownMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
+  private def render(element: Xml.Element): String =
+    HtmlXmlDialect.render(element)
+
+  private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
+    Footnote.harvest(xml, HtmlXmlDialect, MarkdownMarkup.isSpuriousFootnotesDiv)
 
   test("nested lists") {
     val xml: Xml.Element = parse(
@@ -15,4 +25,45 @@ final class MarkdownSpec extends AnyFunSuite:
         |""".stripMargin
     )
     assert(xml.getName == "div")
+  }
+
+  test("See this [^note] becomes footnote IR; two uses share one body") {
+    val xml: Xml.Element = process(
+      """See this [^note] and again [^note].
+        |
+        |[^note]: A note.
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val ids: Seq[String] = Footnote.linkIds(xml, HtmlXmlDialect).toSeq
+    assert(ids.size == 2, dumped)
+    assert(ids.toSet.size == 1, dumped)
+    val bodies: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(Footnote.isBody(element))(element)
+    ).toSeq
+    assert(bodies.size == 1, dumped)
+    assert(Footnote.getCorrelationId(bodies.head) == ids.head, dumped)
+    assert(dumped.contains("A note"), dumped)
+    val (notes, stripped) = harvest(xml)
+    assert(notes.size == 1)
+    assert(Xml.toString(notes.values.head.nodes).contains("A note"))
+    assert(!render(stripped).contains("""class="footnotes""""), render(stripped))
+  }
+
+  test("| A | B | table survives convert") {
+    val xml: Xml.Element = process(
+      """#| A | B |
+        #|---|---|
+        #| 1 | 2 |
+        #""".stripMargin('#')
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("<table"), dumped)
+    val cells: Seq[String] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
+    ).toSeq.filter(_.nonEmpty)
+    assert(cells.contains("A"), dumped)
+    assert(cells.contains("B"), dumped)
+    assert(cells.contains("1"), dumped)
+    assert(cells.contains("2"), dumped)
   }

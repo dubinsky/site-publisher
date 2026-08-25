@@ -174,6 +174,19 @@ final class GlossarySpec extends AnyFunSuite:
     assert(Glossary.isList(xml.getChildren.flatMap(_.asElement).find(_.getName == "dl").get))
   }
 
+  test("Markdown term text with spaces becomes a hyphenated id") {
+    val xml: Xml.Element = fromMarkdown(
+      """Alter Rebbe
+        |: the first Lubavitcher Rebbe
+        |
+        |{:.glossary}
+        |""".stripMargin
+    )
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml, HtmlXmlDialect)
+    assert(defs.keySet == Set("Alter-Rebbe"), render(xml))
+    assert(definitionText(defs, "Alter-Rebbe") == "the first Lubavitcher Rebbe")
+  }
+
   test("Markdown dt id wins over the term-text slug") {
     val xml: Xml.Element = MarkdownMarkup.convert(parse(
       """<div>

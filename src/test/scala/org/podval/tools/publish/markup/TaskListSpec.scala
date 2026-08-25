@@ -69,6 +69,43 @@ final class TaskListSpec extends AnyFunSuite:
     assert(render(again) == render(xml))
   }
 
+  test("Markdown mixed task and plain items") {
+    val xml: Xml.Element = fromMarkdown(
+      """- [ ] open
+        |- plain
+        |- [x] done
+        |""".stripMargin
+    )
+    assertMixed(xml, render(xml))
+  }
+
+  test("AsciiDoc mixed task and plain items") {
+    val xml: Xml.Element = fromAsciiDoc(
+      """* [ ] open
+        |* plain
+        |* [x] done
+        |""".stripMargin
+    )
+    assertMixed(xml, render(xml))
+  }
+
+  private def assertMixed(xml: Xml.Element, dumped: String): Unit =
+    val lists: Seq[Xml.Element] = HtmlXmlDialect.gather(xml, element =>
+      Option.when(element.getName == "ul" || element.getName == "ol")(element)
+    ).toSeq
+    val list: Xml.Element = lists.find(_.has(TaskList.ListClass)).getOrElse:
+      throw new AssertionError(s"no task-list: $dumped")
+    val lis: Seq[Xml.Element] = list.getChildren.flatMap(_.asElement).filter(_.getName == "li").toSeq
+    assert(lis.size == 3, dumped)
+    assert(lis(0).has(TaskList.ItemClass), dumped)
+    assert(!lis(1).has(TaskList.ItemClass), dumped)
+    assert(lis(2).has(TaskList.ItemClass), dumped)
+    assert(lis(1).getText.contains("plain"), dumped)
+    val boxes: Seq[Xml.Element] = lis.flatMap(_.getChildren.flatMap(_.asElement).filter(_.has(TaskList.CheckboxClass)))
+    assert(boxes.size == 2, dumped)
+    assert(boxes.head.get("checked").isEmpty, dumped)
+    assert(boxes(1).get("checked").contains("checked"), dumped)
+
   test("HTML that is already IR is unchanged by HtmlMarkup.process") {
     val ir: Xml.Element = parse(
       """<div><ul class="task-list"><li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked"/>done</li></ul></div>"""
