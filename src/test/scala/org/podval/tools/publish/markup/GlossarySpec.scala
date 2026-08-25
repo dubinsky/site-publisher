@@ -18,7 +18,7 @@ final class GlossarySpec extends AnyFunSuite:
     )
 
   private def fromMarkdown(source: String): Xml.Element =
-    MarkdownMarkup.convert(parse(MarkdownMarkup.xmlContent(source, null, null)))
+    MarkdownMarkup.convert(parse(MarkdownMarkup.xmlContent(source, File("t.md"))))
 
   private def render(element: Xml.Element): String =
     HtmlXmlDialect.render(element)
@@ -223,15 +223,15 @@ final class GlossarySpec extends AnyFunSuite:
     assert(rendered.contains("<dt>CPU</dt>"))
   }
 
-  test("attachTip and wrapRef produce a sibling tooltip outside the link") {
+  test("attachTip wraps the link and tip as siblings") {
     val link: Xml.Element = Xml
       .element("a")
       .setId("src")
       .setHref("#posuk")
       .setText("posuk")
     val withTip: Xml.Element = Glossary.tip.attachTip(link, Chunk(Xml.text("verse")))
-    val wrapped: Xml.Element = parse("<p></p>").setChildren(Glossary.tip.wrapRef(withTip).get)
-    val rendered: String = render(wrapped)
+    val rendered: String = render(withTip).replaceAll("\\s+", " ").replace("= ", "=")
+    assert(Glossary.tip.isRef(withTip))
     assert(rendered.contains("""class="glossary-ref""""))
     assert(rendered.contains("""class="glossary-tip""""))
     assert(rendered.contains("""id="src-tip""""))

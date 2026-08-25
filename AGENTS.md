@@ -54,7 +54,9 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 ## When Working on the Code
 
 - Prefer making changes that keep the core small and plugin-free (the project's stated philosophy).
-- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, …). Shared IR and bibliography resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). There is no `feature/` package.
+- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, …). Shared IR and resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). There is no `feature/` package.
+- Keep existing comments when moving or refactoring (TODOs, ordering constraints, "why" notes). Move them with the code they describe. Drop or rewrite a comment only if it is factually wrong; do not delete comments to tidy a diff.
+- Documentation split: **design** (pipeline, IR, why) goes in the Obsidian note `dub.podval.org/notes/Publishing/Site Publisher.md` under **Design**, with a per-feature subsection when a feature has IR or non-obvious architecture. **User documentation** (how to run the generator; syntax of each construct in each markup) stays in this repo’s `README.adoc`. Some overlap is expected (IR HTML shape in the note vs HTML/author syntax in the README). Do not put design essays in the README or author syntax in the Design section.
 - Run `./gradlew test` before considering a change complete.
 - Generated directories (`build/`, `out/`, `target/`, `.gradle/`) are gitignored. With `respect_gitignore = true` they should stay out of searches and listings.
 - The `build/` directory can be very large — avoid reading files from it.

@@ -1,8 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.{PageError, PageErrorReporter}
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlDialect, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
@@ -106,9 +105,7 @@ final class SectionSpec extends AnyFunSuite:
       inner
     ))
     val root: Xml.Element = Xml.element("TEI").setChildren(Chunk(grouping))
-    val toc: Toc = Toc(root, TeiMarkup, new PageErrorReporter:
-      def error(kind: PageError.Kind, message: String, cause: Option[Throwable]): Unit = ()
-    )
+    val toc: Toc = Toc(root, TeiMarkup, PageErrorReporter.Silent)
     assert(toc.flatten.map(_.id) == Seq("meth"))
     assert(toc.flatten.head.title == "Methodology")
   }
@@ -131,10 +128,7 @@ final class SectionSpec extends AnyFunSuite:
     assert(!rendered.contains("<tei-head id="))
   }
 
-  private val noSource: PageSource = null.asInstanceOf[PageSource]
   private lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
-  private val silent: PageErrorReporter = new PageErrorReporter:
-    def error(kind: PageError.Kind, message: String, cause: Option[Throwable]): Unit = ()
 
   private def parse(xml: String): Xml.Element = XmlParser.parseXml(xml).toOption.get
 
@@ -142,7 +136,7 @@ final class SectionSpec extends AnyFunSuite:
     normalizeTree(processed, markup)
 
   private def tocTitles(xml: Xml.Element, markup: Markup): Seq[(String, String)] =
-    Toc(xml, markup, silent).flatten.map(section => (section.id, section.title))
+    Toc(xml, markup, PageErrorReporter.Silent).flatten.map(section => (section.id, section.title))
 
   private def assertPermalink(rendered: String, id: String, title: String): Unit =
     assert(rendered.contains(s"""id="$id""""), rendered)
@@ -159,13 +153,13 @@ final class SectionSpec extends AnyFunSuite:
     val xml: Xml.Element = parse(
       """<div><h1>Book</h1><p>intro</p><h2 id="chapter">Chapter</h2><p>chap</p><h3 id="notes">Notes</h3><p>sec</p></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(noSource, xml)._1
+    val processed: Xml.Element = HtmlMarkup.process(xml, PageErrorReporter.Silent)._1
     val normalized: Xml.Element = ir(HtmlMarkup, processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "chapter", "Chapter")
     assertPermalink(rendered, "notes", "Notes")
     assert(tocTitles(normalized, HtmlMarkup) == Seq("chapter" -> "Chapter", "notes" -> "Notes"))
-    val top: Section = Toc(normalized, HtmlMarkup, silent).sections.head
+    val top: Section = Toc(normalized, HtmlMarkup, PageErrorReporter.Silent).sections.head
     assert(top.id == "chapter")
     assert(top.sections.map(_.id) == Seq("notes"))
   }
@@ -179,10 +173,9 @@ final class SectionSpec extends AnyFunSuite:
         |### Notes
         |sec
         |""".stripMargin,
-      File("t.md"),
-      null
+      File("t.md")
     ))
-    val processed: Xml.Element = HtmlMarkup.process(noSource, MarkdownMarkup.convert(xml))._1
+    val processed: Xml.Element = HtmlMarkup.process(MarkdownMarkup.convert(xml), PageErrorReporter.Silent)._1
     val normalized: Xml.Element = ir(HtmlMarkup, processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
@@ -207,7 +200,7 @@ final class SectionSpec extends AnyFunSuite:
       File("t.adoc").getAbsoluteFile,
       asciidoctor
     ))
-    val processed: Xml.Element = HtmlMarkup.process(noSource, AsciiDocMarkup.cleanup(xml))._1
+    val processed: Xml.Element = HtmlMarkup.process(AsciiDocMarkup.cleanup(xml), PageErrorReporter.Silent)._1
     val normalized: Xml.Element = ir(AsciiDocMarkup, processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
@@ -225,13 +218,13 @@ final class SectionSpec extends AnyFunSuite:
         |</div>
         |</body></text></TEI>"""
     )
-    val processed: Xml.Element = TeiMarkup.process(noSource, xml)._1
+    val processed: Xml.Element = TeiMarkup.process(xml, PageErrorReporter.Silent)._1
     val normalized: Xml.Element = ir(TeiMarkup, processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "meth", "Methodology")
     assertPermalink(rendered, "notes", "Notes")
     assert(tocTitles(normalized, TeiMarkup) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
-    val top: Section = Toc(normalized, TeiMarkup, silent).sections.head
+    val top: Section = Toc(normalized, TeiMarkup, PageErrorReporter.Silent).sections.head
     assert(top.id == "meth")
     assert(top.sections.map(_.id) == Seq("notes"))
   }

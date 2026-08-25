@@ -1,8 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -22,18 +21,25 @@ object AsciiDocMarkup extends Markup(
   rendersToXml = true,
   xmlDialect = HtmlXmlDialect
 ):
-  def asciidoctor(site: Site): Asciidoctor =
-    val result: Asciidoctor = Asciidoctor.Factory.create()
-    AsciiDocCiteExtension.register(result)
-    result
+  private var asciidoctorVar: Option[Asciidoctor] = None
+  def asciidoctor: Asciidoctor = synchronized:
+    asciidoctorVar.getOrElse:
+      val result: Asciidoctor = Asciidoctor.Factory.create()
+      AsciiDocCiteExtension.register(result)
+      asciidoctorVar = Some(result)
+      result
+
+  def closeAsciidoctor(): Unit = synchronized:
+    asciidoctorVar.foreach(_.close())
+    asciidoctorVar = None
 
   override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
 
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 
-  override def xmlContent(content: String, sourceFile: File, site: Site): String =
-    convert(content, sourceFile, site.asciidoctor)
+  override def xmlContent(content: String, sourceFile: File): String =
+    convert(content, sourceFile, asciidoctor)
 
   private[markup] def convert(
     content: String,
@@ -78,10 +84,10 @@ object AsciiDocMarkup extends Markup(
     s"<div>$result</div>"
 
   override def process(
-    source: PageSource,
-    xml: Xml.Element
+    xml: Xml.Element,
+    errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
-    HtmlMarkup.process(source, cleanup(xml))
+    HtmlMarkup.process(cleanup(xml), errorReporter)
 
   private[markup] def cleanup(xml: Xml.Element): Xml.Element =
     xmlDialect.transform(xml, (element: Xml.Element) =>

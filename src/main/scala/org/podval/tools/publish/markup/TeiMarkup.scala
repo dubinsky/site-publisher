@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
-import org.podval.tools.publish.page.{MarkupPage, PageSource}
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.page.MarkupPage
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html, XmlUtil}
 import org.podval.xml.XmlUtil.*
@@ -20,7 +20,7 @@ object TeiMarkup extends Markup(
 
   override def rootElements: Set[String] = Set("TEI", "store", "collection") ++ EntityKind.values.map(_.element).toSet
 
-  override def xmlContent(content: String, sourceFile: File, site: Site): String = content
+  override def xmlContent(content: String, sourceFile: File): String = content
 
   // Sections in TEI:
   //<div type="section" n="2"> // chapter", "section", "part", "subsection", etc
@@ -36,8 +36,8 @@ object TeiMarkup extends Markup(
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
 
   override def process(
-    source: PageSource,
-    xml: Xml.Element
+    xml: Xml.Element,
+    errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
     // TODO extract title
     val tei2Html: Xml2Html = Xml2Html("tei")

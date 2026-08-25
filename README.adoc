@@ -6,7 +6,21 @@
 
 Generate and publish websites.
 
-It supports various
+For motivation and design choices, see https://dub.podval.org/notes/Publishing/Site%20Publisher.html[Site Publisher].
+
+This file is about how to *use* the generator and the *syntax* of each construct in each markup.
+
+[#usage]
+== Usage
+
+The source directory must contain `_site_config.yml`. Pass that directory as the only positional argument:
+
+----
+./gradlew run --args="/path/to/source-directory"
+----
+
+`./gradlew build` compiles and tests; `./gradlew test` runs tests only.
+
 
 [#summary]
 == Summary
@@ -44,12 +58,12 @@ TODO expound
 [#markup]
 == Markup
 
-Markup languages are supported:
+Recognized by extension:
 
-- Markdown
-- AsciiDoc
-- HTML
-- TEI (TODO)
+- Markdown (`.md`)
+- AsciiDoc (`.adoc`)
+- HTML (`.html`)
+- TEI (`.xml` with a TEI root element) - TODO
 
 Support considered for:
 
@@ -59,15 +73,18 @@ Support considered for:
 [#frontmatter]
 == Frontmatter
 
-Frontmatter can be:
+Internal (YAML between `---` lines in the markup file) or external (same basename, `.yaml` / `.yml`). Do not use both.
 
-- internal, in the file with markup
-- external, in the file with the same name and extension `.yaml` or `.yml`
+Set `title` in front matter only when it differs from the file name. Both the file name and the title are used for link resolution.
 
-Files are recognized as markup:
+Useful fields:
 
-- if their extension is associated with a markup language (`.md`, `.adoc`)
-- if their extension is `.xml` and their root XML element is associated with a markup language (`TEI`)
+- `chunk` / `chunk-depth` — see <<chunking>>
+- `bibliography` / `csl` / `lang` — see <<bibliography>>
+- `toc-depth`
+- `tags`, `categories`, `aliases`
+- `header-page`, `icon`, `permalink`, `post`, `date`
+- `pdf` - see <<pdf>>
 
 TODO add frontmatter boolean `asset` to declare that a file is *not* markup.
 
@@ -116,65 +133,57 @@ Wiki links in Obsidian:
 - auto-post (same file name)
 - permalink (any file name)
 
+
 [#chunking]
 == Chunking
 
-Previously, I used `asciidoctor-multipage` Asciidoctor
-[extension](https://github.com/owenh000/asciidoctor-multipage)
-to split an HTML file into per-section pages.
+Split a document into per-section HTML pages (any markup, not only AsciiDoc).
 
-That extension has long-known
-[issues](https://github.com/owenh000/asciidoctor-multipage/issues/46),
-for example, it does not handle footnotes.
+----
+chunk: true
+chunk-depth: 2
+----
 
-Even if those issues get fixed (which seems extremely unlikely),
-this extension only works with AsciiDoc files;
-site generator can chunk files in any markup language it supports.
-
-I use the term `chunking` as did DocBook XSLT stylesheets
-and not `multi-page` as does AsciiDoctor extension.
-
-Chunking is enabled by setting `chunk` to `true` in the file's front-matter.
-
-Chunking depth is controlled by the `chunk-depth` front-matter field.
+Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
 
 [#pdf]
 == PDF
 
-TODO
 
 [#tables]
 == Tables
-Site generator supports Markdown tables via FlexMark Tables Extension;
-Obsidian supports them natively.
+
+Markdown tables via FlexMark Tables Extension (Obsidian supports them natively).
 
 [#task-lists]
 == Task Lists
-Site generator supports Markdown task lists via FlexMark Task List Extension;
-Obsidian supports them natively.
+
+Markdown task lists via FlexMark Task List Extension (Obsidian supports them natively).
 
 [#footnotes]
 == Footnotes
 
+Hovering a footnote number shows the note; the numbered list is at the end of the (chunk of the) page.
+
+AsciiDoc:: `footnote:[text]` (Asciidoctor).
+
+Markdown:: FlexMark footnotes: `[^id]` in the text and `[^id]: body` for the definition.
+
 [#glossary]
 == Glossary
 
-Glossary entries are harvested from a markup-neutral HTML shape
-(`class="glossary"` on the list, `class="glossary-item"` with an `id` on each term).
-Links to those ids get inline definition tooltips.
+A glossary is a description list marked as such. Term links get hover definitions (print inlines them in parentheses).
 
-AsciiDoc: set `[glossary]` on the description list; term ids come from `[[id]]`.
-Reference a term with `<<id>>`.
+AsciiDoc:: `[glossary]` on the description list; term ids from `[[id]]`. Reference a term with `<<id>>`.
 
-Markdown: PHP Extra definition lists
-(https://michelf.ca/projects/php-markdown/extra/#def-list),
-via FlexMark's
+Markdown:: PHP Extra definition lists
+(https://michelf.ca/projects/php-markdown/extra/#def-list)
+via FlexMark
 https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
-Mark a list with `{:.glossary}` after it
-(a Kramdown https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[inline attribute list],
-same family of marker as `{:toc}`).
-A definition list without that marker is left as FlexMark emitted it:
-not a glossary, no term ids, no tooltips.
+Mark the list with `{:.glossary}` after it
+(Kramdown https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL],
+same family as `{:toc}`).
+Without that marker the list is not a glossary (no term ids, no tooltips).
 The marker also separates adjacent lists.
 
 Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens
@@ -185,85 +194,34 @@ A lone `:` after a Markdown term is not a reliable empty definition:
 FlexMark can take the next term as that definition.
 Write a real definition line, or omit the term.
 
+In HTML the list is `class="glossary"`; each term is `class="glossary-item"` with an `id`.
+
 [#bibliography]
 == Bibliography
 
-Citations become a markup-neutral IR (`span.citation` / `span.citation-item` with `data-key`,
-optional `data-locator`, and `data-mode`; `div.bibliography` for the list placeholder).
-A per-document BibTeX file plus citeproc-java (CSL) resolve those stubs after footnotes.
+Per document (no site-wide file or style). Front matter:
 
-Front matter on the document (no site config, no default file or style):
-
-- `bibliography` — path to a `.bib` file, relative to the source file
-- `csl` — CSL style name from the bundled Citation Style Language styles (for example `apa`, `ieee`)
+- `bibliography` — path to a `.bib` file, relative to this source file
+- `csl` — CSL style name from the bundled styles (for example `apa`, `ieee`)
 - `lang` — CSL locale; falls back to the site `lang`, then `en-US`
 
-Both `bibliography` and `csl` are required to resolve citations.
-Only works cited on the page appear in the list.
-Resolved in-text cites become `a.citation` links to `#bibl-{key}` on the matching `csl-entry`
-(first key if a cite has several).
-Unknown keys become `span.unresolved-citation` and a page error.
+Both `bibliography` and `csl` are required. Only works cited on the page appear in the list.
+In-text cites become links to `#bibl-{key}` on the matching list entry
+(first key if a cite names several). Unknown keys are highlighted and recorded as a page error.
 
-AsciiDoc (Java extensions; no `asciidoctor-bibliography` gem):
+AsciiDoc (no `asciidoctor-bibliography` gem)::
 
 - `cite:[key]`, `cite:[key, p. 12]`, `cite:[key1, key2]` — parenthetical
 - `cite:key[]`, `cite:key[p. 12]` — same, standard inline-macro form
 - `citenp:[key]` — narrative (author in the sentence)
 - `bibliography::[]` — list placeholder (otherwise the list is appended)
 
-Markdown (Pandoc citation syntax, scanned after FlexMark; no extra extension):
+Markdown (Pandoc citation syntax; no extra FlexMark extension)::
 
 - `[@key]`, `[@key, p. 12]`, `[@key1; @key2]` — parenthetical
 - `@key` — narrative (`me@host.com` is left as an email)
 - `[-@key]` — suppress author
 - `:::bibliography` — list placeholder
-
-== Farewell, Jekyll
-
-Events of 2026:
-
-- Mar 17: My Jekyll setup (wiki-refs plugin) broke down
-- Mar 20: I created my site publisher repository
-- I became aware of ZIO Blocks Yaml released on Mar 11 and ZIO Blocks Markdown released on Jan 30
-- Mar 22: I filed ZIO Blocks pull request
-- Apr 30: I switched my personal website to use my site publisher vis GitHub Actions Workflow
-- May 04: I removed all traces of Jekyll from my personal website
-- May 06: I became aware of the ZIO Blocks HTML that was added on Apr 25-May 01, and started switching to it from my home-grown HTML DSL
-- May 07: switched
-- June/July: working on TEI support
-- July/August: Asciidoc support and chunking
-- Aug 7: PDF generation (with Grok's help)
-- Aug 9: switching OpenTorah website from Asciidoctor and Jekyll to site generator
-
-The first milestone for this project is to replace Jekyll on my personal website.
-In under two month and a little less than 2000 lines of Scala code,
-I have:
-
-- no support for paginating the post list, which I did not use with Jekyll anyway;
-- instead of the Ruby code highlighter Rouge, my publisher uses Highlights.js; it loads only the language modules used in the page; TODO unsupported language mapping...
-
-- while I did manage to list children pages using Jekyll,
-I never figured out how to list subdirectories;
-with my own publisher this is not a problem ;)
-
-- Jekyll ignores Markdown files without front matter; I do not;
-- wiki links
-- link resolution
-- front-matter defaults auto-added pages;
-- header pages are configured in their frontmatter, with FA icons (and defaults) ;)
-- transclusion
-- directory navigation: up, prev, next;
-- path navigation;
-- insertion of missing index pages;
-
-Write about all the plugins I used:
-
-- jekyll-optional-front-matter
-- jekyll-sitemap
-- jekyll-feed
-- jekyll-mentions
-- jekyll-avatar
-- jekyll-wikirefs
 
 == TODO
 
@@ -310,51 +268,3 @@ Support in a markup-independent way:
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
 - Think about serializing the full list of backlinks out of the memory
 - Maybe configure FlexMark to not convert general transclusion Markdown links (if it does now)
-
-[#motivation]
-== Motivation
-
-=== Jekyll finally pissed me off
-
-When I listed TODO link  unresistable to any programmer urge to
-write certain kinds of systems, I neglected to mention
-a static site generator.
-
-I've been using Jekyll since I migrated my blog from Blogger TODO when;
-I then moved my notes from Roam into Obsidian
-TODO when link and merged them into the static site with my blog;
-that required customizing my Jekyll setup
-TODO move Jekyll customization notes into the Jekyll page and link it here.
-
-In March 2026, my site stopped publishing;
-error messages were meaningless, and it took a lot of time
-to figure out what is the problem by deleting files until it went away.
-It turned out that Jekyll plugin I used for handling wiki links TODO link
-breaks when an `index` page contains a wiki link (e.g., a [[TODO]]).
-Previous communications with the author of the plugin made it clear
-that he considers Jekyll to be a legacy system
-(but it remained unclear what is the suggested replacement).
-
-At this point, I looked at a few of the modern static site generators
-like 11ty TODO link - and decided to write my own ;)
-
-=== New Possibilities
-
-It occurred to me that if I write my own site generator,
-I can make it Obsidian-aware:
-
-- it can read Obsidian configuration
-- it can publish daily notes as dated blog posts
-
-It also occurred to me that I can make alter-rebbe.org TODO link,
-a site where I publish some archive documents in the TEI format
-static (again) -
-if I add support for TEI to my generator:
-
-- link resolution
-- facsimiles
-- multi-lingual names
-
-It also occurred to me that I can add publishing to X Articles -
-if X ever makes an API for that. This would allow me
-to own my blog - and at the same time use X ;)

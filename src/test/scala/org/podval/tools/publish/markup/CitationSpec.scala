@@ -2,7 +2,8 @@ package org.podval.tools.publish.markup
 
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import org.asciidoctor.Asciidoctor
-import org.podval.tools.publish.page.{FrontMatter, PageContent, PageSource}
+import org.podval.tools.publish.page.FrontMatter
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
@@ -119,8 +120,7 @@ final class CitationSpec extends AnyFunSuite:
         |
         |:::bibliography
         |""".stripMargin,
-      File("t.md"),
-      null
+      File("t.md")
     ))
     val converted: Xml.Element = MarkdownCite.convertElement(xml)
     val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(converted)
@@ -135,8 +135,7 @@ final class CitationSpec extends AnyFunSuite:
   test("Markdown [-@key] and [@key1; @key2]") {
     val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
       "See [-@knuth79] and [@knuth79; @lamport94].",
-      File("t.md"),
-      null
+      File("t.md")
     ))
     val converted: Xml.Element = MarkdownCite.convertElement(xml)
     val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(converted)
@@ -151,10 +150,9 @@ final class CitationSpec extends AnyFunSuite:
   test("MarkdownMarkup.process converts Pandoc cites") {
     val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
       "See [@knuth79] and [-@lamport94].",
-      File("t.md"),
-      null
+      File("t.md")
     ))
-    val processed: Xml.Element = MarkdownMarkup.process(null.asInstanceOf[PageSource], xml)._1
+    val processed: Xml.Element = MarkdownMarkup.process(xml, PageErrorReporter.Silent)._1
     val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(processed)
     val dumped: String = render(processed)
     assert(items.exists((mode, item) => mode == Citation.Mode.Parenthetical && item.key == "knuth79"), dumped)
@@ -267,12 +265,6 @@ final class CitationSpec extends AnyFunSuite:
     assert(render(last).toLowerCase.contains("knuth"), render(last))
     assert(render(last).contains(s"""id="${Citation.entryId("knuth79")}""""), render(last))
     assert(render(resolved).contains(s"""href="${Citation.entryHref("knuth79")}""""), render(resolved))
-  }
-
-  test("chunked pages skip unknown-citation errors; unchunked pages do not") {
-    val labels: Seq[String] = Seq("missing")
-    assert(PageContent.unknownCitationMessages(labels, isChunked = false) == Seq("unknown citation 'missing'"))
-    assert(PageContent.unknownCitationMessages(labels, isChunked = true).isEmpty)
   }
 
   test("FrontMatter reads bibliography and csl") {

@@ -8,7 +8,6 @@ import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
 import com.microsoft.playwright.{Browser, Playwright}
-import org.asciidoctor.Asciidoctor
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.{File, UncheckedIOException}
 import java.net.{BindException, InetSocketAddress, URI, URISyntaxException}
@@ -176,13 +175,6 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
     // TODO sort pages topologically based on transclusions
 
-  private var asciidoctorVar: Option[Asciidoctor] = None
-  def asciidoctor: Asciidoctor = synchronized:
-    asciidoctorVar.getOrElse:
-      val result: Asciidoctor = AsciiDocMarkup.asciidoctor(this)
-      asciidoctorVar = Some(result)
-      result
-
   private var playwrightVar: Option[Playwright] = None
   def playwright: Playwright = synchronized:
     playwrightVar.getOrElse:
@@ -198,7 +190,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
       result
 
   private def stopConverters(): Unit =
-    asciidoctorVar.foreach(_.close())
+    AsciiDocMarkup.closeAsciidoctor()
     browserVar.foreach(_.close())
     playwrightVar.foreach(_.close())
 

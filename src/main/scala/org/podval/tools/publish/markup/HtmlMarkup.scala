@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml}
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -31,13 +30,13 @@ object HtmlMarkup extends Markup(
       try Some(qName.substring(1).toInt)
       catch case _: NumberFormatException => None
 
-  override def xmlContent(content: String, sourceFile: File, site: Site): String =
+  override def xmlContent(content: String, sourceFile: File): String =
     // Wrap HTML in a 'div' to accommodate multi-root documents.
     s"<div>$content</div>"
 
   override def process(
-    source: PageSource,
-    xml: Xml.Element
+    xml: Xml.Element,
+    errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
     val (result: Xml.Element, title: Option[Xml.Element]) = xml
       .getChildren

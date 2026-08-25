@@ -6,7 +6,7 @@ import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItem
 import org.podval.xml.{HtmlElement, Xml, XmlDialect, XmlParser}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-import java.io.FileInputStream
+import java.io.{File, FileInputStream}
 
 final class Bibliography(
   private val provider: Option[BibTeXItemDataProvider],
@@ -51,7 +51,7 @@ final class Bibliography(
             Bibliography.wrapList(csl.makeBibliography(), ids)
         (replacements, formattedList)
 
-  def unknownLabels(stubs: Seq[Xml.Element]): Seq[String] =
+  private def unknownLabels(stubs: Seq[Xml.Element]): Seq[String] =
     stubs.flatMap: stub =>
       val items: Seq[Citation.Item] = Citation.itemsOf(stub)
       val missing: Seq[String] = items.map(_.key).filterNot(contains)
@@ -63,7 +63,7 @@ final class Bibliography(
     xml: Xml.Element,
     xmlDialect: XmlDialect
   ): (Xml.Element, Seq[String]) =
-    val stubs: Seq[Xml.Element] = Citation.gather(xml, xmlDialect).toSeq
+    val stubs: Seq[Xml.Element] = Citation.gather(xml, xmlDialect)
     if stubs.isEmpty then (xml, Seq.empty)
     else
       val (replacements: Map[Xml.Element, Xml.Element], list: Option[Xml.Element]) = format(stubs)
@@ -81,7 +81,7 @@ final class Bibliography(
 
 object Bibliography:
   def load(
-    documentDirectory: java.io.File,
+    documentDirectory: File,
     bibliography: Option[String],
     csl: Option[String],
     lang: Option[String]
@@ -89,7 +89,7 @@ object Bibliography:
     val locale: String = lang.getOrElse("en-US")
     (bibliography, csl) match
       case (Some(name), Some(style)) =>
-        val file = java.io.File(documentDirectory, name)
+        val file = File(documentDirectory, name)
         if !file.isFile then Bibliography(None, style, locale)
         else
           val provider: BibTeXItemDataProvider = BibTeXItemDataProvider()
@@ -99,7 +99,7 @@ object Bibliography:
           Bibliography(Some(provider), style, locale)
       case _ => Bibliography(None, csl.getOrElse(""), locale)
 
-  def unresolved(stub: Xml.Element): Xml.Element =
+  private def unresolved(stub: Xml.Element): Xml.Element =
     val keys: String = Citation.itemsOf(stub).map(_.key).mkString("; ")
     stub.add(Citation.UnresolvedClass).setText(if keys.nonEmpty then keys else "?")
 

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.PageSource
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.SeqHasAsJava
@@ -46,17 +45,17 @@ object MarkdownMarkup extends Markup(
   // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
   def parseAndRenderMarkdown(content: String): String = renderer.render(parser.parse(content))
 
-  override def xmlContent(content: String, sourceFile: File, site: Site): String =
+  override def xmlContent(content: String, sourceFile: File): String =
     // Wrap Markdown rendered as HTML in a 'div'.
     s"<div>${parseAndRenderMarkdown(content)}</div>"
 
   override def process(
-    source: PageSource,
-    xml: Xml.Element
+    xml: Xml.Element,
+    errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
     val result: Xml.Element = xmlDialect.transform(xml, (element: Xml.Element) =>
       var result: Xml.Element = element
-      result = WikiBlock.convert(result, source).getOrElse(result)
+      result = WikiBlock.convert(result, errorReporter).getOrElse(result)
       if !result.isA then
         result = XmlUtil.convertText(result, WikiLink.convert(Chunk.empty, _))
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
@@ -65,8 +64,8 @@ object MarkdownMarkup extends Markup(
       result
     )
     HtmlMarkup.process(
-      source,
-      convert(MarkdownCite.convertElement(result))
+      convert(MarkdownCite.convertElement(result)),
+      errorReporter
     )
 
   private[markup] def convert(xml: Xml.Element): Xml.Element =

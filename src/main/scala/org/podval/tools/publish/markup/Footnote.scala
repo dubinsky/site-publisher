@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlDialect}
+import zio.blocks.chunk.Chunk
 
 // Details of the footnote internal representation.
 object Footnote:
@@ -32,6 +33,72 @@ object Footnote:
     .add(BodyClass)
     .set(CorrelationId, correlationId)
     .setChildren(content)
+
+  def linkIds(xml: Xml.Element, xmlDialect: XmlDialect): Chunk[String] =
+    xmlDialect.gather(xml, element =>
+      Option.when(isLink(element))(getCorrelationId(element))
+    )
+
+  /** Number footnotes in document-link order, then drop bodies (and dialect-specific
+    * leftover footnote containers) from the tree. */
+  def harvest(
+    xml: Xml.Element,
+    xmlDialect: XmlDialect,
+    isSpuriousFootnotesDiv: Xml.Element => Boolean = _ => false
+  ): (Map[String, Footnote], Xml.Element) =
+    val numbers: Map[String, Int] = linkIds(xml, xmlDialect).zipWithIndexFrom(1).toMap
+    val footnotes: Map[String, Footnote] = xmlDialect
+      .gather(xml, element =>
+        Option.when(isBody(element)):
+          val correlationId: String = getCorrelationId(element)
+          correlationId -> Footnote(
+            correlationId = correlationId,
+            number = numbers(correlationId),
+            nodes = element.getChildren
+          )
+      )
+      .toMap
+    val stripped: Xml.Element = xmlDialect.transform(xml, element =>
+      element.setChildren(element
+        .getChildren
+        .filterNot(_.asElement.fold(false)(child =>
+          isBody(child) || isSpuriousFootnotesDiv(child)
+        ))
+      )
+    )
+    (footnotes, stripped)
+
+  // Add bodies of the footnotes referenced in the selected XML
+  // TODO footnotes placed at the end of elements like table, not the overall end?
+  // TODO how do multi-level footnotes look?
+  def appendReferenced(
+    xml: Xml.Element,
+    footnotes: Map[String, Footnote],
+    xmlDialect: XmlDialect
+  ): Xml.Element =
+    val toAdd: Chunk[Footnote] = linkIds(xml, xmlDialect).map(footnotes)
+    if toAdd.isEmpty then xml
+    else
+      val footnotesDiv: Xml.Element = Xml
+        .element("div")
+        .addClass("footnotes")
+        .setChildren(toAdd.map(_.body))
+      xml.setChildren(xml.getChildren :+ footnotesDiv)
+
+  def resolveLink(
+    element: Xml.Element,
+    footnotes: Map[String, Footnote],
+    attachTip: Boolean
+  ): Xml.Element =
+    if !isLink(element) then element
+    else
+      val footnote: Footnote = footnotes(getCorrelationId(element))
+      var result: Xml.Element = footnote.link
+      if attachTip then
+        val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
+        if content.nonEmpty then
+          result = tip.attachTip(result, content)
+      result
 
 final class Footnote(
   val correlationId: String,

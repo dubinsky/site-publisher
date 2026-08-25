@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page, PageSource}
-import org.podval.tools.publish.site.{PageError, Path, Site}
+import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page}
+import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
 import zio.blocks.html.*
@@ -27,14 +27,14 @@ abstract class Markup(
 
   def rootElements: Set[String] = Set.empty
 
-  def xmlContent(content: String, sourceFile: File, site: Site): String
+  def xmlContent(content: String, sourceFile: File): String
 
   // Process raw parsed XML:
   // - clean it up (AsciiDoc div soup etc.)
   // - nest HTML sections
   // - convert footnotes into common format
   // - extract title
-  def process(source: PageSource, xml: Xml.Element): (Xml.Element, Option[Xml.Element])
+  def process(xml: Xml.Element, errorReporter: PageErrorReporter): (Xml.Element, Option[Xml.Element])
 
   final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
     .getChildren
@@ -89,7 +89,7 @@ abstract class Markup(
 
         FrontMatter.empty
 
-    val xmlString: String = xmlContent(content, sourceFile, site)
+    val xmlString: String = xmlContent(content, sourceFile)
 
     val xml: Xml.Element = XmlParser.parse(xmlString, isXml = rendersToXml) match
       case Right(xml) =>
