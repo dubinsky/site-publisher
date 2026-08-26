@@ -8,10 +8,14 @@ import zio.blocks.html.*
 object DirectoryPage:
   val fileName: String = "index"
 
-final class DirectoryPage(site: Site, path: Path) extends SyntheticMarkupPage(site, path.html):
+final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, path.html):
   override def isDirectory: Boolean = true
 
-  override protected def syntheticContent: Html.Element =
+  override def hasSyntheticContent: Boolean = true
+
+  override protected def syntheticContentOpt: Option[Html.Element] = Some(syntheticContent)
+
+  private def syntheticContent: Html.Element =
     div(className := "directory", Page.pageList(directories ++ pages))
 
   override protected def iconDefault: Icon = if isPost then Icon.calendar else Icon.folder

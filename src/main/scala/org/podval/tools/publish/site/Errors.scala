@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{NonDirectoryPage, SyntheticMarkupPage}
+import org.podval.tools.publish.page.SyntheticMarkupPage
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
@@ -8,7 +8,7 @@ import zio.blocks.html.*
 final class Errors(
   site: Site,
   treatErrorsAsWarnings: Boolean
-) extends SyntheticMarkupPage(site, Path("errors").html) with NonDirectoryPage:
+) extends SyntheticMarkupPage(site, Path("errors").html):
   override def titleDefault: String = "Errors"
   override protected def descriptionDefault: Option[String] = Some("Site errors by kind")
   override protected def iconDefault: Icon = Icon.errors

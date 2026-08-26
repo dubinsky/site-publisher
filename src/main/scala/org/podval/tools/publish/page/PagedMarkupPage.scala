@@ -15,12 +15,6 @@ final class PagedMarkupPage(
 ):
   override def markupContent: Option[Html.Element] = postsPage.markupContent
 
-  override def isDirectory: Boolean = false
-
-  override def source: Option[PageSource] = None
-
-  override def titleFromPath: String = path.fileName
-
   override def titleDefault: String = s"${postsPage.title} (page $batchIndex)"
 
   override def hasSyntheticContent: Boolean = true

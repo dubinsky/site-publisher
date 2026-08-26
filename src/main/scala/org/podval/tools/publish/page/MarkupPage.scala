@@ -7,7 +7,7 @@ import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
 
-abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) with PageWithContent:
+abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
   def prev: Option[Page]
@@ -16,9 +16,9 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   def pagerPrev: Option[Page] = None
   def pagerNext: Option[Page] = None
 
-  def hasSyntheticContent: Boolean
+  def hasSyntheticContent: Boolean = false
 
-  protected def syntheticContentOpt: Option[Html.Element]
+  protected def syntheticContentOpt: Option[Html.Element] = None
 
   // TODO use markup.xmlDialect?
   final override def textContent: String = htmlString(markupContent, syntheticContentOpt)

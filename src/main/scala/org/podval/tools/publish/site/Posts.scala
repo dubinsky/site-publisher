@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.PagedList
-import org.podval.tools.publish.page.{DirectoryPage, NonDirectoryPage, Page, PagedMarkupPage, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{DirectoryPage, Page, PagedMarkupPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
@@ -21,7 +21,7 @@ object Posts:
     try Some(LocalDate.parse(dateString))
     catch case e: DateTimeParseException => None
 
-final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html) with NonDirectoryPage:
+final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html):
   override def titleDefault: String = "Posts"
   override protected def descriptionDefault: Option[String] = Some("All posts")
   override protected def iconDefault: Icon = Icon.envelope

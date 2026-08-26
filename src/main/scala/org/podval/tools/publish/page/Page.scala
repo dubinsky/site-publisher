@@ -55,13 +55,13 @@ abstract class Page(
       .filterNot(_.isEmpty)
       .map(parentDirectory => site.pages.getOrAddDirectory(Path(parentDirectory :+ DirectoryPage.fileName *).html))
 
-  def isAlias: Boolean
+  def isAlias: Boolean = false
 
-  def real: RealPage
+  def real: Page = this
 
-  def isDirectory: Boolean
+  def isDirectory: Boolean = false
 
-  def source: Option[PageSource]
+  def source: Option[PageSource] = None
 
   // TODO not final: overridden in AssetWithSourcePath
   def sourcePath: Option[Path] = source.map(_.sourcePath)
@@ -107,7 +107,7 @@ abstract class Page(
     .getOrElse(titleDefault)
 
   def titleDefault: String = titleFromPath
-  def titleFromPath: String
+  def titleFromPath: String = path.fileName
 
   final def description: Option[String] = content(_.frontMatter.description).orElse(descriptionDefault)
   protected def descriptionDefault: Option[String] = None

@@ -8,16 +8,10 @@ import java.io.File
 
 final class PdfPage(
   markupPage: FullMarkupPage
-) extends RealPage(
+) extends Page(
   markupPage.site,
   markupPage.path.withExtension(PdfPage.extension)
 ):
-  override def isDirectory: Boolean = false
-
-  override def source: Option[PageSource] = None
-
-  override def titleFromPath: String = path.fileName
-
   override protected def iconDefault: Icon = Icon.pdf
 
   // Write a PDF of an HTML page already written.

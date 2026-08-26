@@ -18,10 +18,6 @@ final class ChunkedMarkupPage(
     sectionId = sectionId,
     isTerminal = isTerminal
   )
-  
-  override def isDirectory: Boolean = false
-
-  override def source: Option[PageSource] = None
 
   // Chunks live under /P/; do not synthesize a DirectoryPage at /P/index.html
   // (that path is the TOC chunk). Same parent as the unchunked document.
@@ -32,10 +28,6 @@ final class ChunkedMarkupPage(
 
   override def titleDefault: String =
     if sectionId.isEmpty then markupPage.title else path.fileName
-
-  override def hasSyntheticContent: Boolean = false
-
-  override protected def syntheticContentOpt: Option[Html.Element] = None
 
   override protected def iconDefault: Icon = Icon.note // TODO page/document...
 

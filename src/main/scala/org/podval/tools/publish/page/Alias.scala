@@ -10,14 +10,10 @@ final class Alias(
 ) extends Page(
   site,
   path
-) with NonDirectoryPage with PageWithContent:
+) with PageWithContent:
   override def isAlias: Boolean = true
 
-  override def real: RealPage = page.real
-
-  override def source: Option[PageSource] = None
-  
-  override def titleDefault: String = path.fileName
+  override def real: Page = page.real
 
   override protected def iconDefault: Icon = Icon("link", Icon.Solid)
   
