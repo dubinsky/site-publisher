@@ -8,11 +8,86 @@ final class TeiMarkupSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
     XmlParser.parseXml(input).toOption.get
 
+  private def processResult(input: String): (Xml.Element, Option[Xml.Element]) =
+    TeiMarkup.process(parse(input), PageErrorReporter.Silent)
+
   private def process(input: String): Xml.Element =
-    TeiMarkup.process(parse(input), PageErrorReporter.Silent)._1
+    processResult(input)._1
 
   private def render(element: Xml.Element): String =
     HtmlXmlDialect.render(element)
+
+  test("titleStmt title is extracted as tei-title; teiHeader stays") {
+    val (xml, title) = processResult(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt>
+        |    <title>Doc title</title>
+        |    <author>A</author>
+        |  </titleStmt></fileDesc></teiHeader>
+        |  <text><body><p>Hello</p></body></text>
+        |</TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(title.exists(_.getName == "tei-title"), dumped)
+    assert(title.exists(_.getText.contains("Doc title")), dumped)
+    assert(xml.gather(el => Option.when(el.getName == "teiHeader")(el)).nonEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.getName == "titleStmt")(el)).nonEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.getName == "tei-title")(el)).isEmpty, dumped)
+    assert(dumped.contains("Hello"), dumped)
+    assert(dumped.contains("A"), dumped)
+  }
+
+  test("title type=main wins over a sibling title") {
+    val (xml, title) = processResult(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt>
+        |    <title>Alt</title>
+        |    <title type="main">Main</title>
+        |  </titleStmt></fileDesc></teiHeader>
+        |  <text><body><p>x</p></body></text>
+        |</TEI>""".stripMargin
+    )
+    assert(title.exists(_.getText.trim == "Main"), render(xml))
+  }
+
+  test("empty titleStmt yields no document title") {
+    val (xml, title) = processResult(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt><author>?</author></titleStmt></fileDesc></teiHeader>
+        |  <text><body><p>x</p></body></text>
+        |</TEI>""".stripMargin
+    )
+    assert(title.isEmpty, render(xml))
+  }
+
+  test("bibl title and body head are not the document title") {
+    val (xml, title) = processResult(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt><author>?</author></titleStmt></fileDesc></teiHeader>
+        |  <text><body>
+        |    <head>Not the title</head>
+        |    <p>See <bibl><title>Papers</title></bibl>.</p>
+        |  </body></text>
+        |</TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(title.isEmpty, dumped)
+    assert(dumped.contains("Not the title"), dumped)
+    assert(dumped.contains("Papers"), dumped)
+  }
+
+  test("store and collection child title is extracted and stripped") {
+    val (store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
+    assert(storeTitle.exists(_.getText.contains("Fund 109")), render(store))
+    assert(store.gather(el => Option.when(el.getName == "tei-title" || el.getName == "title")(el)).isEmpty, render(store))
+    val (collection, collectionTitle) = processResult("""<collection><title>Case 29</title><p>y</p></collection>""")
+    assert(collectionTitle.exists(_.getText.contains("Case 29")), render(collection))
+  }
+
+  test("person has no document title") {
+    val (xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
+    assert(title.isEmpty, render(xml))
+  }
 
   test("note place=end becomes footnote IR; class is not tei-class; plain note stays") {
     val xml: Xml.Element = process(

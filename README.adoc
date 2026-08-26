@@ -80,10 +80,6 @@ Recognized by extension:
 - TEI (`.xml` with a TEI root element) - TODO
 - DocBook (`.xml` with a DocBook root: `article`, `book`, `chapter`, `appendix`, `part`, `set`, `preface`, `refentry`, `topic`)
 
-Support considered for:
-
-- ReStructured Text
-
 [#frontmatter]
 == Frontmatter
 

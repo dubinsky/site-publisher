@@ -39,7 +39,6 @@ object TeiMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
-    // TODO extract title
     val tei2Html: Xml2Html = Xml2Html("tei")
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
@@ -49,10 +48,12 @@ object TeiMarkup extends Markup(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
     )
-    val headerBiblIds: Set[String] = headerListBiblEntryIds(converted)
-    val biblIds: Set[String] = listBiblIds(converted, headerBiblIds)
+    val title: Option[Xml.Element] = documentTitle(converted)
+    val body: Xml.Element = title.fold(converted)(stripTitle(converted, _))
+    val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
+    val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // TODO does it really need to be a separate pass?
-    val withIr: Xml.Element = converted.transform(
+    val withIr: Xml.Element = body.transform(
       element =>
         var result: Xml.Element = element.setChildren(
           XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
@@ -71,7 +72,36 @@ object TeiMarkup extends Markup(
       stopAtCode = false
     )
 
-    (markHeadedDivs(withIr), None)
+    (markHeadedDivs(withIr), title)
+
+  private def isTeiTitle(element: Xml.Element): Boolean =
+    element.getName == "tei-title" || element.getName == "title"
+
+  private def documentTitle(root: Xml.Element): Option[Xml.Element] =
+    root.getName match
+      case "TEI" =>
+        pickTitle(
+          root.getChildren.flatMap(_.asElement).filter(_.getName == "teiHeader").toSeq
+            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.getName == "fileDesc"))
+            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.getName == "titleStmt"))
+            .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
+        )
+      case "store" | "collection" =>
+        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
+      case _ =>
+        None
+
+  private def pickTitle(candidates: Seq[Xml.Element]): Option[Xml.Element] =
+    val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
+    nonempty.find(_.get("type").contains("main")).orElse(nonempty.headOption)
+
+  private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
+    root.setChildren(root.getChildren.flatMap: node =>
+      if node eq title then Chunk.empty
+      else node.asElement.match
+        case Some(el) => Chunk(stripTitle(el, title))
+        case None => Chunk(node)
+    )
 
   // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =

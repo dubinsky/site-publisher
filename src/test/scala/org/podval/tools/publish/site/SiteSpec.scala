@@ -231,6 +231,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
 
   test("TEI sample: endnote, table, glossary, code, and quote") {
     val page: String = html("tei-sample.html")
+    assert(page.contains("""class="post-title p-name""""), page)
+    assert(page.contains("TEI Sample"), page)
     assert(page.contains("TEI endnote body"), page)
     assert(page.contains("""class="footnote-ref""""), page)
     assert(page.contains("Clinging note"), page)

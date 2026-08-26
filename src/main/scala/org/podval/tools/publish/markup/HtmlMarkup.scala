@@ -55,7 +55,7 @@ object HtmlMarkup extends Markup(
 
   // Sections are represented by the HTML `h` elements and are not nested.
   // Common for markup formats whose XML representation is actually HTML:
-  // HTML itself, Markdown, AsciiDoc, and likely Re-Structured text;
+  // HTML itself, Markdown, and AsciiDoc;
   // pure XML markup formats like TEI and DocBook are different.
 
   // From:
