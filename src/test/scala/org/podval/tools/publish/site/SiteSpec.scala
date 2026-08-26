@@ -65,6 +65,19 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("Content Title"), page)
   }
 
+  test("site header has a settings menu with glossary checkbox") {
+    val home: String = html("index.html")
+    assert(home.contains("""class="site-settings""""), home)
+    assert(home.contains("""class="site-settings-toggle""""), home)
+    assert(home.contains("fa-gear"), home)
+    assert(home.contains("""id="setting-glossary-expand""""), home)
+    assert(home.contains("""data-setting="glossary-expand""""), home)
+    assert(!home.contains("glossary-expand-toggle"), home)
+    val head: String = home.substring(0, home.indexOf("</head>"))
+    assert(head.contains("[data-setting]"), head)
+    assert(head.contains("localStorage"), head)
+  }
+
   test("posts listing is a header page when its file says so") {
     val home: String = html("index.html")
     assert(home.contains("""href="/posts.html""""), home)

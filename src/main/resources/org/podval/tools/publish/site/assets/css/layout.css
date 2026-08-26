@@ -32,39 +32,66 @@
     }
 }
 
-.glossary-expand-toggle {
+.site-settings {
     float: right;
-    margin: 0 var(--spacing-unit-half) 0 0;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--text-color);
-    font: inherit;
-    cursor: pointer;
-    line-height: inherit;
-
-    &[aria-pressed="true"] {
-        font-weight: 600;
-    }
+    position: relative;
+    /* Same as the collapsed space between header page links (Notes / Posts / Tags). */
+    margin-left: 0.25em;
+    margin-right: var(--spacing-unit-half);
 
     @media screen and (max-width: var(--on-medium)) {
-        position: relative;
         z-index: 1;
         margin-right: 48px;
-        width: 36px;
-        height: 36px;
-        overflow: hidden;
     }
 }
 
-.glossary-expand-label {
-    @media screen and (max-width: var(--on-medium)) {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
+.site-settings-toggle {
+    display: flex;
+    align-items: center;
+    min-height: calc(var(--base-line-height) * var(--base-font-size) * 2.25);
+    list-style: none;
+    cursor: pointer;
+    color: var(--text-color);
+
+    &::-webkit-details-marker {
+        display: none;
     }
+
+    &::marker {
+        content: "";
+    }
+}
+
+.site-settings-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 2;
+    box-sizing: border-box;
+    width: 16rem;
+    max-width: calc(100vw - 2 * var(--spacing-unit));
+    padding: var(--spacing-unit-half);
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color-01);
+    border-radius: 5px;
+    line-height: var(--base-line-height);
+    text-align: left;
+}
+
+.site-settings[open] > .site-settings-menu {
+    display: block;
+}
+
+.site-settings-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    cursor: pointer;
+    color: var(--text-color);
+    font: inherit;
+    font-weight: 400;
+    white-space: normal;
 }
 
 .site-nav {

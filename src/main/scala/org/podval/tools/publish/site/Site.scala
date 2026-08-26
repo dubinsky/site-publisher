@@ -17,10 +17,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
   override def cdn: String = ""
   override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
 
-  override def headInlineJs: Some[Js] = Some:
-    js"""try{if(localStorage.getItem('glossary-expand')==='1')document.documentElement.classList.add('glossary-expand')}catch(e){}"""
-
-  override def inlineJs: Some[Js] = Some(Site.glossaryExpandJs)
+  // In <head> so it runs even when later markup is ill-formed and swallows body scripts.
+  override def headInlineJs: Some[Js] = Some(Site.siteSettingsJs)
   
   // Directories
   val sourceDirectory: File = File(options.sourceDirectoryPath).getAbsoluteFile
@@ -222,6 +220,25 @@ final class Site(options: SiteOptions) extends JSLibrary:
     header(className := "site-header",
       div(className := "wrapper",
         a(className := "site-title", href := "/", rel := "author", config.title),
+        // First right-float is the rightmost: gear at the edge, nav to its left.
+        details(className := "site-settings",
+          summary(
+            className := "site-settings-toggle",
+            titleAttr := "Settings",
+            aria("label") := "Settings",
+            Icon.gear.html
+          ),
+          div(className := "site-settings-menu", role := "group", aria("label") := "Settings",
+            label(className := "site-settings-item",
+              input(
+                `type` := "checkbox",
+                id := "setting-glossary-expand",
+                attr("data-setting") := "glossary-expand"
+              ),
+              "Show glossary definitions in the text"
+            )
+          )
+        ),
         nav(className := "site-nav",
           input(`type` := "checkbox", id := "nav-trigger"),
           label(`for` := "nav-trigger",
@@ -238,15 +255,6 @@ final class Site(options: SiteOptions) extends JSLibrary:
             page.next.map(_.navRef(Icon.arrowRight)),
             page.formatLinks
           )
-        ),
-        button(
-          `type` := "button",
-          id := "glossary-expand-toggle",
-          className := "glossary-expand-toggle",
-          aria("pressed") := "false",
-          titleAttr := "Show glossary definitions in the text",
-          Icon.book.html,
-          span(className := "glossary-expand-label", "Glossary")
         )
       )
     )
@@ -286,7 +294,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
 object Site:
-  private lazy val glossaryExpandJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/glossaryExpand.js"))
+  // Do not put `//` comments in the JS: HTML pretty-printing wraps lines and would comment out the rest.
+  private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
 
   val localhost: String = "127.0.0.1"
   val defaultHttpPort: Int = 8000

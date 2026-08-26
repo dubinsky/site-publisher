@@ -26,6 +26,7 @@ object Icon:
   val fileLines = Icon("file-lines", Regular)
   val tableList = Icon("table-list", Solid)
   val book = Icon("book", Solid)
+  val gear = Icon("gear", Solid)
   val arrowUp = Icon("arrow-up", Solid)
   val arrowLeft = Icon("arrow-left", Solid)
   val arrowRight = Icon("arrow-right", Solid)
