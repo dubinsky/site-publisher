@@ -418,7 +418,7 @@ object AsciiDocMarkup extends Markup(
   // From:
   //   <sup class="footnote">[<a id="_footnoteref_N" class="footnote" href="#_footnotedef_N">N</a>]</sup>
   // To:
-  //   <a class="footnote-link" footnoteCorrelationId="N"/>
+  //   <a class="footnote-link" footnote-correlation-id="N"/>
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
     val isFootnoteLink: Boolean = element.getName == "sup" /* && element.hasClass("footnote") */
     if !isFootnoteLink then None else
@@ -433,7 +433,7 @@ object AsciiDocMarkup extends Markup(
   // From:
   //   <div class="footnote" id="_footnotedef_N"><a href="#_footnoteref_N">N</a>. Footnote Body</div>
   // To:
-  //   <span class="footnote" footnoteCorrelationId="N">Footnote Body</span>
+  //   <span class="footnote" footnote-correlation-id="N">Footnote Body</span>
   private def convertFootnoteBody(element: Xml.Element): Option[Xml.Element] =
     val isFootnoteBody: Boolean = element.getName == "div" && element.hasClass("footnote")
     if !isFootnoteBody then None else

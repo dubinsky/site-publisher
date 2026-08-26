@@ -5,13 +5,13 @@ import org.podval.xml.Html
 
 abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
   final override def prev: Option[Page] = parent.flatMap(_.prev(this))
-  final override def next: Option[Page] = parent.flatMap(_.next(this))
+  override def next: Option[Page] = parent.flatMap(_.next(this))
 
   private var sourceVar: Option[PageSource] = None
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
   final override def source: Option[PageSource] = sourceVar
   final override def markupContent: Option[Html.Element] = markupContent(
-    sectionId = None, 
+    sectionId = None,
     isTerminal = true
   )
   final override def pageHeader: Option[Html.Element] = source.map(_.markup.pageHeader(this))

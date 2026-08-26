@@ -226,7 +226,7 @@ object MarkdownMarkup extends Markup(
   // From:
   //   <sup id="fnref-N"><a class="footnote-ref" href="#fn-N">N</a></sup>
   // To:
-  //   <a class="footnote-link" footnoteCorrelationId="N"/>
+  //   <a class="footnote-link" footnote-correlation-id="N"/>
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "sup" then None else
       for correlationId <- element
@@ -246,7 +246,7 @@ object MarkdownMarkup extends Markup(
   //     ...
   //   </li>
   // To:
-  //   <span class="footnote" footnoteCorrelationId="N">Footnote Body</span>
+  //   <span class="footnote" footnote-correlation-id="N">Footnote Body</span>
   private def convertFootnoteBody(element: Xml.Element): Option[Xml.Element] =
     if element.getName != "li" then None else
       for

@@ -4,3 +4,4 @@ url: http://fixture.test
 author: Test Author
 email: test@fixture.test
 lang: en
+paginate-posts: 2

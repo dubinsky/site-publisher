@@ -12,16 +12,25 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   def prev: Option[Page]
   def next: Option[Page]
 
+  def pagerPrev: Option[Page] = None
+  def pagerNext: Option[Page] = None
+
   def hasSyntheticContent: Boolean
 
   protected def syntheticContentOpt: Option[Html.Element]
 
   // TODO use markup.xmlDialect?
-  final override def textContent: String = HtmlXmlDialect.render(toHtml(
-    pageHeader = pageHeader,
-    markupContent = markupContent,
-    syntheticContent = syntheticContentOpt
-  ))
+  final override def textContent: String = htmlString(markupContent, syntheticContentOpt)
+
+  protected def htmlString(
+    markup: Option[Html.Element],
+    synthetic: Option[Html.Element]
+  ): String =
+    HtmlXmlDialect.render(toHtml(
+      pageHeader = pageHeader,
+      markupContent = markup,
+      syntheticContent = synthetic
+    ))
 
   def markupContent: Option[Html.Element]
 
@@ -66,6 +75,8 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         site.favicon,
         site.license,
         Sitemap.sitemapLink,
+        pagerPrev.map(p => link(rel := "prev", href := p.path.toString)),
+        pagerNext.map(p => link(rel := "next", href := p.path.toString)),
         // TODO {%- seo -%}: https://github.com/jekyll/jekyll-seo-tag
         // TODO {%- feed_meta -%}: https://github.com/jekyll/jekyll-feed
         libraries.flatMap(library => library.stylesheet.map(ref =>

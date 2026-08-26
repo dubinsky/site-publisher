@@ -42,6 +42,9 @@ final class Pages(site: Site):
     // Scan the directories and add all source pages
     scan(Seq.empty, site.sourceDirectory, None)
 
+    // Post listing batches after scan so `Posts.posts` is complete.
+    site.posts.paged.foreach(add)
+
     // Add synthetic assets that were not supplied explicitly
     if get(Sitemap.path).isEmpty then add(Sitemap(site))
     if get(Robots.path).isEmpty then add(Robots(site))

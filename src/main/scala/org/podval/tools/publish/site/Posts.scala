@@ -1,6 +1,7 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{DirectoryPage, NonDirectoryPage, Page, SyntheticMarkupPage}
+import org.podval.tools.publish.markup.PagedList
+import org.podval.tools.publish.page.{DirectoryPage, NonDirectoryPage, Page, PagedMarkupPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
@@ -35,18 +36,42 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
     .sortBy(_.date)
     .reverse
 
-  override protected def syntheticContent: Html.Element =
+  /** `paginate-posts` in `_site_config.yml`; omitted or &lt; 1 is off. */
+  def pageSize: Option[Int] = site.config.paginatePosts.filter(_ >= 1)
+
+  def pager: Seq[Page] = this +: paged
+
+  lazy val paged: Seq[PagedMarkupPage] =
+    pageSize.fold(Seq.empty): size =>
+      val total: Int = PagedList.batchCount(posts.size, size)
+      (2 to total).map(i => PagedMarkupPage(this, i, i.toString))
+
+  override def next: Option[Page] = paged.headOption.orElse(super.next)
+
+  override def pagerNext: Option[Page] = paged.headOption
+
+  override protected def syntheticContent: Html.Element = batchContent(1)
+
+  def batchContent(pageIndex: Int): Html.Element =
+    val size: Int = pageSize.getOrElse(Int.MaxValue)
+    val batch: Seq[Page] = PagedList.slice(posts, pageIndex, size)
+    val total: Int = pageSize.fold(1)(PagedList.batchCount(posts.size, _))
     div(className := "home",
       //      h1(className := "page-heading", page.title)
       h2(className := "post-list-heading", "Posts"),
-      ul(className := "post-list", posts.map(post =>
+      ul(className := "post-list", batch.map(post =>
         li(
           span(className := "post-meta", post.date.map(_.toShortString).getOrElse("")),
           h3(className := "post-link", post.ref())
           // {%- if site.minima.show_excerpts -%} {{ post.excerpt }} {%- endif -%} // TODO unify with feed.xml
         )
-      ))
+      )),
+      Option.when(total > 1)(PagedList.nav(pageIndex, total, postPageHref))
     )
+
+  private def postPageHref(index: Int): String =
+    if index <= 1 then path.toString
+    else path.add(index.toString).html.toString
 
   private def postsDirectoryName: String = site.postsDirectoryName
   private def draftsDirectoryName: Option[String] = site.draftsDirectoryName

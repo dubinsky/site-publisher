@@ -34,6 +34,7 @@ This here is a static site generator. It:
 - lists <<directories>>;
 - supports <<blog-posts>>;
 - supports <<chunking>>;
+- supports <<paging>>;
 - supports <<pdf>> generation;
 
 Supported markup constructs:
@@ -149,6 +150,16 @@ Wiki links in Obsidian:
 - auto-post (same file name)
 - permalink (any file name)
 
+[#paging]
+== Paging
+
+The `/posts` listing only. In `_site_config.yml`:
+
+----
+paginate-posts: 10
+----
+
+Omitted or less than 1 is off. Page 1 stays `/posts.html`; further batches are `/posts/2.html`, `/posts/3.html`. A `nav.pagination` sits under the list.
 
 [#chunking]
 == Chunking
@@ -279,12 +290,12 @@ TEI:: definition and use are the same element at the point of reference (`n` is 
 <p>See this<note place="end">A note.</note>.</p>
 ----
 
-HTML:: IR stubs (same `footnoteCorrelationId` on the call site and the body):
+HTML:: IR stubs (same `footnote-correlation-id` on the call site and the body):
 +
 [source,html]
 ----
-<p>See this<span class="footnote-link" footnoteCorrelationId="note"></span>.</p>
-<span class="footnote" footnoteCorrelationId="note">A note.</span>
+<p>See this<span class="footnote-link" footnote-correlation-id="note"></span>.</p>
+<span class="footnote" footnote-correlation-id="note">A note.</span>
 ----
 
 [#glossary]

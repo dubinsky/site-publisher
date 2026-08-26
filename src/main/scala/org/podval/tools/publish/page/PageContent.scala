@@ -173,10 +173,13 @@ object PageContent:
     // Footnote *links* stay in the tree; bodies are harvested then stripped.
     val ids: IdGenerator = IdGenerator("_generated_id")
     val prepared: Xml.Element = xmlProcessed.transform(prepareElement(_, source, ids))
-    val (footnotes: Map[String, Footnote], harvested: Xml.Element) = Footnote.harvest(
-      xml = prepared,
-      isSpuriousFootnotesDiv = source.markup.isSpuriousFootnotesDiv
-    )
+    val (footnotes: Map[String, Footnote], harvested: Xml.Element) =
+      try Footnote.harvest(
+        xml = prepared,
+        isSpuriousFootnotesDiv = source.markup.isSpuriousFootnotesDiv
+      )
+      catch case e: IllegalStateException =>
+        throw IllegalStateException(s"${source.sourcePath}: ${e.getMessage}", e)
 
     new PageContent(
       source = source,

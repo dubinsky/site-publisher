@@ -5,7 +5,7 @@ import zio.blocks.chunk.Chunk
 
 // Details of the footnote internal representation.
 object Footnote:
-  private object CorrelationId extends XmlAttribute("footnoteCorrelationId")
+  private object CorrelationId extends XmlAttribute("footnote-correlation-id")
 
   private object LinkClass extends HtmlClass("footnote-link")
 
@@ -50,7 +50,10 @@ object Footnote:
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
-          val correlationId: String = getCorrelationId(element)
+          val correlationId: String = element.get(CorrelationId).getOrElse:
+            throw IllegalStateException(
+              s"footnote body without correlation id: <${element.getName} class=${element.getClasses.mkString(" ")}>"
+            )
           correlationId -> Footnote(
             correlationId = correlationId,
             number = numbers(correlationId),

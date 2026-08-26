@@ -500,6 +500,30 @@ ul.page-list {
     list-style: none;
 }
 
+nav.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em 0.75em;
+    margin: var(--spacing-unit) 0;
+}
+
+nav.pagination a,
+nav.pagination .pagination-current {
+    padding: 0.15em 0.4em;
+}
+
+nav.pagination .pagination-current {
+    font-weight: 600;
+}
+
+@media print {
+    nav.pagination {
+        display: none;
+    }
+}
+
 /* Sections should start on a new page in PDF. */
 /* Written by Grok ;) */
 @media print {

@@ -49,7 +49,7 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 - Special source directories: `_posts/`, `_drafts/`, Obsidian daily-notes folder (configured via `.obsidian`).
 - Links: wiki-style `[[...]]`, internal link resolution, backlinks, TOC.
 - Citations: two kinds, usable together. External: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`; list ids are `bibl-{key}`. `.bib` files are ignored at scan (not published); citeproc still reads them from source. Internal: native lists (`BibliographyItem`) — AsciiDoc `[bibliography]` / `[[[id]]]` / `<<id>>`, TEI `listBibl` / `bibl` and `ref`/`ptr` `@target="#id"` — authored ids, hover tips. TEI `@cRef` is the external citeproc key. Markdown has no native in-document list.
-- Chunking (`chunk` / `chunk-depth` in front matter) and PDF are markup-independent.
+- Chunking (`chunk` / `chunk-depth` in front matter) and PDF are markup-independent. Site config `paginate-posts` (optional int) batches the synthetic `/posts` listing (`/posts.html`, `/posts/2.html`, …).
 - Every real page writes its `textContent` (or copies assets).
 
 ## When Working on the Code
