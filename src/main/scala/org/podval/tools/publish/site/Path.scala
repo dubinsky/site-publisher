@@ -42,24 +42,22 @@ final case class Path(
     else file(File(directory, path.head), path.tail)
 
   def relativize(alias: String): Path =
-    // TODO handle '.' and '..'
-    // TODO from Grok:
-    //- Description: `relativize` does not normalize `.` / `..` (TODO at line 43).
-    // Alias / permalink values such as `../../other` can escape the intended URL tree
-    // and write outside the logical site layout (path traversal via content metadata).
-    //- Suggestion: Normalize segments (drop `.`, resolve `..` with bounds check);
-    // reject aliases that escape site root; never allow `..` to leave `targetDirectory` when resolving write paths.
-    val segments: Seq[String] = alias.split("/").toSeq.filterNot(_.isEmpty)
-    val pathSegments =
-      if alias.startsWith("/") then segments
-      else path.init ++ segments
-
-    Path(pathSegments *)
+    val extra: Seq[String] = alias.split("/").toSeq.filterNot(_.isEmpty)
+    val base: Seq[String] = if alias.startsWith("/") then Seq.empty else path.init
+    Path(Path.normalize(base ++ extra) *)
 
 object Path:
   given Ordering[Path] = (left: Path, right: Path) =>
     Ordering.Implicits.seqOrdering[Seq, String].compare(left.path, right.path)
 
   val root: Path = new Path(Seq.empty, None)
-  
+
   def apply(path: String*) = new Path(path, None)
+
+  // Drop `.`; `..` pops a segment. Extra `..` at site root is ignored (does not escape).
+  private[site] def normalize(segments: Seq[String]): Seq[String] =
+    segments.foldLeft(List.empty[String]): (acc, seg) =>
+      seg match
+        case "." => acc
+        case ".." => if acc.isEmpty then acc else acc.init
+        case s => acc :+ s

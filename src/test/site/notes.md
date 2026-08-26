@@ -1,5 +1,7 @@
 ---
 tags: [fixture]
+aliases:
+  - notes-alias
 ---
 A table:
 
@@ -38,3 +40,5 @@ See ~~struck out~~ here.
 ![[sample.pdf]]
 
 ![[clip.mp4]]
+
+See [[missing-page]].

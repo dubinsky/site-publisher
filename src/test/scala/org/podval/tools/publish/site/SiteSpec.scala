@@ -101,6 +101,16 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""type="application/pdf""""), page)
     assert(page.contains("<video"), page)
     assert(page.contains("clip.mp4"), page)
+    assert(page.contains("unresolved-link"), page)
+    assert(page.contains("missing-page"), page)
+    assert(page.contains("""class="backlinks""""), page)
+    exists("notes-alias.html")
+    val alias: String = html("notes-alias.html")
+    assert(alias.contains("/notes.html"), alias)
+    assert(alias.toLowerCase.contains("refresh"), alias)
+    val errors: String = html("errors.html")
+    assert(errors.contains("unresolved"), errors)
+    assert(errors.contains("missing-page"), errors)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
