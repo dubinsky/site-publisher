@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, Page, SyntheticXmlAsset}
+import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlEncode}
 import zio.blocks.chunk.Chunk
@@ -121,13 +121,11 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           ).toSeq
       ))
   
-  private def author(page: Page): String = page match
-    case page: FullMarkupPage => page.author.getOrElse(site.config.author)
-    case _ => site.config.author
+  private def author(page: Page): String =
+    page.asFullMarkupPage.flatMap(_.author).getOrElse(site.config.author)
 
-  private def tags(page: Page): List[String] = page match
-    case page: FullMarkupPage => page.tags
-    case _ => List.empty
+  private def tags(page: Page): List[String] =
+    page.asFullMarkupPage.map(_.tags).getOrElse(List.empty)
 
   private def absoluteUrl(path: Path): String = s"${site.uri}$path"
 

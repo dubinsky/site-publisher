@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
-import org.podval.tools.publish.page.{EmbeddedAsset, FullMarkupPage, MarkupPage, PdfPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -166,7 +166,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
     // Gather back-links
     for
-      case page: FullMarkupPage <- pages.pages
+      page <- pages.pages.flatMap(_.asFullMarkupPage)
       content <- page.content
     do
       backLinks.addBackLinks(

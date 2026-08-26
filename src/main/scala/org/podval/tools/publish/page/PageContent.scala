@@ -23,10 +23,6 @@ final class PageContent private(
 ):
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
-  private def fullPage: Option[FullMarkupPage] = source.page match
-    case page: FullMarkupPage => Some(page)
-    case _ => None
-
   def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
@@ -70,6 +66,7 @@ final class PageContent private(
     isChunked: Boolean
   ): Html.Element =
     var tocAdded: Boolean = false
+    val fullPage: Option[FullMarkupPage] = source.page.asFullMarkupPage
     def tocHtml: Html.Element = toc.html(
       sectionId = sectionId,
       tocDepth = fullPage.map(_.tocDepth).getOrElse(2),
@@ -137,7 +134,7 @@ final class PageContent private(
 
         // TODO do the same with section links in Toc - and move this there?
         val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
-          fullPage match
+          source.page.asFullMarkupPage match
             case None => linkTo.url
             case Some(page) =>
               val id: String = linkTo.fragment.get.id

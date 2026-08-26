@@ -58,6 +58,10 @@ abstract class Page(
 
   def real: Page = this
 
+  final def asFullMarkupPage: Option[FullMarkupPage] = this match
+    case page: FullMarkupPage => Some(page)
+    case _ => None
+
   def isDirectory: Boolean = false
 
   def source: Option[PageSource] = None

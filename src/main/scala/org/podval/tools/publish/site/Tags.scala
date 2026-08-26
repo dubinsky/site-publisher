@@ -15,7 +15,7 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
   private def fullMarkupPages: List[FullMarkupPage] = site
     .pages
     .pages
-    .collect { case page: FullMarkupPage => page }
+    .flatMap(_.asFullMarkupPage)
 
   private def tagsAll: List[String] = fullMarkupPages
     .flatMap(_.tags)
