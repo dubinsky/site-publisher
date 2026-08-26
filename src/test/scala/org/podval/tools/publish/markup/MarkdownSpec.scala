@@ -46,8 +46,26 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(dumped.contains("A note"), dumped)
     val (notes, stripped) = harvest(xml)
     assert(notes.size == 1)
-    assert(Xml.toString(notes.values.head.nodes).contains("A note"))
+    val noteNodes: String = render(Xml.element("span").setChildren(notes.values.head.nodes))
+    assert(noteNodes.contains("A note"), noteNodes)
+    assert(!noteNodes.contains("<p"), noteNodes)
     assert(!render(stripped).contains("""class="footnotes""""), render(stripped))
+  }
+
+  test("multi-paragraph FlexMark footnote unwraps each wrapping p") {
+    val xml: Xml.Element = process(
+      """See this [^note].
+        |
+        |[^note]: First paragraph.
+        |
+        |    Second paragraph.
+        |""".stripMargin
+    )
+    val (notes, _) = harvest(xml)
+    val noteNodes: String = render(Xml.element("span").setChildren(notes.values.head.nodes))
+    assert(noteNodes.contains("First paragraph"), noteNodes)
+    assert(noteNodes.contains("Second paragraph"), noteNodes)
+    assert(!noteNodes.contains("<p"), noteNodes)
   }
 
   test("footnote after emphasis with no source space has no separating HTML space") {

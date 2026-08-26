@@ -238,13 +238,10 @@ object MarkdownMarkup extends Markup(
       yield
         Footnote.link(correlationId)
 
-  // From:
+  // From (FlexMark always wraps the note in <p>, then a sibling backref):
   //   <li id="fn-N">
-  //     ...
-  //     <p>...</p>
-  //     ...
-  //     <a class="footnote-backref" href="fnref-N">Footnote Body</a>
-  //     ...
+  //     <p>Footnote Body</p>
+  //     <a class="footnote-backref" href="#fnref-N">↩</a>
   //   </li>
   // To:
   //   <span class="footnote" footnote-correlation-id="N">Footnote Body</span>
@@ -255,14 +252,23 @@ object MarkdownMarkup extends Markup(
           .getId
           .flatMap: id =>
             Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
-        body <- Xml
-          .getChildren(element)
+        body <- element
+          .getChildren
           .flatMap(_.asElement)
           .find(_.hasClass("footnote-backref"))
-          .map(backLink => element.getChildren.takeWhile(_ ne backLink))
+          .map(backLink => unwrapFootnoteParagraphs(element.getChildren.takeWhile(_ ne backLink)))
       yield
-        // TODO find the <p> within the body and use its children as body...
         Footnote.body(correlationId, body)
+
+  // convert() unwraps lone <p> in td/li/dd, but this <li> is already a footnote span by then.
+  private def unwrapFootnoteParagraphs(body: Xml.Nodes): Xml.Nodes =
+    val paras: List[Xml.Element] = body
+      .filterNot(_.isWhitespace)
+      .toList
+      .flatMap(_.asElement.filter(_.getName == "p"))
+    val significant: Int = body.count(node => !node.isWhitespace)
+    if paras.isEmpty || paras.length != significant then body
+    else paras.map(_.getChildren).reduce((a, b) => a ++ Chunk(Xml.text(" ")) ++ b)
 
   override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
 
