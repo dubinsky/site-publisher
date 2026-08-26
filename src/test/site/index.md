@@ -10,3 +10,5 @@ This fixture exercises the publisher.
 - [[book]] — AsciiDoc
 - [[about]] — HTML
 - [[tei-sample]] — TEI
+- [[docbook-sample]] — DocBook
+

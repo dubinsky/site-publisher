@@ -78,10 +78,10 @@ Recognized by extension:
 - AsciiDoc (`.adoc`)
 - HTML (`.html`)
 - TEI (`.xml` with a TEI root element) - TODO
+- DocBook (`.xml` with a DocBook root: `article`, `book`, `chapter`, `appendix`, `part`, `set`, `preface`, `refentry`, `topic`)
 
 Support considered for:
 
-- DocBook
 - ReStructured Text
 
 [#frontmatter]
@@ -225,6 +225,18 @@ TEI::
 </table>
 ----
 
+DocBook:: CALS `row` / `entry` (optional `tgroup`); `morerows` becomes `rowspan`.
++
+[source,xml]
+----
+<table>
+  <tgroup cols="2">
+    <thead><row><entry>A</entry><entry>B</entry></row></thead>
+    <tbody><row><entry>1</entry><entry>2</entry></row></tbody>
+  </tgroup>
+</table>
+----
+
 HTML::
 +
 [source,html]
@@ -255,6 +267,8 @@ AsciiDoc:: native checklists:
 * [ ] open
 * [x] done
 ----
+
+DocBook has no native task-list markup.
 
 HTML:: the IR shape (already a task list; no conversion):
 +
@@ -299,6 +313,13 @@ TEI:: definition and use are the same element at the point of reference (`n` is 
 [source,xml]
 ----
 <p>See this<note place="end">A note.</note>.</p>
+----
+
+DocBook:: `<footnote>` at the call site (`xml:id` optional). Reuse with `<footnoteref linkend="id"/>`.
++
+[source,xml]
+----
+<para>See this<footnote><para>A note.</para></footnote>.</para>
 ----
 
 HTML:: IR stubs (same `footnote-correlation-id` on the call site and the body):
@@ -370,6 +391,19 @@ TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`. Term
 </list>
 ----
 
+DocBook:: `<glosslist>` (or `<glossary>`) of `<glossentry>` / `<glossterm>` / `<glossdef>`. Term id from `xml:id` on the entry, else the term, else the term text with spaces turned into hyphens. Reference a term with `<link linkend="id">`. `<variablelist>` is a description list, not a glossary.
++
+[source,xml]
+----
+<para>See <link linkend="posuk">posuk</link>.</para>
+<glosslist>
+  <glossentry xml:id="posuk">
+    <glossterm>posuk</glossterm>
+    <glossdef><para>verse</para></glossdef>
+  </glossentry>
+</glosslist>
+----
+
 HTML:: the IR shape (`class="glossary"`; each term is `class="glossary-item"` with an `id`):
 +
 [source,html]
@@ -427,6 +461,14 @@ https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations] inserts `[@ke
 See [@knuth79] and [@knuth79, p. 12] and [@knuth79; @lamport94]
 ----
 
+DocBook:: `<citation>key</citation>` (optional locator after a comma). `biblioref` `@linkend` that is not a native entry id is the same. Empty `<bibliography/>` is the list placeholder (otherwise the list is appended).
++
+[source,xml]
+----
+<para>See <citation>knuth79</citation> and <citation>knuth79, p. 12</citation>.</para>
+<bibliography/>
+----
+
 HTML:: the IR shape:
 +
 [source,html]
@@ -480,6 +522,18 @@ and <ptr target="#lamport94"/>.</p>
 </listBibl>
 ----
 
+DocBook:: `<bibliography>` with `biblioentry` / `bibliomixed`; cite with `<link linkend="id">` or `<biblioref linkend="id"/>` (empty `biblioref` shows `@xreflabel` or the id).
++
+[source,xml]
+----
+<para>See <link linkend="knuth79">Knuth 1979</link>
+and <biblioref linkend="lamport94"/>.</para>
+<bibliography>
+  <biblioentry xml:id="knuth79">Knuth, Donald E. TeX and Metafont. 1979.</biblioentry>
+  <bibliomixed xml:id="lamport94">Lamport, Leslie. LaTeX. 1994.</bibliomixed>
+</bibliography>
+----
+
 Markdown has no native in-document bibliography list.
 
 [#code-blocks]
@@ -524,6 +578,15 @@ TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:l
 </code>
 ----
 
+DocBook:: `<code>` / `<literal>` inline; `<programlisting>` / `<screen>` / `<literallayout>` as a block. `@language` (not `xml:lang`) is the highlight.js tag.
++
+[source,xml]
+----
+<para>Use <code language="scala">map</code> in</para>
+<programlisting language="scala">xs.map(f)
+</programlisting>
+----
+
 HTML::
 +
 [source,html]
@@ -548,6 +611,16 @@ require 'sinatra' <1>
 ----
 <1> Library import
 ------
+
+DocBook:: `<co>` in a listing; `<calloutlist>` / `<callout arearefs>` below. `@label` on `co` is the marker number.
++
+[source,xml]
+----
+<programlisting>require 'sinatra'<co xml:id="co1" label="1"/></programlisting>
+<calloutlist>
+  <callout arearefs="co1"><para>Library import</para></callout>
+</calloutlist>
+----
 
 HTML:: the IR shape:
 +
@@ -588,6 +661,13 @@ Multi-paragraph body.
 ====
 ----
 
+DocBook:: `note`, `tip`, `warning`, `caution`, `important` (optional child `title`).
++
+[source,xml]
+----
+<note><title>Save time</title><para>Use the shortcut.</para></note>
+----
+
 HTML:: the IR shape (`details` when folded):
 +
 [source,html]
@@ -622,6 +702,16 @@ Markdown:: no native syntax; Obsidian has none. Write an HTML `+++<aside>+++` bl
 </aside>
 ----
 
+DocBook:: `<sidebar>` (optional child `title`).
++
+[source,xml]
+----
+<sidebar>
+  <title>Optional Title</title>
+  <para>Auxiliary content.</para>
+</sidebar>
+----
+
 HTML:: `<aside>` (IR adds `class="aside"` if missing); optional title:
 +
 [source,html]
@@ -653,6 +743,17 @@ Markdown:: a CommonMark blockquote (`>`). No attribution syntax (an em-dash line
 [source,markdown]
 ----
 > A Markdown quotation.
+----
+
+DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`. Inline `<quote>` stays `<q>`.
++
+[source,xml]
+----
+<blockquote>
+  <title>A title</title>
+  <para>A little rebellion now and then is a good thing.</para>
+  <attribution>Jefferson</attribution>
+</blockquote>
 ----
 
 HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `<footer>` attribution (`cite` kept as-is):
@@ -702,6 +803,13 @@ TEI:: `<del>`.
 <p>See <del>TEI struck</del>.</p>
 ----
 
+DocBook:: `<emphasis role="strikethrough">` (or `line-through`). Default `<emphasis>` is `<em>`; `role="bold"` is `<strong>`.
++
+[source,xml]
+----
+<para>See <emphasis role="strikethrough">DocBook struck</emphasis>.</para>
+----
+
 HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become `<del>`:
 +
 [source,html]
@@ -739,6 +847,20 @@ TEI:: `<figure>` with `<graphic url>` and optional `<head>` (caption). `<graphic
 </figure>
 ----
 
+DocBook:: `<figure>` (or `<informalfigure>`) with `<imagedata fileref>` and optional `<title>` (caption).
++
+[source,xml]
+----
+<figure>
+  <title>A DocBook figure</title>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="pixel.svg"/>
+    </imageobject>
+  </mediaobject>
+</figure>
+----
+
 HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`:
 +
 [source,html]
@@ -762,6 +884,8 @@ Markdown:: Obsidian `+++![[file.pdf]]+++`; optional `#page=N` and `&height=H` (p
 ----
 
 AsciiDoc:: no native block; write the HTML IR (passthrough `++++`).
+
+DocBook has no native PDF-embed markup.
 
 HTML:: `<object type="application/pdf">` (IR wraps it) or the IR:
 +
@@ -794,6 +918,17 @@ AsciiDoc:: `video::file.mp4[]` (optional `.Title` becomes a figure caption). You
 [source,asciidoc]
 ----
 video::clip.mp4[]
+----
+
+DocBook:: `<videodata fileref>`. A YouTube/Vimeo URL becomes an iframe.
++
+[source,xml]
+----
+<mediaobject>
+  <videoobject>
+    <videodata fileref="clip.mp4"/>
+  </videoobject>
+</mediaobject>
 ----
 
 HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `<iframe>` gets `class="video-embed"`:

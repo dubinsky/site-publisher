@@ -1,0 +1,63 @@
+---
+bibliography: library.bib
+csl: apa
+---
+<article xmlns="http://docbook.org/ns/docbook" version="5.2">
+  <title>DocBook Sample</title>
+  <para>See this<footnote><para>DocBook footnote body.</para></footnote>
+    and <emphasis>clung</emphasis><footnote><para>Clinging note.</para></footnote>
+    and <link linkend="posuk">posuk</link>
+    and <code language="scala">xs.map(f)</code>
+    and <emphasis role="strikethrough">DocBook struck</emphasis>
+    and <link linkend="knuth79">Knuth 1979</link>
+    and <biblioref linkend="lamport94"/>
+    and <citation>knuth79</citation>.</para>
+  <blockquote>
+    <para>A DocBook quotation.</para>
+    <attribution>Jefferson</attribution>
+  </blockquote>
+  <figure xml:id="fig1">
+    <title>A DocBook figure</title>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="pixel.svg"/>
+      </imageobject>
+    </mediaobject>
+  </figure>
+  <glosslist>
+    <glossentry xml:id="posuk">
+      <glossterm>posuk</glossterm>
+      <glossdef><para>verse</para></glossdef>
+    </glossentry>
+  </glosslist>
+  <note><para>Auxiliary information.</para></note>
+  <sidebar><para>From DocBook.</para></sidebar>
+  <programlisting language="scala">require 'sinatra'<co xml:id="co1" label="1"/></programlisting>
+  <calloutlist>
+    <callout arearefs="co1"><para>Library import</para></callout>
+  </calloutlist>
+  <mediaobject>
+    <videoobject>
+      <videodata fileref="clip.mp4"/>
+    </videoobject>
+  </mediaobject>
+  <bibliography>
+    <biblioentry xml:id="knuth79">Knuth, Donald E. TeX and Metafont. 1979.</biblioentry>
+    <bibliomixed xml:id="lamport94">Lamport, Leslie. LaTeX. 1994.</bibliomixed>
+  </bibliography>
+  <bibliography/>
+  <table>
+    <tgroup cols="2">
+      <thead>
+        <row><entry>A</entry><entry>B</entry></row>
+      </thead>
+      <tbody>
+        <row><entry>1</entry><entry>2</entry></row>
+      </tbody>
+    </tgroup>
+  </table>
+  <section xml:id="intro">
+    <title>Introduction</title>
+    <para>A DocBook paragraph.</para>
+  </section>
+</article>

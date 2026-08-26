@@ -748,7 +748,8 @@ table[rendition="borderless"] {
 }
 
 
-.section > tei-head {
+.section > tei-head,
+.section > db-title {
     text-indent: -0.5em;
 }
 
@@ -780,7 +781,8 @@ tei-title[level=m] {
     font-style: italic;
 }
 
-tei-head {
+tei-head,
+db-title {
     display: block;
 }
 

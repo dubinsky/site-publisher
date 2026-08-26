@@ -118,7 +118,8 @@ object Markup:
     HtmlMarkup,
     MarkdownMarkup,
     AsciiDocMarkup,
-    TeiMarkup
+    TeiMarkup,
+    DocBookMarkup
   )
 
   // TODO verify that extensions do not overlap

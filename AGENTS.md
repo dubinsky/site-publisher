@@ -1,6 +1,6 @@
 # Site Publisher Agent Guidelines
 
-Static site generator written in Scala 3 + Gradle. Produces sites from Markdown, AsciiDoc, HTML, and TEI using a Minima-inspired layout.
+Static site generator written in Scala 3 + Gradle. Produces sites from Markdown, AsciiDoc, HTML, TEI, and DocBook using a Minima-inspired layout.
 
 ## Project Layout
 
@@ -45,17 +45,17 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 
 - `Site` is the top-level coordinator.
 - `Pages` scans the source tree, builds the `Page` graph (including synthetic pages like `/posts`, `/tags`, `/errors`, `sitemap.xml`, etc.).
-- Content pipeline: dialect `Markup` (md / adoc / html / tei) → `FrontMatter` + `Xml.Element` → dialect converters emit shared IR → `PageContent` (sections, links, footnotes, glossary, citations) → Minima-inspired HTML → write.
+- Content pipeline: dialect `Markup` (md / adoc / html / tei / docbook) → `FrontMatter` + `Xml.Element` → dialect converters emit shared IR → `PageContent` (sections, links, footnotes, glossary, citations) → Minima-inspired HTML → write.
 - Special source directories: `_posts/`, `_drafts/`, Obsidian daily-notes folder (configured via `.obsidian`).
 - Links: wiki-style `[[...]]`, internal link resolution, backlinks, TOC.
-- Citations: two kinds, usable together. External: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`; list ids are `bibl-{key}`. `.bib` files are ignored at scan (not published); citeproc still reads them from source. Internal: native lists (`BibliographyItem`) — AsciiDoc `[bibliography]` / `[[[id]]]` / `<<id>>`, TEI `listBibl` / `bibl` and `ref`/`ptr` `@target="#id"` — authored ids, hover tips. TEI `@cRef` is the external citeproc key. Markdown has no native in-document list.
+- Citations: two kinds, usable together. External: dialect syntax → `Citation` IR → the document's front matter `bibliography` (path relative to the source file) and `csl` (no site default). citeproc-java formats; locale is page `lang`, else site `lang`, else `en-US`; list ids are `bibl-{key}`. `.bib` files are ignored at scan (not published); citeproc still reads them from source. Internal: native lists (`BibliographyItem`) — AsciiDoc `[bibliography]` / `[[[id]]]` / `<<id>>`, TEI `listBibl` / `bibl` and `ref`/`ptr` `@target="#id"`, DocBook `bibliography` / `biblioentry` and `link`/`biblioref` `@linkend` — authored ids, hover tips. TEI `@cRef` is the external citeproc key; DocBook uses `<citation>key</citation>` or a `biblioref` whose `linkend` is not a native entry. Markdown has no native in-document list.
 - Chunking (`chunk` / `chunk-depth` in front matter) and PDF are markup-independent. Site config `paginate-posts` (optional int) batches the synthetic `/posts` listing (`/posts.html`, `/posts/2.html`, …).
 - Every real page writes its `textContent` (or copies assets).
 
 ## When Working on the Code
 
 - Prefer making changes that keep the core small and plugin-free (the project's stated philosophy).
-- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, …). Shared IR and resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). HTML-shaped leftovers (bare `<aside>` / `<blockquote>`, `<s>`, standalone `p>img`, PDF `<object>`, `<video>`, YouTube/Vimeo `<iframe>`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`. TEI does not use that pass yet. There is no `feature/` package.
+- Markup-specific conversion lives next to the dialect (`AsciiDocMarkup` / `AsciiDocCiteExtension`, `MarkdownMarkup` / `MarkdownCite`, `DocBookMarkup`, …). Shared IR and resolution stay in `markup/` (`Citation`, `Bibliography`, `Footnote`, `Glossary`, `Section`, …). HTML-shaped leftovers (bare `<aside>` / `<blockquote>`, `<s>`, standalone `p>img`, PDF `<object>`, `<video>`, YouTube/Vimeo `<iframe>`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`. TEI and DocBook do not use that pass yet. There is no `feature/` package.
 - Keep existing comments when moving or refactoring (TODOs, ordering constraints, "why" notes). Move them with the code they describe. Drop or rewrite a comment only if it is factually wrong; do not delete comments to tidy a diff.
 - Documentation split: **design** (pipeline, IR, why) goes in the Obsidian note `dub.podval.org/notes/Publishing/Site Publisher.md` under **Design**, with a per-feature subsection when a feature has IR or non-obvious architecture. **User documentation** (how to run the generator; syntax of each construct in each markup) stays in this repo’s `README.adoc`. Some overlap is expected (IR HTML shape in the note vs HTML/author syntax in the README). Do not put design essays in the README or author syntax in the Design section.
 - Run `./gradlew test` before considering a change complete.
@@ -86,7 +86,7 @@ Compiler flags:
 - Do not commit changes to the hardcoded path in `generate()`.
 - Posts and daily notes have strict filename conventions (`YYYY-MM-DD-title`).
 - Directories that should not produce pages (e.g. `_posts`) are specially handled by `Posts.isDirectoryEmptiedOut`.
-- XML dialects are disambiguated by root element for `.xml` files.
+- XML dialects are disambiguated by root element for `.xml` files (TEI vs DocBook).
 - `Site.targetDirectory` is `sourceDirectory / name` unless `target-directory-name` is absolute; Java `File(parent, "/abs")` on Unix does *not* ignore the parent.
 - The Errors page is written after other HTML so unknown citations and unresolved links found while rendering appear on it.
 - AsciiDoc `cite:[key]` needs a custom inline-macro regexp (empty target); `cite:[k1, k2]` must join all positional attributes, not just `1`.

@@ -2,8 +2,9 @@ package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
 
-/** Native in-document bibliography entries (TEI `listBibl` / `bibl`, AsciiDoc
-  * `[bibliography]` / `[[[id]]]`). Not citeproc `csl-entry`. */
+/** Native in-document bibliography entries (TEI `listBibl` / `bibl`, DocBook
+  * `bibliography` / `biblioentry`, AsciiDoc `[bibliography]` / `[[[id]]]`).
+  * Not citeproc `csl-entry`. */
 object BibliographyItem:
   object ItemClass extends HtmlClass("bibliography-item")
 
@@ -14,8 +15,10 @@ object BibliographyItem:
 
   def isItem(element: Xml.Element): Boolean = element.has(ItemClass)
 
+  // TODO shoud this IR (?) object know markup-specific things? Or is it a multy-markup helper?
   def isEntryName(name: String): Boolean =
-    name == "bibl" || name == "biblStruct" || name == "biblFull"
+    name == "bibl" || name == "biblStruct" || name == "biblFull" ||
+    name == "biblioentry" || name == "bibliomixed"
 
   /** Mark an entry and hoist a leading empty `<a id>` (AsciiDoc `[[[id]]]`). */
   def asItem(element: Xml.Element): Xml.Element =
