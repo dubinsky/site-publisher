@@ -54,6 +54,17 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     exists("assets/css/style.css")
   }
 
+  test("conflicting front matter and content titles are recorded") {
+    val errors: String = html("errors.html")
+    assert(errors.contains("ambiguous title"), errors)
+    assert(errors.contains("title-conflict"), errors)
+    assert(errors.contains("Front Matter Title"), errors)
+    assert(errors.contains("Content Title"), errors)
+    assert(!errors.contains("title-same"), errors)
+    val page: String = html("title-conflict.html")
+    assert(page.contains("Content Title"), page)
+  }
+
   test("posts listing is a header page when its file says so") {
     val home: String = html("index.html")
     assert(home.contains("""href="/posts.html""""), home)

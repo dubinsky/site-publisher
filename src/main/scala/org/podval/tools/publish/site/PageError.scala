@@ -15,6 +15,7 @@ object PageError:
 
   case object MalformedFrontMatter extends Kind("malformed frontmatter")
   case object AmbiguousFrontMatter extends Kind("ambiguous frontmatter")
+  case object AmbiguousTitle extends Kind("ambiguous title")
   case object MalformedXml extends Kind("malformed XML")
   case object FileName extends Kind("file name")
   case object Duplicate extends Kind("duplicate")
@@ -26,13 +27,15 @@ object PageError:
   case object UnknownCitation extends Kind("unknown citation")
 
   val all: List[Kind] = List(
-    MalformedFrontMatter, 
-    MalformedXml, 
+    MalformedFrontMatter,
+    AmbiguousFrontMatter,
+    AmbiguousTitle,
+    MalformedXml,
     FileName,
     Duplicate,
     NoId,
     NoDate,
-    SelfLink, 
+    SelfLink,
     Unresolved,
     MissingAsset,
     UnknownCitation

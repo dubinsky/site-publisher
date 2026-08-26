@@ -181,7 +181,14 @@ object PageContent:
     // Run markup-specific processors and extract title
     val (xmlProcessed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
 
-    // TODO error if both front matter and content titles are present and are different.
+    (frontMatter.title, title) match
+      case (Some(frontMatterTitle), Some(contentTitle))
+        if frontMatterTitle.trim != contentTitle.getText.trim =>
+        source.error(
+          PageError.AmbiguousTitle,
+          s"title from front matter ('$frontMatterTitle') differs from content title ('${contentTitle.getText}')"
+        )
+      case _ =>
 
     // Prepare to calculate Toc and backlinks.
     // Footnote *links* stay in the tree; bodies are harvested then stripped.

@@ -87,7 +87,7 @@ Internal (YAML between `---` lines in the markup file) or external (same basenam
 
 Obsidian treats internal YAML as https://help.obsidian.md/properties[Properties]; it stores extra keys but does not interpret this publisher's fields (`chunk`, `bibliography`, `csl`, …).
 
-Set `title` in front matter only when it differs from the file name. Both the file name and the title are used for link resolution.
+Set `title` in front matter only when it differs from the file name. Both the file name and the title are used for link resolution. If the document also has a title (`h1`, AsciiDoc `=`, TEI/DocBook title), it must match the front matter `title`; a mismatch is recorded on the Errors page.
 
 Useful fields:
 
