@@ -36,6 +36,7 @@ This here is a static site generator. It:
 - supports <<chunking>>;
 - supports <<paging>>;
 - supports <<pdf>> generation;
+- writes <<seo>> tags in each page `<head>`;
 
 Supported markup constructs:
 
@@ -97,6 +98,7 @@ Useful fields:
 - `chunk` / `chunk-depth` — see <<chunking>>
 - `bibliography` / `csl` / `lang` — see <<bibliography>>
 - `toc-depth`
+- `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback
 - `tags`, `categories`, `aliases`
 - `header-page`, `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
@@ -160,6 +162,13 @@ paginate-posts: 10
 ----
 
 Omitted or less than 1 is off. Page 1 stays `/posts.html`; further batches are `/posts/2.html`, `/posts/3.html`. A `nav.pagination` sits under the list.
+
+[#seo]
+== SEO
+
+No extra config. Each HTML page `<head>` gets a document title (`Page | Site title`; home is just the site title), `meta name="generator"` pointing at this publisher, description, author, canonical URL, Open Graph, a Twitter summary card, and JSON-LD (`WebSite` / `BlogPosting` / `WebPage`).
+
+Taken from existing fields: site `title`, `description`, `url`, `author`, `lang`, `social.twitter`; page `title`, `description`, `author`, `lang`, `date` (and git/`modified_time` for modified). No image, Facebook, or webmaster keys.
 
 [#chunking]
 == Chunking

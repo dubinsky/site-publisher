@@ -48,6 +48,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
       el("id", absoluteUrl(Feed.path)),
       el("title", site.config.title).set("type", "html"),
       el("subtitle", site.config.description),
+      el("generator", Seo.generatorName).set("uri", Seo.generatorUrl),
       link(
         href = absoluteUrl(Feed.path),
         rel = "self",
@@ -70,7 +71,6 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
     Xml
       .element("feed")
       .set(XmlAttribute.Xmlns, "http://www.w3.org/2005/Atom")
-      //<generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator>
       .setChildren(Chunk.from(
         prologue ++ posts.map(entry)
       ))

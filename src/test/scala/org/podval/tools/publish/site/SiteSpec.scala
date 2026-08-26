@@ -316,4 +316,45 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""type="application/atom+xml""""), page)
     assert(page.contains("""href="http://fixture.test/feed.xml""""), page)
     assert(page.contains("""title="Site Publisher Fixture""""), page)
+    val feed: String = html("feed.xml")
+    assert(feed.contains("Site Publisher"), feed)
+    assert(feed.contains("https://github.com/dubinsky/site-publisher"), feed)
+  }
+
+  test("home page SEO: site title, description, canonical, WebSite") {
+    val page: String = html("index.html")
+    assert(page.contains("<title>Site Publisher Fixture</title>"), page)
+    assert(page.contains("""name="generator""""), page)
+    assert(page.contains("Site Publisher (https://github.com/dubinsky/site-publisher)"), page)
+    assert(page.contains("""name="description""""), page)
+    assert(page.contains("End-to-end fixture for site-publisher tests"), page)
+    assert(page.contains("""rel="canonical""""), page)
+    assert(page.contains("""href="http://fixture.test/index.html""""), page)
+    assert(page.contains("""property="og:type""""), page)
+    assert(page.contains("""content="website""""), page)
+    assert(page.contains("""property="og:locale""""), page)
+    assert(page.contains("""content="en_US""""), page)
+    assert(page.contains("""name="twitter:card""""), page)
+    assert(page.contains("""content="summary""""), page)
+    assert(page.contains(""""@type":"WebSite""""), page)
+    assert(page.contains("""itemtype="http://schema.org/WebSite""""), page)
+  }
+
+  test("post SEO: titled with site, article type, BlogPosting") {
+    val page: String = html("2026/08/01/hello.html")
+    assert(page.contains("<title>hello | Site Publisher Fixture</title>"), page)
+    assert(page.contains("""property="og:type""""), page)
+    assert(page.contains("""content="article""""), page)
+    assert(page.contains("""property="article:published_time""""), page)
+    assert(page.contains("2026-08-01"), page)
+    assert(page.contains(""""@type":"BlogPosting""""), page)
+    assert(page.contains("""itemtype="http://schema.org/BlogPosting""""), page)
+    assert(page.contains("""href="http://fixture.test/2026/08/01/hello.html""""), page)
+  }
+
+  test("ordinary page SEO is WebPage") {
+    val page: String = html("notes.html")
+    assert(page.contains("<title>notes | Site Publisher Fixture</title>"), page)
+    assert(page.contains(""""@type":"WebPage""""), page)
+    assert(page.contains("""itemtype="http://schema.org/WebPage""""), page)
   }

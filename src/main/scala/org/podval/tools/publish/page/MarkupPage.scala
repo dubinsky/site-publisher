@@ -1,10 +1,10 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
-import org.podval.tools.publish.site.{Feed, Path, Site, Sitemap}
+import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
-import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
+import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
 
 abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
@@ -71,14 +71,13 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         meta(charset := "utf-8"),
         meta(httpEquiv := "X-UA-Compatible", contentAttribute := "IE=edge"),
         meta(name := "viewport", contentAttribute := "width=device-width, initial-scale=1"),
-        titleElement(title),
+        Seo.head(this),
         site.favicon,
         site.license,
         Sitemap.sitemapLink,
         Feed.feedMeta(site),
         pagerPrev.map(p => link(rel := "prev", href := p.path.toString)),
         pagerNext.map(p => link(rel := "next", href := p.path.toString)),
-        // TODO {%- seo -%}: https://github.com/jekyll/jekyll-seo-tag
         libraries.flatMap(library => library.stylesheet.map(ref =>
           link(rel := "stylesheet", href := s"${library.cdn}$ref")
         )),
@@ -88,7 +87,7 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         site.siteHeader(this),
         main(className := "page-content", aria("label") := "Content",
           div(className := "wrapper",
-            article(className := "post h-entry", itemScope := true, itemType := "http://schema.org/BlogPosting",
+            article(className := "post h-entry", itemScope := true, itemType := s"http://schema.org/${Seo.schemaType(this)}",
               pageHeader,
               div(className := "post-content e-content", itemProp := "articleBody", articleBody),
               a(className := "u-url", href := path.toString, hidden := true)
