@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{LinkKind, Markup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
-  FullMarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
+  FullMarkupPage, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -99,15 +99,12 @@ final class Pages(site: Site):
     pagesVar = pagesVar.appended(page)
     // Add implied directories
     page.parent
-    // Add alias pages
-    page.aliases.foreach(add)
-    
     page match
       case page: FullMarkupPage =>
-        // Add chunk pages
+        page.aliases.foreach(add)
         if page.chunk then page.chunks.foreach(add)
         if page.pdf then add(PdfPage(page))
-      case _ =>  
+      case _ =>
       
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
@@ -254,16 +251,15 @@ final class Pages(site: Site):
         (page, true)
 
     page match
-      case markupPage: FullMarkupPage =>
+      case page: MarkupPage =>
         val pageSource: PageSource = PageSource(
-          page = markupPage,
+          page = page,
           markup = markup,
           sourcePath = sourcePath,
           frontMatterStandAlone = frontMatterStandAlone
         )
-        markupPage.setSource(pageSource)
+        page.setSource(pageSource)
         parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
-
       case _ => () // TODO error?
 
     if addIt then add(page)

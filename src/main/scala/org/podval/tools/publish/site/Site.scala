@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, BackLink, Link}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, FullMarkupPage, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -166,7 +166,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
     // Gather back-links
     for
-      page <- pages.pages
+      case page: FullMarkupPage <- pages.pages
       content <- page.content
     do
       backLinks.addBackLinks(
@@ -175,7 +175,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
             if !Link.isInternal(element) then None else BackLink(
               element,
               parent = parent.get,
-              from = content.source.page, // TODO go through FullMarkupPages only, use page, remove content.page
+              from = page,
               ids = content.ids
             )
         )
@@ -315,10 +315,10 @@ object Site:
 
   @main def generate(): Unit = Site(SiteOptions(
     sourceDirectoryPath =
-      "/home/dub/OpenTorah/chumashquestions.org/",
+//      "/home/dub/OpenTorah/chumashquestions.org/",
 //      "/home/dub/OpenTorah/opentorah.org/docs",
     //  "/home/dub/OpenTorah/alter-rebbe.org"
-//      "/home/dub/Podval/dub.podval.org",
+      "/home/dub/Podval/dub.podval.org",
     //  "/home/dub/Podval/www.podval.org"
     logLevelOpt = Some("INFO"),
     treatErrorsAsWarnings = true

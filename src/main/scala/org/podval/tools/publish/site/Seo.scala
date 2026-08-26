@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{DirectoryPage, MarkupPage, Page}
+import org.podval.tools.publish.page.{DirectoryPage, FullMarkupPage, MarkupPage, Page}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.Html
 import zio.blocks.html.{Js, content as contentAttribute, title as titleElement, *}
@@ -72,8 +72,11 @@ object Seo:
   private def description(page: Page): String =
     page.description.getOrElse(page.site.config.description)
 
-  private def author(page: Page): String =
-    page.author.getOrElse(page.site.config.author)
+  private def author(page: MarkupPage): String =
+    val fromPage: Option[String] = page match
+      case page: FullMarkupPage => page.author
+      case _ => None
+    fromPage.getOrElse(page.site.config.author)
 
   private def canonical(page: Page): String = s"${page.site.uri}${page.path}"
 

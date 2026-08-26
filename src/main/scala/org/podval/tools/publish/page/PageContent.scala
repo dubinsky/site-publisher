@@ -23,6 +23,10 @@ final class PageContent private(
 ):
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
+  private def fullPage: Option[FullMarkupPage] = source.page match
+    case page: FullMarkupPage => Some(page)
+    case _ => None
+
   def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
@@ -68,15 +72,15 @@ final class PageContent private(
     var tocAdded: Boolean = false
     def tocHtml: Html.Element = toc.html(
       sectionId = sectionId,
-      tocDepth = source.page.tocDepth,
-      chunkDepth = Option.when(isChunked)(source.page.chunkDepth)
+      tocDepth = fullPage.map(_.tocDepth).getOrElse(2),
+      chunkDepth = Option.when(isChunked)(fullPage.map(_.chunkDepth).getOrElse(2))
     )
     val withPlaceholder: Html.Element = Html.transform(html)(element =>
       if tocAdded || !source.markup.isTocPlaceholder(element) then element else
         tocAdded = true
         tocHtml
     )
-    if source.page.hasToc && !tocAdded
+    if fullPage.exists(_.hasToc) && !tocAdded
     then withPlaceholder.setChildren(tocHtml +: withPlaceholder.getChildren)
     else withPlaceholder
 
@@ -133,9 +137,12 @@ final class PageContent private(
 
         // TODO do the same with section links in Toc - and move this there?
         val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
-          val id: String = linkTo.fragment.get.id
-          val sectionId: Option[String] = ids.sectionById(id)
-          s"${toc.chunkName(sectionId, source.page.chunkDepth)}#$id"
+          fullPage match
+            case None => linkTo.url
+            case Some(page) =>
+              val id: String = linkTo.fragment.get.id
+              val sectionId: Option[String] = ids.sectionById(id)
+              s"${toc.chunkName(sectionId, page.chunkDepth)}#$id"
 
         var result: Xml.Element = element.setHref(href)
         if result.getText == WikiLink.linkText(element, ref) then

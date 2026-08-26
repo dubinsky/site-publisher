@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
+import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlEncode}
 import zio.blocks.chunk.Chunk
@@ -100,9 +100,9 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           el("id", absoluteUrl(page.path.withoutHtml)),
           Xml
             .element("author")
-            .setChildren(Chunk(el("name", page.author.getOrElse(site.config.author))))
+            .setChildren(Chunk(el("name", author(page))))
         ) ++
-          page.tags.map(tag => Xml.element("category").set("term", tag)) ++
+          tags(page).map(tag => Xml.element("category").set("term", tag)) ++
           //<![CDATA[ Years ago, I wrote a piece on the sbt build tool: [[2011-11-08-sbt-why]]. Although I dislike how sbt works (and since I looked at the sbt internals I dislike it even more), my main complaint was not about how, but about the fact that sbt exists at all. ]]>
           page.description.map(text => el("summary", text /* TODO use CData */).set("type", "html")).toSeq ++
           //<content type="html" xml:base="http://dub.podval.org/2025/12/22/mill-why.html">
@@ -121,6 +121,14 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           ).toSeq
       ))
   
+  private def author(page: Page): String = page match
+    case page: FullMarkupPage => page.author.getOrElse(site.config.author)
+    case _ => site.config.author
+
+  private def tags(page: Page): List[String] = page match
+    case page: FullMarkupPage => page.tags
+    case _ => List.empty
+
   private def absoluteUrl(path: Path): String = s"${site.uri}$path"
 
   private def link(

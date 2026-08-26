@@ -54,6 +54,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     exists("assets/css/style.css")
   }
 
+  test("posts listing is a header page when its file says so") {
+    val home: String = html("index.html")
+    assert(home.contains("""href="/posts.html""""), home)
+  }
+
   test("home page wiki links resolve") {
     val page: String = html("index.html")
     assert(page.contains("Site Publisher Fixture"), page)

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{Page, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
@@ -12,16 +12,17 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
   override protected def headerPagePriorityDefault: Int = 2
   override protected def langDefault: Option[String] = Some("en")
 
-  private def tagsAll: List[String] = site
+  private def fullMarkupPages: List[FullMarkupPage] = site
     .pages
     .pages
+    .collect { case page: FullMarkupPage => page }
+
+  private def tagsAll: List[String] = fullMarkupPages
     .flatMap(_.tags)
     .distinct
     .sorted
 
-  private def withTag(tag: String): List[Page] = site
-    .pages
-    .pages
+  private def withTag(tag: String): List[Page] = fullMarkupPages
     .filter(_.tags.contains(tag))
     .sortBy(_.title)
 

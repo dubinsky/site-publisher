@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
-import org.podval.tools.publish.page.MarkupPage
+import org.podval.tools.publish.page.FullMarkupPage
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html, XmlAttribute, XmlUtil}
@@ -29,7 +29,7 @@ object TeiMarkup extends Markup(
   //</div>
   override def isSectionHeader(element: Xml.Element): Boolean = element.getName == "tei-head"
 
-  override def pageHeader(page: MarkupPage): Html.Element =
+  override def pageHeader(page: FullMarkupPage): Html.Element =
     super.pageHeader(page) // TODO
 
   override def entityKind(xml: Xml.Element): Option[EntityKind] =

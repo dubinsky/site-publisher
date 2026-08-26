@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.page.{FrontMatter, MarkupPage, Page}
+import org.podval.tools.publish.page.{FrontMatter, FullMarkupPage, Page}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.{Date, Files}
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
@@ -50,7 +50,7 @@ abstract class Markup(
 
   def isTocPlaceholder(element: Html.Element): Boolean = false
 
-  def pageHeader(page: MarkupPage): Html.Element = Markup.pageHeader(page)
+  def pageHeader(page: FullMarkupPage): Html.Element = Markup.pageHeader(page)
 
   final def readAndParse(
     site: Site,
@@ -135,7 +135,7 @@ object Markup:
 
   def forElement(element: String): Option[Markup] = forElement.get(element)
 
-  def pageHeader(page: MarkupPage): Html.Element =
+  def pageHeader(page: FullMarkupPage): Html.Element =
     header(className := "post-header",
       postPath(page),
       h1(className := "post-title p-name", itemProp := "name headline", page.title),
@@ -151,7 +151,7 @@ object Markup:
     val path: Seq[Page] = if pathFull.isEmpty then pathFull else pathFull.tail
     span(className := "post-path", path.map(page => span("/", page.ref(withIcon = false))))
 
-  private def articleMeta(page: Page): Html.Element =
+  private def articleMeta(page: FullMarkupPage): Html.Element =
     div(className := "post-meta",
       join(
         join(

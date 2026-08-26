@@ -10,6 +10,16 @@ import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
+  final def math: Boolean = site.config.math || frontMatter.math
+
+  final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
+  // TODO set to "en" and clean up overrides
+  protected def langDefault: Option[String] = None
+
+  private var sourceVar: Option[PageSource] = None
+  final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
+  final override def source: Option[PageSource] = sourceVar
+
   def prev: Option[Page]
   def next: Option[Page]
 

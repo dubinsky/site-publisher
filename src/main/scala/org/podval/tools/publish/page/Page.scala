@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.markup.Link
-import org.podval.tools.publish.site.{HeaderPage, PageError, Path, Posts, Site}
+import org.podval.tools.publish.site.{HeaderPage, Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -10,7 +10,6 @@ import java.io.File
 import java.net.URI
 import java.time.{Instant, LocalDate}
 
-// TODO move methods appropriate only for Markup pages there.
 abstract class Page(
   val site: Site,
   val path: Path
@@ -69,22 +68,7 @@ abstract class Page(
   final def content: Option[PageContent] = source.map(_.content)
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
   
-  private def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
-
-  // TODO permalink must be absolute
-  final def aliases: Seq[Alias] = (postPath.toSeq ++ frontMatter.permalink.toSeq ++ frontMatter.aliases)
-    .map(Alias(site, this, _))
-
-  private def postPath: Option[String] = if !frontMatter.post then None else date match
-    case None =>
-      site.error(path, PageError.NoDate, s"No date for an automatic blog post")
-      None
-    case Some(date) =>
-      val title: String = frontMatter.postTitle.getOrElse(path.fileName) // TODO titleFromPath?
-      Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
-
-  final def tags: List[String] = frontMatter.tags
-  final def math: Boolean = site.config.math || frontMatter.math
+  protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
   final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
@@ -98,8 +82,6 @@ abstract class Page(
   ))
 
   protected def headerPagePriorityDefault: Int = 0
-  
-  final def author: Option[String] = content(_.frontMatter.author)
 
   final def title: String =
     content(_.title.map(_.getText))
@@ -119,16 +101,6 @@ abstract class Page(
 
   protected def iconDefault: Icon
 
-  final def tocDepth: Int = frontMatter.tocDepth.getOrElse(2)
-  final def hasToc: Boolean = chunk || frontMatter.tocDepth.isDefined
-  final def chunk: Boolean = frontMatter.chunk
-  final def chunkDepth: Int = frontMatter.chunkDepth.getOrElse(2)
-  final def pdf: Boolean = frontMatter.pdf
-
-  final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
-  // TODO set to "en" and clean up overrides
-  protected def langDefault: Option[String] = None
-  
   final def entityKind: Option[EntityKind] = content(content => content.source.markup.entityKind(content.xml))
   
   final def ref(
