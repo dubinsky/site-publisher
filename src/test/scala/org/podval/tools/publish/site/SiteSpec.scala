@@ -61,6 +61,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""href="/glossary.html""""), page)
     assert(page.contains("""href="/cite.html""""), page)
     assert(page.contains("""href="/chunked.html""""), page)
+    assert(page.contains("""href="/chunked/index.html""""), page)
     assert(page.contains("""href="/book.html""""), page)
     assert(page.contains("""href="/about.html""""), page)
     assert(page.contains("""href="/tei-sample.html""""), page)
@@ -140,10 +141,12 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
 
   test("chunked Markdown writes a TOC chunk and per-section pages") {
     exists("chunked.html")
-    val toc: String = html("chunked/chunked.html")
+    val toc: String = html("chunked/index.html")
     assert(toc.contains("Preamble of the chunked document"), toc)
     assert(toc.contains("Table of Contents"), toc)
     assert(!toc.contains("Alpha preamble, before subsections"), toc)
+    assert(!toc.contains("""class="directory""""), toc)
+    assert(!File(targetDirectory, "chunked/chunked.html").exists)
     val alpha: String = html("chunked/Alpha.html")
     assert(alpha.contains("Alpha preamble, before subsections"), alpha)
     assert(!alpha.contains("First leaf"), alpha)

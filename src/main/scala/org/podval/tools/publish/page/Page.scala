@@ -45,7 +45,7 @@ abstract class Page(
 
   def up: Option[Page] = parent
 
-  final lazy val parent: Option[DirectoryPage] =
+  lazy val parent: Option[DirectoryPage] =
     val parentDirectory: Option[Seq[String]] =
       if isDirectory && path.path.length > 1 then Some(path.path.init.init)
       else if !isDirectory && path.path.nonEmpty then Some(path.path.init)

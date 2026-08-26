@@ -27,6 +27,7 @@ final class LinkSpec extends AnyFunSuite:
           |title: Home
           |---
           |See [[notes]] and [[notes#Alpha#One]] and [[notes#^blk]].
+          |[Chunked HTML](/book/book/index.html) [One-Page HTML](/book/book.html)
           |""".stripMargin
       )
       Files.write(
@@ -39,6 +40,20 @@ final class LinkSpec extends AnyFunSuite:
           |## Alpha
           |
           |### One
+          |
+          |Leaf.
+          |""".stripMargin
+      )
+      Files.write(
+        File(dir, "book/book.md"),
+        """---
+          |title: Nested Book
+          |chunk: true
+          |chunk-depth: 2
+          |---
+          |Preamble.
+          |
+          |## Alpha
           |
           |Leaf.
           |""".stripMargin
@@ -108,4 +123,22 @@ final class LinkSpec extends AnyFunSuite:
       val link: Link = Link.resolve("notes#^blk", None, home).get
       assert(!link.isIntrapage)
       assert(link.url == "/notes.html#blk")
+  }
+
+  test("chunked TOC /book/book/index.html is not rewritten to /book/book.html") {
+    withSite: site =>
+      val home: Page = pageNamed(site, "Home")
+      val toc: Link = Link.resolve("/book/book/index.html", None, home).get
+      assert(toc.url == "/book/book/index.html")
+      val full: Link = Link.resolve("/book/book.html", None, home).get
+      assert(full.url == "/book/book.html")
+      val wiki: Link = Link.resolve("Nested Book", None, home).get
+      assert(wiki.url == "/book/book.html")
+  }
+
+  test("relative index.html from a section chunk is the TOC") {
+    withSite: site =>
+      val alpha: Page = site.pages.pages.find(_.path == Path("book", "book", "Alpha").html).get
+      val link: Link = Link.resolve("index.html", None, alpha).get
+      assert(link.url == "/book/book/index.html")
   }

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{ChunkedMarkupPage, FullMarkupPage}
+import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMarkupPage}
 import org.podval.xml.{Html, Xml, XmlUtil}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
@@ -23,15 +23,12 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     )
       .map(Link.ToSection(_))
 
-  // TODO TOC: DirectoryPage.fileName!
-  private def tocChunkName(markupPage: FullMarkupPage): String = markupPage.path.fileName
-
   def chunks(page: FullMarkupPage): Seq[ChunkedMarkupPage] =
     val root: ChunkedMarkupPage = ChunkedMarkupPage(
       page,
       sectionId = None,
       isTerminal = false,
-      name = tocChunkName(page)
+      name = DirectoryPage.fileName
     )
     val rest: Seq[ChunkedMarkupPage] =
       for section <- flatten if section.depth == page.chunkDepth - 2 || section.depth == page.chunkDepth - 1
@@ -51,7 +48,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
 
   def chunkName(sectionId: Option[String], chunkDepth: Int): String = sectionId match
     case None =>
-      "" // TODO TOC Chunk!
+      s"${DirectoryPage.fileName}.${HtmlMarkup.extension}"
     case Some(sectionId) =>
       var section: Section = getById(sectionId)
       while section.depth > chunkDepth - 1 do section = section.parent.get

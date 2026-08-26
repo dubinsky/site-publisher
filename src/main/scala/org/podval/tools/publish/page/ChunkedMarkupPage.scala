@@ -22,8 +22,16 @@ final class ChunkedMarkupPage(
   override def isDirectory: Boolean = false
 
   override def source: Option[PageSource] = None
-  
-  override def titleFromPath: String = path.fileName
+
+  // Chunks live under /P/; do not synthesize a DirectoryPage at /P/index.html
+  // (that path is the TOC chunk). Same parent as the unchunked document.
+  override lazy val parent: Option[DirectoryPage] = markupPage.parent
+
+  override def titleFromPath: String =
+    if sectionId.isEmpty then markupPage.titleFromPath else path.fileName
+
+  override def titleDefault: String =
+    if sectionId.isEmpty then markupPage.title else path.fileName
 
   override def hasSyntheticContent: Boolean = false
 

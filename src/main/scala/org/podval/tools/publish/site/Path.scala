@@ -1,6 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.HtmlMarkup
+import org.podval.tools.publish.util.Files
 import java.io.File
 
 final case class Path(
@@ -46,6 +47,15 @@ final case class Path(
     val base: Seq[String] = if alias.startsWith("/") then Seq.empty else path.init
     Path(Path.normalize(base ++ extra) *)
 
+  // Join a file href (`index.html`, `./x.html`, `/a/b.html`) to this page's directory.
+  // Wiki names (`notes`, `book/book`) are not resolved here.
+  def resolveFrom(href: String): Path =
+    val extra: Path = Path.fromHref(href)
+    if href.trim.startsWith("/") then extra.copy(path = Path.normalize(extra.path))
+    else
+      val base: Seq[String] = if path.isEmpty then Seq.empty else path.init
+      Path(Path.normalize(base ++ extra.path), extra.extension)
+
 object Path:
   given Ordering[Path] = (left: Path, right: Path) =>
     Ordering.Implicits.seqOrdering[Seq, String].compare(left.path, right.path)
@@ -53,6 +63,23 @@ object Path:
   val root: Path = new Path(Seq.empty, None)
 
   def apply(path: String*) = new Path(path, None)
+
+  def fromHref(href: String): Path =
+    val segments: Seq[String] = href.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
+    if segments.isEmpty then Path.root
+    else
+      val (last, extension) = Files.nameAndExtension(segments.last)
+      Path(segments.init :+ last.trim, extension)
+
+  // Relative `*.html` and `./` / `../` hrefs; not wiki names and not site-root `/…`.
+  def isRelativeFileHref(href: String): Boolean =
+    val trimmed: String = href.trim
+    !trimmed.startsWith("/") && (
+      trimmed.startsWith(".") ||
+        Files.nameAndExtension(
+          trimmed.split('/').map(_.trim).filterNot(_.isEmpty).lastOption.getOrElse(trimmed)
+        )._2.contains(HtmlMarkup.extension)
+    )
 
   // Drop `.`; `..` pops a segment. Extra `..` at site root is ignored (does not escape).
   private[site] def normalize(segments: Seq[String]): Seq[String] =

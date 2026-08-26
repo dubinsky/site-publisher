@@ -242,7 +242,11 @@ final class Pages(site: Site):
     path: Path,
     isAbsolute: Boolean,
     kind: Option[LinkKind]
-  ): Option[Page] = pages.flatMap(page => is(page, path, isAbsolute)).headOption
+  ): Option[Page] =
+    // Exact path first so `/P/index.html` is the chunked TOC, not title-walked to `/P.html`.
+    get(path)
+      .orElse(if path.extension.isEmpty then get(path.html) else None)
+      .orElse(pages.flatMap(page => is(page, path, isAbsolute)).headOption)
 
   private def is(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
     isPath(page, path, isAbsolute).orElse(
@@ -264,11 +268,8 @@ final class Pages(site: Site):
             then Option.when(!isAbsolute)(to)
             else loop(parent, init)
 
-    if !isExtension(page.path, path) then None else
-      val names: Seq[String] = path.path
-      if names.lastOption.contains(DirectoryPage.fileName)
-      then loop(page, names.init)
-      else loop(page, names)
+    if !isExtension(page.path, path) || path.path.isEmpty then None
+    else loop(page, path.path)
 
   // TODO this should be the same as isPath()?
   private def isSourcePath(sourcePath: Path, path: Path, isAbsolute: Boolean): Boolean =

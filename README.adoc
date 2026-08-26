@@ -178,6 +178,8 @@ chunk: true
 chunk-depth: 2
 ----
 
+`P.html` is the unsplit document (wiki `[[P]]` lands there). The split view is `P/index.html` (`P/` on a static host): preamble plus TOC, then `P/Section.html` for each chunk. File hrefs to `P/index.html` stay there; they are not rewritten to `P.html`. No directory listing is synthesized for `P/`.
+
 Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
 
 [#pdf]

@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{Page, PageContent}
 import org.podval.tools.publish.site.Path
-import org.podval.tools.publish.util.{Files, Strings}
+import org.podval.tools.publish.util.Strings
 import org.podval.xml.{HtmlClass, Xml}
 
 final class Link(
@@ -52,17 +52,17 @@ object Link:
   ): Option[Link] =
     val (pathStringRaw: String, fragmentStr: Option[String]) = Strings.splitFirst(ref, '#')
     val pathString: String = pathStringRaw.trim
-    // TODO unify with Path.relativize()
     val isAbsolute: Boolean = pathString.startsWith("/")
-    val pathSegments: Seq[String] = pathString.split('/').toSeq.filterNot(_.isEmpty).map(_.trim)
-    val path: Path = if pathSegments.isEmpty then Path.root else
-      val (lastSegment, extension) = Files.nameAndExtension(pathSegments.last)
-      Path(pathSegments.init :+ lastSegment.trim, extension)
+    val isFileHref: Boolean = isAbsolute || Path.isRelativeFileHref(pathString)
+    val path: Path =
+      if pathString.isEmpty then Path.root
+      else if isFileHref then from.path.resolveFrom(pathString)
+      else Path.fromHref(pathString)
 
     val to: Option[Page] =
       if pathString.isEmpty
       then Some(from)
-      else from.site.pages.find(path, isAbsolute, kind)
+      else from.site.pages.find(path, isFileHref, kind)
 
     to.map: to =>
       val fragment: Option[ToFragment] = fragmentStr.flatMap: fragment =>
