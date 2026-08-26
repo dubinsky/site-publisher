@@ -78,6 +78,16 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(head.contains("localStorage"), head)
   }
 
+  test("media queries use literal breakpoints, not custom properties") {
+    val layout: String = html("assets/css/layout.css")
+    val base: String = html("assets/css/base.css")
+    assert(layout.contains("max-width: 600px"), layout)
+    assert(layout.contains("min-width: 800px"), layout)
+    assert(!layout.contains("max-width: var(--on-"), layout)
+    assert(!layout.contains("min-width: var(--on-"), layout)
+    assert(!base.contains("max-width: var(--on-"), base)
+  }
+
   test("posts listing is a header page when its file says so") {
     val home: String = html("index.html")
     assert(home.contains("""href="/posts.html""""), home)
