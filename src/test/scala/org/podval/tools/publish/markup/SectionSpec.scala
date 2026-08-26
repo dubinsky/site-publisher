@@ -274,6 +274,27 @@ final class SectionSpec extends AnyFunSuite:
     assert(!chunk.contains("B2"), chunk)
   }
 
+  test("resolveSection finds a nested section by title or id") {
+    val notes: Section = Section("notes", "Notes", Seq.empty)
+    val chapter: Section = Section("chapter", "Chapter", Seq(notes))
+    val toc: Toc = new Toc(Seq(chapter, Section("other", "Other", Seq.empty)))
+    assert(toc.resolveSection(Seq("Notes")).map(_.id).contains("notes"))
+    assert(toc.resolveSection(Seq("notes")).map(_.id).contains("notes"))
+    assert(toc.resolveSection(Seq("Chapter", "Notes")).map(_.id).contains("notes"))
+    val branched: Toc = new Toc(Seq(
+      Section("a", "A", Seq(Section("a1", "A1", Seq.empty))),
+      Section("b", "B", Seq(Section("b1", "B1", Seq.empty)))
+    ))
+    assert(branched.resolveSection(Seq("B1")).map(_.id).contains("b1"))
+    assert(branched.resolveSection(Seq("A1")).map(_.id).contains("a1"))
+  }
+
+  test("resolveSection does not match the first section for an unknown name") {
+    val toc: Toc = new Toc(Seq(Section("a", "A", Seq(Section("a1", "A1", Seq.empty)))))
+    assert(toc.resolveSection(Seq("nope")).isEmpty)
+    assert(toc.resolveSection(Seq("A", "nope")).isEmpty)
+  }
+
   test("unchunked TOC still lists every branch to tocDepth") {
     val a1: Section = Section("a1", "A1", Seq.empty)
     val b1: Section = Section("b1", "B1", Seq.empty)
