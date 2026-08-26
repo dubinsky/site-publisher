@@ -91,7 +91,7 @@ final class VideoSpec extends AnyFunSuite:
       .setHref("clip.mp4")
       .setText("![[Demo]]")
     val embedded: Xml.Element = WikiLink.embed(a, "clip.mp4").get
-    val dumped: String = render(embedded)
+    val dumped: String = render(embedded).replaceAll("\\s+", " ")
     assert(dumped.contains("Open video: Demo"), dumped)
   }
 

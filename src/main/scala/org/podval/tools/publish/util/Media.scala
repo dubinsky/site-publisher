@@ -10,6 +10,10 @@ object Media:
   private val videoExtensions: Set[String] = Set("mp4", "webm", "ogv", "m4v")
   def isVideo(extension: String): Boolean = videoExtensions.contains(extension.toLowerCase)
 
+  def isAsset(extension: String): Boolean =
+    val lower: String = extension.toLowerCase
+    isImage(lower) || isAudio(lower) || isVideo(lower) || lower == "pdf"
+
   def icon(extension: Option[String]): Option[Icon] = extension.map(_.toLowerCase).flatMap(icons.get)
   private val icons: Map[String, Icon] = Map(
     "pgp" -> Icon.key,

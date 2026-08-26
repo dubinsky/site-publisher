@@ -68,7 +68,7 @@ object WikiLink:
   // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
   def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
     val (path, _): (String, Option[String]) = Strings.splitFirst(ref, '#')
-    Files.nameAndExtension(path)._2.map(_.toLowerCase) match
+    val embedded: Option[Xml.Element] = Files.nameAndExtension(path)._2.map(_.toLowerCase) match
       case Some(extension) if Media.isImage(extension) =>
         val (width: Option[Int], height: Option[Int]) =
           // TODO Embed image, potentially with sizes WIDTHxHEIGHT or just WIDTH or nothing in the text
@@ -93,6 +93,7 @@ object WikiLink:
         Some(PdfEmbed.fromRef(ref, embedLabel(element, path)))
       case _ =>
         None
+    embedded.map(AssetRef.markWikiEmbed)
 
   private def embedLabel(element: Xml.Element, path: String): String =
     val inner: String = element.getText.trim.stripPrefix("![[").stripSuffix("]]").trim

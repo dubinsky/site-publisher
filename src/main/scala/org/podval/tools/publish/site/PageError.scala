@@ -22,6 +22,7 @@ object PageError:
   case object NoDate extends Kind("no date")
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
+  case object MissingAsset extends Kind("missing asset")
   case object UnknownCitation extends Kind("unknown citation")
 
   val all: List[Kind] = List(
@@ -33,5 +34,6 @@ object PageError:
     NoDate,
     SelfLink, 
     Unresolved,
+    MissingAsset,
     UnknownCitation
   )

@@ -820,7 +820,7 @@ HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become 
 [#figures]
 == Figures
 
-A block image (or other graphic) with an optional caption. Inline images stay `<img>`.
+A block image (or other graphic) with an optional caption. Inline images stay `<img>`. Local `src` values are resolved to a site path (`/pixel.svg`); a missing file is an error (`missing asset`) and the `<img>` gets `unresolved-asset`. Wiki `+++![[image]]+++` also finds a unique file of that name anywhere in the source tree.
 
 Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later).
 +
@@ -899,12 +899,12 @@ HTML:: `<object type="application/pdf">` (IR wraps it) or the IR:
 </div>
 ----
 
-The sibling link is always visible and is what remains in print (the inner viewer is hidden).
+The sibling link is always visible and is what remains in print (the inner viewer is hidden). `data` (and the fallback `href`) are resolved like other local assets; `#page=N` is kept.
 
 [#video]
 == Video
 
-A local video file, or a YouTube/Vimeo player. Local files use HTML `<video>` (like `<audio>`).
+A local video file, or a YouTube/Vimeo player. Local files use HTML `<video>` (like `<audio>`). Local `src` is resolved like images; YouTube/Vimeo `<iframe>` URLs are left alone.
 
 Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`). Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
 +

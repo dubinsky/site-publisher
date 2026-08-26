@@ -65,6 +65,15 @@ final class PathSpec extends AnyFunSuite:
     assert(toc.resolveFrom("Alpha.html").toString == "/chunked/Alpha.html")
   }
 
+  test("resolveFrom joins relative asset hrefs to the page directory") {
+    val page: Path = Path("book", "notes").html
+    assert(page.resolveFrom("pixel.svg").toString == "/book/pixel.svg")
+    assert(page.resolveFrom("./pixel.svg").toString == "/book/pixel.svg")
+    assert(page.resolveFrom("/pixel.svg").toString == "/pixel.svg")
+    assert(page.resolveFrom("../pixel.svg").toString == "/pixel.svg")
+    assert(page.resolveFrom("sample.pdf").toString == "/book/sample.pdf")
+  }
+
   test("isRelativeFileHref is html files and ./ ../, not wiki names") {
     assert(Path.isRelativeFileHref("index.html"))
     assert(Path.isRelativeFileHref("./Alpha.html"))

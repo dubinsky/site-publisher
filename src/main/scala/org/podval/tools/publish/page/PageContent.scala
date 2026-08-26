@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids, Link,
-  LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids,
+  Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -94,6 +94,13 @@ final class PageContent private(
     // Resolve internal links, including the ones in footnote bodies
     if Link.isInternal(result) then result.getHref.foreach: ref =>
       result = resolveInternalLink(result, ref, isChunked, attachTips)
+
+    result = AssetRef.resolve(
+      result,
+      source.page,
+      source,
+      reportMissing = !isChunked
+    )
 
     // Turn footnote links into footnote references
     result = Footnote.resolveLink(result, footnotes, attachTips)

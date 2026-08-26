@@ -41,4 +41,6 @@ See ~~struck out~~ here.
 
 ![[clip.mp4]]
 
+![](missing.png)
+
 See [[missing-page]].

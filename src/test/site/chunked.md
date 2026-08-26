@@ -5,6 +5,8 @@ chunk-depth: 2
 ---
 Preamble of the chunked document.
 
+![chunked pixel](pixel.svg)
+
 ## Alpha
 
 Alpha preamble, before subsections.

@@ -248,6 +248,9 @@ final class Pages(site: Site):
       .orElse(if path.extension.isEmpty then get(path.html) else None)
       .orElse(pages.flatMap(page => is(page, path, isAbsolute)).headOption)
 
+  def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
+    pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)
+
   private def is(page: Page, path: Path, isAbsolute: Boolean): Option[Page] =
     isPath(page, path, isAbsolute).orElse(
       Option.when(page.sourcePath.exists(isSourcePath(_, path, isAbsolute)))(page)
