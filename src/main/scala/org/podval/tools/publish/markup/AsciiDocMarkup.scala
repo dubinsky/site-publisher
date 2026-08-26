@@ -172,10 +172,42 @@ object AsciiDocMarkup extends Markup(
         rest.flatMap(_.asElement).find(el => el.getName == "ul" || el.getName == "ol")
       list.map: ul =>
         val items: Xml.Nodes = ul.getChildren.map: node =>
-          node.asElement.filter(_.getName == "li").fold(node)(BibliographyItem.asItem)
+          node.asElement.filter(_.getName == "li").fold(node)(asBibliographyItem)
         val converted: Xml.Element =
           ul.add(Citation.ListClass).setId(element.getId).setChildren(items)
         title.fold(Chunk[Xml.Node](converted))(heading => Chunk(heading, converted))
+
+  // Mark an entry and hoist a leading empty `<a id>` (AsciiDoc `[[[id]]]`).
+  private def asBibliographyItem(element: Xml.Element): Xml.Element =
+    val (fromAnchor, stripped): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(element.getChildren)
+    val id: Option[String] = fromAnchor.orElse(element.getId.filter(_.nonEmpty))
+    id.fold(element): value =>
+      element.add(BibliographyItem.ItemClass).setId(value).setChildren(stripped)
+
+  private def hoistEmptyIdAnchor(nodes: Xml.Nodes): (Option[String], Xml.Nodes) =
+    val (leading, rest): (Xml.Nodes, Xml.Nodes) = nodes.span(node =>
+      node.isWhitespace || node.asElement.exists(isEmptyIdAnchor)
+    )
+    val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
+    if fromAnchor.isDefined then (fromAnchor, rest)
+    else
+      var found: Option[String] = None
+      val walked: Xml.Nodes = nodes.map: node =>
+        if found.isDefined then node
+        else node.asElement.filter(el => el.getName == "p" || el.getName == "span") match
+          case Some(wrapper) =>
+            val (inner, innerNodes): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(wrapper.getChildren)
+            found = inner
+            if inner.isDefined then wrapper.setChildren(innerNodes) else node
+          case None =>
+            node
+      (found, walked)
+
+  private def isEmptyIdAnchor(element: Xml.Element): Boolean =
+    element.isA &&
+    element.getId.nonEmpty &&
+    element.getHref.isEmpty &&
+    element.getChildren.forall(_.isWhitespace)
 
   // Asciidoctor html5 without `icons`: `<b class="conum">(1)</b>` in the listing;
   // `div.colist > ol > li`. With `icons=font`: `<i class="conum" data-value="1"></i><b>(1)</b>`
@@ -412,8 +444,16 @@ object AsciiDocMarkup extends Markup(
     nodes.map: node =>
       node.asElement match
         case Some(dl) if dl.getName == "dl" =>
-          dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, DescriptionList.stripExplicitTermId))
+          dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, takeGlossaryTermId))
         case _ => node
+
+  // Asciidoctor empty `<a id>` on the term (same leftover as `[[[id]]]` on bibliography items).
+  private def takeGlossaryTermId(dt: Xml.Element): (Option[String], Xml.Element) =
+    val (fromAnchor, strippedNodes): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(dt.getChildren)
+    val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(strippedNodes)
+    val id: Option[String] = fromAnchor.orElse(stripped.getId.filter(_.nonEmpty))
+    val term: Xml.Element = if stripped.getId.isEmpty then stripped else stripped.setId("")
+    (id, term)
 
   // From:
   //   <sup class="footnote">[<a id="_footnoteref_N" class="footnote" href="#_footnotedef_N">N</a>]</sup>

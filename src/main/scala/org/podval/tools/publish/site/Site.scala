@@ -313,9 +313,6 @@ object Site:
 
   def main(args: Array[String]): Unit = Site(SiteOptions.forArgs(args)).generate()
 
-  // TODO make chunked HTML the front page of chumashquestions:
-  // allow the chunked index be called "index.html";
-  // allow permalink to override slf-added index file...
   @main def generate(): Unit = Site(SiteOptions(
     sourceDirectoryPath =
       "/home/dub/OpenTorah/chumashquestions.org/",

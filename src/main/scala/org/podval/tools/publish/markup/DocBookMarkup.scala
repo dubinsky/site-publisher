@@ -368,7 +368,7 @@ object DocBookMarkup extends Markup(
 
   private def entryIds(list: Xml.Element): Chunk[String] =
     list.getChildren.flatMap(_.asElement)
-      .filter(el => BibliographyItem.isEntryName(el.getName))
+      .filter(isBibliographyEntry)
       .flatMap(xmlId)
 
   private def convertBibliography(element: Xml.Element): Xml.Element =
@@ -378,10 +378,16 @@ object DocBookMarkup extends Markup(
       Citation.listPlaceholder.setId(xmlId(element))
     else
       val children: Xml.Nodes = element.getChildren.map: node =>
-        node.asElement.filter(el => BibliographyItem.isEntryName(el.getName)) match
-          case Some(entry) => BibliographyItem.asItem(entry.copyXmlId)
+        node.asElement.filter(isBibliographyEntry) match
+          case Some(entry) =>
+            val withId: Xml.Element = entry.copyXmlId
+            withId.getId.filter(_.nonEmpty).fold(withId)(_ => withId.add(BibliographyItem.ItemClass))
           case None => node
       element.add(Citation.ListClass).setChildren(children)
+
+  private def isBibliographyEntry(element: Xml.Element): Boolean =
+    val name: String = element.getName
+    name == "biblioentry" || name == "bibliomixed"
 
   private def convertCitation(element: Xml.Element): Xml.Element =
     if element.getName != "citation" || Citation.isCite(element) then element

@@ -1,8 +1,8 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{LinkKind, Markup, XmlMarkup}
-import org.podval.tools.publish.page.{AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter, FullMarkupPage,
-  Page, PageSource, PdfPage, SimpleMarkupPage}
+import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
+  FullMarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -50,6 +50,8 @@ final class Pages(site: Site):
     if get(Robots.path).isEmpty then add(Robots(site))
     if get(Feed.path).isEmpty then add(Feed(site))
 
+    installHome()
+
     // Report conflicting pages
     pages
       .groupBy(_.path)
@@ -62,6 +64,36 @@ final class Pages(site: Site):
       ))
     
     site.errors.throwIfErrors()
+
+  private def installHome(): Unit =
+    site.config.home.map(_.trim).filter(_.nonEmpty).foreach: home =>
+      val requested: Path = Path.fromHref(home)
+      val target: Option[Page] =
+        find(requested, isAbsolute = true, kind = None)
+          .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
+      target match
+        case None =>
+          site.error(requested, PageError.Unresolved, s"home page not found: $home")
+        case Some(target) =>
+          val index: Path = Path(DirectoryPage.fileName).html
+          get(index) match
+            case Some(page) if page.source.isDefined =>
+              site.error(
+                index,
+                PageError.Duplicate,
+                s"home: '$home' cannot coexist with an authored index"
+              )
+            case Some(_: DirectoryPage) =>
+              pagesVar = pagesVar.filterNot(page => page.path == index && page.isInstanceOf[DirectoryPage])
+              add(new Alias(site, target, index))
+            case None =>
+              add(new Alias(site, target, index))
+            case Some(_) =>
+              site.error(
+                index,
+                PageError.Duplicate,
+                s"home: '$home' cannot occupy $index"
+              )
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)

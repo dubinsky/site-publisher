@@ -6,10 +6,10 @@ import org.podval.tools.publish.util.Icon
 final class Alias(
   site: Site,
   val page: Page,
-  val alias: String
+  path: Path
 ) extends Page(
   site,
-  path = page.path.relativize(alias).html
+  path
 ) with NonDirectoryPage with PageWithContent:
   override def isAlias: Boolean = true
 
@@ -21,4 +21,8 @@ final class Alias(
 
   override protected def iconDefault: Icon = Icon("link", Icon.Solid)
   
-  override def textContent: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.real.path}"/></head>"""
+  override def textContent: String = s"""<head><meta http-equiv="Refresh" content="0; URL=${page.path}"/></head>"""
+
+object Alias:
+  def apply(site: Site, page: Page, alias: String): Alias =
+    new Alias(site, page, page.path.relativize(alias).html)

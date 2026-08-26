@@ -72,18 +72,6 @@ object Citation:
   def gather(xml: Xml.Element): Chunk[Xml.Element] =
     xml.gather(element => Option.when(isCite(element))(element))
 
-  /** AsciiDoc `cite:[key]`, `cite:[key, 33]`, `cite:[key1, key2]`. */
-  def parseAsciiDocTarget(raw: String): Seq[Item] =
-    val parts: Seq[String] = raw.split(',').toSeq.map(_.trim).filter(_.nonEmpty)
-    if parts.isEmpty then Seq.empty
-    else if parts.length == 1 then Seq(Item(parts.head))
-    else
-      val keys: Seq[String] = parts.filter(isBibKey)
-      val rest: Seq[String] = parts.filterNot(isBibKey)
-      if rest.isEmpty then keys.map(Item(_))
-      else if keys.isEmpty then Seq(Item(parts.head, Some(parts.tail.mkString(", "))))
-      else keys.init.map(Item(_)) :+ Item(keys.last, Some(rest.mkString(", ")))
-
   def isBibKey(token: String): Boolean =
     token.nonEmpty && token.charAt(0).isLetter && token.forall(c => c.isLetterOrDigit || c == '_' || c == '-' || c == ':')
 

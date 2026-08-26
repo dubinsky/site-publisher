@@ -178,8 +178,9 @@ object MarkdownMarkup extends Markup(
       .add(Glossary.ListClass)
 
   private def takeTermId(dt: Xml.Element): (Option[String], Xml.Element) =
-    val (explicit, term) = DescriptionList.stripExplicitTermId(dt)
-    val id: Option[String] = explicit.orElse:
+    val fromDt: Option[String] = dt.getId.filter(_.nonEmpty)
+    val term: Xml.Element = if fromDt.isEmpty then dt else dt.setId("")
+    val id: Option[String] = fromDt.orElse:
       val text: String = term.getText.trim
       Option.when(text.nonEmpty)(Xml.toId(text))
     (id, term)

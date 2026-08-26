@@ -207,7 +207,7 @@ object TeiMarkup extends Markup(
 
   private def entryIds(list: Xml.Element): Chunk[String] =
     list.getChildren.flatMap(_.asElement)
-      .filter(el => BibliographyItem.isEntryName(el.getName))
+      .filter(isBibliographyEntry)
       .flatMap(xmlId)
 
   private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] =
@@ -221,13 +221,17 @@ object TeiMarkup extends Markup(
     else if entryIds(element).exists(headerBiblIds.contains) then element
     else
       val children: Xml.Nodes = element.getChildren.map: node =>
-        node.asElement.filter(el => BibliographyItem.isEntryName(el.getName)) match
+        node.asElement.filter(isBibliographyEntry) match
           case Some(entry) =>
             val withId: Xml.Element = xmlId(entry).fold(entry)(entry.setId)
             withId.add(BibliographyItem.ItemClass)
           case None =>
             node
       element.add(Citation.ListClass).setChildren(children)
+
+  private def isBibliographyEntry(element: Xml.Element): Boolean =
+    val name: String = element.getName
+    name == "bibl" || name == "biblStruct" || name == "biblFull"
 
   private def fillEmptyPointer(element: Xml.Element, biblIds: Set[String]): Xml.Element =
     if !element.isA || biblIds.isEmpty then element

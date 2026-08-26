@@ -17,6 +17,7 @@ final class Config(
   val licenseLink: Option[String] = None,
   val googleAnalytics: Option[String] = None,
   val paginatePosts: Option[Int] = None,
+  val home: Option[String] = None,
   val social: Config.Social = Config.Social()
 )
 

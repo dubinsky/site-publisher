@@ -40,8 +40,6 @@ object Figure:
     node.asElement match
       case Some(el) if el.getName == "figcaption" && !el.has(CaptionClass) =>
         el.add(CaptionClass)
-      case Some(el) if el.getName == "head" || el.getName == "tei-head" =>
-        el.rename("figcaption").add(CaptionClass)
       case _ =>
         node
 

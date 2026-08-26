@@ -58,14 +58,14 @@ final class CitationSpec extends AnyFunSuite:
     finally
       NioFiles.walk(path).sorted(java.util.Comparator.reverseOrder()).forEach(NioFiles.delete(_))
 
-  test("parseAsciiDocTarget splits keys and locators") {
-    val one: Seq[Citation.Item] = Citation.parseAsciiDocTarget("knuth79")
+  test("CiteMacro.parseTarget splits keys and locators") {
+    val one: Seq[Citation.Item] = CiteMacro.parseTarget("knuth79")
     assert(one.map(_.key) == Seq("knuth79"))
     assert(one.head.locator.isEmpty)
-    val located: Seq[Citation.Item] = Citation.parseAsciiDocTarget("knuth79, p. 12")
+    val located: Seq[Citation.Item] = CiteMacro.parseTarget("knuth79, p. 12")
     assert(located.map(_.key) == Seq("knuth79"))
     assert(located.head.locator.contains("p. 12"))
-    val two: Seq[Citation.Item] = Citation.parseAsciiDocTarget("knuth79, lamport94")
+    val two: Seq[Citation.Item] = CiteMacro.parseTarget("knuth79, lamport94")
     assert(two.map(_.key) == Seq("knuth79", "lamport94"))
   }
 

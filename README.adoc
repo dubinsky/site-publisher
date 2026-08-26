@@ -135,7 +135,16 @@ Wiki links in Obsidian:
 [#directories]
 == Directories
 
-- home page: directory
+Root `/` is `index.md` / `index.adoc`, or a synthesized listing of that folder.
+
+To open at a specific page instead, set `home` in `_site_config.yml` to an absolute site path. If the document is chunked, use the TOC (`P/index.html`):
+
+----
+home: /book/book/index.html
+----
+
+`/index.html` is then a meta Refresh to that page (not an HTTP 301). Do not also author `index.md` / `index.adoc`. Other root files stay on the site; they are just not listed at `/`.
+
 - directory structure
 - navigation
 - header pages

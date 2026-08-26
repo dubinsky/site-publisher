@@ -43,19 +43,3 @@ object DescriptionList:
 
     flush()
     Chunk.from(result)
-
-  def stripExplicitTermId(dt: Xml.Element): (Option[String], Xml.Element) =
-    val (leading, rest) = dt.getChildren.span(node =>
-      node.isWhitespace || node.asElement.exists(isEmptyIdAnchor)
-    )
-    val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
-    val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(rest)
-    val id: Option[String] = fromAnchor.orElse(stripped.getId)
-    val term: Xml.Element = if stripped.getId.isEmpty then stripped else stripped.setId("")
-    (id, term)
-
-  private def isEmptyIdAnchor(element: Xml.Element): Boolean =
-    element.isA &&
-    element.getId.nonEmpty &&
-    element.getHref.isEmpty &&
-    element.getChildren.forall(_.isWhitespace)

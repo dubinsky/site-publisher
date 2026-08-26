@@ -25,7 +25,7 @@ final class CiteMacro(name: String, mode: Citation.Mode) extends InlineMacroProc
     attributes: java.util.Map[String, Object]
   ): PhraseNode =
     val html: String = Citation.toHtmlString(
-      Citation.cite(mode, Citation.parseAsciiDocTarget(CiteMacro.raw(target, attributes)))
+      Citation.cite(mode, CiteMacro.parseTarget(CiteMacro.raw(target, attributes)))
     )
     val options = new java.util.HashMap[String, Object]()
     options.put("type", ":pass")
@@ -36,6 +36,18 @@ object CiteMacro:
     val result = new java.util.HashMap[String, Object]()
     result.put(InlineMacroProcessor.REGEXP, s"\\b$name:(\\S*?)\\[(.*?)\\]")
     result
+
+  /** AsciiDoc `cite:[key]`, `cite:[key, 33]`, `cite:[key1, key2]`. */
+  def parseTarget(raw: String): Seq[Citation.Item] =
+    val parts: Seq[String] = raw.split(',').toSeq.map(_.trim).filter(_.nonEmpty)
+    if parts.isEmpty then Seq.empty
+    else if parts.length == 1 then Seq(Citation.Item(parts.head))
+    else
+      val keys: Seq[String] = parts.filter(Citation.isBibKey)
+      val rest: Seq[String] = parts.filterNot(Citation.isBibKey)
+      if rest.isEmpty then keys.map(Citation.Item(_))
+      else if keys.isEmpty then Seq(Citation.Item(parts.head, Some(parts.tail.mkString(", "))))
+      else keys.init.map(Citation.Item(_)) :+ Citation.Item(keys.last, Some(rest.mkString(", ")))
 
   def raw(target: String, attributes: java.util.Map[String, Object]): String =
     val fromTarget: Option[String] = Option(target).map(_.trim).filter(_.nonEmpty)
