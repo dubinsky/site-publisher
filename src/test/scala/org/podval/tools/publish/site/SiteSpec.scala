@@ -309,3 +309,11 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val feed: String = html("feed.xml")
     assert(feed.contains("hello"), feed)
   }
+
+  test("pages advertise the Atom feed") {
+    val page: String = html("index.html")
+    assert(page.contains("""rel="alternate""""), page)
+    assert(page.contains("""type="application/atom+xml""""), page)
+    assert(page.contains("""href="http://fixture.test/feed.xml""""), page)
+    assert(page.contains("""title="Site Publisher Fixture""""), page)
+  }

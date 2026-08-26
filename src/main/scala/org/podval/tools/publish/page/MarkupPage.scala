@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
-import org.podval.tools.publish.site.{Path, Site, Sitemap}
+import org.podval.tools.publish.site.{Feed, Path, Site, Sitemap}
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, title as titleElement, *}
@@ -75,10 +75,10 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
         site.favicon,
         site.license,
         Sitemap.sitemapLink,
+        Feed.feedMeta(site),
         pagerPrev.map(p => link(rel := "prev", href := p.path.toString)),
         pagerNext.map(p => link(rel := "next", href := p.path.toString)),
         // TODO {%- seo -%}: https://github.com/jekyll/jekyll-seo-tag
-        // TODO {%- feed_meta -%}: https://github.com/jekyll/jekyll-feed
         libraries.flatMap(library => library.stylesheet.map(ref =>
           link(rel := "stylesheet", href := s"${library.cdn}$ref")
         )),

@@ -22,6 +22,14 @@ object Feed:
     span(className := "rss-feed", "RSS feed")
   )
 
+  // jekyll-feed `{% feed_meta %}`: autodiscovery `<link>` in `<head>`.
+  def feedMeta(site: Site): Html.Element = link(
+    rel := "alternate",
+    `type` := "application/atom+xml",
+    titleAttr := site.config.title,
+    href := s"${site.uri}$path"
+  )
+
 final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   override protected def iconDefault: Icon = Feed.icon
 
