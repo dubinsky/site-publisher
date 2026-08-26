@@ -275,9 +275,12 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(posts.contains("/2026/07/01/earlier.html"), posts)
     assert(!posts.contains("/2026/06/01/oldest.html"), posts)
     assert(posts.contains("""class="pagination""""), posts)
+    assert(posts.contains("""class="post-excerpt""""), posts)
+    assert(posts.contains("Greeting from the newest fixture post"), posts)
     val posts2: String = html("posts/2.html")
     assert(posts2.contains("/2026/06/01/oldest.html"), posts2)
     assert(!posts2.contains("/2026/08/01/hello.html"), posts2)
+    assert(!posts2.contains("""class="post-excerpt""""), posts2)
     val sitemap: String = html("sitemap.xml")
     assert(sitemap.contains("/posts.html"), sitemap)
     assert(sitemap.contains("/posts/2.html"), sitemap)
@@ -308,6 +311,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(robots.contains("http://fixture.test/sitemap.xml"), robots)
     val feed: String = html("feed.xml")
     assert(feed.contains("hello"), feed)
+    assert(feed.contains("Greeting from the newest fixture post"), feed)
   }
 
   test("pages advertise the Atom feed") {

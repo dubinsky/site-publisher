@@ -152,6 +152,8 @@ Wiki links in Obsidian:
 - auto-post (same file name)
 - permalink (any file name)
 
+Front matter `description` is the post teaser: Atom `<summary>` and, when present, a `p.post-excerpt` on every `/posts` batch. Not auto-cut from the body. Site `description` is not used here (SEO still falls back to it).
+
 [#paging]
 == Paging
 

@@ -62,8 +62,8 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
       ul(className := "post-list", batch.map(post =>
         li(
           span(className := "post-meta", post.date.map(_.toShortString).getOrElse("")),
-          h3(className := "post-link", post.ref())
-          // {%- if site.minima.show_excerpts -%} {{ post.excerpt }} {%- endif -%} // TODO unify with feed.xml
+          h3(className := "post-link", post.ref()),
+          post.description.map(text => p(className := "post-excerpt", text))
         )
       )),
       Option.when(total > 1)(PagedList.nav(pageIndex, total, postPageHref))

@@ -292,6 +292,11 @@
     font-size: 1.5rem;
 }
 
+.post-excerpt {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
 
 
 /**
