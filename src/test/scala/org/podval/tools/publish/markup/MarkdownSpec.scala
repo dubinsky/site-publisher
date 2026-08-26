@@ -27,6 +27,86 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(xml.getName == "div")
   }
 
+  private def wikiBlocks(xml: Xml.Element): Seq[Xml.Element] =
+    xml.gather(element => Option.when(WikiBlock.is(element))(element)).toSeq
+
+  test("paragraph trailing ^id marks the paragraph") {
+    val xml: Xml.Element = process("Intro ^blk\n")
+    val found: Seq[Xml.Element] = wikiBlocks(xml)
+    assert(found.size == 1, render(xml))
+    assert(found.head.getName == "p", render(xml))
+    assert(found.head.getId.contains("blk"), render(xml))
+    assert(found.head.getText.contains("Intro"), render(xml))
+    assert(!found.head.getText.contains("^blk"), render(xml))
+  }
+
+  test("standalone ^id after a list attaches to the list, not a leftover paragraph") {
+    val xml: Xml.Element = process(
+      """- a
+        |- b
+        |
+        |^lst
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = wikiBlocks(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.getName == "ul" || found.head.getName == "ol", dumped)
+    assert(found.head.getId.contains("lst"), dumped)
+    assert(!dumped.contains("^lst"), dumped)
+  }
+
+  test("list item trailing ^id marks the item, not the list") {
+    val xml: Xml.Element = process(
+      """- a
+        |- b ^item
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = wikiBlocks(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.getName == "li", dumped)
+    assert(found.head.getId.contains("item"), dumped)
+    assert(found.head.getText.contains("b"), dumped)
+  }
+
+  test("standalone ^id after a table, quote, or code fence attaches to that block") {
+    def assertOn(source: String, name: String, id: String): Unit =
+      val xml: Xml.Element = process(source)
+      val dumped: String = render(xml)
+      val found: Seq[Xml.Element] = wikiBlocks(xml)
+      assert(found.exists(el => el.getName == name && el.getId.contains(id)), dumped)
+      assert(!dumped.contains(s"^$id"), dumped)
+    assertOn(
+      """| A | B |
+         ||---|---|
+         || 1 | 2 |
+         |
+         |^tbl
+         |""".stripMargin,
+      "table",
+      "tbl"
+    )
+    assertOn(
+      """> quoted
+        |
+        |^qt
+        |""".stripMargin,
+      "blockquote",
+      "qt"
+    )
+    assertOn(
+      """```scala
+        |xs.map(f)
+        |```
+        |
+        |^code
+        |""".stripMargin,
+      "pre",
+      "code"
+    )
+  }
+
   test("See this [^note] becomes footnote IR; two uses share one body") {
     val xml: Xml.Element = process(
       """See this [^note] and again [^note].

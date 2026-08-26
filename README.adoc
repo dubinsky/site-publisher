@@ -122,7 +122,7 @@ TODO Obsidian plugin needs to be installed.
 
 TODO aliases
 
-Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian.
+Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian. Block ids: `^id` at the end of a paragraph, or on its own line after a list, table, quote, or code block (blank line before the id). Link with `+++[[note#^id]]+++`.
 
 Wiki links in Obsidian:
 
