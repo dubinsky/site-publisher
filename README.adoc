@@ -180,10 +180,12 @@ chunk-depth: 2
 
 `P.html` is the unsplit document (wiki `[[P]]` lands there). The split view is `P/index.html` (`P/` on a static host): preamble plus TOC, then `P/Section.html` for each chunk. File hrefs to `P/index.html` stay there; they are not rewritten to `P.html`. No directory listing is synthesized for `P/`.
 
-Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
+When both views exist, the site header has icon links between them (list for chunked, file for one-page). Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
 
 [#pdf]
 == PDF
+
+Front matter `pdf: true` prints `P.html` to `P.pdf` (Chromium). The site header on `P.html` (and on chunked pages, if any) gets a PDF icon linking to it. The site header is hidden in print, so the PDF itself does not include those icons.
 
 
 [#tables]

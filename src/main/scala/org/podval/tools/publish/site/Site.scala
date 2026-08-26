@@ -235,7 +235,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
             pages.headerPages.map(_.page.ref()),
             page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
             page.prev.map(_.navRef(Icon.arrowLeft)),
-            page.next.map(_.navRef(Icon.arrowRight))
+            page.next.map(_.navRef(Icon.arrowRight)),
+            page.formatLinks
           )
         ),
         button(

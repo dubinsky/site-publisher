@@ -45,5 +45,6 @@ final class DirectoryPage(site: Site, path: Path) extends SyntheticMarkupPage(si
     .pages
     .pages
     .filterNot(_.isDirectory)
+    .filterNot(_.isInstanceOf[PdfPage]) // PDF is an alternate of the HTML page, not a sibling
     .filter(_.path.path.init == path.path.init)  // TODO unify with the Page.parent path calculations
     .sortBy(_.title.toLowerCase)

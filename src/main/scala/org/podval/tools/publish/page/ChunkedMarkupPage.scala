@@ -41,6 +41,9 @@ final class ChunkedMarkupPage(
 
   override def pageHeader: Option[Html.Element] = markupPage.pageHeader
 
+  override protected def formatSourcePage: Option[FullMarkupPage] = Some(markupPage)
+  override protected def formatIsChunked: Boolean = true
+
   override def up: Option[Page] = sectionId match
     case None => super.up
     case Some(id) =>

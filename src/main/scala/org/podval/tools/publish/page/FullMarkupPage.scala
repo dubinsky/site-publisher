@@ -16,3 +16,4 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
   )
   final override def pageHeader: Option[Html.Element] = source.map(_.markup.pageHeader(this))
   final def chunks: Seq[ChunkedMarkupPage] = content.map(_.toc.chunks(this)).getOrElse(Seq.empty)
+  override protected def formatSourcePage: Option[FullMarkupPage] = Some(this)

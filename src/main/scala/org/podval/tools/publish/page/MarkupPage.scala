@@ -2,6 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
+import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
@@ -40,6 +41,32 @@ abstract class MarkupPage(site: Site, path: Path) extends RealPage(site, path) w
   ): Option[Html.Element] = content.map(_.markupContent(sectionId, isTerminal))
 
   def pageHeader: Option[Html.Element]
+
+  // Other HTML/PDF views of the same document (site-header icons). Empty unless this
+  // is a FullMarkupPage or one of its chunks.
+  protected def formatSourcePage: Option[FullMarkupPage] = None
+  protected def formatIsChunked: Boolean = false
+
+  final def formatLinks: Seq[Html.Element] = formatSourcePage.toSeq.flatMap: page =>
+    val onePage: Option[Html.Element] = Option.when(formatIsChunked)(
+      formatLink(page.path.toString, Icon.fileLines, "One-page HTML")
+    )
+    val chunked: Option[Html.Element] = Option.when(!formatIsChunked && page.chunk)(
+      formatLink(page.path.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
+    )
+    val pdf: Option[Html.Element] = Option.when(page.pdf)(
+      formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")
+    )
+    Seq(onePage, chunked, pdf).flatten
+
+  private def formatLink(url: String, icon: Icon, label: String): Html.Element =
+    a(
+      className := "nav-item page-format",
+      href := url,
+      titleAttr := label,
+      aria("label") := label,
+      icon.html
+    )
 
   // Based on https://github.com/jekyll/minima
   private def toHtml(

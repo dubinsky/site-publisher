@@ -83,6 +83,10 @@
         }
     }
 
+    .page-format .icon-span {
+        vertical-align: middle;
+    }
+
     @media screen and (max-width: var(--on-medium)) {
         position: absolute;
         top: 9px;

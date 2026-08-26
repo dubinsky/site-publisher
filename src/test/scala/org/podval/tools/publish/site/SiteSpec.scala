@@ -159,6 +159,37 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(beta.contains("Beta has no children"), beta)
   }
 
+  test("header format icons: chunked HTML ↔ one-page HTML; PDF when present") {
+    val full: String = html("chunked.html")
+    assert(full.contains("""class="nav-item page-format""""), full)
+    assert(full.contains("""href="/chunked/index.html""""), full)
+    assert(full.contains("""title="Chunked HTML""""), full)
+    assert(full.contains("fa-table-list"), full)
+    assert(!full.contains("""href="/chunked.pdf""""), full)
+    assert(!full.contains("""title="One-page HTML""""), full)
+
+    val toc: String = html("chunked/index.html")
+    assert(toc.contains("""href="/chunked.html""""), toc)
+    assert(toc.contains("""title="One-page HTML""""), toc)
+    assert(toc.contains("fa-file-lines"), toc)
+    assert(!toc.contains("""title="Chunked HTML""""), toc)
+    val alpha: String = html("chunked/Alpha.html")
+    assert(alpha.contains("""href="/chunked.html""""), alpha)
+    assert(alpha.contains("""title="One-page HTML""""), alpha)
+
+    val glossary: String = html("glossary.html")
+    assert(glossary.contains("""href="/glossary.pdf""""), glossary)
+    assert(glossary.contains("""title="PDF""""), glossary)
+    assert(glossary.contains("fa-file-pdf"), glossary)
+    assert(!glossary.contains("""title="Chunked HTML""""), glossary)
+
+    val notes: String = html("notes.html")
+    assert(!notes.contains("""class="nav-item page-format""""), notes)
+
+    val home: String = html("index.html")
+    assert(!home.contains("""href="/glossary.pdf""""), home)
+  }
+
   test("AsciiDoc book: checklist IR, table, footnote, citation, glossary") {
     val page: String = html("book.html")
     assert(page.contains("""class="task-list""""), page)
