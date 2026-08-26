@@ -28,6 +28,9 @@ final class AsideSpec extends AnyFunSuite:
       PageErrorReporter.Silent
     )._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def asides(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Aside.is(element))(element)).toSeq
 
@@ -136,4 +139,21 @@ final class AsideSpec extends AnyFunSuite:
     assert(dumped.contains("<h2"), dumped)
     assert(dumped.contains("Not a title"), dumped)
     assert(dumped.contains("body"), dumped)
+  }
+
+  test("DocBook sidebar with title becomes aside IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<sidebar><title>Optional Title</title><para>Auxiliary content.</para></sidebar>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = asides(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.getName == "aside", dumped)
+    assert(dumped.contains("""class="aside-title""""), dumped)
+    assert(dumped.contains("Optional Title"), dumped)
+    assert(dumped.contains("Auxiliary content"), dumped)
+    assert(!dumped.contains("<sidebar"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
   }

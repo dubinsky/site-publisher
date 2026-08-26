@@ -22,6 +22,9 @@ final class CalloutSpec extends AnyFunSuite:
       PageErrorReporter.Silent
     )._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def marks(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Callout.isMark(element))(element), stopAtCode = false).toSeq
 
@@ -123,4 +126,20 @@ final class CalloutSpec extends AnyFunSuite:
     assert(dumped.contains("""class="callout""""), dumped)
     assert(dumped.contains("""class="callout-list""""), dumped)
     assert(marks(processed).size == 1, dumped)
+  }
+
+  test("DocBook co and calloutlist become callout IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<programlisting>require 'sinatra'<co xml:id="co1" label="1"/></programlisting>
+        |<calloutlist><callout arearefs="co1"><para>Library import</para></callout></calloutlist>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(marks(xml).size == 1, dumped)
+    assert(marks(xml).head.get("data-value").contains("1"), dumped)
+    assert(lists(xml).size == 1, dumped)
+    assert(dumped.contains("Library import"), dumped)
+    assert(!dumped.contains("<co "), dumped)
+    assert(!dumped.contains("<calloutlist"), dumped)
   }

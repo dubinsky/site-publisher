@@ -229,6 +229,26 @@ final class SectionSpec extends AnyFunSuite:
     assert(top.sections.map(_.id) == Seq("notes"))
   }
 
+  test("DocBook nested sections become headed div.section with db-title") {
+    val xml: Xml.Element = parse(
+      """<article>
+        |  <section xml:id="meth"><title>Methodology</title><para>body</para>
+        |    <section xml:id="notes"><title>Notes</title><para>sec</para></section>
+        |  </section>
+        |</article>"""
+    )
+    val processed: Xml.Element = DocBookMarkup.process(xml, PageErrorReporter.Silent)._1
+    val normalized: Xml.Element = ir(DocBookMarkup, processed)
+    val rendered: String = render(normalized)
+    assertPermalink(rendered, "meth", "Methodology")
+    assertPermalink(rendered, "notes", "Notes")
+    assert(tocTitles(normalized, DocBookMarkup) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
+    val top: Section = Toc(normalized, DocBookMarkup, PageErrorReporter.Silent).sections.head
+    assert(top.id == "meth")
+    assert(top.sections.map(_.id) == Seq("notes"))
+    assert(rendered.contains("<db-title"), rendered)
+  }
+
   private def tocHtml(toc: Toc, current: Option[String], tocDepth: Int = 2): String =
     HtmlXmlDialect.render(toc.html(current, tocDepth, chunkDepth = Some(2)))
 

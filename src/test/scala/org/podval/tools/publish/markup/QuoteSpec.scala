@@ -244,6 +244,9 @@ final class QuoteSpec extends AnyFunSuite:
   private def fromTei(source: String): Xml.Element =
     TeiMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   test("TEI quote becomes quote IR") {
     val xml: Xml.Element = fromTei(
       """<div><quote>A TEI quotation.</quote></div>"""
@@ -343,4 +346,36 @@ final class QuoteSpec extends AnyFunSuite:
     assert(dumped.contains("outer"), dumped)
     assert(dumped.contains("inner"), dumped)
     assert(!dumped.contains("<quote"), dumped)
+  }
+
+  test("DocBook blockquote with title and attribution becomes quote IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<blockquote>
+        |  <title>A title</title>
+        |  <para>A little rebellion now and then is a good thing.</para>
+        |  <attribution>Jefferson</attribution>
+        |</blockquote>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = quotes(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.getName == "blockquote", dumped)
+    assert(dumped.contains("A little rebellion"), dumped)
+    assert(dumped.contains("""class="quote-title""""), dumped)
+    assert(dumped.contains("A title"), dumped)
+    assert(dumped.contains("""class="quote-attribution""""), dumped)
+    assert(dumped.contains("Jefferson"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
+  }
+
+  test("DocBook inline quote stays q, not a block quote") {
+    val xml: Xml.Element = fromDocBook(
+      """<article><para>See <quote>inline</quote>.</para></article>"""
+    )
+    val dumped: String = render(xml)
+    assert(quotes(xml).isEmpty, dumped)
+    assert(dumped.contains("<q"), dumped)
+    assert(dumped.contains("inline"), dumped)
   }

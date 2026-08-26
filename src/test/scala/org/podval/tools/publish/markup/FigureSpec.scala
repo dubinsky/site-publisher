@@ -31,6 +31,9 @@ final class FigureSpec extends AnyFunSuite:
   private def fromTei(source: String): Xml.Element =
     TeiMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def figures(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Figure.is(element))(element)).toSeq
 
@@ -149,4 +152,36 @@ final class FigureSpec extends AnyFunSuite:
     assert(dumped.contains("<img"), dumped)
     assert(dumped.contains("pixel.svg"), dumped)
     assert(!dumped.contains("<image"), dumped)
+  }
+
+  test("DocBook figure with imagedata and title becomes figure IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<figure xml:id="fig1">
+        |  <title>A DocBook figure</title>
+        |  <mediaobject><imageobject><imagedata fileref="pixel.svg"/></imageobject></mediaobject>
+        |</figure>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = figures(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.getId.contains("fig1"), dumped)
+    assert(dumped.contains("<img"), dumped)
+    assert(dumped.contains("pixel.svg"), dumped)
+    assert(dumped.contains("A DocBook figure"), dumped)
+    assert(dumped.contains("""class="figure-caption""""), dumped)
+    assert(!dumped.contains("<imagedata"), dumped)
+    assert(!dumped.contains("<mediaobject"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
+  }
+
+  test("DocBook inline imagedata is not a figure") {
+    val xml: Xml.Element = fromDocBook(
+      """<article><para>See <inlinemediaobject><imageobject><imagedata fileref="pixel.svg"/></imageobject></inlinemediaobject>.</para></article>"""
+    )
+    val dumped: String = render(xml)
+    assert(figures(xml).isEmpty, dumped)
+    assert(dumped.contains("<img"), dumped)
+    assert(dumped.contains("pixel.svg"), dumped)
   }

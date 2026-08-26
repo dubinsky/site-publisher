@@ -208,6 +208,49 @@ final class CitationSpec extends AnyFunSuite:
     assert(Citation.modeOf(multi.get) == Citation.Mode.Parenthetical)
   }
 
+  test("DocBook citation and empty bibliography become citeproc stubs") {
+    val xml: Xml.Element = DocBookMarkup.process(
+      parse(
+        """<article>
+          |<para>See <citation>knuth79</citation> and <citation>knuth79, p. 12</citation>
+          |and <biblioref linkend="lamport94"/>.</para>
+          |<bibliography/>
+          |</article>""".stripMargin
+      ),
+      PageErrorReporter.Silent
+    )._1
+    val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(xml)
+    val dumped: String = render(xml)
+    assert(items.exists((_, item) => item.key == "knuth79" && item.locator.isEmpty), dumped)
+    assert(items.exists((_, item) => item.key == "knuth79" && item.locator.contains("p. 12")), dumped)
+    assert(items.exists((_, item) => item.key == "lamport94"), dumped)
+    assert(xml.gather(el => Option.when(Citation.isPlaceholder(el))(el)).size == 1, dumped)
+    assert(!dumped.contains("db-class"), dumped)
+  }
+
+  test("DocBook bibliography entries are native items, not citeproc stubs") {
+    val xml: Xml.Element = DocBookMarkup.process(
+      parse(
+        """<article>
+          |<para>See <link linkend="knuth79">Knuth 1979</link>
+          |and <biblioref linkend="lamport94"/>.</para>
+          |<bibliography>
+          |  <biblioentry xml:id="knuth79">Knuth, Donald E.</biblioentry>
+          |  <bibliomixed xml:id="lamport94">Lamport, Leslie. LaTeX. 1994.</bibliomixed>
+          |</bibliography>
+          |</article>""".stripMargin
+      ),
+      PageErrorReporter.Silent
+    )._1
+    val dumped: String = render(xml)
+    val items: Seq[Xml.Element] =
+      xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
+    assert(items.map(_.getId).toSet == Set(Some("knuth79"), Some("lamport94")), dumped)
+    assert(xml.gather(el => Option.when(BibliographyItem.isList(el))(el)).nonEmpty, dumped)
+    assert(dumped.contains("""href="#knuth79""""), dumped)
+    assert(citeItems(xml).isEmpty, dumped)
+  }
+
   test("MarkdownMarkup.process converts Pandoc cites") {
     val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
       "See [@knuth79] and [-@lamport94].",

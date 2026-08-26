@@ -31,6 +31,9 @@ final class StrikeSpec extends AnyFunSuite:
   private def fromTei(source: String): Xml.Element =
     TeiMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def strikes(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Strike.is(element))(element)).toSeq
 
@@ -92,6 +95,18 @@ final class StrikeSpec extends AnyFunSuite:
     assert(strikes(xml).size == 1, dumped)
     assert(dumped.contains("TEI struck"), dumped)
     assert(!dumped.contains("tei-class"), dumped)
+  }
+
+  test("DocBook emphasis role=strikethrough becomes del") {
+    val xml: Xml.Element = fromDocBook(
+      """<article><para>See <emphasis role="strikethrough">DocBook struck</emphasis>.</para></article>"""
+    )
+    val dumped: String = render(xml)
+    assert(strikes(xml).size == 1, dumped)
+    assert(dumped.contains("<del"), dumped)
+    assert(dumped.contains("DocBook struck"), dumped)
+    assert(!dumped.contains("<emphasis"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
   }
 
   test("Markdown ~~ inside code is not strikethrough") {

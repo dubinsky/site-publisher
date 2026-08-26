@@ -28,6 +28,9 @@ final class AdmonitionSpec extends AnyFunSuite:
       PageErrorReporter.Silent
     )._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def admonitions(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Admonition.is(element))(element)).toSeq
 
@@ -175,4 +178,20 @@ final class AdmonitionSpec extends AnyFunSuite:
     assert(dumped.contains("Inner"), dumped)
     assert(dumped.contains("Nested"), dumped)
     assert(!dumped.contains("<blockquote"), dumped)
+  }
+
+  test("DocBook note with title becomes admonition IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<note><title>Save time</title><para>Use the shortcut.</para></note>
+        |<tip><para>A tip.</para></tip>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = admonitions(xml)
+    assert(found.map(_.get(Admonition.TypeAttr)).toSet == Set(Some("note"), Some("tip")), dumped)
+    assert(dumped.contains("Save time"), dumped)
+    assert(dumped.contains("Use the shortcut"), dumped)
+    assert(dumped.contains("A tip"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
   }

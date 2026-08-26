@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
@@ -19,6 +20,9 @@ final class GlossarySpec extends AnyFunSuite:
 
   private def fromMarkdown(source: String): Xml.Element =
     MarkdownMarkup.convert(parse(MarkdownMarkup.xmlContent(source, File("t.md"))))
+
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
   private def render(element: Xml.Element): String =
     HtmlXmlDialect.render(element)
@@ -262,4 +266,26 @@ final class GlossarySpec extends AnyFunSuite:
     assert(rendered.contains(">posuk</a>"))
     assert(rendered.contains("verse"))
     assert(!rendered.contains("<a href=\"#posuk\">posuk<span"))
+  }
+
+  test("DocBook glosslist becomes glossary IR; variablelist is not a glossary") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<para>See <link linkend="posuk">posuk</link>.</para>
+        |<glosslist>
+        |  <glossentry xml:id="posuk"><glossterm>posuk</glossterm><glossdef><para>verse</para></glossdef></glossentry>
+        |  <glossentry><glossterm>mud</glossterm><glossdef><para>wet dirt</para></glossdef></glossentry>
+        |</glosslist>
+        |<variablelist>
+        |  <varlistentry><term>alpha</term><listitem><para>first</para></listitem></varlistentry>
+        |</variablelist>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
+    assert(defs.keySet == Set("posuk", "mud"), dumped)
+    assert(definitionText(defs, "posuk").contains("verse"))
+    assert(xml.gather(el => Option.when(Glossary.isList(el))(el)).size == 1, dumped)
+    assert(dumped.contains("alpha"), dumped)
+    assert(!dumped.contains("db-class"), dumped)
   }

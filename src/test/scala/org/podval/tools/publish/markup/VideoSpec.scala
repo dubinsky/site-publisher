@@ -28,6 +28,9 @@ final class VideoSpec extends AnyFunSuite:
       PageErrorReporter.Silent
     )._1
 
+  private def fromDocBook(source: String): Xml.Element =
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+
   private def videos(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Video.is(element))(element)).toSeq
 
@@ -126,4 +129,31 @@ final class VideoSpec extends AnyFunSuite:
     assert(dumped.contains("wiki-link"), dumped)
     assert(dumped.contains("transclude"), dumped)
     assert(dumped.contains("clip.mp4"), dumped)
+  }
+
+  test("DocBook videodata becomes video IR") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<mediaobject><videoobject><videodata fileref="clip.mp4"/></videoobject></mediaobject>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(videos(xml).size == 1, dumped)
+    assert(dumped.contains("clip.mp4"), dumped)
+    assert(dumped.contains("controls"), dumped)
+    assert(!dumped.contains("<videodata"), dumped)
+  }
+
+  test("DocBook videodata YouTube URL becomes iframe.video-embed") {
+    val xml: Xml.Element = fromDocBook(
+      """<article>
+        |<mediaobject><videoobject>
+        |  <videodata fileref="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
+        |</videoobject></mediaobject>
+        |</article>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(embeds(xml).size == 1, dumped)
+    assert(dumped.contains("youtube.com/embed"), dumped)
+    assert(videos(xml).isEmpty, dumped)
   }
