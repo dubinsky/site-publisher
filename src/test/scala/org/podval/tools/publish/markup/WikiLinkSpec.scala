@@ -62,6 +62,34 @@ final class WikiLinkSpec extends AnyFunSuite:
     assert(render(nodes).contains("[[notes"))
   }
 
+  private def embedImage(source: String): Xml.Element =
+    val a: Xml.Element = links(convert(source)).head
+    WikiLink.embed(a, a.getHref.get).get
+
+  test("![[pixel.svg]] embed has no width or height") {
+    val img: Xml.Element = embedImage("![[pixel.svg]]")
+    val dumped: String = render(Chunk(img))
+    assert(img.getName == "img", dumped)
+    assert(img.get("src").contains("pixel.svg"), dumped)
+    assert(img.get("width").isEmpty, dumped)
+    assert(img.get("height").isEmpty, dumped)
+  }
+
+  test("![[pixel.svg|320]] sets img width") {
+    val img: Xml.Element = embedImage("![[pixel.svg|320]]")
+    val dumped: String = render(Chunk(img))
+    assert(img.get("src").contains("pixel.svg"), dumped)
+    assert(img.get("width").contains("320"), dumped)
+    assert(img.get("height").isEmpty, dumped)
+  }
+
+  test("![[pixel.svg|320x240]] sets img width and height") {
+    val img: Xml.Element = embedImage("![[pixel.svg|320x240]]")
+    val dumped: String = render(Chunk(img))
+    assert(img.get("width").contains("320"), dumped)
+    assert(img.get("height").contains("240"), dumped)
+  }
+
   test("empty alias [[notes|]] uses the ref as text") {
     val found: Seq[Xml.Element] = links(convert("[[notes|]]"))
     assert(found.size == 1)

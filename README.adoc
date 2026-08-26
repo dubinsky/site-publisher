@@ -831,14 +831,16 @@ HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become 
 
 A block image (or other graphic) with an optional caption. Inline images stay `<img>`. Local `src` values are resolved to a site path (`/pixel.svg`); a missing file is an error (`missing asset`) and the `<img>` gets `unresolved-asset`. Wiki `+++![[image]]+++` also finds a unique file of that name anywhere in the source tree.
 
-Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later).
+Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. FlexMark does not turn Obsidian `|WIDTH` / `|WIDTHxHEIGHT` in the alt into `img` `width`/`height` (the size stays in `alt`). Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later); `|WIDTH` or `|WIDTHxHEIGHT` on that wiki embed do become `width`/`height`.
 +
 [source,markdown]
 ----
 ![A square](pixel.svg "A Markdown figure")
+![[pixel.svg|320]]
+![[pixel.svg|320x240]]
 ----
 
-AsciiDoc:: block `image::` (optional `.Title`). Inline `image:src[]` is not a figure.
+AsciiDoc:: block `image::` (optional `.Title`). Inline `image:src[]` is not a figure. Width and height (`image::file.png[alt, 320, 240]` or `width=320, height=240`) are kept on the `<img>`.
 +
 [source,asciidoc]
 ----

@@ -37,6 +37,38 @@ final class FigureSpec extends AnyFunSuite:
   private def figures(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Figure.is(element))(element)).toSeq
 
+  private def imgs(xml: Xml.Element): Seq[Xml.Element] =
+    xml.gather(element => Option.when(element.getName == "img")(element)).toSeq
+
+  test("FlexMark leaves Obsidian |WIDTH in the alt; no img width or height") {
+    val xml: Xml.Element = fromMarkdown("![A square|320](pixel.svg)\n")
+    val dumped: String = render(xml)
+    val found: Seq[Xml.Element] = imgs(xml)
+    assert(found.size == 1, dumped)
+    assert(found.head.get("alt").contains("A square|320"), dumped)
+    assert(found.head.get("width").isEmpty, dumped)
+    assert(found.head.get("height").isEmpty, dumped)
+    val both: Xml.Element = fromMarkdown("![A square|320x240](pixel.svg)\n")
+    val bothImg: Xml.Element = imgs(both).head
+    assert(bothImg.get("alt").contains("A square|320x240"), render(both))
+    assert(bothImg.get("width").isEmpty, render(both))
+    assert(bothImg.get("height").isEmpty, render(both))
+  }
+
+  test("Asciidoctor image:: width and height survive convert") {
+    val positional: Xml.Element = fromAsciiDoc("image::pixel.svg[A square, 320, 240]\n")
+    val dumped: String = render(positional)
+    val found: Seq[Xml.Element] = imgs(positional)
+    assert(found.size == 1, dumped)
+    assert(found.head.get("alt").contains("A square"), dumped)
+    assert(found.head.get("width").contains("320"), dumped)
+    assert(found.head.get("height").contains("240"), dumped)
+    val named: Xml.Element = fromAsciiDoc("image::pixel.svg[A square, width=320, height=240]\n")
+    val namedImg: Xml.Element = imgs(named).head
+    assert(namedImg.get("width").contains("320"), render(named))
+    assert(namedImg.get("height").contains("240"), render(named))
+  }
+
   test("AsciiDoc image:: with title becomes figure IR") {
     val xml: Xml.Element = fromAsciiDoc(
       """.A figure caption

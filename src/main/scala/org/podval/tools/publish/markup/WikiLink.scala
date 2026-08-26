@@ -65,15 +65,13 @@ object WikiLink:
         )
 
   // see https://obsidian.md/help/embeds
-  // TODO FlexMark inlines image links for the ![]() references - but does not process image sizes...
   def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
     val (path, _): (String, Option[String]) = Strings.splitFirst(ref, '#')
     val embedded: Option[Xml.Element] = Files.nameAndExtension(path)._2.map(_.toLowerCase) match
       case Some(extension) if Media.isImage(extension) =>
-        val (width: Option[Int], height: Option[Int]) =
-          // TODO Embed image, potentially with sizes WIDTHxHEIGHT or just WIDTH or nothing in the text
-          (None, None)
-
+        // Note: FlexMark inlines image links for the ![]() references, so I do not get to do it -
+        // and it does not process image sizes...
+        val (width: Option[Int], height: Option[Int]) = imageSize(wikiEmbedInner(element))
         Some(Xml
           .element("img")
           .set("src", path)
@@ -96,12 +94,31 @@ object WikiLink:
     embedded.map(AssetRef.markWikiEmbed)
 
   private def embedLabel(element: Xml.Element, path: String): String =
-    val inner: String = element.getText.trim.stripPrefix("![[").stripSuffix("]]").trim
-    val name: String = Strings.splitFirst(inner, '#')._1.trim
+    val name: String = wikiEmbedInner(element)
     val fileName: String = path.split('/').lastOption.getOrElse(path)
     val ext: Option[String] = Files.nameAndExtension(name)._2.map(_.toLowerCase)
     if name.isEmpty || name == path || ext.exists(isMediaExtension) then fileName
     else name
+
+  // Obsidian `![[image|WIDTH]]` / `![[image|WIDTHxHEIGHT]]` (pixels). Alias is the wiki-link text.
+  private val imageSizeBoth = raw"(\d+)[xX](\d+)".r
+  private val imageSizeWidth = raw"(\d+)".r
+
+  private def wikiEmbedInner(element: Xml.Element): String =
+    val inner: String = element.getText.trim.stripPrefix("![[").stripSuffix("]]").trim
+    Strings.splitFirst(inner, '#')._1.trim
+
+  private def imageSize(text: String): (Option[Int], Option[Int]) =
+    text.trim match
+      case imageSizeBoth(width, height) =>
+        (positivePx(width), positivePx(height)) match
+          case (Some(w), Some(h)) => (Some(w), Some(h))
+          case _ => (None, None)
+      case imageSizeWidth(width) => (positivePx(width), None)
+      case _ => (None, None)
+
+  private def positivePx(raw: String): Option[Int] =
+    raw.toIntOption.filter(_ > 0)
 
   private def isMediaExtension(extension: String): Boolean =
     Media.isImage(extension) || Media.isAudio(extension) || Media.isVideo(extension) || extension == "pdf"

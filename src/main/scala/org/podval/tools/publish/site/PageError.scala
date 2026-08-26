@@ -20,6 +20,7 @@ object PageError:
   case object FileName extends Kind("file name")
   case object Duplicate extends Kind("duplicate")
   case object NoId extends Kind("no id")
+  case object NoTitle extends Kind("no title")
   case object NoDate extends Kind("no date")
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
@@ -34,6 +35,7 @@ object PageError:
     FileName,
     Duplicate,
     NoId,
+    NoTitle,
     NoDate,
     SelfLink,
     Unresolved,

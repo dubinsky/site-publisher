@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
-import org.podval.tools.publish.site.PageErrorReporter
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
@@ -272,6 +272,36 @@ final class SectionSpec extends AnyFunSuite:
     assert(chunk.contains(">B<") || chunk.contains(">B</a>"))
     assert(!chunk.contains("B1"), chunk)
     assert(!chunk.contains("B2"), chunk)
+  }
+
+  test("marked section without a heading is a defect") {
+    val section: Xml.Element = Section
+      .mark(Xml.element("div"))
+      .setId("foo")
+      .setChildren(Chunk(Xml.element("p").setChildren(Chunk(Xml.text("body")))))
+    val thrown: IllegalStateException = intercept[IllegalStateException]:
+      Toc(section, HtmlMarkup, PageErrorReporter.Silent)
+    assert(thrown.getMessage.contains("foo"), thrown.getMessage)
+  }
+
+  test("empty section heading is reported") {
+    var reported: Option[(PageError.Kind, String)] = None
+    val reporter: PageErrorReporter = new PageErrorReporter:
+      override def error(
+        kind: PageError.Kind,
+        message: String,
+        cause: Option[Throwable] = None
+      ): Unit = reported = Some((kind, message))
+    val section: Xml.Element = Section
+      .mark(Xml.element("div"))
+      .setId("foo")
+      .setChildren(Chunk(
+        Xml.element("h2"),
+        Xml.element("p").setChildren(Chunk(Xml.text("body")))
+      ))
+    val toc: Toc = Toc(section, HtmlMarkup, reporter)
+    assert(reported.contains((PageError.NoTitle, "No title on section foo")))
+    assert(toc.flatten.head.title == "foo")
   }
 
   test("resolveSection finds a nested section by title or id") {

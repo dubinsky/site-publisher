@@ -149,11 +149,14 @@ object Toc:
           errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
           element.flatMapElements(sections)
         case Some(id) =>
-          val title: String = markup
-            .sectionHeader(element)
-            .map(Section.headingText)
-            .filter(_.nonEmpty)
-            .getOrElse(s"Untitled Section $id") // TODO error
+          val title: String = markup.sectionHeader(element).map(Section.headingText) match
+            case None =>
+              throw IllegalStateException(s"Defect: No heading on section $id")
+            case Some(text) if text.isEmpty =>
+              errorReporter.error(PageError.NoTitle, s"No title on section $id")
+              id
+            case Some(text) =>
+              text
           Chunk(Section(
             id,
             title,
