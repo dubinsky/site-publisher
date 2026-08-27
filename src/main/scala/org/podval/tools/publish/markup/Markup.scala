@@ -1,6 +1,5 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tei.EntityKind
 import org.podval.tools.publish.page.{FrontMatter, FullMarkupPage, Page}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.{Date, Files}
@@ -39,8 +38,6 @@ abstract class Markup(
 
   /** TEI `entityLists` buckets. Harvested from the raw tree. */
   def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] = None
-
-  def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
   def pageHeader(page: FullMarkupPage): Html.Element = Markup.pageHeader(page)
 

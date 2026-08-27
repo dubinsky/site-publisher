@@ -124,7 +124,9 @@ abstract class Page(
 
   protected def iconDefault: Icon
 
-  final def entityKind: Option[EntityKind] = content(content => content.source.markup.entityKind(content.xml))
+  final def entityKind: Option[EntityKind] = content(content =>
+    EntityKind.values.find(entityKind => content.xml.getName == entityKind.element)
+  )
 
   final def entityRole: Option[String] =
     content(c => c.xml.get("role").map(_.trim).filter(_.nonEmpty))
