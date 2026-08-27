@@ -112,6 +112,8 @@ Useful fields:
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
 
+`permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL. When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf bookmark. A remainder under a non-directory alias does not resolve.
+
 TODO add frontmatter boolean `asset` to declare that a file is *not* markup.
 
 [#page-names]
@@ -132,8 +134,6 @@ and set the title in the front matter only when it is different from the file na
 Obsidian uses file names exclusively and ignores the front matter title;
 for link resolution to use front matter titles also,
 TODO Obsidian plugin needs to be installed.
-
-TODO aliases
 
 Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian. Block ids: `^id` at the end of a paragraph, or on its own line after a list, table, quote, or code block (blank line before the id). Link with `+++[[note#^id]]+++`.
 

@@ -34,6 +34,8 @@ final class LinkSpec extends AnyFunSuite:
         File(dir, "notes.md"),
         """---
           |title: Notes Title
+          |aliases:
+          |  - notes-alias
           |---
           |Intro ^blk
           |
@@ -57,6 +59,18 @@ final class LinkSpec extends AnyFunSuite:
           |
           |Leaf.
           |""".stripMargin
+      )
+      Files.write(
+        File(dir, "aliased/index.md"),
+        """---
+          |permalink: /short
+          |---
+          |See [the child](/short/child) and [[short/child]].
+          |""".stripMargin
+      )
+      Files.write(
+        File(dir, "aliased/child.md"),
+        "Child page under the aliased directory.\n"
       )
       val target: File = File(dir, "_site")
       val site: Site = Site(SiteOptions(
@@ -141,4 +155,24 @@ final class LinkSpec extends AnyFunSuite:
       val alpha: Page = site.pages.pages.find(_.path == Path("book", "book", "Alpha").html).get
       val link: Link = Link.resolve("index.html", None, alpha).get
       assert(link.url == "/book/book/index.html")
+  }
+
+  test("permalink prefix /short/child and wiki short/child resolve under the aliased directory") {
+    withSite: site =>
+      val home: Page = pageNamed(site, "Home")
+      val absolute: Link = Link.resolve("/short/child", None, home).get
+      assert(absolute.url == "/aliased/child.html")
+      val wiki: Link = Link.resolve("short/child", None, home).get
+      assert(wiki.url == "/aliased/child.html")
+      val collection: Link = Link.resolve("/short", None, home).get
+      assert(collection.url == "/aliased/index.html")
+      assert(Link.resolve("/short/missing", None, home).isEmpty)
+  }
+
+  test("leaf alias does not prefix-resolve a remainder") {
+    withSite: site =>
+      val home: Page = pageNamed(site, "Home")
+      val alias: Link = Link.resolve("/notes-alias", None, home).get
+      assert(alias.url == "/notes.html")
+      assert(Link.resolve("/notes-alias/nope", None, home).isEmpty)
   }

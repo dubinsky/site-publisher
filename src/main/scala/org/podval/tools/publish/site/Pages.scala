@@ -118,8 +118,14 @@ final class Pages(site: Site):
     find(requested, isAbsolute = true, kind = None)
       .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
+  private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
+
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
+    page match
+      case alias: Alias =>
+        aliasByPrefix = aliasByPrefix.updated(alias.path.withoutHtml.path, alias)
+      case _ =>
     // Add implied directories
     page.parent
     page.asFullMarkupPage.foreach: page =>
@@ -376,9 +382,46 @@ final class Pages(site: Site):
         findEntity(path, entityKind)
       case _ =>
         // Exact path first so `/P/index.html` is the chunked TOC, not title-walked to `/P.html`.
-        get(path)
-          .orElse(if path.extension.isEmpty then get(path.html) else None)
-          .orElse(pages.flatMap(page => is(page, path, isAbsolute)).headOption)
+        findExact(path)
+          .orElse(findViaAlias(path))
+          .orElse(findWalk(path, isAbsolute))
+
+  private def findExact(path: Path): Option[Page] =
+    get(path).orElse(if path.extension.isEmpty then get(path.html) else None)
+
+  private def findWalk(path: Path, isAbsolute: Boolean): Option[Page] =
+    pages.flatMap(page => is(page, path, isAbsolute)).headOption
+
+  // `/short/child` is `child` under the page that permalink/alias `short` names, when that page is a directory.
+  // Does not recurse through `find` (the expanded path still starts with the alias prefix).
+  private def findViaAlias(path: Path): Option[Page] =
+    val segments: Seq[String] = path.path
+    if segments.length < 2 then None
+    else
+      (segments.length - 1 until 0 by -1)
+        .flatMap: prefixLen =>
+          aliasByPrefix.get(segments.take(prefixLen)).flatMap: alias =>
+            findUnderAliased(alias.real, segments.drop(prefixLen), path.extension)
+        .headOption
+
+  private def findUnderAliased(
+    real: Page,
+    remainder: Seq[String],
+    extension: Option[String]
+  ): Option[Page] =
+    if !real.isDirectory || remainder.isEmpty then None
+    else
+      val joined: Path = Path(Path.normalize(real.path.path.init ++ remainder), extension)
+      findExact(joined)
+        .orElse(findBySourceUnder(real, remainder))
+        .orElse(findWalk(joined, isAbsolute = true))
+
+  private def findBySourceUnder(real: Page, remainder: Seq[String]): Option[Page] =
+    real.sourcePath.flatMap: source =>
+      val directory: Seq[String] =
+        if source.fileName == DirectoryPage.fileName then source.path.init else source.path
+      val want: Seq[String] = directory ++ remainder
+      pages.find(_.sourcePath.exists(_.path == want))
 
   private var entityByKindAndId: Map[(EntityKind, String), Page] = Map.empty
 

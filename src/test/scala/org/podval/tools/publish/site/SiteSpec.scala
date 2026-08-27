@@ -161,6 +161,21 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(errors.contains("missing.png"), errors)
   }
 
+  test("permalink prefix /short/child resolves under the aliased directory") {
+    exists("short.html")
+    val shortAlias: String = html("short.html")
+    assert(shortAlias.contains("/aliased/index.html"), shortAlias)
+    assert(shortAlias.toLowerCase.contains("refresh"), shortAlias)
+    exists("aliased/index.html")
+    exists("aliased/child.html")
+    val aliased: String = html("aliased/index.html")
+    assert(aliased.contains("""href="/aliased/child.html""""), aliased)
+    assert(!aliased.contains("unresolved-link"), aliased)
+    assert(!aliased.contains("""href="/short/child""""), aliased)
+    val errors: String = html("errors.html")
+    assert(!errors.contains("/short/child"), errors)
+  }
+
   test("Markdown glossary IAL yields term ids and hover tips") {
     val page: String = html("glossary.html")
     assert(page.contains("""class="glossary""""), page)
