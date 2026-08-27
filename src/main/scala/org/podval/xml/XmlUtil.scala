@@ -7,14 +7,19 @@ object XmlUtil:
     element: Xml.Element,
     converter: String => Xml.Nodes
   ): Xml.Element =
-    element.setChildren(element.getChildren.flatMap(xml => xml.asText.fold(Chunk(xml))(converter)))
+    element.setChildren(
+      element.getChildren.foldLeft(Chunk.empty[Xml.Node]): (acc, xml) =>
+        acc ++ xml.asText.fold(Chunk(xml))(converter)
+    )
 
   def convertElements(
     children: Xml.Nodes,
     converter: Xml.Element => Option[Xml.Nodes]
-  ): Xml.Nodes = children.flatMap(child =>
-    child.asElement.flatMap(converter).getOrElse(Chunk(child))
-  )
+  ): Xml.Nodes =
+    // Do not use `Chunk.flatMap`: it takes ClassTag from the first inner chunk, so a
+    // leading text node then an element (or the reverse) throws ArrayStoreException.
+    children.foldLeft(Chunk.empty[Xml.Node]): (acc, child) =>
+      acc ++ child.asElement.flatMap(converter).getOrElse(Chunk(child))
 
   def renameElement(
     name: String,

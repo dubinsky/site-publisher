@@ -107,14 +107,11 @@
     }
 
     .nav-item {
+        display: inline-flex;
+        align-items: center;
+        vertical-align: top;
+        min-height: calc(var(--base-line-height) * var(--base-font-size) * 2.25);
         color: var(--text-color);
-        &:not(:last-child) {
-            margin-right: var(--spacing-unit-half);
-        }
-    }
-
-    .page-format .icon-span {
-        vertical-align: middle;
     }
 
     @media screen and (max-width: 600px) {
@@ -184,6 +181,7 @@
         .nav-items > a {
             display: flex;
             align-items: center;
+            min-height: 0;
             margin: 0;
             padding: 5px 10px;
             color: var(--text-color);

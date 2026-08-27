@@ -326,9 +326,9 @@ object Site:
     sourceDirectoryPath =
 //      "/home/dub/OpenTorah/chumashquestions.org/",
 //      "/home/dub/OpenTorah/opentorah.org/docs",
-    //  "/home/dub/OpenTorah/alter-rebbe.org"
-      "/home/dub/Podval/dub.podval.org",
-    //  "/home/dub/Podval/www.podval.org"
+      "/home/dub/OpenTorah/alter-rebbe.org",
+//      "/home/dub/Podval/dub.podval.org",
+//      "/home/dub/Podval/www.podval.org",
     logLevelOpt = Some("INFO"),
     treatErrorsAsWarnings = true
   ))

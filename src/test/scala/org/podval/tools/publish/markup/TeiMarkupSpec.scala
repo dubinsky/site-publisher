@@ -89,6 +89,16 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(title.isEmpty, render(xml))
   }
 
+  test("endnote among mixed text and elements does not throw") {
+    val xml: Xml.Element = process(
+      """<p><note place="end">leading</note> after <hi>x</hi><note place="end">clung</note> tail</p>"""
+    )
+    val dumped: String = render(xml)
+    assert(Footnote.linkIds(xml).size == 2, dumped)
+    assert(dumped.contains("after"), dumped)
+    assert(dumped.contains("tail"), dumped)
+  }
+
   test("note place=end becomes footnote IR; class is not tei-class; plain note stays") {
     val xml: Xml.Element = process(
       """<div>
