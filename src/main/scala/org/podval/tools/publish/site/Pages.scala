@@ -22,7 +22,8 @@ final class Pages(site: Site):
   def pages: List[Page] = pagesVar
 
   // Header pages
-  lazy val headerPages: List[HeaderPage] = pages.flatMap(_.headerPage).sortBy(_.priority)
+  private var headerPagesVar: List[Page] = List.empty
+  def headerPages: List[Page] = headerPagesVar
 
   // TODO make a map for quick lookups:
   private def get(path: Path): Option[Page] = pages.find(_.path == path)
@@ -51,6 +52,7 @@ final class Pages(site: Site):
     if get(Feed.path).isEmpty then add(Feed(site))
 
     installHome()
+    headerPagesVar = resolveHeaderPages()
 
     // Report conflicting pages
     pages
@@ -68,9 +70,7 @@ final class Pages(site: Site):
   private def installHome(): Unit =
     site.config.home.map(_.trim).filter(_.nonEmpty).foreach: home =>
       val requested: Path = Path.fromHref(home)
-      val target: Option[Page] =
-        find(requested, isAbsolute = true, kind = None)
-          .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
+      val target: Option[Page] = pageForSpec(home)
       target match
         case None =>
           site.error(requested, PageError.Unresolved, s"home page not found: $home")
@@ -94,6 +94,24 @@ final class Pages(site: Site):
                 PageError.Duplicate,
                 s"home: '$home' cannot occupy $index"
               )
+
+  private def resolveHeaderPages(): List[Page] =
+    site.config.headerPages.foldLeft(List.empty[Page]): (acc, spec) =>
+      val trimmed: String = spec.trim
+      if trimmed.isEmpty then acc
+      else
+        pageForSpec(trimmed) match
+          case None =>
+            site.error(Path.fromHref(trimmed), PageError.Unresolved, s"header page not found: $trimmed")
+            acc
+          case Some(page) =>
+            if acc.exists(_.path == page.path) then acc
+            else acc :+ page
+
+  private def pageForSpec(spec: String): Option[Page] =
+    val requested: Path = Path.fromHref(spec.trim)
+    find(requested, isAbsolute = true, kind = None)
+      .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)

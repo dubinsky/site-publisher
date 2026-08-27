@@ -9,7 +9,6 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
   override def titleDefault: String = "Tags"
   override protected def descriptionDefault: Option[String] = Some("Pages by tags")
   override protected def iconDefault: Icon = Icon.tags
-  override protected def headerPagePriorityDefault: Int = 2
   override protected def langDefault: Option[String] = Some("en")
 
   private def fullMarkupPages: List[FullMarkupPage] = site

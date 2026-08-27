@@ -25,9 +25,6 @@ final case class FrontMatter(
   // Note: not using nested `Icon` to avoid weird-looking JSON display of the property in Obsidian.
   icon: Option[String] = None,
   iconStyle: Option[Icon.Style] = None,
-  // Note: not using nested `HeaderPage` to avoid weird-looking JSON display of the property in Obsidian.
-  headerPage: Boolean = false,
-  headerPagePriority: Option[Int] = None,
 //  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
   tocDepth: Option[Int] = None,
   chunk: Boolean = false,

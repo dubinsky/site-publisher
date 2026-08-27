@@ -5,3 +5,6 @@ author: Test Author
 email: test@fixture.test
 lang: en
 paginate-posts: 2
+header-pages:
+  - about.html
+  - posts

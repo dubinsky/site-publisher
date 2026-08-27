@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
 import org.podval.tools.publish.markup.Link
-import org.podval.tools.publish.site.{HeaderPage, Path, Posts, Site}
+import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -79,13 +79,6 @@ abstract class Page(
   final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(content(_.frontMatter.date))
   final def dateModified: Option[Date] = content(_.frontMatter.modifiedTime)
   final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
-
-  final lazy val headerPage: Option[HeaderPage] = Option.when(frontMatter.headerPage)(HeaderPage(
-    page = this,
-    priority = frontMatter.headerPagePriority.getOrElse(headerPagePriorityDefault)
-  ))
-
-  protected def headerPagePriorityDefault: Int = 0
 
   final def title: String =
     content(_.title.map(_.getText))

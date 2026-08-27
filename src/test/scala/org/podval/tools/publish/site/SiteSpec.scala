@@ -88,9 +88,13 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!base.contains("max-width: var(--on-"), base)
   }
 
-  test("posts listing is a header page when its file says so") {
+  test("header pages come from site config in listed order") {
     val home: String = html("index.html")
-    assert(home.contains("""href="/posts.html""""), home)
+    val about: Int = home.indexOf("""href="/about.html"""")
+    val posts: Int = home.indexOf("""href="/posts.html"""")
+    assert(about >= 0, home)
+    assert(posts >= 0, home)
+    assert(about < posts, home)
   }
 
   test("home page wiki links resolve") {

@@ -21,6 +21,17 @@ The source directory must contain `_site_config.yml`. Pass that directory as the
 
 `./gradlew build` compiles and tests; `./gradlew test` runs tests only.
 
+Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as `home`):
+
+----
+header-pages:
+  - notes/index.md
+  - posts
+  - tags
+----
+
+Omitted or empty means no header links (up/prev/next and format icons still appear). Unknown entries are recorded on the Errors page.
+
 
 [#summary]
 == Summary
@@ -96,7 +107,7 @@ Useful fields:
 - `toc-depth`
 - `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback
 - `tags`, `categories`, `aliases`
-- `header-page`, `icon`, `permalink`, `post`, `date`
+- `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
 
 TODO add frontmatter boolean `asset` to declare that a file is *not* markup.

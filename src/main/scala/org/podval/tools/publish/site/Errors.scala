@@ -12,7 +12,6 @@ final class Errors(
   override def titleDefault: String = "Errors"
   override protected def descriptionDefault: Option[String] = Some("Site errors by kind")
   override protected def iconDefault: Icon = Icon.errors
-  override protected def headerPagePriorityDefault: Int = 9
   override protected def langDefault: Option[String] = Some("en")
 
   private var errorsVar: List[PageError] = List.empty
