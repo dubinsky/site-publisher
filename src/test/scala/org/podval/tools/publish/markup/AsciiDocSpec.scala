@@ -26,7 +26,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     HtmlXmlDialect.render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    Footnote.harvest(xml, AsciiDocMarkup.isSpuriousFootnotesDiv)
+    Footnote.harvest(xml)
 
   private def isItem(rendered: String, id: String, cssClass: String): Boolean =
     rendered.contains(s"""<div class="$cssClass" id="$id">""") ||
@@ -112,6 +112,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(dumped.contains("A note"), dumped)
     assert(!dumped.contains("_footnoteref"), dumped)
     assert(!dumped.contains("_footnotedef"), dumped)
+    assert(!dumped.contains("""id="footnotes""""), dumped)
     val (notes, stripped) = harvest(xml)
     assert(notes.size == 1)
     assert(Xml.toString(notes.values.head.nodes).contains("A note"))

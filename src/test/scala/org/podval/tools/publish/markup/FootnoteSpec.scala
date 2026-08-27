@@ -48,19 +48,24 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(Footnote.linkIds(stripped).toSeq == Seq("a", "b"))
   }
 
-  test("harvest drops spurious footnote containers") {
-    val inner: Xml.Element = Xml.element("div").addClass("footnotes").setChildren(Chunk(
-      Footnote.body("a", Chunk(Xml.text("hello")))
+  test("unwrapLeftovers replaces matching containers with IR bodies") {
+    val leftover: Xml.Element = Xml.element("div").addClass("footnotes").setChildren(Chunk(
+      Xml.element("hr"),
+      Xml.element("ol").setChildren(Chunk(
+        Footnote.body("a", Chunk(Xml.text("hello")))
+      ))
     ))
-    val xml: Xml.Element = Xml.element("div").setChildren(Chunk(Footnote.link("a"), inner))
-    val (notes, stripped) = Footnote.harvest(
+    val xml: Xml.Element = Xml.element("div").setChildren(Chunk(Footnote.link("a"), leftover))
+    val unwrapped: Xml.Element = Footnote.unwrapLeftovers(
       xml,
-      isSpuriousFootnotesDiv = element => element.getName == "div" && element.hasClass("footnotes")
+      el => el.getName == "div" && el.hasClass("footnotes")
     )
-    assert(notes("a").number == 1)
-    val dumped: String = render(stripped)
+    val dumped: String = render(unwrapped)
     assert(!dumped.contains("""class="footnotes""""), dumped)
-    assert(!dumped.contains("hello"), dumped)
+    assert(!dumped.contains("<ol"), dumped)
+    val bodies: Seq[Xml.Element] = unwrapped.gather(el => Option.when(Footnote.isBody(el))(el)).toSeq
+    assert(bodies.size == 1, dumped)
+    assert(bodies.head.getText == "hello", dumped)
   }
 
   test("appendReferenced adds only footnotes linked in the selected tree") {

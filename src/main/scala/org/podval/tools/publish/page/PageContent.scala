@@ -202,10 +202,7 @@ object PageContent:
     val ids: IdGenerator = IdGenerator("_generated_id")
     val prepared: Xml.Element = xmlProcessed.transform(prepareElement(_, source, ids))
     val (footnotes: Map[String, Footnote], harvested: Xml.Element) =
-      try Footnote.harvest(
-        xml = prepared,
-        isSpuriousFootnotesDiv = source.markup.isSpuriousFootnotesDiv
-      )
+      try Footnote.harvest(prepared)
       catch case e: IllegalStateException =>
         throw IllegalStateException(s"${source.sourcePath}: ${e.getMessage}", e)
 

@@ -66,7 +66,9 @@ object MarkdownMarkup extends Markup(
       result
     )
     HtmlMarkup.process(
-      convertTocPlaceholders(convert(MarkdownCite.convertElement(result))),
+      convertTocPlaceholders(convert(MarkdownCite.convertElement(
+        Footnote.unwrapLeftovers(result, el => el.getName == "div" && el.hasClass("footnotes"))
+      ))),
       errorReporter
     )
 
@@ -269,9 +271,6 @@ object MarkdownMarkup extends Markup(
     val significant: Int = body.count(node => !node.isWhitespace)
     if paras.isEmpty || paras.length != significant then body
     else paras.map(_.getChildren).reduce((a, b) => a ++ Chunk(Xml.text(" ")) ++ b)
-
-  override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
-    element.getName == "div" && element.hasClass("footnotes")
 
   // Top-level children of the Markdown wrapper only: not lists, quotes, or code.
   // First match wins (`insertToc` also replaces only the first placeholder).

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlUtil}
 import zio.blocks.chunk.Chunk
 
 // Details of the footnote internal representation.
@@ -40,12 +40,18 @@ object Footnote:
       Option.when(isLink(element))(getCorrelationId(element))
     )
 
-  /** Number footnotes in document-link order, then drop bodies (and dialect-specific
-    * leftover footnote containers) from the tree. */
-  def harvest(
-    xml: Xml.Element,
-    isSpuriousFootnotesDiv: Xml.Element => Boolean = _ => false
-  ): (Map[String, Footnote], Xml.Element) =
+  /** Replace leftover containers (caller says which) with the IR bodies inside them. */
+  def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =
+    xml.transform(element =>
+      element.setChildren(XmlUtil.convertElements(element.getChildren, leftover =>
+        Option.when(isContainer(leftover))(
+          leftover.gather(el => Option.when(isBody(el))(el: Xml.Node))
+        )
+      ))
+    )
+
+  /** Number footnotes in document-link order, then drop bodies from the tree. */
+  def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
     val numbers: Map[String, Int] = linkIds(xml).zipWithIndexFrom(1).toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
@@ -64,9 +70,7 @@ object Footnote:
     val stripped: Xml.Element = xml.transform(element =>
       element.setChildren(element
         .getChildren
-        .filterNot(_.asElement.fold(false)(child =>
-          isBody(child) || isSpuriousFootnotesDiv(child)
-        ))
+        .filterNot(_.asElement.exists(isBody))
       )
     )
     (footnotes, stripped)

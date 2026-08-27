@@ -33,9 +33,6 @@ object AsciiDocMarkup extends Markup(
     asciidoctorVar.foreach(_.close())
     asciidoctorVar = None
 
-  override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
-    element.getName == "div" && element.getId.contains("footnotes")
-
   override def xmlContent(content: String, sourceFile: File): String =
     convert(content, sourceFile, asciidoctor)
 
@@ -117,7 +114,10 @@ object AsciiDocMarkup extends Markup(
       result
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
-    rewriteCalloutMarks(cleaned)
+    rewriteCalloutMarks(Footnote.unwrapLeftovers(
+      cleaned,
+      el => el.getName == "div" && el.getId.contains("footnotes")
+    ))
 
   private def rewriteCalloutMarks(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = convertCalloutMarks(element.getChildren).map: node =>

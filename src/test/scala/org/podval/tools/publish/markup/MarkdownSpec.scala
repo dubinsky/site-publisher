@@ -16,7 +16,7 @@ final class MarkdownSpec extends AnyFunSuite:
     HtmlXmlDialect.render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    Footnote.harvest(xml, MarkdownMarkup.isSpuriousFootnotesDiv)
+    Footnote.harvest(xml)
 
   test("nested lists") {
     val xml: Xml.Element = parse(
@@ -191,6 +191,7 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(bodies.size == 1, dumped)
     assert(Footnote.getCorrelationId(bodies.head) == ids.head, dumped)
     assert(dumped.contains("A note"), dumped)
+    assert(!dumped.contains("""class="footnotes""""), dumped)
     val (notes, stripped) = harvest(xml)
     assert(notes.size == 1)
     val noteNodes: String = render(Xml.element("span").setChildren(notes.values.head.nodes))

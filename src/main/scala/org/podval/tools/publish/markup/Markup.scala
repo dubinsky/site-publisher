@@ -43,8 +43,6 @@ abstract class Markup(
   /** TEI `entityLists` buckets. Harvested from the raw tree. */
   def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] = None
 
-  def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
-
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
   def pageHeader(page: FullMarkupPage): Html.Element = Markup.pageHeader(page)
