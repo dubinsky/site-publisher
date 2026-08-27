@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
@@ -66,7 +66,7 @@ object MarkdownMarkup extends Markup(
       result
     )
     HtmlMarkup.process(
-      convert(MarkdownCite.convertElement(result)),
+      convertTocPlaceholders(convert(MarkdownCite.convertElement(result))),
       errorReporter
     )
 
@@ -275,11 +275,32 @@ object MarkdownMarkup extends Markup(
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 
-  // Kramdown Toc Marker
-  override def isTocPlaceholder(element: Html.Element): Boolean =
-    element.getName == "ul" && element.getChildren.exists: node =>
-      node.asElement.fold(false): child =>
-        child.getName == "li" &&
-        child.getChildren.length == 1 &&
-        child.getChildren.head.asText.fold(false): text =>
-          text.endsWith("{:toc}")
+  // Top-level children of the Markdown wrapper only: not lists, quotes, or code.
+  // First match wins (`insertToc` also replaces only the first placeholder).
+  private def convertTocPlaceholders(root: Xml.Element): Xml.Element =
+    var found: Boolean = false
+    root.setChildren(root.getChildren.map: node =>
+      if found then node
+      else node.asElement.filter(isTocSource).map: _ =>
+        found = true
+        Toc.placeholder
+      .getOrElse(node)
+    )
+
+  private def isTocSource(element: Xml.Element): Boolean =
+    isKramdownTocList(element) || isBracketToc(element)
+
+  // FlexMark leaves Kramdown `{:toc}` on the last item: `<li>seed {:toc}</li>`.
+  private def isKramdownTocList(element: Xml.Element): Boolean =
+    (element.getName == "ul" || element.getName == "ol") &&
+    element.getChildren.flatMap(_.asElement).exists: item =>
+      item.getName == "li" && item.getText.trim.endsWith("{:toc}")
+
+  // Typora / GitLab `[TOC]` as a whole paragraph, not a link or `[TOC]:` reference.
+  private def isBracketToc(element: Xml.Element): Boolean =
+    element.getName == "p" &&
+    element.getChildren.filterNot(_.isWhitespace).toList.match
+      case List(node) =>
+        node.asText.exists(_.trim.equalsIgnoreCase("[TOC]"))
+      case _ =>
+        false

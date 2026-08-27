@@ -27,6 +27,73 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(xml.getName == "div")
   }
 
+  private def tocPlaceholders(xml: Xml.Element): Seq[Xml.Element] =
+    xml.gather(el => Option.when(el.has(Toc.PlaceholderClass))(el)).toSeq
+
+  test("Kramdown ul {:toc} becomes a TOC placeholder") {
+    val xml: Xml.Element = process(
+      """* TOC
+        |{:toc}
+        |
+        |## Alpha
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(tocPlaceholders(xml).size == 1, dumped)
+    assert(!dumped.contains("{:toc}"), dumped)
+  }
+
+  test("Kramdown ol {:toc} becomes a TOC placeholder") {
+    val xml: Xml.Element = process(
+      """1. TOC
+        |{:toc}
+        |
+        |## Alpha
+        |""".stripMargin
+    )
+    assert(tocPlaceholders(xml).size == 1, render(xml))
+  }
+
+  test("[TOC] paragraph becomes a TOC placeholder") {
+    val xml: Xml.Element = process(
+      """[TOC]
+        |
+        |## Alpha
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(tocPlaceholders(xml).size == 1, dumped)
+    assert(!dumped.contains("[TOC]"), dumped)
+  }
+
+  test("[toc] is accepted case-insensitively") {
+    val xml: Xml.Element = process("[toc]\n\n## Alpha\n")
+    assert(tocPlaceholders(xml).size == 1, render(xml))
+  }
+
+  test("[TOC] is not a placeholder in a sentence, list, quote, code, or as a link") {
+    def count(source: String): Int = tocPlaceholders(process(source)).size
+    assert(count("See [TOC] here\n") == 0)
+    assert(count("* [TOC]\n") == 0)
+    assert(count("> [TOC]\n") == 0)
+    assert(count("`[TOC]`\n") == 0)
+    assert(count("[TOC]: /x\n\n[TOC]\n") == 0)
+  }
+
+  test("only the first top-level TOC placeholder is converted") {
+    val xml: Xml.Element = process(
+      """[TOC]
+        |
+        |## Alpha
+        |
+        |[TOC]
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(tocPlaceholders(xml).size == 1, dumped)
+    assert(dumped.contains("[TOC]"), dumped)
+  }
+
   private def wikiBlocks(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(WikiBlock.is(element))(element)).toSeq
 

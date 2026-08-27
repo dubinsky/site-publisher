@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMarkupPage}
-import org.podval.xml.{Html, Xml, XmlUtil}
+import org.podval.xml.{Html, HtmlClass, Xml, XmlUtil}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import zio.blocks.chunk.Chunk
@@ -138,6 +138,10 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     ))
 
 object Toc:
+  object PlaceholderClass extends HtmlClass("toc-placeholder")
+
+  def placeholder: Xml.Element = Xml.element("div").add(PlaceholderClass)
+
   def apply(
     element: Xml.Element,
     markup: Markup,

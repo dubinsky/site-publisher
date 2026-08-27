@@ -54,8 +54,6 @@ abstract class Markup(
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None
 
-  def isTocPlaceholder(element: Html.Element): Boolean = false
-
   def pageHeader(page: FullMarkupPage): Html.Element = Markup.pageHeader(page)
 
   final def readAndParse(

@@ -52,6 +52,7 @@ This here is a static site generator. It:
 
 Supported markup constructs:
 
+- <<toc>>;
 - <<tables>>;
 - <<task-lists>>;
 - <<footnotes>>;
@@ -240,6 +241,35 @@ chunk-depth: 2
 
 When both views exist, the site header has icon links between them (list for chunked, file for one-page). Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
 
+[#toc]
+== Table of contents
+
+A page with `chunk: true` or `toc-depth` gets a generated TOC at the top if none is marked in the body. A placeholder in the body is replaced with that TOC (the first one only) even without those keys; `toc-depth` still controls how deep it goes (default 2).
+
+Markdown:: Kramdown
+https://kramdown.gettalong.org/converter/html.html#automatic-table-of-contents-generation[`{:toc}`]
+on a list. The list (seed item included) is replaced. Ordered or unordered:
+
++
+[source,markdown]
+----
+* this list is replaced with the TOC
+{:toc}
+
+## Alpha
+----
+
++
+or `1. seed` / `{:toc}` for a numbered outline.
+
+A paragraph whose only text is `[TOC]` (any case) is the same placeholder
+(Typora, GitLab). It must be a top-level paragraph: not a link (`[TOC]: /url` then `[TOC]`),
+not in a list, quote, or code span.
+
+HTML:: `<div class="toc-placeholder"></div>`.
+
+AsciiDoc, TEI, and DocBook have no in-body placeholder; use `chunk` / `toc-depth`.
+
 [#pdf]
 == PDF
 
@@ -409,7 +439,7 @@ via FlexMark
 https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
 Mark the list with `{:.glossary}` after it
 (Kramdown https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL],
-same family as `{:toc}`).
+same family as <<toc>>).
 Without that marker the list is not a glossary (no term ids, no tooltips).
 The marker also separates adjacent lists.
 

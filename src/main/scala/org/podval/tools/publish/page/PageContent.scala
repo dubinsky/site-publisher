@@ -80,7 +80,7 @@ final class PageContent private(
       chunkDepth = Option.when(isChunked)(fullPage.map(_.chunkDepth).getOrElse(2))
     )
     val withPlaceholder: Html.Element = Html.transform(html)(element =>
-      if tocAdded || !source.markup.isTocPlaceholder(element) then element else
+      if tocAdded || !element.has(Toc.PlaceholderClass) then element else
         tocAdded = true
         tocHtml
     )
