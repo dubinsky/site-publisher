@@ -113,8 +113,8 @@ final class TeiMarkupSpec extends AnyFunSuite:
     val dumped: String = render(process(input))
     assert(!dumped.contains("xi:include"), dumped)
     assert(!dumped.contains("this-file-does-not-exist"), dumped)
-    assert(dumped.contains("book:"), dumped)
-    assert(dumped.contains("store-by"), dumped)
+    assert(!dumped.contains("book:"), dumped)
+    assert(!dumped.contains("store-by"), dumped)
     assert(!dumped.contains("store-name"), dumped)
     assert(!dumped.contains("store-header"), dumped)
   }
@@ -137,8 +137,9 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("store-name"), dumped)
     assert(!dumped.contains("Российский государственный архив"), dumped)
     assert(!dumped.contains("Вебсайт"), dumped)
-    assert(dumped.contains("store-by"), dumped)
-    assert(dumped.contains("category:"), dumped)
+    assert(!dumped.contains("store-by"), dumped)
+    assert(!dumped.contains("category:"), dumped)
+    assert(index.selector.contains("category"), index.selector)
   }
 
   test("person has no document title") {

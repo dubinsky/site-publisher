@@ -9,10 +9,10 @@ import zio.blocks.html.*
 // TODO move this to `page`.
 object PageHeader:
   def of(page: FullMarkupPage): Html.Element =
-    // TODO also documents under a collection (ancestor store path), not only the store root.
-    if page.content.flatMap(_.storeIndex).isDefined
-    then collectorPageHeader(page)
-    else pageHeader(page)
+    if isCollector(page) then collectorPageHeader(page) else pageHeader(page)
+
+  private def isCollector(page: FullMarkupPage): Boolean =
+    page.content.flatMap(_.storeIndex).isDefined || collectorAncestors(page).nonEmpty
 
   def pageHeader(page: FullMarkupPage): Html.Element =
     header(className := "post-header",
@@ -65,22 +65,100 @@ object PageHeader:
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
   def collectorPageHeader(page: FullMarkupPage): Html.Element =
-    val index: StoreIndex = page.content.flatMap(_.storeIndex).get
-    Xml2Html.fromXml(collectorHeaderXml(index))
+    Xml2Html.fromXml(collectorHeaderXml(page))
 
-  // Live collector: `div.store-header` / `tei-head` with name, ": ", title, then abstract.
-  // Parent selector labels (`архив`) are not in this store file.
-  private def collectorHeaderXml(index: StoreIndex): Xml.Element =
-    val names: Xml.Nodes = Chunk.from(
-      index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).toSeq.map(storeNameXml)
+  /** Live collector: ancestor `<l>` lines, then `tei-head` for this page, then abstract/body,
+    * then this store's `by` selector label (the listing itself stays in the body). */
+  private def collectorHeaderXml(page: FullMarkupPage): Xml.Element =
+    val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
+    val head: Xml.Element = currentHead(page)
+    val index: Option[StoreIndex] = page.content.flatMap(_.storeIndex)
+    val description: Xml.Nodes = Chunk.from(index.flatMap(_.description).toSeq.map(TeiMarkup.convertFragment))
+    val body: Xml.Nodes = index.flatMap(_.body).fold(Chunk.empty[Xml.Node]): bodyEl =>
+      TeiMarkup.convertFragment(bodyEl).getChildren
+    val byLabel: Xml.Nodes = Chunk.from(index.flatMap(_.selector).toSeq.map: selector =>
+      Xml.element("l").addClass("store-by").setText(s"${Selector.displayName(selector)}:")
     )
-    val titleInner: Xml.Nodes = index.title.fold(Chunk.empty[Xml.Node]): title =>
-      TeiMarkup.convertFragment(title).getChildren
+    Xml.element("header").addClass("store-header").setChildren(
+      Chunk.from(ancestors.map(el => el: Xml.Node)) ++
+        Chunk(head: Xml.Node) ++
+        description ++
+        body ++
+        byLabel
+    )
+
+  private def collectorAncestors(page: Page): Seq[Page] =
+    def loop(opt: Option[Page]): List[Page] = opt match
+      case None => Nil
+      case Some(parent) =>
+        val rest: List[Page] = loop(parent.parent)
+        if parent.content.flatMap(_.storeIndex).isDefined then rest :+ parent else rest
+    loop(page.parent)
+
+  private def ancestorLine(page: Page): Xml.Element =
+    val name: Xml.Element =
+      Xml.element("a").setHref(page.path.toString).setText(pageDisplayName(page))
+    headingLine(
+      selector = selectorName(page),
+      name = Chunk(name),
+      title = storeTitleInner(page),
+      asHead = false
+    )
+
+  private def currentHead(page: FullMarkupPage): Xml.Element =
+    val nameFromIndex: Option[Xml.Element] = page.content.flatMap(_.storeIndex).flatMap: index =>
+      index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
+    val name: Xml.Nodes = nameFromIndex.fold(Chunk(Xml.text(pageDisplayName(page))))(n => Chunk(n))
+    val fromStore: Xml.Nodes = storeTitleInner(page)
+    val title: Xml.Nodes = if fromStore.nonEmpty then fromStore else pageTitleInner(page)
+    headingLine(
+      selector = selectorName(page),
+      name = name,
+      title = title,
+      asHead = true
+    )
+
+  private def headingLine(
+    selector: Option[String],
+    name: Xml.Nodes,
+    title: Xml.Nodes,
+    asHead: Boolean
+  ): Xml.Element =
+    val sel: Xml.Nodes = selector.fold(Chunk.empty[Xml.Node]): s =>
+      Chunk(Xml.text(Selector.displayName(s)), Xml.text(" "))
     val colon: Xml.Nodes =
-      if names.nonEmpty && titleInner.nonEmpty then Chunk(Xml.text(": ")) else Chunk.empty
-    val head: Xml.Element = Xml.element("tei-head").setChildren(names ++ colon ++ titleInner)
-    val description: Xml.Nodes = Chunk.from(index.description.toSeq.map(TeiMarkup.convertFragment))
-    Xml.element("header").addClass("store-header").setChildren(Chunk(head: Xml.Node) ++ description)
+      if name.nonEmpty && title.nonEmpty then Chunk(Xml.text(": ")) else Chunk.empty
+    Xml.element(if asHead then "tei-head" else "l").setChildren(sel ++ name ++ colon ++ title)
+
+  /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
+    * directory segment that is a known selector (`archive/` → архив). */
+  private def selectorName(page: Page): Option[String] =
+    page.parent.flatMap: parent =>
+      val parentIndex: Option[StoreIndex] = parent.content.flatMap(_.storeIndex)
+      parentIndex.flatMap(_.selector)
+        .orElse:
+          Option.when(
+            parentIndex.exists(_.isCollection) && page.content.flatMap(_.storeIndex).isEmpty
+          )("document")
+        .orElse(directorySelector(parent))
+
+  private def directorySelector(parent: Page): Option[String] =
+    val segment: String =
+      if parent.isDirectory && parent.path.path.length > 1
+      then parent.path.path.init.last
+      else parent.path.fileName
+    Option.when(Selector.find(segment).isDefined)(segment)
+
+  private def pageDisplayName(page: Page): String =
+    page.content.flatMap(_.storeIndex).flatMap(_.displayName).getOrElse(page.titleFromPath)
+
+  private def storeTitleInner(page: Page): Xml.Nodes =
+    page.content.flatMap(_.storeIndex).flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
+      TeiMarkup.convertFragment(title).getChildren
+
+  private def pageTitleInner(page: FullMarkupPage): Xml.Nodes =
+    if page.content.flatMap(_.storeIndex).isDefined then Chunk.empty
+    else page.content.flatMap(_.title).fold(Chunk.empty[Xml.Node])(_.getChildren)
 
   private def storeNameXml(name: StoreIndex.Name): Xml.Element =
     var result: Xml.Element = Xml.element("span").addClass("store-name").setText(name.n)

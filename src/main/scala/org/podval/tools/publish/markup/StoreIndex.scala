@@ -10,7 +10,9 @@ final class StoreIndex(
   val hrefs: Seq[String],
   val names: Seq[StoreIndex.Name],
   val title: Option[Xml.Element],
-  val description: Option[Xml.Element]
+  val description: Option[Xml.Element],
+  val body: Option[Xml.Element],
+  val isCollection: Boolean
 ):
   def displayName: Option[String] =
     names.find(_.lang.contains("ru")).orElse(names.headOption).map(_.n)
@@ -32,7 +34,9 @@ object StoreIndex:
         ).flatten,
         names = storeNames(xml),
         title = storeTitle(xml),
-        description = storeDescription(xml)
+        description = storeDescription(xml),
+        body = storeBody(xml),
+        isCollection = xml.localName == "collection"
       )
 
   private def storeTitle(root: Xml.Element): Option[Xml.Element] =
@@ -44,6 +48,10 @@ object StoreIndex:
   private def storeDescription(root: Xml.Element): Option[Xml.Element] =
     root.getChildren.flatMap(_.asElement).find: el =>
       el.localName == "abstract" && el.getChildren.nonEmpty
+
+  private def storeBody(root: Xml.Element): Option[Xml.Element] =
+    root.getChildren.flatMap(_.asElement).find: el =>
+      el.localName == "body" && el.getChildren.nonEmpty
 
   private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
     val fromChildren: Seq[StoreIndex.Name] =

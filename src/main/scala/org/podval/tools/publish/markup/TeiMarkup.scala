@@ -44,8 +44,8 @@ object TeiMarkup extends Markup(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
     )
-    // Title while the root is still `store` / `collection`. Header chrome (name, title,
-    // abstract) is stripped in `convertStoreChrome`; `by` stays as the listing label.
+    // Title while the root is still `store` / `collection`. Header chrome is
+    // `PageHeader.collectorPageHeader`; the store/collection tree is emptied.
     val title: Option[Xml.Element] = documentTitle(converted)
     val withoutTitle: Xml.Element = title.fold(converted)(stripTitle(converted, _))
     val body: Xml.Element = withoutTitle.transform(convertStoreChrome, stopAtCode = false)
@@ -154,26 +154,8 @@ object TeiMarkup extends Markup(
     )
 
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.localName match
-    case "store" | "collection" =>
-      element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isStoreHeaderChild)))
-    case "by" => convertBy(element)
+    case "store" | "collection" => element.setChildren(Chunk.empty)
     case _ => element
-
-  private def isStoreHeaderChild(element: Xml.Element): Boolean =
-    val name: String = element.localName
-    name == "name" || name == "title" || name == "tei-title" || name == "abstract"
-
-  private def convertBy(element: Xml.Element): Xml.Element =
-    val selector: Option[String] = element.get("selector").map(_.trim).filter(_.nonEmpty)
-    val heading: Xml.Nodes = selector.fold(Chunk.empty[Xml.Node]): s =>
-      Chunk(Xml.element("em").setText(s"$s:"))
-    var by: Xml.Element = element
-      .rename("div")
-      .addClass("store-by")
-      .set("selector", "")
-      .setChildren(heading)
-    selector.foreach(s => by = by.set("data-selector", s))
-    by
 
   private def dropIncludes(element: Xml.Element): Xml.Element =
     element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isInclude)))

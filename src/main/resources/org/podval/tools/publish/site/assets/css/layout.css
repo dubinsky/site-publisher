@@ -367,7 +367,7 @@
 
 .post-title,
 .post-content h1,
-.store-header > tei-head /* TODO store-header is from collector... */
+.store-header > tei-head
 {
     margin-bottom: 10px;
     font-size: 2.625rem;
@@ -552,6 +552,10 @@ ul.page-list {
 .store-name + .store-name::before {
     content: " / ";
     font-style: normal;
+}
+
+.store-header l {
+    display: block;
 }
 
 .store-by {

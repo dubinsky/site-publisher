@@ -193,7 +193,7 @@ home: /book/book/index.html
 
 `/index.html` is then a meta Refresh to that page (not an HTTP 301). Do not also author `index.md` / `index.adoc`. Other root files stay on the site; they are just not listed at `/`.
 
-A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Children are listed in include order (`name: title`). Names, `title`, and `abstract` from the store file go in the page header (`.store-header`); they are not repeated in the body. A scanned file under that directory that is not named in the includes is an error. Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them.
+A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Children are listed in include order (`name: title`). The page header (`.store-header`) holds ancestor path lines, this node's selector + name + title, `abstract`/`body`, and the `by/@selector` label; the body is only the directory list. Selector labels (`category` → `разряд`) come from the bundled `Selector.xml` (Russian name when present). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error. Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them.
 
 - directory structure
 - navigation
