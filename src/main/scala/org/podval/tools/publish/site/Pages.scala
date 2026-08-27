@@ -1,8 +1,9 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.{LinkKind, Markup, StoreIndex, TeiMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, FrontMatter,
-  MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
+import org.podval.tei.EntityKind
+import org.podval.tools.publish.markup.{EntityLists, LinkKind, Markup, StoreIndex, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
+  FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -65,6 +66,9 @@ final class Pages(site: Site):
         PageError.Duplicate,
         s"Duplicates for the path $path: ${pages.map(_.title).tail.mkString(", ")}"
       ))
+
+    indexEntities()
+    resolveEntityLists()
     
     site.errors.throwIfErrors()
 
@@ -360,16 +364,75 @@ final class Pages(site: Site):
   private def findBySource(sourcePath: Path): Option[Page] =
     pages.find(_.sourcePath.contains(sourcePath))
 
-  // TODO search only pages corresponding to the 'kind'
+  // Entity refs (`persName` / `placeName` / `orgName` `@ref`) look up (kind, filename)
+  // and do not title-walk. Other LinkKind values still fall through to path/title search.
   def find(
     path: Path,
     isAbsolute: Boolean,
     kind: Option[LinkKind]
   ): Option[Page] =
-    // Exact path first so `/P/index.html` is the chunked TOC, not title-walked to `/P.html`.
-    get(path)
-      .orElse(if path.extension.isEmpty then get(path.html) else None)
-      .orElse(pages.flatMap(page => is(page, path, isAbsolute)).headOption)
+    kind match
+      case Some(LinkKind.Entity(entityKind)) =>
+        findEntity(path, entityKind)
+      case _ =>
+        // Exact path first so `/P/index.html` is the chunked TOC, not title-walked to `/P.html`.
+        get(path)
+          .orElse(if path.extension.isEmpty then get(path.html) else None)
+          .orElse(pages.flatMap(page => is(page, path, isAbsolute)).headOption)
+
+  private var entityByKindAndId: Map[(EntityKind, String), Page] = Map.empty
+
+  private def indexEntities(): Unit =
+    val grouped: Map[(EntityKind, String), List[Page]] = pages.flatMap: page =>
+      for
+        source <- page.source if source.markup == TeiMarkup
+        kind <- page.entityKind
+        sourcePath <- page.sourcePath
+      yield (kind, sourcePath.fileName) -> page
+    .groupMap(_._1)(_._2)
+
+    entityByKindAndId = grouped.flatMap:
+      case (key, List(page)) =>
+        Some(key -> page)
+      case ((kind, id), duplicates) =>
+        duplicates.foreach: page =>
+          site.error(
+            page.sourcePath.getOrElse(page.path),
+            PageError.Duplicate,
+            s"duplicate ${kind.element} entity '$id'"
+          )
+        None
+
+  private def findEntity(path: Path, entityKind: EntityKind): Option[Page] =
+    if path.extension.nonEmpty || path.path.size != 1 then None
+    else entityByKindAndId.get((entityKind, path.fileName))
+
+  private def resolveEntityLists(): Unit =
+    pages.foreach:
+      case directory: DirectoryPage =>
+        directory.content.flatMap(_.entityListsIndex).foreach: index =>
+          val entities: Seq[Page] = EntityLists.entitiesUnder(directory)
+          directory.setStoreChildren(
+            entities.sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)).toList
+          )
+          val listPages: List[EntityListPage] = index.lists.toList.flatMap: spec =>
+            val members: Seq[Page] = EntityLists.members(directory, spec)
+            if members.isEmpty then None
+            else
+              val listPath: Path = EntityLists.listPath(directory, spec)
+              get(listPath) match
+                case Some(existing) =>
+                  site.error(
+                    listPath,
+                    PageError.Duplicate,
+                    s"entity list '${spec.id}' collides with $existing"
+                  )
+                  None
+                case None =>
+                  Some(EntityListPage(site, listPath, spec, members))
+          listPages.foreach(add)
+          listPages.foreach(_.setSiblings(listPages))
+      case _ =>
 
   def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
     pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)

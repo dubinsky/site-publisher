@@ -18,9 +18,10 @@ object BackLink:
     from: FullMarkupPage,
     ids: Ids
   ): Option[BackLink] =
+    val kind: Option[LinkKind] = LinkKind.of(element)
     for
       ref <- element.getHref
-      to <- Link.resolve(ref, kind = None, from)
+      to <- Link.resolve(ref, kind, from)
       id <- element.getId
     yield
       val toFrom: Link = Link(from, fragment = ids.resolve(id), isIntrapage = false)
@@ -30,7 +31,7 @@ object BackLink:
         to = to,
         from = from,
         transclude = WikiLink.isTranscluded(element),
-        kind = LinkKind.of(element),
+        kind = kind,
         context = LinkContext(
           toFrom = toFrom,
           before = before,

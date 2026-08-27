@@ -40,6 +40,9 @@ abstract class Markup(
   /** TEI `store` / `collection` include list. Harvested from the raw tree (includes are not expanded). */
   def storeIndex(xml: Xml.Element): Option[StoreIndex] = None
 
+  /** TEI `entityLists` buckets. Harvested from the raw tree. */
+  def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] = None
+
   final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
     .getChildren
     .flatMap(_.asElement)

@@ -13,7 +13,9 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
 
   override def hasSyntheticContent: Boolean = true
 
-  override protected def syntheticContentOpt: Option[Html.Element] = Some(syntheticContent)
+  override protected def syntheticContentOpt: Option[Html.Element] =
+    if content.flatMap(_.entityListsIndex).isDefined then None
+    else Some(syntheticContent)
 
   private def syntheticContent: Html.Element =
     div(className := "directory", listing(children))

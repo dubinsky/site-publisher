@@ -403,6 +403,14 @@ wit {
 }
 
 /* Entities, entity lists, entity names.*/
+ul.entity-lists-toc {
+  list-style: none;
+  padding-left: 0;
+  margin: 0 0 1em;
+}
+ul.entity-lists-toc li {
+  display: block;
+}
 listPerson > tei-head, listPlace > tei-head, listOrg > tei-head {
   font-size: 32px;
   text-indent: -0.5em;
@@ -412,7 +420,9 @@ person, place, org, personGrp {
   margin-top: 1em;
   margin-bottom: 1em;
 }
-person > a.persName, place > a.placeName, org > a.orgName {
+person > persName, person > a.persName,
+place > placeName, place > a.placeName,
+org > orgName, org > a.orgName {
   display: block;
   font-size: 24px;
 }

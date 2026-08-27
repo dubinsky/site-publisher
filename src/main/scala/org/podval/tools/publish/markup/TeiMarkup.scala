@@ -18,7 +18,8 @@ object TeiMarkup extends Markup(
 ):
   private val facsimileSymbol: String = "⎙"
 
-  override def rootElements: Set[String] = Set("TEI", "store", "collection") ++ EntityKind.values.map(_.element).toSet
+  override def rootElements: Set[String] =
+    Set("TEI", "store", "collection", "entityLists") ++ EntityKind.values.map(_.element).toSet
 
   override def xmlContent(content: String, sourceFile: File): String = content
 
@@ -34,6 +35,9 @@ object TeiMarkup extends Markup(
 
   override def entityKind(xml: Xml.Element): Option[EntityKind] =
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
+
+  override def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] =
+    EntityLists.harvest(xml)
 
   override def storeIndex(xml: Xml.Element): Option[StoreIndex] =
     Option.when(isStoreRoot(xml)):
@@ -100,7 +104,7 @@ object TeiMarkup extends Markup(
             .flatMap(_.getChildren.flatMap(_.asElement).filter(_.getName == "titleStmt"))
             .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
         )
-      case "store" | "collection" =>
+      case "store" | "collection" | "entityLists" =>
         pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
       case "div" if root.hasClass("store") || root.hasClass("collection") =>
         pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
@@ -149,9 +153,12 @@ object TeiMarkup extends Markup(
       case "term" =>
         teiHref(stripped).fold(stripped)(value => renameElement("a", stripped.setHref(value)))
 
-      case name if EntityKind.values.exists(_.nameElement == name) =>
-        // TODO turn those into As *only* if 'ref' attribute is present!
-        renameElement("a", copyAttribute("ref", "href", stripped))
+      case name if isEntityName(name) =>
+        val ref: Option[String] = stripped.get("ref").map(_.trim).filter(_.nonEmpty)
+        ref.fold(stripped)(_ => renameElement("a", copyAttribute("ref", "href", stripped)))
+
+      case name if isEntityList(name) =>
+        convertEntityList(stripped)
 
       case "pb" =>
         // TODO convert 'n' attribute?
@@ -331,11 +338,30 @@ object TeiMarkup extends Markup(
         case None =>
           element
 
+  private def isEntityName(name: String): Boolean =
+    EntityKind.values.exists(_.nameElement == name)
+
+  private def isEntityList(name: String): Boolean =
+    EntityKind.values.exists(_.listElement == name)
+
+  private def convertEntityList(element: Xml.Element): Xml.Element =
+    val withId: Xml.Element =
+      element.get("n").map(_.trim).filter(_.nonEmpty).fold(element)(element.setId)
+    withId.setChildren(withId.getChildren.map: node =>
+      node.asElement match
+        case Some(el) if isTeiTitle(el) => el.rename("tei-head")
+        case _ => node
+    )
+
+  private def isEntityNameLink(element: Xml.Element): Boolean =
+    EntityKind.values.exists(kind => element.hasClass(kind.nameElement))
+
   // Front-matter `.bib` keys: `@cRef`, or a bare `@target` that is not a native listBibl id.
   // `#id` to a listBibl entry stays an internal link (tips). Same key can be used both ways
   // (`#knuth79` vs citeproc `#bibl-knuth79`).
+  // Entity `@ref` on persName/placeName/orgName is a filename, not a bib key.
   private def convertCite(element: Xml.Element, biblIds: Set[String]): Xml.Element =
-    if !element.isA || Citation.isCite(element) then element
+    if !element.isA || Citation.isCite(element) || isEntityNameLink(element) then element
     else
       val href: Option[String] = element.getHref.map(_.trim).filter(_.nonEmpty)
       val fragment: Option[String] =

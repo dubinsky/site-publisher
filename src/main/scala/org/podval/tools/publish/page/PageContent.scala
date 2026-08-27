@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids,
-  Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, EntityLists, Footnote,
+  Glossary, Ids, Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -20,7 +20,8 @@ final class PageContent private(
   val footnotes: Map[String, Footnote],
   val glossaryDefinitions: Map[String, Xml.Nodes],
   val bibliographyDefinitions: Map[String, Xml.Nodes],
-  val storeIndex: Option[StoreIndex]
+  val storeIndex: Option[StoreIndex],
+  val entityListsIndex: Option[EntityLists.Index]
 ):
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
@@ -47,7 +48,12 @@ final class PageContent private(
     if !isChunked then unknownCitations.foreach: label =>
       source.error(PageError.UnknownCitation, s"unknown citation '$label'")
 
-    val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
+    // After backlink harvest (Site.load walks PageContent.xml). Index → entity hrefs are display-only.
+    val withLists: Xml.Element = entityListsIndex.fold(withCitations)(index =>
+      EntityLists.fill(withCitations, source.page, index)
+    )
+
+    val withLinks: Xml.Element = resolveLinks(withLists, isChunked, attachTips = true)
 
     // Convert to HTML
     insertToc(Xml2Html.fromXml(withLinks), sectionId, isChunked)
@@ -177,6 +183,7 @@ object PageContent:
     xml: Xml.Element
   ): PageContent =
     val storeIndex: Option[StoreIndex] = source.markup.storeIndex(xml)
+    val entityListsIndex: Option[EntityLists.Index] = source.markup.entityListsIndex(xml)
 
     // Run markup-specific processors and extract title
     val (xmlProcessed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
@@ -213,7 +220,8 @@ object PageContent:
       footnotes = footnotes,
       glossaryDefinitions = Glossary.definitions(harvested),
       bibliographyDefinitions = BibliographyItem.definitions(harvested),
-      storeIndex = storeIndex
+      storeIndex = storeIndex,
+      entityListsIndex = entityListsIndex
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */

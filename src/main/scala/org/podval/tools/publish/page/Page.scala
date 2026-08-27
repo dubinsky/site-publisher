@@ -93,15 +93,16 @@ abstract class Page(
   def titleDefault: String = titleFromPath
   def titleFromPath: String = path.fileName
 
-  /** Directory listing label: store `name: title` when the child is a store. */
+  /** Directory listing label: store `name: title` when the child is a store; first TEI name for an entity. */
   final def listTitle: String =
-    content.flatMap(_.storeIndex).flatMap(_.displayName) match
-      case Some(name) =>
-        val t: String = title.trim
-        if t.isEmpty || t == name || t == titleFromPath then name
-        else s"$name: $t"
-      case None =>
-        title
+    entityDisplayName.getOrElse:
+      content.flatMap(_.storeIndex).flatMap(_.displayName) match
+        case Some(name) =>
+          val t: String = title.trim
+          if t.isEmpty || t == name || t == titleFromPath then name
+          else s"$name: $t"
+        case None =>
+          title
 
   final def listRef(cls: Option[String] = None): Html.Element =
     val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
@@ -124,6 +125,17 @@ abstract class Page(
   protected def iconDefault: Icon
 
   final def entityKind: Option[EntityKind] = content(content => content.source.markup.entityKind(content.xml))
+
+  final def entityRole: Option[String] =
+    content(c => c.xml.get("role").map(_.trim).filter(_.nonEmpty))
+
+  final def entityDisplayName: Option[String] =
+    entityKind.flatMap: kind =>
+      content.flatMap: c =>
+        c.xml.getChildren.flatMap(_.asElement)
+          .find(el => el.getName == kind.nameElement || el.hasClass(kind.nameElement))
+          .map(_.getText.trim)
+          .filter(_.nonEmpty)
   
   final def ref(
     cls: Option[String] = None,

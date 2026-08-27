@@ -112,6 +112,69 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(title.isEmpty, render(xml))
   }
 
+  test("person, place, and org roots are TEI") {
+    assert(Markup.forElement("person").contains(TeiMarkup))
+    assert(Markup.forElement("place").contains(TeiMarkup))
+    assert(Markup.forElement("org").contains(TeiMarkup))
+    assert(Markup.forElement("entityLists").contains(TeiMarkup))
+    assert(Markup.forElement("TEI").contains(TeiMarkup))
+  }
+
+  test("entityLists document title is the direct child; list title becomes tei-head") {
+    val (xml, title) = processResult(
+      """<entityLists>
+        |  <title>Имена</title>
+        |  <listPerson n="jews" role="jew"><title>Жиды</title></listPerson>
+        |  <listPlace n="places"><title>Места</title></listPlace>
+        |</entityLists>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(title.exists(_.getText.contains("Имена")), dumped)
+    assert(xml.gather(el => Option.when(el.getName == "title" || el.getName == "tei-title")(el)).isEmpty, dumped)
+    val people: Seq[Xml.Element] = xml.gather(el => Option.when(el.getName == "listPerson")(el)).toSeq
+    assert(people.exists(_.getId.contains("jews")), dumped)
+    assert(people.exists(el => el.getChildren.flatMap(_.asElement).exists(h =>
+      h.getName == "tei-head" && h.getText.contains("Жиды")
+    )), dumped)
+    val index = EntityLists.harvest(parse(
+      """<entityLists>
+        |  <listPerson n="jews" role="jew"><title>Жиды</title></listPerson>
+        |</entityLists>""".stripMargin
+    )).get
+    assert(index.lists.size == 1)
+    assert(index.lists.head.id == "jews")
+    assert(index.lists.head.role.contains("jew"))
+    assert(index.lists.head.kind == org.podval.tei.EntityKind.Person)
+  }
+
+  test("entity name with ref becomes a; without ref stays") {
+    val xml: Xml.Element = process(
+      """<p>See <persName ref="alter-rebbe">the Rebbe</persName>
+        | in <placeName ref="Вильна">Vilna</placeName>
+        | and <orgName ref="кагал">the kahal</orgName>
+        | vs <persName>bare</persName>
+        | and <persName ref="  ">empty</persName>.</p>""".stripMargin
+    )
+    val dumped: String = render(xml)
+
+    def named(cls: String, href: String): Seq[Xml.Element] =
+      xml.gather(el =>
+        Option.when(el.isA && el.hasClass(cls) && el.getHref.contains(href))(el)
+      ).toSeq
+
+    assert(named("persName", "alter-rebbe").exists(_.getText.contains("the Rebbe")), dumped)
+    assert(named("placeName", "Вильна").exists(_.getText.contains("Vilna")), dumped)
+    assert(named("orgName", "кагал").exists(_.getText.contains("the kahal")), dumped)
+
+    val leftover: Seq[Xml.Element] = xml.gather(el =>
+      Option.when(el.getName == "persName")(el)
+    ).toSeq
+    assert(leftover.exists(_.getText.contains("bare")), dumped)
+    assert(leftover.exists(_.getText.contains("empty")), dumped)
+    assert(leftover.forall(_.getHref.isEmpty), dumped)
+    assert(xml.gather(el => Option.when(Citation.isCite(el))(el)).isEmpty, dumped)
+  }
+
   test("endnote among mixed text and elements does not throw") {
     val xml: Xml.Element = process(
       """<p><note place="end">leading</note> after <hi>x</hi><note place="end">clung</note> tail</p>"""

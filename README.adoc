@@ -42,6 +42,7 @@ This here is a static site generator. It:
 - recognizes various <<markup>> languages;
 - interprets <<frontmatter>>;
 - resolves various <<page-names>>;
+- recognizes TEI <<entities>>;
 - lists <<directories>>;
 - supports <<blog-posts>>;
 - supports <<chunking>>;
@@ -88,7 +89,7 @@ Recognized by extension:
 - Markdown (`.md`)
 - AsciiDoc (`.adoc`)
 - HTML (`.html`)
-- TEI (`.xml` with a TEI root element) - TODO
+- TEI (`.xml` with a TEI root: `TEI`, `store`, `collection`, `person`, `place`, `org`)
 - DocBook (`.xml` with a DocBook root: `article`, `book`, `chapter`, `appendix`, `part`, `set`, `preface`, `refentry`, `topic`)
 
 [#frontmatter]
@@ -142,6 +143,41 @@ Wiki links in Obsidian:
 - how do they look in the file if name reference is ambiguous?
 - can they be split between the lines?
 - do they support any kind of agglutination?
+
+[#entities]
+== Entities
+
+A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`names/alter-rebbe.xml` → `alter-rebbe`).
+
+`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link).
+
+[source,xml]
+----
+<persName ref="alter-rebbe">Алтер Ребе</persName>
+в <placeName ref="Вильна">Вильне</placeName>
+<orgName ref="Виленский_кагал">виленский кагал</orgName>
+----
+
+Wiki `+++[[alter-rebbe]]+++` still finds the entity page by file name. Entity refs do not title-walk, so a markdown page titled `alter-rebbe` does not steal `persName ref="alter-rebbe"`.
+
+A TEI `entityLists` file beside a directory (`names.xml` next to `names/`) is that directory's index (`/names/index.html`), not a flat listing of files. Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
+
+- the list kind is the element (`listPerson` → `person` files);
+- `@n` is the list id (in-page `#n` and `/names/{n}.html`);
+- `@role` present: entities of that kind whose root `@role` matches; omitted: entities of that kind with no role;
+- `<title>` on the list is the heading; a direct child `<title>` of `entityLists` is the page title.
+
+Empty lists are omitted. Members are sibling entity files in that directory, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. Document backlinks on an entity page still come from `@ref` in other documents; the index itself is not a backlink source.
+
+[source,xml]
+----
+<entityLists>
+  <title>Имена</title>
+  <listPerson n="jews" role="jew"><title>Жиды (они же Евреи)</title></listPerson>
+  <listPerson n="unknown"><title>Неизвестно кто</title></listPerson>
+  <listPlace n="places"><title>Места</title></listPlace>
+</entityLists>
+----
 
 [#directories]
 == Directories
