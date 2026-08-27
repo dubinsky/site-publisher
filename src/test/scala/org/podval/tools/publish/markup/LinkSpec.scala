@@ -184,3 +184,34 @@ final class LinkSpec extends AnyFunSuite:
       assert(alias.url == "/notes.html")
       assert(Link.resolve("/notes-alias/nope", None, home).isEmpty)
   }
+
+  test("mailto is not a self-link when site url has no host") {
+    val path: NioPath = NioFiles.createTempDirectory("site-publisher-mailto")
+    try
+      val dir: File = path.toFile
+      Files.write(
+        File(dir, "_site_config.yml"),
+        """title: Mailto Fixture
+          |description: mailto must not be a self-link
+          |url: www.alter-rebbe.org
+          |author: Test
+          |email: test@example.test
+          |""".stripMargin
+      )
+      Files.write(
+        File(dir, "index.md"),
+        "Write [olga](mailto:olga-minkina@yandex.ru) or olga-minkina@yandex.ru.\n"
+      )
+      val target: File = File(dir, "_site")
+      Site(SiteOptions(
+        sourceDirectoryPath = dir.getAbsolutePath,
+        targetDirectoryNameOpt = Some(target.getAbsolutePath),
+        treatErrorsAsWarnings = true,
+        logLevelOpt = Some("WARN")
+      )).generate()
+      val errors: String = Files.read(File(target, "errors.html"))
+      assert(!errors.contains("spurious external"), errors)
+      assert(!errors.contains("olga-minkina"), errors)
+    finally
+      NioFiles.walk(path).sorted(java.util.Comparator.reverseOrder()).forEach(NioFiles.delete(_))
+  }

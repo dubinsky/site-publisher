@@ -58,8 +58,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
     // TODO verify that external link is not broken if the Site is so configured
     try
       val uri: URI = URI(href)
-      val isSelf: Boolean = uri.getScheme != null && (/*uri.getHost == null ||*/ uri.getHost == this.uri.getHost)
-      if isSelf then errorReporter.error(PageError.SelfLink, href)
+      // Both hosts must be present: `mailto:` and a scheme-less site `url` both have host null.
+      val hrefHost: String = uri.getHost
+      val siteHost: String = this.uri.getHost
+      if hrefHost != null && siteHost != null && hrefHost.equalsIgnoreCase(siteHost) then
+        errorReporter.error(PageError.SelfLink, href)
       uri.getScheme == null
     catch case e: URISyntaxException => true
 
