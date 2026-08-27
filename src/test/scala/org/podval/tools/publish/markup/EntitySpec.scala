@@ -158,6 +158,60 @@ final class EntitySpec extends AnyFunSuite:
       assert(!page.contains("""href="/notes.html""""), page)
   }
 
+  test("collector header resolves entity refs in store titles") {
+    withSite(Map(
+      "col.xml" ->
+        """<collection n="29">
+          |  <title>About <persName ref="alter-rebbe">the Rebbe</persName></title>
+          |</collection>
+          |""".stripMargin,
+      "col/001.md" -> "body\n"
+    )): (_, target) =>
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("""href="/people/alter-rebbe.html""""), index)
+      val doc: String = html(target, "col/001.html")
+      assert(doc.contains("""href="/people/alter-rebbe.html""""), doc)
+      assert(doc.contains("<l>документ 001</l>"), doc)
+      assert(!doc.contains("<tei-head>документ"), doc)
+  }
+
+  test("collection document header table from teiHeader") {
+    withSite(Map(
+      "col.xml" ->
+        """<collection n="1"><title>C</title></collection>""".stripMargin,
+      "col/003.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt>
+          |      <author><persName ref="alter-rebbe">the Rebbe</persName></author>
+          |      <editor role="transcriber"><persName ref="ab">A</persName></editor>
+          |    </titleStmt></fileDesc>
+          |    <profileDesc>
+          |      <abstract>A description of <persName ref="alter-rebbe">him</persName>.</abstract>
+          |      <creation><date when="1798-08-11">11 августа 1798</date></creation>
+          |      <correspDesc><correspAction><persName role="addressee" ref="ab">Someone</persName></correspAction></correspDesc>
+          |    </profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val doc: String = html(target, "col/003.html")
+      assert(doc.contains("document-header"), doc)
+      assert(doc.contains("Описание"), doc)
+      assert(doc.contains("1798-08-11"), doc)
+      assert(doc.contains("Кто"), doc)
+      assert(doc.contains("Кому"), doc)
+      assert(doc.contains("Расшифровка"), doc)
+      assert(doc.contains("""href="/people/alter-rebbe.html""""), doc)
+      assert(doc.contains("""href="/people/ab.html""""), doc)
+      val post: String = doc.substring(doc.indexOf("post-content"))
+      assert(!post.contains("teiHeader"), post)
+      assert(post.contains("hello"), post)
+      val index: String = html(target, "col/index.html")
+      assert(!index.contains("<tei-head>"), index)
+  }
+
   test("wiki link still finds an entity by file name") {
     withSite(): (site, target) =>
       val home: Page = pageNamed(site, "Home")

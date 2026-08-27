@@ -558,6 +558,27 @@ ul.page-list {
     display: block;
 }
 
+table.document-header {
+    width: 100%;
+    margin-top: 0.5em;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: none;
+
+    td {
+        border: none;
+        vertical-align: top;
+        background: none;
+        position: static;
+        font-weight: normal;
+    }
+
+    .heading {
+        width: 18%;
+        font-style: italic;
+    }
+}
+
 .store-by {
     margin: 0.5em 0;
 }

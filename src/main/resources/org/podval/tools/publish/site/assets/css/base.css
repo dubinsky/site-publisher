@@ -166,6 +166,12 @@ p, tei-p {
     /*text-align: justify;*/
 }
 
+/* Verse documents (`p`/`l`): live TEI `p` is not a HTML paragraph with 1em margins. */
+tei-p:has(> l) {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 *[rendition~="#center"] tei-p {
     text-align: center;
 }

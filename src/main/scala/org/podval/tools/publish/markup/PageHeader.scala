@@ -73,15 +73,17 @@ object PageHeader:
     val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
     val head: Xml.Element = currentHead(page)
     val index: Option[StoreIndex] = page.content.flatMap(_.storeIndex)
-    val description: Xml.Nodes = Chunk.from(index.flatMap(_.description).toSeq.map(TeiMarkup.convertFragment))
+    val description: Xml.Nodes = Chunk.from(index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml)))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Chunk.empty[Xml.Node]): bodyEl =>
-      TeiMarkup.convertFragment(bodyEl).getChildren
+      resolvedFragment(page, bodyEl).getChildren
     val byLabel: Xml.Nodes = Chunk.from(index.flatMap(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${Selector.displayName(selector)}:")
     )
+    val table: Xml.Nodes = Chunk.from(documentHeaderTable(page).toSeq)
     Xml.element("header").addClass("store-header").setChildren(
       Chunk.from(ancestors.map(el => el: Xml.Node)) ++
         Chunk(head: Xml.Node) ++
+        table ++
         description ++
         body ++
         byLabel
@@ -109,13 +111,11 @@ object PageHeader:
     val nameFromIndex: Option[Xml.Element] = page.content.flatMap(_.storeIndex).flatMap: index =>
       index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
     val name: Xml.Nodes = nameFromIndex.fold(Chunk(Xml.text(pageDisplayName(page))))(n => Chunk(n))
-    val fromStore: Xml.Nodes = storeTitleInner(page)
-    val title: Xml.Nodes = if fromStore.nonEmpty then fromStore else pageTitleInner(page)
     headingLine(
       selector = selectorName(page),
       name = name,
-      title = title,
-      asHead = true
+      title = storeTitleInner(page),
+      asHead = page.content.flatMap(_.storeIndex).exists(index => !index.isCollection)
     )
 
   private def headingLine(
@@ -154,13 +154,50 @@ object PageHeader:
 
   private def storeTitleInner(page: Page): Xml.Nodes =
     page.content.flatMap(_.storeIndex).flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
-      TeiMarkup.convertFragment(title).getChildren
+      resolvedFragment(page, title).getChildren
 
-  private def pageTitleInner(page: FullMarkupPage): Xml.Nodes =
-    if page.content.flatMap(_.storeIndex).isDefined then Chunk.empty
-    else page.content.flatMap(_.title).fold(Chunk.empty[Xml.Node])(_.getChildren)
+  private def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
+    val converted: Xml.Element = TeiMarkup.convertFragment(xml)
+    page.content.fold(converted)(_.resolveConverted(converted))
 
   private def storeNameXml(name: StoreIndex.Name): Xml.Element =
     var result: Xml.Element = Xml.element("span").addClass("store-name").setText(name.n)
     name.lang.foreach(lang => result = result.set("lang", lang))
     result
+
+  private def documentHeaderTable(page: FullMarkupPage): Option[Xml.Element] =
+    val header: Option[DocumentHeader] = page.content.flatMap(_.documentHeader)
+    Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
+      val meta: DocumentHeader = header.get
+      Xml.element("table").addClass("document-header").setChildren(Chunk(
+        headerRow(page, "Описание", meta.description.fold(Chunk.empty[Xml.Node])(_.getChildren)),
+        headerRow(page, "Дата", dateCell(meta.date)),
+        headerRow(page, "Кто", joinedInner(meta.authors)),
+        headerRow(page, "Кому", Chunk.from(meta.addressee.toSeq.map(el => el: Xml.Node))),
+        headerRow(page, "Расшифровка", joinedInner(meta.transcribers))
+      ))
+
+  private def isCollectionDocument(page: Page): Boolean =
+    page.content.flatMap(_.storeIndex).isEmpty &&
+      collectorAncestors(page).exists(_.content.flatMap(_.storeIndex).exists(_.isCollection))
+
+  private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Xml.Element =
+    Xml.element("tr").setChildren(Chunk(
+      Xml.element("td").addClass("heading").setText(heading),
+      Xml.element("td").addClass("value").setChildren(convertedNodes(page, nodes))
+    ))
+
+  private def dateCell(date: Option[Xml.Element]): Xml.Nodes =
+    date.fold(Chunk.empty[Xml.Node]): el =>
+      el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Chunk(Xml.text(when)))
+
+  private def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
+    val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)
+    inners match
+      case Seq() => Chunk.empty
+      case Seq(one) => one
+      case many => many.reduce((left, right) => left ++ Chunk(Xml.text(", ")) ++ right)
+
+  private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
+    if nodes.isEmpty then Chunk.empty
+    else resolvedFragment(page, Xml.element("span").setChildren(nodes)).getChildren

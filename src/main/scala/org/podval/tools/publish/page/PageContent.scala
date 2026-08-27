@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, EntityLists, Footnote,
-  Glossary, Ids, Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, DocumentHeader, EntityLists,
+  Footnote, Glossary, Ids, Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -48,7 +48,8 @@ object PageContent:
       glossaryDefinitions = Glossary.definitions(result),
       bibliographyDefinitions = BibliographyItem.definitions(result),
       storeIndex = StoreIndex(xml),
-      entityListsIndex = EntityLists.harvest(xml)
+      entityListsIndex = EntityLists.harvest(xml),
+      documentHeader = DocumentHeader.harvest(xml)
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */
@@ -88,7 +89,8 @@ final class PageContent private(
   val glossaryDefinitions: Map[String, Xml.Nodes],
   val bibliographyDefinitions: Map[String, Xml.Nodes],
   val storeIndex: Option[StoreIndex],
-  val entityListsIndex: Option[EntityLists.Index]
+  val entityListsIndex: Option[EntityLists.Index],
+  val documentHeader: Option[DocumentHeader]
 ):
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
@@ -99,10 +101,12 @@ final class PageContent private(
     val isChunked: Boolean = sectionId.isDefined || !isTerminal
 
     // Select XML to include
-    val selected: Xml.Element = toc.select(
-      xml = xml,
-      sectionId = sectionId,
-      isTerminal = isTerminal
+    val selected: Xml.Element = stripTeiHeaderIfDocument(
+      toc.select(
+        xml = xml,
+        sectionId = sectionId,
+        isTerminal = isTerminal
+      )
     )
 
     // Add bodies of the footnotes referenced in the selected XML
@@ -124,6 +128,31 @@ final class PageContent private(
 
     // Convert to HTML
     insertToc(Xml2Html.fromXml(withLinks), sectionId, isChunked)
+
+  private def stripTeiHeaderIfDocument(element: Xml.Element): Xml.Element =
+    if documentHeader.isEmpty || !underCollection then element
+    else if element.localName != "TEI" then element
+    else element.setChildren(element.getChildren.filterNot(node =>
+      node.asElement.exists(_.localName == "teiHeader")
+    ))
+
+  private def underCollection: Boolean =
+    source.page.parent.exists(_.content.flatMap(_.storeIndex).exists(_.isCollection))
+
+  /** Resolve `a@href` in already-converted XML (collector header titles). */
+  def resolveConverted(xml: Xml.Element): Xml.Element =
+    resolveLinks(
+      xml.transform(markInternalLink, stopAtCode = false),
+      isChunked = false,
+      attachTips = false
+    )
+
+  private def markInternalLink(element: Xml.Element): Xml.Element =
+    if element.isA && !Section.isPermalink(element) then
+      element.getHref.fold(element): href =>
+        if source.page.site.isInternalLink(href, source) then element.add(Link.InternalLinkClass)
+        else element
+    else element
 
   private lazy val bibliography: Bibliography =
     val sourceFile: File = source.page.site.sourceFile(source.sourcePath)
