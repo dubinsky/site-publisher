@@ -68,8 +68,12 @@ object Path:
     val segments: Seq[String] = href.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
     if segments.isEmpty then Path.root
     else
-      val (last, extension) = Files.nameAndExtension(segments.last)
-      Path(segments.init :+ last.trim, extension)
+      val last: String = segments.last
+      val (name: String, extension: Option[String]) = Files.nameAndExtension(last)
+      // Digit-only suffix is part of the name (`255.2`), not an extension.
+      if extension.exists(ext => ext.nonEmpty && ext.forall(_.isDigit))
+      then Path(segments.init :+ last.trim, None)
+      else Path(segments.init :+ name.trim, extension)
 
   // Relative `*.html` and `./` / `../` hrefs; not wiki names and not site-root `/…`.
   def isRelativeFileHref(href: String): Boolean =

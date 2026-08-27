@@ -72,6 +72,10 @@ final class LinkSpec extends AnyFunSuite:
         File(dir, "aliased/child.md"),
         "Child page under the aliased directory.\n"
       )
+      Files.write(
+        File(dir, "aliased/255.2.md"),
+        "Dotted document id under the aliased directory.\n"
+      )
       val target: File = File(dir, "_site")
       val site: Site = Site(SiteOptions(
         sourceDirectoryPath = dir.getAbsolutePath,
@@ -167,6 +171,10 @@ final class LinkSpec extends AnyFunSuite:
       val collection: Link = Link.resolve("/short", None, home).get
       assert(collection.url == "/aliased/index.html")
       assert(Link.resolve("/short/missing", None, home).isEmpty)
+      val dotted: Link = Link.resolve("/short/255.2", None, home).get
+      assert(dotted.url == "/aliased/255.2.html")
+      val dottedWiki: Link = Link.resolve("short/255.2", None, home).get
+      assert(dottedWiki.url == "/aliased/255.2.html")
   }
 
   test("leaf alias does not prefix-resolve a remainder") {

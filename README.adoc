@@ -112,7 +112,7 @@ Useful fields:
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
 
-`permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL. When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf bookmark. A remainder under a non-directory alias does not resolve.
+`permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL. When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf bookmark. A remainder under a non-directory alias does not resolve. A last-dot suffix in a href that is all digits is part of the name (`255.2`), not a file extension.
 
 TODO add frontmatter boolean `asset` to declare that a file is *not* markup.
 

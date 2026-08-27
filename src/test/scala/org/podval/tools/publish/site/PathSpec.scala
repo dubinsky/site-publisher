@@ -52,6 +52,18 @@ final class PathSpec extends AnyFunSuite:
     assert(Path.fromHref("index.html").toString == "/index.html")
     assert(Path.fromHref("/book/").toString == "/book")
     assert(Path.fromHref("/a/./b/../c.html").toString == "/a/./b/../c.html")
+    assert(Path.fromHref("pixel.svg").toString == "/pixel.svg")
+    assert(Path.fromHref("pixel.svg").extension.contains("svg"))
+  }
+
+  test("fromHref keeps dotted document ids as the file name") {
+    val dotted: Path = Path.fromHref("/dubnov/255.2")
+    assert(dotted.toString == "/dubnov/255.2")
+    assert(dotted.fileName == "255.2")
+    assert(dotted.extension.isEmpty)
+    assert(Path.fromHref("090.1").toString == "/090.1")
+    assert(Path.fromHref("/short/255.2.html").fileName == "255.2")
+    assert(Path.fromHref("/short/255.2.html").extension.contains("html"))
   }
 
   test("resolveFrom joins relative html hrefs to the page directory") {

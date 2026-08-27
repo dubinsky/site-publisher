@@ -168,12 +168,16 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(shortAlias.toLowerCase.contains("refresh"), shortAlias)
     exists("aliased/index.html")
     exists("aliased/child.html")
+    exists("aliased/255.2.html")
     val aliased: String = html("aliased/index.html")
     assert(aliased.contains("""href="/aliased/child.html""""), aliased)
+    assert(aliased.contains("""href="/aliased/255.2.html""""), aliased)
     assert(!aliased.contains("unresolved-link"), aliased)
     assert(!aliased.contains("""href="/short/child""""), aliased)
+    assert(!aliased.contains("""href="/short/255.2""""), aliased)
     val errors: String = html("errors.html")
     assert(!errors.contains("/short/child"), errors)
+    assert(!errors.contains("/short/255.2"), errors)
   }
 
   test("Markdown glossary IAL yields term ids and hover tips") {
