@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{FrontMatter, FullMarkupPage}
+import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
@@ -34,8 +34,6 @@ abstract class Markup(
   // - convert footnotes into common format
   // - extract title
   def process(xml: Xml.Element, errorReporter: PageErrorReporter): (Xml.Element, Option[Xml.Element])
-
-  def pageHeader(page: FullMarkupPage): Html.Element = PageHeader.pageHeader(page)
 
   final def readAndParse(
     site: Site,

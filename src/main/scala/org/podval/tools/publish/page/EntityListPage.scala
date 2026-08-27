@@ -20,6 +20,7 @@ final class EntityListPage(
 
   override protected def iconDefault: Icon = Icon.note
 
+  // TODO maybe go through PageHeader?
   override def pageHeader: Option[Html.Element] = Some(
     header(className := "post-header",
       h1(className := "post-title p-name", itemProp := "name headline", title)

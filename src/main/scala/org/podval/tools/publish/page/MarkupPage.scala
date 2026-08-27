@@ -50,6 +50,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     isTerminal: Boolean
   ): Option[Html.Element] = content.map(_.markupContent(sectionId, isTerminal))
 
+  // TODO maybe remove this in favour of PageHeader?
   def pageHeader: Option[Html.Element]
 
   // Other HTML/PDF views of the same document (site-header icons). Empty unless this

@@ -19,7 +19,7 @@ object StoreIndex:
   )
 
   def apply(xml: Xml.Element): Option[StoreIndex] =
-    Option.when(isStoreRoot(xml)):
+    Option.when(TeiMarkup.isStoreRoot(xml)):
       new StoreIndex(
         selector = xml.gather(el =>
           Option.when(el.localName == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
@@ -29,11 +29,7 @@ object StoreIndex:
         ).flatten,
         names = storeNames(xml)
       )
-
-  private def isStoreRoot(element: Xml.Element): Boolean =
-    val name: String = element.localName
-    name == "store" || name == "collection"
-
+  
   private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
     val fromChildren: Seq[StoreIndex.Name] =
       root.getChildren.flatMap(_.asElement)

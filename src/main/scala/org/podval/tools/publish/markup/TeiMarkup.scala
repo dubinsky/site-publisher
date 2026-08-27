@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tei.{EntityKind, TeiXmlDialect}
-import org.podval.tools.publish.page.FullMarkupPage
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html, XmlAttribute, XmlUtil}
@@ -21,6 +20,10 @@ object TeiMarkup extends Markup(
   override def rootElements: Set[String] =
     Set("TEI", "store", "collection", "entityLists") ++ EntityKind.values.map(_.element).toSet
 
+  def isStoreRoot(element: Xml.Element): Boolean =
+    val name: String = element.localName
+    name == "store" || name == "collection"
+
   override def xmlContent(content: String, sourceFile: File): String = content
 
   // Sections in TEI:
@@ -28,9 +31,6 @@ object TeiMarkup extends Markup(
   //  <head>Methodology</head>
   //  <p>...</p>
   //</div>
-  override def pageHeader(page: FullMarkupPage): Html.Element =
-    super.pageHeader(page) // TODO
-
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter

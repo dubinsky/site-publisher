@@ -5,7 +5,16 @@ import org.podval.tools.publish.util.Date
 import org.podval.xml.Html
 import zio.blocks.html.*
 
+// TODO move this to `page`.
 object PageHeader:
+  def of(page: FullMarkupPage): Html.Element =
+    val isCollector: Boolean =
+      // TODO this covers store and collection; it should apply also to the documents under the collection
+      page.content.exists(content => TeiMarkup.isStoreRoot(content.xml))
+    if isCollector
+    then collectorPageHeader(page)
+    else pageHeader(page)
+
   def pageHeader(page: FullMarkupPage): Html.Element =
     header(className := "post-header",
       postPath(page),
@@ -56,5 +65,5 @@ object PageHeader:
       label.fold(Seq.empty)(label => Seq(span(className := "meta-label", label))) ++
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
-  
-  
+  def collectorPageHeader(page: FullMarkupPage): Html.Element =
+    header("TODO!!!")
