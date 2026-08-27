@@ -31,9 +31,6 @@ object TeiMarkup extends Markup(
   override def pageHeader(page: FullMarkupPage): Html.Element =
     super.pageHeader(page) // TODO
 
-  override def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] =
-    EntityLists.harvest(xml)
-
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter

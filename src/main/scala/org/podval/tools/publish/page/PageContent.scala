@@ -48,7 +48,7 @@ object PageContent:
       glossaryDefinitions = Glossary.definitions(result),
       bibliographyDefinitions = BibliographyItem.definitions(result),
       storeIndex = StoreIndex(xml),
-      entityListsIndex = source.markup.entityListsIndex(xml)
+      entityListsIndex = EntityLists.harvest(xml)
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */

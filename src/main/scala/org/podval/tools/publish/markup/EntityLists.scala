@@ -6,7 +6,8 @@ import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
-/** TEI `entityLists` directory index: kind + role buckets filled from sibling entity files. */
+/** TEI `entityLists` directory index: kind + role buckets filled from sibling entity files.
+  * Harvested from the raw tree. */
 object EntityLists:
   val expand: String = "⇗"
 

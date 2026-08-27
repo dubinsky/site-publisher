@@ -36,9 +36,6 @@ abstract class Markup(
   // - extract title
   def process(xml: Xml.Element, errorReporter: PageErrorReporter): (Xml.Element, Option[Xml.Element])
 
-  /** TEI `entityLists` buckets. Harvested from the raw tree. */
-  def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] = None
-
   def pageHeader(page: FullMarkupPage): Html.Element = Markup.pageHeader(page)
 
   final def readAndParse(
