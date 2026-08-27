@@ -37,8 +37,6 @@ object TeiMarkup extends Markup(
   override def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] =
     EntityLists.harvest(xml)
 
-  override def storeIndex(xml: Xml.Element): Option[StoreIndex] = StoreIndex(xml)
-
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter

@@ -2,7 +2,8 @@ package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlUtil}
 
-/** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude. */
+/** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
+  * Harvested from the raw tree (includes are not expanded). */
 final class StoreIndex(
   val selector: Option[String],
   val hrefs: Seq[String],

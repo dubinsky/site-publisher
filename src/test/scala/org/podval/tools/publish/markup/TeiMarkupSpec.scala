@@ -106,7 +106,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |  </by>
         |</store>""".stripMargin
     val parsed: Xml.Element = parse(input)
-    val index = TeiMarkup.storeIndex(parsed).get
+    val index = StoreIndex(parsed).get
     assert(index.hrefs == Seq("this-file-does-not-exist.xml", "books/book/derzhavin.xml"), index.hrefs)
     assert(index.selector.contains("book"), index.selector)
     assert(index.names.exists(_.n == "books"), index.names.map(_.n))

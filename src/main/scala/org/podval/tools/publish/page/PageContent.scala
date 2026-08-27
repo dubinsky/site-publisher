@@ -47,7 +47,7 @@ object PageContent:
       footnotes = footnotes,
       glossaryDefinitions = Glossary.definitions(result),
       bibliographyDefinitions = BibliographyItem.definitions(result),
-      storeIndex = source.markup.storeIndex(xml),
+      storeIndex = StoreIndex(xml),
       entityListsIndex = source.markup.entityListsIndex(xml)
     )
 
