@@ -41,3 +41,6 @@ object XmlUtil:
   ): Xml.Element = xml
     .gather(element => Option.when(element.getId.contains(id))(element))
     .head
+
+  def isInclude(element: Xml.Element): Boolean =
+    element.localName == "include" && element.get("href").exists(_.trim.nonEmpty)

@@ -37,17 +37,7 @@ object TeiMarkup extends Markup(
   override def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] =
     EntityLists.harvest(xml)
 
-  override def storeIndex(xml: Xml.Element): Option[StoreIndex] =
-    Option.when(isStoreRoot(xml)):
-      StoreIndex(
-        selector = xml.gather(el =>
-          Option.when(localName(el) == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
-        ).flatten.headOption,
-        hrefs = xml.gather(el =>
-          Option.when(isInclude(el))(el.get("href").map(_.trim).filter(_.nonEmpty))
-        ).flatten.toSeq,
-        names = storeNames(xml)
-      )
+  override def storeIndex(xml: Xml.Element): Option[StoreIndex] = StoreIndex(xml)
 
   override def process(
     xml: Xml.Element,
@@ -97,15 +87,15 @@ object TeiMarkup extends Markup(
     root.getName match
       case "TEI" =>
         pickTitle(
-          root.getChildren.flatMap(_.asElement).filter(_.getName == "teiHeader").toSeq
+          root.getChildren.flatMap(_.asElement).filter(_.getName == "teiHeader")
             .flatMap(_.getChildren.flatMap(_.asElement).filter(_.getName == "fileDesc"))
             .flatMap(_.getChildren.flatMap(_.asElement).filter(_.getName == "titleStmt"))
             .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
         )
       case "store" | "collection" | "entityLists" =>
-        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
+        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle))
       case "div" if root.hasClass("store") || root.hasClass("collection") =>
-        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
+        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle))
       case _ =>
         None
 
@@ -162,17 +152,16 @@ object TeiMarkup extends Markup(
       case _ =>
         stripped
 
-  private def convertStoreChrome(element: Xml.Element): Xml.Element =
-    localName(element) match
-      case "store" | "collection" => convertStore(element)
-      case "by" => convertBy(element)
-      case _ => element
+  private def convertStoreChrome(element: Xml.Element): Xml.Element = element.localName match
+    case "store" | "collection" => convertStore(element)
+    case "by" => convertBy(element)
+    case _ => element
 
   private def convertStore(element: Xml.Element): Xml.Element =
     val kids: Xml.Nodes = element.getChildren.map: node =>
       node.asElement match
-        case Some(el) if localName(el) == "name" => convertName(el)
-        case Some(el) if localName(el) == "by" => convertBy(el)
+        case Some(el) if el.localName == "name" => convertName(el)
+        case Some(el) if el.localName == "by" => convertBy(el)
         case _ => node
     renameElement("div", element.setChildren(kids))
 
@@ -202,34 +191,6 @@ object TeiMarkup extends Markup(
   private def dropIncludes(element: Xml.Element): Xml.Element =
     element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isInclude)))
 
-  private def isStoreRoot(element: Xml.Element): Boolean =
-    val name: String = localName(element)
-    name == "store" || name == "collection"
-
-  private def isInclude(element: Xml.Element): Boolean =
-    localName(element) == "include" && element.get("href").exists(_.trim.nonEmpty)
-
-  private def localName(element: Xml.Element): String =
-    val name: String = element.getName
-    val colon: Int = name.lastIndexOf(':')
-    if colon < 0 then name else name.substring(colon + 1)
-
-  private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
-    val fromChildren: Seq[StoreIndex.Name] =
-      root.getChildren.flatMap(_.asElement)
-        .filter(el => localName(el) == "name")
-        .flatMap(storeName)
-        .toSeq
-    val fromN: Option[StoreIndex.Name] =
-      root.get("n").map(_.trim).filter(_.nonEmpty).map(n => StoreIndex.Name(n, None))
-    if fromChildren.nonEmpty then fromChildren else fromN.toSeq
-
-  private def storeName(element: Xml.Element): Option[StoreIndex.Name] =
-    val n: String = element.get("n").map(_.trim).filter(_.nonEmpty).getOrElse(element.getText.trim)
-    Option.when(n.nonEmpty)(
-      StoreIndex.Name(n, element.get("lang").map(_.trim).filter(_.nonEmpty))
-    )
-
   // Xml2Html prefixes reserved HTML attributes (`target` → `tei-target`).
   private def teiHref(element: Xml.Element): Option[String] =
     element.getHref
@@ -252,7 +213,7 @@ object TeiMarkup extends Markup(
       val body: Xml.Nodes =
         children.filterNot: node =>
           heads.exists(_ eq node) || (heads.isEmpty && descs.exists(_ eq node))
-      val caption: Seq[Xml.Node] = captionSource.toSeq.flatMap: node =>
+      val caption: Seq[Xml.Node] = captionSource.flatMap: node =>
         node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace).toSeq)
       Figure.make(caption, body).setId(xmlId(element))
 

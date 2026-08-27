@@ -48,6 +48,11 @@ trait XmlAst[ELEMENT]:
   extension (element: Element)
     def getName: String
 
+    /* final */ def localName: String =
+      val name: String = element.getName
+      val colon: Int = name.lastIndexOf(':')
+      if colon < 0 then name else name.substring(colon + 1)
+
     def rename(name: String): Element
 
     def isElement(elem: XmlElement): Boolean = element.getName == elem.name

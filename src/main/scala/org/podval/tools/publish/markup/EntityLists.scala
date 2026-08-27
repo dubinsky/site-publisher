@@ -20,14 +20,14 @@ object EntityLists:
   )
 
   def harvest(xml: Xml.Element): Option[Index] =
-    Option.when(localName(xml) == "entityLists"):
+    Option.when(xml.localName == "entityLists"):
       Index(
         xml.getChildren.flatMap(_.asElement).flatMap(parseList).toSeq
       )
 
   private def parseList(element: Xml.Element): Option[Spec] =
     for
-      kind <- EntityKind.values.find(_.listElement == localName(element))
+      kind <- EntityKind.values.find(_.listElement == element.localName)
       id <- element.get("n").map(_.trim).filter(_.nonEmpty)
       title <- listTitle(element)
     yield Spec(
@@ -40,7 +40,7 @@ object EntityLists:
   private def listTitle(element: Xml.Element): Option[String] =
     element.getChildren.flatMap(_.asElement)
       .find(el =>
-        val name: String = localName(el)
+        val name: String = el.localName
         name == "title" || name == "tei-title"
       )
       .map(_.getText.trim)
@@ -123,8 +123,3 @@ object EntityLists:
       .addClass(kind.nameElement)
       .setHref(page.real.path.toString)
       .setText(displayName(page))
-
-  private def localName(element: Xml.Element): String =
-    val name: String = element.getName
-    val colon: Int = name.lastIndexOf(':')
-    if colon < 0 then name else name.substring(colon + 1)
