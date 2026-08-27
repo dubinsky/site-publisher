@@ -67,7 +67,7 @@ object PageHeader:
   def collectorPageHeader(page: FullMarkupPage): Html.Element =
     Xml2Html.fromXml(collectorHeaderXml(page))
 
-  /** Live collector: ancestor `<l>` lines, then `tei-head` for this page, then abstract/body,
+  /** Live collector: ancestor `<l>` lines, then this node's `<l>`, then abstract/body,
     * then this store's `by` selector label (the listing itself stays in the body). */
   private def collectorHeaderXml(page: FullMarkupPage): Xml.Element =
     val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
@@ -103,8 +103,7 @@ object PageHeader:
     headingLine(
       selector = selectorName(page),
       name = Chunk(name),
-      title = storeTitleInner(page),
-      asHead = false
+      title = storeTitleInner(page)
     )
 
   private def currentHead(page: FullMarkupPage): Xml.Element =
@@ -114,21 +113,19 @@ object PageHeader:
     headingLine(
       selector = selectorName(page),
       name = name,
-      title = storeTitleInner(page),
-      asHead = page.content.flatMap(_.storeIndex).exists(index => !index.isCollection)
+      title = storeTitleInner(page)
     )
 
   private def headingLine(
     selector: Option[String],
     name: Xml.Nodes,
-    title: Xml.Nodes,
-    asHead: Boolean
+    title: Xml.Nodes
   ): Xml.Element =
     val sel: Xml.Nodes = selector.fold(Chunk.empty[Xml.Node]): s =>
       Chunk(Xml.text(Selector.displayName(s)), Xml.text(" "))
     val colon: Xml.Nodes =
       if name.nonEmpty && title.nonEmpty then Chunk(Xml.text(": ")) else Chunk.empty
-    Xml.element(if asHead then "tei-head" else "l").setChildren(sel ++ name ++ colon ++ title)
+    Xml.element("l").setChildren(sel ++ name ++ colon ++ title)
 
   /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
     * directory segment that is a known selector (`archive/` → архив). */

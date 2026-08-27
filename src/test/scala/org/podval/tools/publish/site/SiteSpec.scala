@@ -537,6 +537,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(zebraHref < appleHref, listing)
     assert(listing.contains("item:"), listing)
     assert(listing.contains("store-header"), listing)
+    assert(!listing.contains("<tei-head>"), listing)
     assert(listing.contains("store-name"), listing)
     assert(listing.contains("Stores Fixture"), listing)
     val postContent: String = listing.substring(listing.indexOf("post-content"))
