@@ -13,8 +13,6 @@ object XmlMarkup extends Markup(
 ):
   override def xmlContent(content: String, sourceFile: File): String = content
 
-  override def isSectionHeader(element: Xml.Element): Boolean = false
-
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter

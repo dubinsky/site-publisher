@@ -43,13 +43,6 @@ abstract class Markup(
   /** TEI `entityLists` buckets. Harvested from the raw tree. */
   def entityListsIndex(xml: Xml.Element): Option[EntityLists.Index] = None
 
-  final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
-    .getChildren
-    .flatMap(_.asElement)
-    .find(isSectionHeader)
-
-  def isSectionHeader(element: Xml.Element): Boolean
-
   def isSpuriousFootnotesDiv(element: Xml.Element): Boolean = false
 
   def entityKind(xml: Xml.Element): Option[EntityKind] = None

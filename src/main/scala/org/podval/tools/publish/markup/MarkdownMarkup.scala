@@ -270,8 +270,6 @@ object MarkdownMarkup extends Markup(
     if paras.isEmpty || paras.length != significant then body
     else paras.map(_.getChildren).reduce((a, b) => a ++ Chunk(Xml.text(" ")) ++ b)
 
-  override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
-
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.hasClass("footnotes")
 

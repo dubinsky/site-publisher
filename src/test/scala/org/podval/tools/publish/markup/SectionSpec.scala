@@ -11,9 +11,9 @@ import java.io.File
 final class SectionSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String = HtmlXmlDialect.render(element)
 
-  private def normalizeTree(xml: Xml.Element, markup: Markup): Xml.Element =
+  private def normalizeTree(xml: Xml.Element): Xml.Element =
     val ids: IdGenerator = IdGenerator("_id")
-    xml.transform(Section.normalize(_, markup, ids))
+    xml.transform(Section.normalize(_, ids))
 
   test("normalize copies xml:id to id") {
     val xml: Xml.Element = XmlParser.parseXml(
@@ -38,7 +38,7 @@ final class SectionSpec extends AnyFunSuite:
       """<div><h2 id="colophon">Colophon</h2><p>body</p></div>"""
     ).toOption.get
     val nested: Xml.Element = xml.setChildren(HtmlMarkup.nestSections(xml.getChildren))
-    val normalized: Xml.Element = normalizeTree(nested, HtmlMarkup)
+    val normalized: Xml.Element = normalizeTree(nested)
     val rendered: String = render(normalized)
     assert(rendered.contains("""class="section""""))
     assert(rendered.contains("""id="colophon""""))
@@ -54,23 +54,24 @@ final class SectionSpec extends AnyFunSuite:
       """<div><h2>Notes</h2><p>body</p></div>"""
     ).toOption.get
     val nested: Xml.Element = xml.setChildren(HtmlMarkup.nestSections(xml.getChildren))
-    val normalized: Xml.Element = normalizeTree(nested, HtmlMarkup)
+    val normalized: Xml.Element = normalizeTree(nested)
     val rendered: String = render(normalized)
     assert(rendered.contains("""id="Notes""""))
     assert(rendered.contains("""href="#Notes""""))
   }
 
-  test("sectionHeader skips leading non-heading children") {
+  test("heading skips leading non-heading children") {
     val xml: Xml.Element = XmlParser.parseXml(
       """<div xml:id="meth"><pb n="1"/><fw type="pageNum">3</fw><head>Methodology</head><p>body</p></div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
       if element.getName == "head" then element.rename("tei-head") else element
     )
-    val header: Xml.Element = TeiMarkup.sectionHeader(converted).get
+    val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
+    val header: Xml.Element = Section.heading(marked).get
     assert(header.getName == "tei-head")
     assert(header.getText == "Methodology")
-    assert(Section.is(TeiMarkup.markHeadedDivs(converted)))
+    assert(Section.is(marked))
   }
 
   test("TEI marks only headed divs; grouping divs stay unmarked") {
@@ -97,7 +98,7 @@ final class SectionSpec extends AnyFunSuite:
       .mark(Xml.element("div"))
       .setId("meth")
       .setChildren(Chunk(
-        Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology"))),
+        Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
         Xml.element("p").setChildren(Chunk(Xml.text("body")))
       ))
     val grouping: Xml.Element = Xml.element("div").setChildren(Chunk(
@@ -105,7 +106,7 @@ final class SectionSpec extends AnyFunSuite:
       inner
     ))
     val root: Xml.Element = Xml.element("TEI").setChildren(Chunk(grouping))
-    val toc: Toc = Toc(root, TeiMarkup, PageErrorReporter.Silent)
+    val toc: Toc = Toc(root, PageErrorReporter.Silent)
     assert(toc.flatten.map(_.id) == Seq("meth"))
     assert(toc.flatten.head.title == "Methodology")
   }
@@ -115,10 +116,10 @@ final class SectionSpec extends AnyFunSuite:
       .mark(Xml.element("div"))
       .set(XmlAttribute.XmlId, "methodology")
       .setChildren(Chunk(
-        Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology"))),
+        Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
         Xml.element("p").setChildren(Chunk(Xml.text("body")))
       ))
-    val normalized: Xml.Element = Section.normalize(section, TeiMarkup, IdGenerator("_id"))
+    val normalized: Xml.Element = Section.normalize(section, IdGenerator("_id"))
     val rendered: String = render(normalized)
     assert(normalized.getId.contains("methodology"))
     assert(rendered.contains("""id="methodology""""))
@@ -132,11 +133,11 @@ final class SectionSpec extends AnyFunSuite:
 
   private def parse(xml: String): Xml.Element = XmlParser.parseXml(xml).toOption.get
 
-  private def ir(markup: Markup, processed: Xml.Element): Xml.Element =
-    normalizeTree(processed, markup)
+  private def ir(processed: Xml.Element): Xml.Element =
+    normalizeTree(processed)
 
-  private def tocTitles(xml: Xml.Element, markup: Markup): Seq[(String, String)] =
-    Toc(xml, markup, PageErrorReporter.Silent).flatten.map(section => (section.id, section.title))
+  private def tocTitles(xml: Xml.Element): Seq[(String, String)] =
+    Toc(xml, PageErrorReporter.Silent).flatten.map(section => (section.id, section.title))
 
   private def assertPermalink(rendered: String, id: String, title: String): Unit =
     assert(rendered.contains(s"""id="$id""""), rendered)
@@ -154,12 +155,12 @@ final class SectionSpec extends AnyFunSuite:
       """<div><h1>Book</h1><p>intro</p><h2 id="chapter">Chapter</h2><p>chap</p><h3 id="notes">Notes</h3><p>sec</p></div>"""
     )
     val processed: Xml.Element = HtmlMarkup.process(xml, PageErrorReporter.Silent)._1
-    val normalized: Xml.Element = ir(HtmlMarkup, processed)
+    val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "chapter", "Chapter")
     assertPermalink(rendered, "notes", "Notes")
-    assert(tocTitles(normalized, HtmlMarkup) == Seq("chapter" -> "Chapter", "notes" -> "Notes"))
-    val top: Section = Toc(normalized, HtmlMarkup, PageErrorReporter.Silent).sections.head
+    assert(tocTitles(normalized) == Seq("chapter" -> "Chapter", "notes" -> "Notes"))
+    val top: Section = Toc(normalized, PageErrorReporter.Silent).sections.head
     assert(top.id == "chapter")
     assert(top.sections.map(_.id) == Seq("notes"))
   }
@@ -176,11 +177,11 @@ final class SectionSpec extends AnyFunSuite:
       File("t.md")
     ))
     val processed: Xml.Element = HtmlMarkup.process(MarkdownMarkup.convert(xml), PageErrorReporter.Silent)._1
-    val normalized: Xml.Element = ir(HtmlMarkup, processed)
+    val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
     assertPermalink(rendered, "Notes", "Notes")
-    assert(tocTitles(normalized, HtmlMarkup) == Seq("Chapter" -> "Chapter", "Notes" -> "Notes"))
+    assert(tocTitles(normalized) == Seq("Chapter" -> "Chapter", "Notes" -> "Notes"))
   }
 
   test("AsciiDoc nested headings become nested sections with permalinks") {
@@ -201,11 +202,11 @@ final class SectionSpec extends AnyFunSuite:
       asciidoctor
     ))
     val processed: Xml.Element = HtmlMarkup.process(AsciiDocMarkup.cleanup(xml), PageErrorReporter.Silent)._1
-    val normalized: Xml.Element = ir(AsciiDocMarkup, processed)
+    val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
     assertPermalink(rendered, "Notes", "Notes")
-    assert(tocTitles(normalized, AsciiDocMarkup) == Seq("Chapter" -> "Chapter", "Notes" -> "Notes"))
+    assert(tocTitles(normalized) == Seq("Chapter" -> "Chapter", "Notes" -> "Notes"))
   }
 
   test("TEI headed divs, grouping wrappers, leading pb, nested sections") {
@@ -219,12 +220,12 @@ final class SectionSpec extends AnyFunSuite:
         |</body></text></TEI>"""
     )
     val processed: Xml.Element = TeiMarkup.process(xml, PageErrorReporter.Silent)._1
-    val normalized: Xml.Element = ir(TeiMarkup, processed)
+    val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "meth", "Methodology")
     assertPermalink(rendered, "notes", "Notes")
-    assert(tocTitles(normalized, TeiMarkup) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
-    val top: Section = Toc(normalized, TeiMarkup, PageErrorReporter.Silent).sections.head
+    assert(tocTitles(normalized) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
+    val top: Section = Toc(normalized, PageErrorReporter.Silent).sections.head
     assert(top.id == "meth")
     assert(top.sections.map(_.id) == Seq("notes"))
   }
@@ -238,12 +239,12 @@ final class SectionSpec extends AnyFunSuite:
         |</article>"""
     )
     val processed: Xml.Element = DocBookMarkup.process(xml, PageErrorReporter.Silent)._1
-    val normalized: Xml.Element = ir(DocBookMarkup, processed)
+    val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "meth", "Methodology")
     assertPermalink(rendered, "notes", "Notes")
-    assert(tocTitles(normalized, DocBookMarkup) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
-    val top: Section = Toc(normalized, DocBookMarkup, PageErrorReporter.Silent).sections.head
+    assert(tocTitles(normalized) == Seq("meth" -> "Methodology", "notes" -> "Notes"))
+    val top: Section = Toc(normalized, PageErrorReporter.Silent).sections.head
     assert(top.id == "meth")
     assert(top.sections.map(_.id) == Seq("notes"))
     assert(rendered.contains("<db-title"), rendered)
@@ -280,7 +281,7 @@ final class SectionSpec extends AnyFunSuite:
       .setId("foo")
       .setChildren(Chunk(Xml.element("p").setChildren(Chunk(Xml.text("body")))))
     val thrown: IllegalStateException = intercept[IllegalStateException]:
-      Toc(section, HtmlMarkup, PageErrorReporter.Silent)
+      Toc(section, PageErrorReporter.Silent)
     assert(thrown.getMessage.contains("foo"), thrown.getMessage)
   }
 
@@ -296,10 +297,10 @@ final class SectionSpec extends AnyFunSuite:
       .mark(Xml.element("div"))
       .setId("foo")
       .setChildren(Chunk(
-        Xml.element("h2"),
+        Section.markHeading(Xml.element("h2")),
         Xml.element("p").setChildren(Chunk(Xml.text("body")))
       ))
-    val toc: Toc = Toc(section, HtmlMarkup, reporter)
+    val toc: Toc = Toc(section, reporter)
     assert(reported.contains((PageError.NoTitle, "No title on section foo")))
     assert(toc.flatten.head.title == "foo")
   }

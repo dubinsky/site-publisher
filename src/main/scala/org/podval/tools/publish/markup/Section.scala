@@ -31,20 +31,39 @@ object Section:
     require(element.getName == "div")
     element.add(SectionClass)
 
+  def markHeading(header: Xml.Element): Xml.Element =
+    header.add(HeadingClass)
+
+  // Stamp `heading` on the first matching child and `section` on the div.
+  def markHeaded(div: Xml.Element, isHeader: Xml.Element => Boolean): Xml.Element =
+    if div.getName != "div" then div
+    else
+      var found: Boolean = false
+      val children: Xml.Nodes = div.getChildren.map: node =>
+        node.asElement match
+          case Some(el) if !found && isHeader(el) =>
+            found = true
+            markHeading(el)
+          case _ => node
+      if found then mark(div.setChildren(children)) else div
+
   def is(element: Xml.Element): Boolean =
     element.getName == "div" && element.has(SectionClass)
+
+  def heading(section: Xml.Element): Option[Xml.Element] =
+    section.getChildren.flatMap(_.asElement).find(_.has(HeadingClass))
 
   def isPermalink(element: Xml.Element): Boolean =
     element.has(AnchorClass) || element.has(LinkClass)
 
   // Copy xml:id, ensure a section id, attach permalinks. Markup-independent IR.
-  def normalize(element: Xml.Element, markup: Markup, ids: IdGenerator): Xml.Element =
+  def normalize(element: Xml.Element, ids: IdGenerator): Xml.Element =
     var result: Xml.Element = element.copyXmlId
     if is(result) then
       if result.getId.isEmpty then
-        val title: Option[String] = markup.sectionHeader(result).map(headingText)
+        val title: Option[String] = heading(result).map(headingText)
         result = result.setId(title.map(Xml.toId).getOrElse(ids.generate()))
-      result = addPermalink(result, markup)
+      result = addPermalink(result)
     result
 
   def headingText(header: Xml.Element): String =
@@ -52,17 +71,20 @@ object Section:
       node.isWhitespace || node.asElement.exists(_.has(AnchorClass))
     ).trim
 
-  def addPermalink(element: Xml.Element, markup: Markup): Xml.Element =
+  def addPermalink(element: Xml.Element): Xml.Element =
     if !is(element) then element else
       val id: Option[String] = element.getId.filter(_.nonEmpty)
-      val header: Option[Xml.Element] = markup.sectionHeader(element)
+      val header: Option[Xml.Element] = heading(element)
       (id, header) match
-        case (Some(id), Some(header)) if !header.has(HeadingClass) =>
+        case (Some(id), Some(header)) if !permalinksAttached(header) =>
           element.setChildren(element.getChildren.map: node =>
             if node.asElement.contains(header) then addLinks(header, id) else node
           )
         case _ =>
           element
+
+  private def permalinksAttached(header: Xml.Element): Boolean =
+    header.getChildren.flatMap(_.asElement).exists(_.has(AnchorClass))
 
   // AsciiDoctor sectanchors + sectlinks: hover §, heading text is a self-link.
   // If the heading already contains an <a> (e.g. a glossary term), only add the hover anchor.
@@ -82,7 +104,7 @@ object Section:
           .setHref(href)
           .setChildren(header.getChildren)
         Chunk(anchor, link)
-    header.add(HeadingClass).setChildren(children)
+    header.setChildren(children)
 
   private def containsAnchor(element: Xml.Element): Boolean =
     element.getChildren.exists: node =>

@@ -139,7 +139,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(sect1.get("db-class").contains("keep"), dumped)
     assert(!sect1.hasClass("keep"), dumped)
     assert(divs.forall(Section.is), dumped)
-    val headers: Seq[String] = divs.flatMap(div => DocBookMarkup.sectionHeader(div).map(_.getText.trim))
+    val headers: Seq[String] = divs.flatMap(div => Section.heading(div).map(_.getText.trim))
     assert(headers.contains("S"), dumped)
     assert(headers.contains("One"), dumped)
   }
@@ -169,7 +169,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(title.exists(_.getText.contains("Chapter")), dumped)
     val sections: Seq[Xml.Element] = xml.gather(el => Option.when(Section.is(el))(el)).toSeq
     assert(sections.size == 1, dumped)
-    assert(DocBookMarkup.sectionHeader(sections.head).exists(_.getText.trim == "Nested"), dumped)
+    assert(Section.heading(sections.head).exists(_.getText.trim == "Nested"), dumped)
   }
 
   test("fileref becomes src; linkend/url/xlink:href become href; empty xref is labeled") {

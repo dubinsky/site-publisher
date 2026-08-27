@@ -12,6 +12,7 @@ final class HtmlMarkupSpec extends AnyFunSuite:
     val nested: Xml.Element = xml.setChildren(HtmlMarkup.nestSections(xml.getChildren))
     val rendered: String = HtmlXmlDialect.render(nested)
     assert(rendered.contains("""class="section""""))
+    assert(rendered.contains("""class="heading""""))
     assert(rendered.contains("""id="colophon""""))
     assert(rendered.contains("Colophon"))
     assert(!rendered.contains("""<h2 id="colophon""""))
@@ -25,7 +26,6 @@ final class HtmlMarkupSpec extends AnyFunSuite:
     assert(rendered.contains("Notes"))
     assert(rendered.contains("""aria-hidden="true""""))
     assert(rendered.contains("""class="link""""))
-    assert(rendered.contains("""class="heading""""))
   }
 
   test("addLinks does not nest anchors when the heading already contains a link") {

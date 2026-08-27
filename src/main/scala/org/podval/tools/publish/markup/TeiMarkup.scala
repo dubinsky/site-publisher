@@ -28,8 +28,6 @@ object TeiMarkup extends Markup(
   //  <head>Methodology</head>
   //  <p>...</p>
   //</div>
-  override def isSectionHeader(element: Xml.Element): Boolean = element.getName == "tei-head"
-
   override def pageHeader(page: FullMarkupPage): Html.Element =
     super.pageHeader(page) // TODO
 
@@ -126,10 +124,7 @@ object TeiMarkup extends Markup(
   // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =
     xml.transform(
-      element =>
-        if element.getName == "div" && sectionHeader(element).isDefined
-        then Section.mark(element)
-        else element,
+      element => Section.markHeaded(element, _.getName == "tei-head"),
       stopAtCode = false
     )
 

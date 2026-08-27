@@ -40,8 +40,6 @@ object DocBookMarkup extends Markup(
 
   override def xmlContent(content: String, sourceFile: File): String = content
 
-  override def isSectionHeader(element: Xml.Element): Boolean = element.getName == "db-title"
-
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
@@ -90,10 +88,7 @@ object DocBookMarkup extends Markup(
   // After Xml2Html, `title` is `db-title`. Transform is parent-first, so this is a second pass.
   private def markHeadedDivs(xml: Xml.Element): Xml.Element =
     xml.transform(
-      element =>
-        if element.getName == "div" && sectionHeader(element).isDefined
-        then Section.mark(element)
-        else element,
+      element => Section.markHeaded(element, _.getName == "db-title"),
       stopAtCode = false
     )
 

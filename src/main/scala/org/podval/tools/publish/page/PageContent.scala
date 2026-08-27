@@ -214,7 +214,7 @@ object PageContent:
       frontMatter = frontMatter,
       title = title,
       xml = harvested,
-      toc = Toc(harvested, source.markup, source),
+      toc = Toc(harvested, source),
       ids = Ids(harvested),
       blocks = WikiBlocks(harvested, source),
       footnotes = footnotes,
@@ -231,7 +231,7 @@ object PageContent:
     ids: IdGenerator
   ): Xml.Element =
     // This has to happen before calculating Toc.
-    var result: Xml.Element = Section.normalize(element, source.markup, ids)
+    var result: Xml.Element = Section.normalize(element, ids)
 
     // This has to happen before calculating backlinks.
     if result.isA && result.getId.isEmpty && !Section.isPermalink(result) then

@@ -144,7 +144,6 @@ object Toc:
 
   def apply(
     element: Xml.Element,
-    markup: Markup,
     errorReporter: PageErrorReporter
   ): Toc =
     def sections(element: Xml.Element): Chunk[Section] =
@@ -153,7 +152,7 @@ object Toc:
           errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
           element.flatMapElements(sections)
         case Some(id) =>
-          val title: String = markup.sectionHeader(element).map(Section.headingText) match
+          val title: String = Section.heading(element).map(Section.headingText) match
             case None =>
               throw IllegalStateException(s"Defect: No heading on section $id")
             case Some(text) if text.isEmpty =>

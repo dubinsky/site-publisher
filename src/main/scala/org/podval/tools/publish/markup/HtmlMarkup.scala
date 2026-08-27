@@ -11,8 +11,6 @@ object HtmlMarkup extends Markup(
   rendersToXml = false,
   xmlDialect = HtmlXmlDialect,
 ):
-  override def isSectionHeader(element: Xml.Element): Boolean = headerLevel(element).isDefined
-
   // Unwrap a lone leading <p> in td/li/dd (Asciidoctor and FlexMark both emit these).
   private[markup] def unwrapSpuriousParagraph(element: Xml.Element): Option[Xml.Nodes] =
     val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li" || element.getName == "dd"
@@ -50,7 +48,7 @@ object HtmlMarkup extends Markup(
     (HtmlIr.normalize(nested), title)
 
   // Wrap each HTML section at the top level in a 'div' with class 'section'.
-  // Transplant id from the header element to the section element.
+  // Stamp `heading` on the title node. Transplant id from the header to the section.
   // Permalinks and missing ids are added later on the markup-independent IR.
 
   // Sections are represented by the HTML `h` elements and are not nested.
@@ -82,6 +80,6 @@ object HtmlMarkup extends Markup(
         val id: Option[String] = header.getId.filter(_.nonEmpty)
         Section.mark(Xml.element("div"))
           .setId(id)
-          .setChildren(Chunk(header.setId("")) ++ nestSections(body))
+          .setChildren(Chunk(Section.markHeading(header.setId(""))) ++ nestSections(body))
 
       preamble ++ Chunk(section) ++ nestSections(tail)

@@ -33,8 +33,6 @@ object AsciiDocMarkup extends Markup(
     asciidoctorVar.foreach(_.close())
     asciidoctorVar = None
 
-  override def isSectionHeader(element: Xml.Element): Boolean = HtmlMarkup.isSectionHeader(element)
-
   override def isSpuriousFootnotesDiv(element: Xml.Element): Boolean =
     element.getName == "div" && element.getId.contains("footnotes")
 
