@@ -44,10 +44,11 @@ object TeiMarkup extends Markup(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
     )
-    // After Xml2Html so store `lang` is not prefixed again on already-converted names.
-    val withStore: Xml.Element = converted.transform(convertStoreChrome, stopAtCode = false)
-    val title: Option[Xml.Element] = documentTitle(withStore)
-    val body: Xml.Element = title.fold(withStore)(stripTitle(withStore, _))
+    // Title while the root is still `store` / `collection`. Header chrome (name, title,
+    // abstract) is stripped in `convertStoreChrome`; `by` stays as the listing label.
+    val title: Option[Xml.Element] = documentTitle(converted)
+    val withoutTitle: Xml.Element = title.fold(converted)(stripTitle(converted, _))
+    val body: Xml.Element = withoutTitle.transform(convertStoreChrome, stopAtCode = false)
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // TODO does it really need to be a separate pass?
@@ -144,18 +145,23 @@ object TeiMarkup extends Markup(
       case _ =>
         stripped
 
+  /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`). */
+  private[markup] def convertFragment(xml: Xml.Element): Xml.Element =
+    val tei2Html: Xml2Html = Xml2Html("tei")
+    xml.transform(
+      element => convertSpecial(tei2Html.convert(element)),
+      stopAtCode = false
+    )
+
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.localName match
-    case "store" | "collection" => convertStore(element)
+    case "store" | "collection" =>
+      element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isStoreHeaderChild)))
     case "by" => convertBy(element)
     case _ => element
 
-  private def convertStore(element: Xml.Element): Xml.Element =
-    val kids: Xml.Nodes = element.getChildren.map: node =>
-      node.asElement match
-        case Some(el) if el.localName == "name" => convertName(el)
-        case Some(el) if el.localName == "by" => convertBy(el)
-        case _ => node
-    renameElement("div", element.setChildren(kids))
+  private def isStoreHeaderChild(element: Xml.Element): Boolean =
+    val name: String = element.localName
+    name == "name" || name == "title" || name == "tei-title" || name == "abstract"
 
   private def convertBy(element: Xml.Element): Xml.Element =
     val selector: Option[String] = element.get("selector").map(_.trim).filter(_.nonEmpty)
@@ -168,17 +174,6 @@ object TeiMarkup extends Markup(
       .setChildren(heading)
     selector.foreach(s => by = by.set("data-selector", s))
     by
-
-  private def convertName(element: Xml.Element): Xml.Element =
-    val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
-    val text: String = n.getOrElse(element.getText.trim)
-    val lang: Option[String] =
-      element.get("lang").orElse(element.get("tei-lang")).map(_.trim).filter(_.nonEmpty)
-    var span: Xml.Element = element.rename("span").addClass("store-name").set("n", "").set("tei-lang", "")
-    if text.nonEmpty then span = span.setText(text)
-    lang.foreach: value =>
-      span = span.set("lang", value)
-    span
 
   private def dropIncludes(element: Xml.Element): Xml.Element =
     element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isInclude)))

@@ -115,8 +115,30 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("this-file-does-not-exist"), dumped)
     assert(dumped.contains("book:"), dumped)
     assert(dumped.contains("store-by"), dumped)
-    assert(dumped.contains("store-name"), dumped)
-    assert(dumped.contains("books"), dumped)
+    assert(!dumped.contains("store-name"), dumped)
+    assert(!dumped.contains("store-header"), dumped)
+  }
+
+  test("store names, title, and abstract are header chrome, not body") {
+    val input: String =
+      """<store>
+        |  <name lang="ru" n="РГАДА"/>
+        |  <name lang="en" n="rgada"/>
+        |  <title>Российский государственный архив древних актов (Москва)</title>
+        |  <abstract><ref target="http://example.com/">Вебсайт</ref></abstract>
+        |  <by selector="category"/>
+        |</store>""".stripMargin
+    val parsed: Xml.Element = parse(input)
+    val index = StoreIndex(parsed).get
+    assert(index.displayName.contains("РГАДА"), index.displayName)
+    assert(index.title.exists(_.getText.contains("Российский государственный архив")), index.title.map(_.getText))
+    assert(index.description.exists(_.getText.contains("Вебсайт")), index.description.map(_.getText))
+    val dumped: String = render(process(input))
+    assert(!dumped.contains("store-name"), dumped)
+    assert(!dumped.contains("Российский государственный архив"), dumped)
+    assert(!dumped.contains("Вебсайт"), dumped)
+    assert(dumped.contains("store-by"), dumped)
+    assert(dumped.contains("category:"), dumped)
   }
 
   test("person has no document title") {

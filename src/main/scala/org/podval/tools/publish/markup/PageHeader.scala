@@ -2,16 +2,15 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{FullMarkupPage, Page}
 import org.podval.tools.publish.util.Date
-import org.podval.xml.Html
+import org.podval.xml.{Html, Xml, Xml2Html}
+import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
 // TODO move this to `page`.
 object PageHeader:
   def of(page: FullMarkupPage): Html.Element =
-    val isCollector: Boolean =
-      // TODO this covers store and collection; it should apply also to the documents under the collection
-      page.content.exists(content => TeiMarkup.isStoreRoot(content.xml))
-    if isCollector
+    // TODO also documents under a collection (ancestor store path), not only the store root.
+    if page.content.flatMap(_.storeIndex).isDefined
     then collectorPageHeader(page)
     else pageHeader(page)
 
@@ -66,4 +65,24 @@ object PageHeader:
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
   def collectorPageHeader(page: FullMarkupPage): Html.Element =
-    header("TODO!!!")
+    val index: StoreIndex = page.content.flatMap(_.storeIndex).get
+    Xml2Html.fromXml(collectorHeaderXml(index))
+
+  // Live collector: `div.store-header` / `tei-head` with name, ": ", title, then abstract.
+  // Parent selector labels (`архив`) are not in this store file.
+  private def collectorHeaderXml(index: StoreIndex): Xml.Element =
+    val names: Xml.Nodes = Chunk.from(
+      index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).toSeq.map(storeNameXml)
+    )
+    val titleInner: Xml.Nodes = index.title.fold(Chunk.empty[Xml.Node]): title =>
+      TeiMarkup.convertFragment(title).getChildren
+    val colon: Xml.Nodes =
+      if names.nonEmpty && titleInner.nonEmpty then Chunk(Xml.text(": ")) else Chunk.empty
+    val head: Xml.Element = Xml.element("tei-head").setChildren(names ++ colon ++ titleInner)
+    val description: Xml.Nodes = Chunk.from(index.description.toSeq.map(TeiMarkup.convertFragment))
+    Xml.element("header").addClass("store-header").setChildren(Chunk(head: Xml.Node) ++ description)
+
+  private def storeNameXml(name: StoreIndex.Name): Xml.Element =
+    var result: Xml.Element = Xml.element("span").addClass("store-name").setText(name.n)
+    name.lang.foreach(lang => result = result.set("lang", lang))
+    result
