@@ -76,6 +76,18 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("Papers"), dumped)
   }
 
+  test("title text does not insert a space before a comma after an inline name") {
+    val (_, title) = processResult(
+      """<collection>
+        |  <title>О <orgName>секте</orgName> и <persName>Зальмане Боруховиче</persName>, и о</title>
+        |</collection>""".stripMargin
+    )
+    val text: String = title.map(_.getText).getOrElse("")
+    assert(text.contains("Боруховиче, и о"), text)
+    assert(!text.contains("Боруховиче ,"), text)
+    assert(text.contains("О секте и"), text)
+  }
+
   test("store and collection child title is extracted and stripped") {
     val (store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
     assert(storeTitle.exists(_.getText.contains("Fund 109")), render(store))

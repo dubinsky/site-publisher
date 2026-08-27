@@ -21,7 +21,9 @@ trait XmlAst[ELEMENT]:
 
   def element(name: String): Element
 
-  final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString(" ")
+  // Concatenate only: text nodes already carry author whitespace. Joining with a space
+  // put a gap before punctuation after inline markup (`</persName>,` → "е ,").
+  final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString
 
   final def toId(text: String): String = text.trim.replace(' ', '-')
 
