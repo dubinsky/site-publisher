@@ -35,6 +35,18 @@ object TeiMarkup extends Markup(
   override def entityKind(xml: Xml.Element): Option[EntityKind] =
     EntityKind.values.find(entityKind => xml.getName == entityKind.element)
 
+  override def storeIndex(xml: Xml.Element): Option[StoreIndex] =
+    Option.when(isStoreRoot(xml)):
+      StoreIndex(
+        selector = xml.gather(el =>
+          Option.when(localName(el) == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
+        ).flatten.headOption,
+        hrefs = xml.gather(el =>
+          Option.when(isInclude(el))(el.get("href").map(_.trim).filter(_.nonEmpty))
+        ).flatten.toSeq,
+        names = storeNames(xml)
+      )
+
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
@@ -48,8 +60,10 @@ object TeiMarkup extends Markup(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
     )
-    val title: Option[Xml.Element] = documentTitle(converted)
-    val body: Xml.Element = title.fold(converted)(stripTitle(converted, _))
+    // After Xml2Html so store `lang` is not prefixed again on already-converted names.
+    val withStore: Xml.Element = converted.transform(convertStoreChrome, stopAtCode = false)
+    val title: Option[Xml.Element] = documentTitle(withStore)
+    val body: Xml.Element = title.fold(withStore)(stripTitle(withStore, _))
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // TODO does it really need to be a separate pass?
@@ -88,6 +102,8 @@ object TeiMarkup extends Markup(
         )
       case "store" | "collection" =>
         pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
+      case "div" if root.hasClass("store") || root.hasClass("collection") =>
+        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle).toSeq)
       case _ =>
         None
 
@@ -113,34 +129,104 @@ object TeiMarkup extends Markup(
       stopAtCode = false
     )
 
-  private def convertSpecial(element: Xml.Element): Xml.Element = element.getName match
-    case "row" =>
-      renameElement("tr", element)
+  private def convertSpecial(element: Xml.Element): Xml.Element =
+    val stripped: Xml.Element = dropIncludes(element)
+    stripped.getName match
+      case "row" =>
+        renameElement("tr", stripped)
 
-    case "cell" =>
-      renameElement("td", copyAttribute("cols", "colspan", element))
+      case "cell" =>
+        renameElement("td", copyAttribute("cols", "colspan", stripped))
 
-    case "graphic" =>
-      renameElement("img", copyAttribute("url", "src", element))
+      case "graphic" =>
+        renameElement("img", copyAttribute("url", "src", stripped))
 
-    case "ref" | "ptr" =>
-      teiHref(element).fold(renameElement("a", element))(value =>
-        renameElement("a", element.setHref(value))
-      )
+      case "ref" | "ptr" =>
+        teiHref(stripped).fold(renameElement("a", stripped))(value =>
+          renameElement("a", stripped.setHref(value))
+        )
 
-    case "term" =>
-      teiHref(element).fold(element)(value => renameElement("a", element.setHref(value)))
+      case "term" =>
+        teiHref(stripped).fold(stripped)(value => renameElement("a", stripped.setHref(value)))
 
-    case name if EntityKind.values.exists(_.nameElement == name) =>
-      // TODO turn those into As *only* if 'ref' attribute is present!
-      renameElement("a", copyAttribute("ref", "href", element))
+      case name if EntityKind.values.exists(_.nameElement == name) =>
+        // TODO turn those into As *only* if 'ref' attribute is present!
+        renameElement("a", copyAttribute("ref", "href", stripped))
 
-    case "pb" =>
-      // TODO convert 'n' attribute?
-      renameElement("a", element.setText(facsimileSymbol))
+      case "pb" =>
+        // TODO convert 'n' attribute?
+        renameElement("a", stripped.setText(facsimileSymbol))
 
-    case _ =>
-      element
+      case _ =>
+        stripped
+
+  private def convertStoreChrome(element: Xml.Element): Xml.Element =
+    localName(element) match
+      case "store" | "collection" => convertStore(element)
+      case "by" => convertBy(element)
+      case _ => element
+
+  private def convertStore(element: Xml.Element): Xml.Element =
+    val kids: Xml.Nodes = element.getChildren.map: node =>
+      node.asElement match
+        case Some(el) if localName(el) == "name" => convertName(el)
+        case Some(el) if localName(el) == "by" => convertBy(el)
+        case _ => node
+    renameElement("div", element.setChildren(kids))
+
+  private def convertBy(element: Xml.Element): Xml.Element =
+    val selector: Option[String] = element.get("selector").map(_.trim).filter(_.nonEmpty)
+    val heading: Xml.Nodes = selector.fold(Chunk.empty[Xml.Node]): s =>
+      Chunk(Xml.element("em").setText(s"$s:"))
+    var by: Xml.Element = element
+      .rename("div")
+      .addClass("store-by")
+      .set("selector", "")
+      .setChildren(heading)
+    selector.foreach(s => by = by.set("data-selector", s))
+    by
+
+  private def convertName(element: Xml.Element): Xml.Element =
+    val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
+    val text: String = n.getOrElse(element.getText.trim)
+    val lang: Option[String] =
+      element.get("lang").orElse(element.get("tei-lang")).map(_.trim).filter(_.nonEmpty)
+    var span: Xml.Element = element.rename("span").addClass("store-name").set("n", "").set("tei-lang", "")
+    if text.nonEmpty then span = span.setText(text)
+    lang.foreach: value =>
+      span = span.set("lang", value)
+    span
+
+  private def dropIncludes(element: Xml.Element): Xml.Element =
+    element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isInclude)))
+
+  private def isStoreRoot(element: Xml.Element): Boolean =
+    val name: String = localName(element)
+    name == "store" || name == "collection"
+
+  private def isInclude(element: Xml.Element): Boolean =
+    localName(element) == "include" && element.get("href").exists(_.trim.nonEmpty)
+
+  private def localName(element: Xml.Element): String =
+    val name: String = element.getName
+    val colon: Int = name.lastIndexOf(':')
+    if colon < 0 then name else name.substring(colon + 1)
+
+  private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
+    val fromChildren: Seq[StoreIndex.Name] =
+      root.getChildren.flatMap(_.asElement)
+        .filter(el => localName(el) == "name")
+        .flatMap(storeName)
+        .toSeq
+    val fromN: Option[StoreIndex.Name] =
+      root.get("n").map(_.trim).filter(_.nonEmpty).map(n => StoreIndex.Name(n, None))
+    if fromChildren.nonEmpty then fromChildren else fromN.toSeq
+
+  private def storeName(element: Xml.Element): Option[StoreIndex.Name] =
+    val n: String = element.get("n").map(_.trim).filter(_.nonEmpty).getOrElse(element.getText.trim)
+    Option.when(n.nonEmpty)(
+      StoreIndex.Name(n, element.get("lang").map(_.trim).filter(_.nonEmpty))
+    )
 
   // Xml2Html prefixes reserved HTML attributes (`target` → `tei-target`).
   private def teiHref(element: Xml.Element): Option[String] =

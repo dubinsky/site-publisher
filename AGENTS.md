@@ -86,6 +86,7 @@ Compiler flags:
 - Do not commit changes to the hardcoded path in `generate()`.
 - Posts and daily notes have strict filename conventions (`YYYY-MM-DD-title`).
 - Directories that should not produce pages (e.g. `_posts`) are specially handled by `Posts.isDirectoryEmptiedOut`.
+- TEI `store`/`collection` as `dir.xml` beside `dir/` is an ordered index: `xi:include/@href` is a page ref (never XInclude); unlisted files are `NotInStore`; selector hops in hrefs are not pages.
 - XML dialects are disambiguated by root element for `.xml` files (TEI vs DocBook).
 - `Site.targetDirectory` is `sourceDirectory / name` unless `target-directory-name` is absolute; Java `File(parent, "/abs")` on Unix does *not* ignore the parent.
 - The Errors page is written after other HTML so unknown citations and unresolved links found while rendering appear on it.

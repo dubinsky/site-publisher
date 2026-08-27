@@ -84,6 +84,29 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(collectionTitle.exists(_.getText.contains("Case 29")), render(collection))
   }
 
+  test("xi:include of a missing file is a reference, not XInclude expansion") {
+    val input: String =
+      """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+        |  <name lang="en" n="books"/>
+        |  <by selector="book">
+        |    <xi:include href="this-file-does-not-exist.xml"/>
+        |    <xi:include href="books/book/derzhavin.xml"/>
+        |  </by>
+        |</store>""".stripMargin
+    val parsed: Xml.Element = parse(input)
+    val index = TeiMarkup.storeIndex(parsed).get
+    assert(index.hrefs == Seq("this-file-does-not-exist.xml", "books/book/derzhavin.xml"), index.hrefs)
+    assert(index.selector.contains("book"), index.selector)
+    assert(index.names.exists(_.n == "books"), index.names.map(_.n))
+    val dumped: String = render(process(input))
+    assert(!dumped.contains("xi:include"), dumped)
+    assert(!dumped.contains("this-file-does-not-exist"), dumped)
+    assert(dumped.contains("book:"), dumped)
+    assert(dumped.contains("store-by"), dumped)
+    assert(dumped.contains("store-name"), dumped)
+    assert(dumped.contains("books"), dumped)
+  }
+
   test("person has no document title") {
     val (xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
     assert(title.isEmpty, render(xml))

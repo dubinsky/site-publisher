@@ -545,6 +545,19 @@ ul.page-list {
     list-style: none;
 }
 
+.store-name {
+    font-style: italic;
+}
+
+.store-name + .store-name::before {
+    content: " / ";
+    font-style: normal;
+}
+
+.store-by {
+    margin: 0.5em 0;
+}
+
 nav.pagination {
     display: flex;
     flex-wrap: wrap;

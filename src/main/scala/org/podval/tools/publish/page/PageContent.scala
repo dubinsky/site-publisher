@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids,
-  Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
+  Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.page.PageSource
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -19,7 +19,8 @@ final class PageContent private(
   val blocks: WikiBlocks,
   val footnotes: Map[String, Footnote],
   val glossaryDefinitions: Map[String, Xml.Nodes],
-  val bibliographyDefinitions: Map[String, Xml.Nodes]
+  val bibliographyDefinitions: Map[String, Xml.Nodes],
+  val storeIndex: Option[StoreIndex]
 ):
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
@@ -175,6 +176,8 @@ object PageContent:
     frontMatter: FrontMatter,
     xml: Xml.Element
   ): PageContent =
+    val storeIndex: Option[StoreIndex] = source.markup.storeIndex(xml)
+
     // Run markup-specific processors and extract title
     val (xmlProcessed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
 
@@ -209,7 +212,8 @@ object PageContent:
       blocks = WikiBlocks(harvested, source),
       footnotes = footnotes,
       glossaryDefinitions = Glossary.definitions(harvested),
-      bibliographyDefinitions = BibliographyItem.definitions(harvested)
+      bibliographyDefinitions = BibliographyItem.definitions(harvested),
+      storeIndex = storeIndex
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */

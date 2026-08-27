@@ -37,6 +37,9 @@ abstract class Markup(
   // - extract title
   def process(xml: Xml.Element, errorReporter: PageErrorReporter): (Xml.Element, Option[Xml.Element])
 
+  /** TEI `store` / `collection` include list. Harvested from the raw tree (includes are not expanded). */
+  def storeIndex(xml: Xml.Element): Option[StoreIndex] = None
+
   final def sectionHeader(element: Xml.Element): Option[Xml.Element] = element
     .getChildren
     .flatMap(_.asElement)

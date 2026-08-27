@@ -16,7 +16,10 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
   override protected def syntheticContentOpt: Option[Html.Element] = Some(syntheticContent)
 
   private def syntheticContent: Html.Element =
-    div(className := "directory", Page.pageList(directories ++ pages))
+    div(className := "directory", listing(children))
+
+  private def listing(pages: Seq[Page]): Html.Element =
+    ul(className := "page-list", pages.map(page => li(page.listRef())))
 
   override protected def iconDefault: Icon = if isPost then Icon.calendar else Icon.folder
 
@@ -31,12 +34,22 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
 
   def prev(page: Page): Option[Page] = listFor(page).takeWhile(_ != page).reverse.headOption
   def next(page: Page): Option[Page] = listFor(page).dropWhile(_ != page).dropWhile(_ == page).headOption
-  
+
   private def listFor(page: Page): List[Page] =
-    if page.isInstanceOf[DirectoryPage]
-    then directories
-    else pages
-    
+    storeChildrenVar.getOrElse(
+      if page.isInstanceOf[DirectoryPage]
+      then directories
+      else pages
+    )
+
+  private def children: List[Page] = storeChildrenVar.getOrElse(directories ++ pages)
+
+  private var storeChildrenVar: Option[List[Page]] = None
+
+  def setStoreChildren(children: List[Page]): Unit = storeChildrenVar = Some(children)
+
+  def storeChildren: Option[List[Page]] = storeChildrenVar
+
   private lazy val directories: List[Page] = site
     .pages
     .pages

@@ -17,7 +17,11 @@ object XmlParserStAX:
   private def parseInternal(content: String): Xml.Element =
     // Built-in: com.sun.xml.internal.stream.XMLInputFactoryImp
     val factory: XMLInputFactory = XMLInputFactory.newInstance
+    // Store `xi:include` is a page reference. Do not expand XInclude or load a DTD/external
+    // subset (there is no standard StAX XInclude switch; the JDK factory leaves it off).
     factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false)
+    factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
+    factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)
     val reader: XMLEventReader = factory.createXMLEventReader(new StringReader(content))
 
     val builder: XmlBuilder = XmlBuilder()

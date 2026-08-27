@@ -44,15 +44,20 @@ abstract class Page(
 
   def up: Option[Page] = parent
 
-  lazy val parent: Option[DirectoryPage] =
+  // Not lazy: selector hops are known only after `Pages.resolveStores`.
+  def parent: Option[DirectoryPage] =
     val parentDirectory: Option[Seq[String]] =
       if isDirectory && path.path.length > 1 then Some(path.path.init.init)
       else if !isDirectory && path.path.nonEmpty then Some(path.path.init)
       else None
 
-    parentDirectory
-      .filterNot(_.isEmpty)
-      .map(parentDirectory => site.pages.getOrAddDirectory(Path(parentDirectory :+ DirectoryPage.fileName *).html))
+    parentDirectory.flatMap(directoryParent)
+
+  @scala.annotation.tailrec
+  private def directoryParent(directory: Seq[String]): Option[DirectoryPage] =
+    if directory.isEmpty then None
+    else if site.pages.isSelectorHop(directory) then directoryParent(directory.init)
+    else Some(site.pages.getOrAddDirectory(Path(directory :+ DirectoryPage.fileName *).html))
 
   def isAlias: Boolean = false
 
@@ -87,6 +92,26 @@ abstract class Page(
 
   def titleDefault: String = titleFromPath
   def titleFromPath: String = path.fileName
+
+  /** Directory listing label: store `name: title` when the child is a store. */
+  final def listTitle: String =
+    content.flatMap(_.storeIndex).flatMap(_.displayName) match
+      case Some(name) =>
+        val t: String = title.trim
+        if t.isEmpty || t == name || t == titleFromPath then name
+        else s"$name: $t"
+      case None =>
+        title
+
+  final def listRef(cls: Option[String] = None): Html.Element =
+    val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
+    val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
+    a(
+      className := clss,
+      href := pageLink.url,
+      this.icon.html,
+      listTitle
+    )
 
   final def description: Option[String] = content(_.frontMatter.description).orElse(descriptionDefault)
   protected def descriptionDefault: Option[String] = None

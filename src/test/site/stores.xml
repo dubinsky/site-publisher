@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<store xmlns:xi="http://www.w3.org/2001/XInclude">
+  <name lang="en" n="stores"/>
+  <title>Stores Fixture</title>
+  <by selector="item">
+    <xi:include href="stores/item/zebra.md"/>
+    <xi:include href="stores/item/apple.md"/>
+    <xi:include href="stores/item/ghost.md"/>
+  </by>
+</store>
