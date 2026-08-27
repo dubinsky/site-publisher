@@ -136,4 +136,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         site.siteFooter,
         libraries.flatMap(_.scripts)
       )
-    )
+    ).when(isCollectionIndex)(className := "wide")
+
+  private def isCollectionIndex: Boolean =
+    content.flatMap(_.storeIndex).exists(_.isCollection)

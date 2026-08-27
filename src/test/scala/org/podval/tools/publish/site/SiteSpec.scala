@@ -34,6 +34,13 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(file.isFile, s"missing $relative under $targetDirectory")
     Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
 
+  private def htmlOpen(page: String): String =
+    val start: Int = page.indexOf("<html")
+    assert(start >= 0, page)
+    val end: Int = page.indexOf(">", start)
+    assert(end >= 0, page)
+    page.substring(start, end + 1)
+
   private def exists(relative: String): Unit =
     assert(File(targetDirectory, relative).isFile, s"missing $relative under $targetDirectory")
 
@@ -86,6 +93,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!layout.contains("max-width: var(--on-"), layout)
     assert(!layout.contains("min-width: var(--on-"), layout)
     assert(!base.contains("max-width: var(--on-"), base)
+    assert(layout.contains("html.wide .page-content > .wrapper"), layout)
+    assert(layout.contains("--content-width: 1800px"), layout)
   }
 
   test("header pages come from site config in listed order") {
@@ -540,6 +549,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!listing.contains("<tei-head>"), listing)
     assert(listing.contains("store-name"), listing)
     assert(listing.contains("Stores Fixture"), listing)
+    assert(!htmlOpen(listing).contains("""class="wide""""), htmlOpen(listing))
     val postContent: String = listing.substring(listing.indexOf("post-content"))
     assert(!postContent.contains("Stores Fixture"), postContent)
     assert(!postContent.contains("store-name"), postContent)
@@ -577,6 +587,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(index.contains("store-header"), index)
     assert(index.contains("Case 29"), index)
     assert(!index.contains("<tei-head>"), index)
+    assert(htmlOpen(index).contains("""class="wide""""), htmlOpen(index))
     val doc: String = html("case29/001.html")
     assert(doc.contains("store-header"), doc)
     assert(doc.contains("""href="/case29/index.html""""), doc)
@@ -584,6 +595,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(doc.contains("документ 001"), doc)
     assert(!doc.contains("<tei-head>документ"), doc)
     assert(doc.contains("doc body"), doc)
+    assert(!htmlOpen(doc).contains("""class="wide""""), htmlOpen(doc))
     val postContent: String = doc.substring(doc.indexOf("post-content"))
     assert(!postContent.contains("store-header"), postContent)
   }

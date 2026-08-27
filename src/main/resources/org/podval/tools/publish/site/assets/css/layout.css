@@ -299,6 +299,11 @@
     flex: 1 0 auto;
 }
 
+/* Collection indexes only. Header/footer `.wrapper`s keep `--content-width`. */
+html.wide .page-content > .wrapper {
+    --content-width: 1800px;
+}
+
 .page-heading {
     font-size: 2rem;
 }
