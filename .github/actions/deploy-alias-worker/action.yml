@@ -1,0 +1,63 @@
+name: Deploy collection-alias Worker
+description: >
+  Deploy the Site Publisher alias-rewrite Worker with prefix routes generated
+  from collection-aliases.json (baked into the script).
+
+inputs:
+  site-path:
+    description: Absolute path to the generated site directory (contains collection-aliases.json).
+    required: true
+  hostname:
+    description: Public hostname the Worker is routed on (e.g. ng.alter-rebbe.org).
+    required: true
+  zone-name:
+    description: Cloudflare zone name (e.g. alter-rebbe.org).
+    required: true
+  account-id:
+    description: Cloudflare account id.
+    required: true
+  api-token:
+    description: Cloudflare API token (Workers Scripts Edit + Workers Routes Edit).
+    required: true
+  worker-name:
+    description: Cloudflare Worker script name.
+    required: false
+    default: "site-publisher-alias-rewrite"
+
+runs:
+  using: composite
+  steps:
+    - name: Stage Worker and deploy
+      shell: bash
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api-token }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account-id }}
+      run: |
+        set -euo pipefail
+        publisher_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        cf_src="$publisher_root/src/main/resources/org/podval/tools/publish/site/cloudflare"
+        site_path="${{ inputs.site-path }}"
+        json="$site_path/collection-aliases.json"
+        if [[ ! -f "$json" ]]; then
+          echo "::notice::No collection-aliases.json; skipping Worker deploy"
+          exit 0
+        fi
+        if ! grep -q '"from"' "$json"; then
+          echo "::notice::collection-aliases.json has no aliases; skipping Worker deploy"
+          exit 0
+        fi
+        work="$(mktemp -d)"
+        cp "$cf_src/worker.js" "$cf_src/rewrite.js" "$work/"
+        cp "$json" "$work/collection-aliases.json"
+        node "${{ github.action_path }}/generate-wrangler.mjs" \
+          "$json" \
+          "${{ inputs.hostname }}" \
+          "${{ inputs.zone-name }}" \
+          "${{ inputs.worker-name }}" \
+          "${{ inputs.account-id }}" \
+          "$work/wrangler.toml"
+        cat "$work/wrangler.toml"
+        (
+          cd "$work"
+          npx --yes wrangler@4 deploy
+        )

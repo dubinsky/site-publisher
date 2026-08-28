@@ -157,6 +157,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
         log.debug(s"Writing ${page.path}")
         page.write()
 
+      CollectionAliases.write(targetDirectory, pages)
+
       // Done
       log.info("Done generating!")
     finally

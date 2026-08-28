@@ -160,6 +160,12 @@ final class Pages(site: Site):
 
   private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
 
+  /** Store/directory alias prefixes for the Worker table (`from` → collection directory `to`). */
+  def collectionAliasEntries: Seq[CollectionAliases.Entry] =
+    aliasByPrefix.toSeq.flatMap: (from, alias) =>
+      aliasDirectory(alias.real).map: to =>
+        CollectionAliases.Entry(from, to, alias.real.path)
+
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)
 
