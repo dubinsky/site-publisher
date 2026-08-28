@@ -32,6 +32,12 @@ header-pages:
 
 Omitted or empty means no header links (up/prev/next and format icons still appear). Unknown entries are recorded on the Errors page.
 
+Optional `facsimiles-url` is the base URL of a facsimile site (JPEG bucket; trailing slash as in the collector `tei@facsimilesUrl`). Omitted means none. TEI facsimile viewer pages are not generated yet.
+
+----
+facsimiles-url: https://storage.googleapis.com/facsimiles.alter-rebbe.org/
+----
+
 
 [#summary]
 == Summary

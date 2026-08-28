@@ -19,6 +19,7 @@ final class Config(
   val paginatePosts: Option[Int] = None,
   val headerPages: List[String] = List.empty,
   val home: Option[String] = None,
+  val facsimilesUrl: Option[String] = None,
   val social: Config.Social = Config.Social()
 )
 
