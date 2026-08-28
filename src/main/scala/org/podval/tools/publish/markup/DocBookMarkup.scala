@@ -389,7 +389,7 @@ object DocBookMarkup extends Markup(
     else
       val raw: String = element.getText.trim
       val comma: Int = raw.indexOf(',')
-      val (key, locator): (String, Option[String]) =
+      val (key: String, locator: Option[String]) =
         if comma < 0 then (raw, None)
         else (raw.substring(0, comma).trim, Some(raw.substring(comma + 1).trim).filter(_.nonEmpty))
       if !Citation.isBibKey(key) then element

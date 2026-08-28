@@ -74,7 +74,7 @@ private final class XmlParserSax(builder: XmlBuilder) extends DefaultHandler wit
     builder.comment(String(characters, start, length))
 
 private def fromName(uri: String, localName: String, qName: String): XmlName =
-  val (prefix, local): (Option[String], String) =
+  val (prefix: Option[String], local: String) =
     if localName.nonEmpty then
       val colon: Int = qName.indexOf(':')
       val p: Option[String] = Option.when(colon >= 0)(qName.substring(0, colon)).filter(_.nonEmpty)

@@ -34,7 +34,7 @@ object WikiLink:
 
   // see https://obsidian.md/help/embeds
   def embed(element: Xml.Element, ref: String): Option[Xml.Element] =
-    val (path, _): (String, Option[String]) = Strings.splitFirst(ref, '#')
+    val (path: String, _) = Strings.splitFirst(ref, '#')
     val embedded: Option[Xml.Element] = Files.nameAndExtension(path)._2.map(_.toLowerCase) match
       case Some(extension) if Media.isImage(extension) =>
         // Note: FlexMark inlines image links for the ![]() references, so I do not get to do it -

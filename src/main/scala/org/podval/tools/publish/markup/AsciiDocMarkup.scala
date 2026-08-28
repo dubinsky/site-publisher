@@ -161,7 +161,7 @@ object AsciiDocMarkup extends Markup(
     else if Citation.isPlaceholder(element) then None
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-      val (title, rest): (Option[Xml.Element], Xml.Nodes) =
+      val (title: Option[Xml.Element], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) => (Some(heading), children.drop(1))
@@ -177,13 +177,13 @@ object AsciiDocMarkup extends Markup(
 
   // Mark an entry and hoist a leading empty `<a id>` (AsciiDoc `[[[id]]]`).
   private def asBibliographyItem(element: Xml.Element): Xml.Element =
-    val (fromAnchor, stripped): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(element.getChildren)
+    val (fromAnchor: Option[String], stripped: Xml.Nodes) = hoistEmptyIdAnchor(element.getChildren)
     val id: Option[String] = fromAnchor.orElse(element.getId.filter(_.nonEmpty))
     id.fold(element): value =>
       element.add(BibliographyItem.ItemClass).setId(value).setChildren(stripped)
 
   private def hoistEmptyIdAnchor(nodes: Xml.Nodes): (Option[String], Xml.Nodes) =
-    val (leading, rest): (Xml.Nodes, Xml.Nodes) = nodes.span(node =>
+    val (leading: Xml.Nodes, rest: Xml.Nodes) = nodes.span(node =>
       node.isWhitespace || node.asElement.exists(isEmptyIdAnchor)
     )
     val fromAnchor: Option[String] = leading.flatMap(_.asElement).flatMap(_.getId).headOption
@@ -194,7 +194,7 @@ object AsciiDocMarkup extends Markup(
         if found.isDefined then node
         else node.asElement.filter(el => el.getName == "p" || el.getName == "span") match
           case Some(wrapper) =>
-            val (inner, innerNodes): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(wrapper.getChildren)
+            val (inner: Option[String], innerNodes: Xml.Nodes) = hoistEmptyIdAnchor(wrapper.getChildren)
             found = inner
             if inner.isDefined then wrapper.setChildren(innerNodes) else node
           case None =>
@@ -262,7 +262,7 @@ object AsciiDocMarkup extends Markup(
     if element.getName != "div" || !element.hasClass("sidebarblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-      val (title, body): (Option[String], Xml.Nodes) =
+      val (title: Option[String], body: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) =>
@@ -277,7 +277,7 @@ object AsciiDocMarkup extends Markup(
     if element.getName != "div" || !element.hasClass("quoteblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-      val (title, rest): (Option[String], Xml.Nodes) =
+      val (title: Option[String], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) =>
@@ -301,7 +301,7 @@ object AsciiDocMarkup extends Markup(
     if element.getName != "div" || !element.hasClass("imageblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-      val (body, caption): (Xml.Nodes, Option[String]) =
+      val (body: Xml.Nodes, caption: Option[String]) =
         children.lastOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) =>
@@ -316,7 +316,7 @@ object AsciiDocMarkup extends Markup(
     if element.getName != "div" || !element.hasClass("videoblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-      val (title, rest): (Option[String], Xml.Nodes) =
+      val (title: Option[String], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) =>
@@ -345,7 +345,7 @@ object AsciiDocMarkup extends Markup(
       val content: Option[Xml.Element] = cells.find(_.hasClass("content"))
       val contentChildren: Xml.Nodes =
         content.fold(Chunk.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
-      val (titleFromContent, body): (Option[String], Xml.Nodes) =
+      val (titleFromContent: Option[String], body: Xml.Nodes) =
         contentChildren.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
             case Some(heading) =>
@@ -447,7 +447,7 @@ object AsciiDocMarkup extends Markup(
 
   // Asciidoctor empty `<a id>` on the term (same leftover as `[[[id]]]` on bibliography items).
   private def takeGlossaryTermId(dt: Xml.Element): (Option[String], Xml.Element) =
-    val (fromAnchor, strippedNodes): (Option[String], Xml.Nodes) = hoistEmptyIdAnchor(dt.getChildren)
+    val (fromAnchor: Option[String], strippedNodes: Xml.Nodes) = hoistEmptyIdAnchor(dt.getChildren)
     val stripped: Xml.Element = if fromAnchor.isEmpty then dt else dt.setChildren(strippedNodes)
     val id: Option[String] = fromAnchor.orElse(stripped.getId.filter(_.nonEmpty))
     val term: Xml.Element = if stripped.getId.isEmpty then stripped else stripped.setId("")

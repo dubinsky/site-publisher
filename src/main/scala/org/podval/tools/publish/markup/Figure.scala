@@ -50,7 +50,7 @@ object Figure:
       only <- children.headOption.flatMap(_.asElement) if children.length == 1
       if isStandaloneImage(only)
     yield
-      val (caption, body): (Option[String], Xml.Element) = takeTitle(only)
+      val (caption: Option[String], body: Xml.Element) = takeTitle(only)
       make(caption, Chunk(body))
 
   private def isStandaloneImage(element: Xml.Element): Boolean =
@@ -69,7 +69,7 @@ object Figure:
     else
       val children: Xml.Nodes = element.getChildren
       val img: Xml.Element = children.flatMap(_.asElement).find(_.getName == "img").get
-      val (caption, stripped): (Option[String], Xml.Element) = takeTitle(img)
+      val (caption: Option[String], stripped: Xml.Element) = takeTitle(img)
       val body: Xml.Nodes = children.map: node =>
         if node.asElement.contains(img) then stripped else node
       (caption, element.setChildren(body))

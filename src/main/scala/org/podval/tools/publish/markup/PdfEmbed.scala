@@ -18,7 +18,7 @@ object PdfEmbed:
     element.getName == "div" && element.has(Class)
 
   def fromRef(ref: String, label: String): Xml.Element =
-    val (path, fragment): (String, Option[String]) = Strings.splitFirst(ref, '#')
+    val (path: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
     val params: Map[String, String] = parseParams(fragment)
     val src: String = params.get("page").map(page => s"$path#page=$page").getOrElse(path)
     make(src, label, params.get("height"))
@@ -74,7 +74,7 @@ object PdfEmbed:
       .map(_.trim)
       .filter(_.nonEmpty)
       .flatMap: part =>
-        val (key, value): (String, Option[String]) = Strings.splitFirst(part, '=')
+        val (key: String, value: Option[String]) = Strings.splitFirst(part, '=')
         value.map(_.trim).filter(_.nonEmpty).map(key.trim.toLowerCase -> _)
       .toMap
 

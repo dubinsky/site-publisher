@@ -320,7 +320,7 @@ object TeiMarkup extends Markup(
 
   private def convertBareQuote(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
-    val (bibl, body): (Xml.Nodes, Xml.Nodes) = children.partition(isBibl)
+    val (bibl: Xml.Nodes, body: Xml.Nodes) = children.partition(isBibl)
     Quote.make(None, bibl.flatMap(asAttribution), body).setId(xmlId(element))
 
   private def isQuoted(node: Xml.Node): Boolean =
