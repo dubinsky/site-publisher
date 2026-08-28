@@ -1,8 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{CollectionIndex, CollectionPart, DocumentHeader, EntityLists, Footnote, Ids,
-  PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks}
+import org.podval.tools.publish.markup.{CollectionIndex, CollectionPart, DocumentHeader, EntityKind, EntityLists,
+  Footnote, Ids, PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Html, Xml, Xml2Html}
 

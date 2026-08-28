@@ -1,6 +1,5 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tei.EntityKind
 import org.podval.tools.publish.page.Page
 import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml

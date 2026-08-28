@@ -1,4 +1,4 @@
-package org.podval.tei
+package org.podval.tools.publish.markup
 
 enum EntityKind(
   val element: String,

@@ -226,7 +226,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(index.lists.size == 1)
     assert(index.lists.head.id == "jews")
     assert(index.lists.head.role.contains("jew"))
-    assert(index.lists.head.kind == org.podval.tei.EntityKind.Person)
+    assert(index.lists.head.kind == EntityKind.Person)
   }
 
   test("entity name with ref becomes a; without ref stays") {

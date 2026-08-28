@@ -11,6 +11,13 @@ final class Pb(
   val isEmpty: Boolean,
   val facs: Option[String] = None
 )
+//final class Pb(
+//  val n: String,
+//  val id: Option[String],
+//  val facs: Option[String],
+//  val missing: Boolean = false,
+//  val empty: Boolean = false
+//)
 
 object Pb:
   object Class extends HtmlClass("pb")

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.Link
+import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, Xml}

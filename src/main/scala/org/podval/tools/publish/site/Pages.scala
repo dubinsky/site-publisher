@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
-import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{CollectionIndex, EntityLists, Facsimile, LinkKind, Markup, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.markup.{CollectionIndex, EntityKind, EntityLists, Facsimile, LinkKind, Markup,
+  TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
   FacsimilePage, FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
