@@ -152,13 +152,13 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""title="Facsimile""""), transcription)
   }
 
-  test("collection Страницы numbers go to the transcription; icons to the viewer") {
+  test("collection Страницы numbers go to the transcription") {
     withSite(): (_, target) =>
       val index: String = html(target, "col/index.html")
       assert(index.contains("""href="/col/000.html#p000-1""""), index)
-      assert(index.contains("""href="/col/000/facsimile.html#p000-1""""), index)
-      assert(index.contains("fa-images"), index)
-      assert(index.contains("""target="facsimile""""), index)
+      assert(!index.contains("/facsimile.html"), index)
+      assert(!index.contains("fa-images"), index)
+      assert(!index.contains("""target="facsimile""""), index)
   }
 
   test("missing pb is omitted from the scroller and kept in the transcription") {

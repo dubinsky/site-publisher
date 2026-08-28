@@ -123,20 +123,12 @@ object CollectionIndex:
     lang ++ links
 
   private def pagesCell(document: Page, header: Option[DocumentHeader], pageType: PageType): Xml.Nodes =
-    val viewer: Option[Page] = document.site.pages.facsimilePage(document)
     val groups: Seq[Xml.Nodes] = header.toSeq.flatMap(_.pbs).map: pb =>
-      val id: String = Pb.pageId(pb.n)
-      val number: Xml.Element = Xml.element("a")
-        .setHref(s"${document.publishedPath}#$id")
-        .setText(pageType.displayName(pb.n))
-      val facsimile: Xml.Nodes =
-        if pb.isMissing then Chunk.empty
-        else viewer.fold(Chunk.empty[Xml.Node]): page =>
-          Chunk(
-            Xml.text(" "),
-            Pb.viewerLink(Some(s"${page.publishedPath}#$id")): Xml.Node
-          )
-      Chunk(number: Xml.Node) ++ facsimile
+      Chunk(
+        Xml.element("a")
+          .setHref(s"${document.publishedPath}#${Pb.pageId(pb.n)}")
+          .setText(pageType.displayName(pb.n)): Xml.Node
+      )
     groups match
       case Seq() => Chunk.empty
       case Seq(one) => one
