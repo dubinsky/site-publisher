@@ -8,7 +8,9 @@ final class DocumentHeader(
   val date: Option[Xml.Element],
   val authors: Seq[Xml.Element],
   val addressee: Option[Xml.Element],
-  val transcribers: Seq[Xml.Element]
+  val transcribers: Seq[Xml.Element],
+  val lang: Option[String],
+  val pbs: Seq[Pb]
 ):
   def isEmpty: Boolean =
     description.isEmpty && date.isEmpty && authors.isEmpty && addressee.isEmpty && transcribers.isEmpty
@@ -24,8 +26,14 @@ object DocumentHeader:
         date = profileDesc.flatMap(child(_, "creation")).flatMap(child(_, "date")),
         authors = titleStmt.toSeq.flatMap(children(_, "author")),
         addressee = profileDesc.flatMap(addresseeOf),
-        transcribers = titleStmt.toSeq.flatMap(children(_, "editor")).filter(_.get("role").contains("transcriber"))
+        transcribers = titleStmt.toSeq.flatMap(children(_, "editor")).filter(_.get("role").contains("transcriber")),
+        lang = textLang(xml),
+        pbs = Pb.harvest(xml)
       )
+
+  private def textLang(xml: Xml.Element): Option[String] =
+    child(xml, "text").flatMap: text =>
+      text.get("xml:lang").orElse(text.get("lang")).map(_.trim).filter(_.nonEmpty)
 
   private def addresseeOf(profileDesc: Xml.Element): Option[Xml.Element] =
     profileDesc.gather(el =>

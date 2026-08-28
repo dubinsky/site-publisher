@@ -153,7 +153,7 @@ object PageHeader:
     page.store.flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
       resolvedFragment(page, title).getChildren
 
-  private def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
+  private[markup] def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
     val converted: Xml.Element = TeiMarkup.convertFragment(xml)
     page.content.fold(converted)(_.resolveConverted(converted))
 
@@ -184,11 +184,11 @@ object PageHeader:
       Xml.element("td").addClass("value").setChildren(convertedNodes(page, nodes))
     ))
 
-  private def dateCell(date: Option[Xml.Element]): Xml.Nodes =
+  private[markup] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
     date.fold(Chunk.empty[Xml.Node]): el =>
       el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Chunk(Xml.text(when)))
 
-  private def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
+  private[markup] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
     val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)
     inners match
       case Seq() => Chunk.empty

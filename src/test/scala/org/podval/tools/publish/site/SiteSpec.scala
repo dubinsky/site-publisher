@@ -586,6 +586,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val index: String = html("case29/index.html")
     assert(index.contains("store-header"), index)
     assert(index.contains("Case 29"), index)
+    assert(index.contains("""class="collection-index""""), index)
+    assert(!index.contains("""class="page-list""""), index)
     assert(!index.contains("<tei-head>"), index)
     assert(htmlOpen(index).contains("""class="wide""""), htmlOpen(index))
     val doc: String = html("case29/001.html")

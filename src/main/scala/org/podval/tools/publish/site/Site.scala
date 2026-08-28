@@ -258,7 +258,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
             page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
             page.prev.map(_.navRef(Icon.arrowLeft)),
             page.next.map(_.navRef(Icon.arrowRight)),
-            page.formatLinks
+            page.formatLinks,
+            page.translationLinks
           )
         )
       )

@@ -5,7 +5,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ## Project Layout
 
 - Main logic: `src/main/scala/org/podval/tools/publish/`
-  - `markup/` — `Markup` dialects, shared IR (`Citation`, `BibliographyItem`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), and `Bibliography` resolution
+  - `markup/` — `Markup` dialects, shared IR (`Citation`, `BibliographyItem`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), `Bibliography` resolution, and collection index (`CollectionIndex`)
   - `page/` — `PageContent` + `Content` (store / entity lists / TEI document / entity / markup), front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages`, config, sitemap, errors
 - Supporting libraries in the same repo:
@@ -86,7 +86,7 @@ Compiler flags:
 - Do not commit changes to the hardcoded path in `generate()`.
 - Posts and daily notes have strict filename conventions (`YYYY-MM-DD-title`).
 - Directories that should not produce pages (e.g. `_posts`) are specially handled by `Posts.isDirectoryEmptiedOut`.
-- TEI `store`/`collection` as `dir.xml` beside `dir/` is `StoreContent`: `xi:include/@href` is a page ref (never XInclude); `StoreContent.bind` orders children and reports `NotInStore`; selector hops in hrefs are not pages. Empty `href`s keep filesystem listing.
+- TEI `store`/`collection` as `dir.xml` beside `dir/` is `StoreContent`: `xi:include/@href` is a page ref (never XInclude); `StoreContent.bind` orders children and reports `NotInStore`; selector hops in hrefs are not pages. Empty `href`s keep filesystem listing. A `collection` body is `table.collection-index` (parts, translations as Язык variants, `pb` page links); a `store` body stays the directory list.
 - TEI entity `@ref` is the file name without `.xml` of a `person`/`place`/`org` file of the same kind; it does not title-walk.
 - TEI `entityLists` as `dir.xml` beside `dir/` is `EntityListsContent` (kind+role, `listPerson` `@n` `@role`), not a store `xi:include` list.
 - XML dialects are disambiguated by root element for `.xml` files (TEI vs DocBook).

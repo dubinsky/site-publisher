@@ -4,7 +4,8 @@ import org.podval.xml.{Xml, XmlUtil}
 
 /** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
   * Harvested from the raw tree (includes are not expanded). Names, title, and abstract are
-  * header chrome (`PageHeader.collectorPageHeader`), not body content. */
+  * header chrome (`PageHeader.collectorPageHeader`), not body content. Collection `part`s and
+  * `pageType` feed `CollectionIndex`. */
 final class StoreIndex(
   val selector: Option[String],
   val hrefs: Seq[String],
@@ -13,8 +14,12 @@ final class StoreIndex(
   val description: Option[Xml.Element],
   val body: Option[Xml.Element],
   val isCollection: Boolean,
-  val alias: Option[String]
+  val alias: Option[String],
+  val parts: Seq[CollectionPart],
+  val pageTypeName: Option[String]
 ):
+  def pageType: PageType = PageType.parse(pageTypeName)
+
   def displayName: Option[String] =
     names.find(_.lang.contains("ru")).orElse(names.headOption).map(_.n)
 
@@ -38,7 +43,9 @@ object StoreIndex:
         description = storeDescription(xml),
         body = storeBody(xml),
         isCollection = xml.localName == "collection",
-        alias = xml.get("alias").map(_.trim).filter(_.nonEmpty)
+        alias = xml.get("alias").map(_.trim).filter(_.nonEmpty),
+        parts = CollectionPart.harvest(xml),
+        pageTypeName = xml.get("pageType").map(_.trim).filter(_.nonEmpty)
       )
 
   private def storeTitle(root: Xml.Element): Option[Xml.Element] =

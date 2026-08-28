@@ -1,6 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
+import org.podval.tools.publish.markup.CollectionIndex
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
@@ -69,6 +70,15 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")
     )
     Seq(onePage, chunked, pdf).flatten
+
+  final def translationLinks: Seq[Html.Element] =
+    CollectionIndex.translationsToLink(this).flatMap: translation =>
+      CollectionIndex.langOf(translation).map: lang =>
+        a(
+          className := "nav-item translation",
+          href := translation.publishedPath.toString,
+          s"[$lang]"
+        )
 
   private def formatLink(url: String, icon: Icon, label: String): Html.Element =
     a(

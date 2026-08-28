@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tools.publish.markup.CollectionIndex
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
@@ -34,8 +35,20 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     then path.path.init.last
     else path.fileName // "index"
 
-  def prev(page: Page): Option[Page] = listFor(page).takeWhile(_ != page).reverse.headOption
-  def next(page: Page): Option[Page] = listFor(page).dropWhile(_ != page).dropWhile(_ == page).headOption
+  def prev(page: Page): Option[Page] =
+    position(page).filter(_ > 0).map(i => listFor(page)(i - 1))
+
+  def next(page: Page): Option[Page] =
+    position(page).flatMap(i => listFor(page).drop(i + 1).headOption)
+
+  private def position(page: Page): Option[Int] =
+    val list: List[Page] = listFor(page)
+    val exact: Int = list.indexOf(page)
+    if exact >= 0 then Some(exact)
+    else if store.exists(_.isCollection) then
+      val i: Int = list.indexWhere(child => CollectionIndex.baseName(child) == CollectionIndex.baseName(page))
+      Option.when(i >= 0)(i)
+    else None
 
   private def listFor(page: Page): List[Page] =
     storeChildrenVar.getOrElse(

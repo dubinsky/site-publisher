@@ -147,6 +147,44 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(StoreIndex(parse("""<collection n="3140"><title>x</title></collection>""")).get.alias.isEmpty)
   }
 
+  test("collection harvests parts and pageType") {
+    val index = StoreIndex(parse(
+      """<collection pageType="book" n="6">
+        |  <part n="1" from="084"><title>Materials</title></part>
+        |  <part n="2" from="253.1"><title>End</title></part>
+        |</collection>""".stripMargin
+    )).get
+    assert(index.pageType == PageType.Book, index.pageType)
+    assert(index.parts.map(_.from) == Seq("084", "253.1"), index.parts.map(_.from))
+    assert(index.parts.head.title.exists(_.getText.contains("Materials")), index.parts.head.title.map(_.getText))
+  }
+
+  test("pb becomes a facsimile anchor with p{n} id") {
+    val dumped: String = render(process(
+      """<TEI>
+        |  <text><body><pb n="000-1"/><p>x</p></body></text>
+        |</TEI>""".stripMargin
+    ))
+    assert(dumped.contains("""id="p000-1""""), dumped)
+    assert(dumped.contains("⎙"), dumped)
+  }
+
+  test("document header harvests lang and pbs from the raw tree") {
+    val header = DocumentHeader.harvest(parse(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt></titleStmt></fileDesc></teiHeader>
+        |  <text xml:lang="he"><body>
+        |    <pb n="001-1"/>
+        |    <pb n="001-2" missing="true" empty="true"/>
+        |  </body></text>
+        |</TEI>""".stripMargin
+    )).get
+    assert(header.lang.contains("he"), header.lang)
+    assert(header.pbs.map(_.n) == Seq("001-1", "001-2"), header.pbs.map(_.n))
+    assert(!header.pbs.head.isMissing, header.pbs.head)
+    assert(header.pbs.last.isMissing && header.pbs.last.isEmpty, header.pbs.last)
+  }
+
   test("person has no document title") {
     val (xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
     assert(title.isEmpty, render(xml))

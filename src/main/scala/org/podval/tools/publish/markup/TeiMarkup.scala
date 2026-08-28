@@ -139,8 +139,9 @@ object TeiMarkup extends Markup(
         convertEntityList(stripped)
 
       case "pb" =>
-        // TODO convert 'n' attribute?
-        renameElement("a", stripped.setText(facsimileSymbol))
+        val n: Option[String] = stripped.get("n").map(_.trim).filter(_.nonEmpty)
+        val withId: Xml.Element = n.fold(stripped)(n => stripped.setId(Pb.pageId(n)))
+        renameElement("a", withId.setText(facsimileSymbol))
 
       case _ =>
         stripped

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{EntityLists, LinkKind, Markup, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.markup.{CollectionIndex, EntityLists, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
   FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
@@ -355,12 +355,19 @@ final class Pages(site: Site):
       get(Path(dir :+ DirectoryPage.fileName *).html).exists(_.source.isDefined)
     pages.foreach:
       case page: MarkupPage =>
-        page.store.filter(_.hrefs.nonEmpty).foreach: store =>
-          val (children, pageHops) = store.bind(page, findBySource, isAuthoredDirectory)
-          page match
-            case directory: DirectoryPage => directory.setStoreChildren(children)
-            case _ =>
-          hops = hops ++ pageHops
+        page.store.foreach: store =>
+          if store.hrefs.nonEmpty then
+            val (children, pageHops) = store.bind(page, findBySource, isAuthoredDirectory)
+            page match
+              case directory: DirectoryPage =>
+                directory.setStoreChildren(CollectionIndex.listingChildren(store, children))
+              case _ =>
+            hops = hops ++ pageHops
+          else if store.isCollection then
+            page match
+              case directory: DirectoryPage =>
+                directory.setStoreChildren(CollectionIndex.originalsUnder(directory))
+              case _ =>
       case _ =>
 
     selectorHopsVar = hops

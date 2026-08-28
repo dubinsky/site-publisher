@@ -583,6 +583,29 @@ table.document-header {
     }
 }
 
+table.collection-index {
+    width: 100%;
+    margin-top: 0.5em;
+
+    .description { width: 44%; }
+    .date        { width:  8%; }
+    .author      { width: 10%; }
+    .addressee   { width: 10%; }
+    .language    { width:  4%; }
+    .document    { width:  5%; }
+    .pages       { width:  8%; }
+
+    td, th {
+        vertical-align: top;
+    }
+
+    .part-title {
+        font-weight: 700;
+        font-size: 32px;
+        color: #1614ff;
+    }
+}
+
 .store-by {
     margin: 0.5em 0;
 }

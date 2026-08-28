@@ -1,8 +1,8 @@
 package org.podval.tools.publish.page
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{DocumentHeader, EntityLists, Footnote, Ids, StoreIndex, TeiMarkup, Toc,
-  WikiBlocks}
+import org.podval.tools.publish.markup.{CollectionIndex, CollectionPart, DocumentHeader, EntityLists, Footnote, Ids,
+  PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Html, Xml, Xml2Html}
 
@@ -57,6 +57,11 @@ object Content:
         (lists.title, lists)
       case "TEI" =>
         val header: DocumentHeader = DocumentHeader.harvest(xml).get
+        CollectionIndex.checkLang(
+          source.sourcePath.fileName,
+          header.lang,
+          (kind, message) => source.error(kind, message)
+        )
         val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
         (title, DocumentContent(header, PageContent.prepareAuthored(source, processed)))
       case name =>
@@ -135,6 +140,9 @@ final class StoreContent(
   def isCollection: Boolean = index.isCollection
   def displayName: Option[String] = index.displayName
   def alias: Option[String] = index.alias
+  def parts: Seq[CollectionPart] = index.parts
+  def pageType: PageType = index.pageType
+  def pageTypeName: Option[String] = index.pageTypeName
 
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")
@@ -142,6 +150,15 @@ final class StoreContent(
   override def wide: Boolean = isCollection
   override def listTitle: Option[String] = displayName
   override def asStore: Option[StoreContent] = Some(this)
+  override def suppressDirectoryListing: Boolean = isCollection
+
+  override def markupBody(
+    pageContent: PageContent,
+    sectionId: Option[String],
+    isTerminal: Boolean
+  ): Option[Html.Element] =
+    if !isCollection then None
+    else Some(Xml2Html.fromXml(CollectionIndex.generate(pageContent.source.page, this)))
 
   def bind(
     page: MarkupPage,
@@ -169,7 +186,8 @@ final class StoreContent(
     val listed: Set[Path] = hrefs.map(sourcePath.resolveFrom).toSet
     allPages.foreach: extra =>
       extra.sourcePath.foreach: extraSource =>
-        if StoreContent.isUnlisted(extraSource, sourcePath, indexed, listed) then
+        if StoreContent.isUnlisted(extraSource, sourcePath, indexed, listed) &&
+           !CollectionIndex.isTranslation(extra) then
           page.site.error(
             extraSource,
             PageError.NotInStore,
