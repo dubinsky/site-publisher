@@ -60,10 +60,10 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   final def formatLinks: Seq[Html.Element] = formatSourcePage.toSeq.flatMap: page =>
     val onePage: Option[Html.Element] = Option.when(formatIsChunked)(
-      formatLink(page.site.pages.publishedPath(page).toString, Icon.fileLines, "One-page HTML")
+      formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
     )
     val chunked: Option[Html.Element] = Option.when(!formatIsChunked && page.chunk)(
-      formatLink(page.site.pages.publishedPath(page.path.add(DirectoryPage.fileName).html).toString, Icon.tableList, "Chunked HTML")
+      formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
     )
     val pdf: Option[Html.Element] = Option.when(page.pdf)(
       formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")

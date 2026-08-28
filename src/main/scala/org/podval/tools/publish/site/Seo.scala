@@ -75,7 +75,7 @@ object Seo:
   private def author(page: MarkupPage): String =
     page.asFullMarkupPage.flatMap(_.author).getOrElse(page.site.config.author)
 
-  private def canonical(page: Page): String = s"${page.site.uri}${page.site.pages.publishedPath(page)}"
+  private def canonical(page: Page): String = s"${page.site.uri}${page.publishedPath}"
 
   private def ogLocale(lang: String): String =
     val normalized: String = lang.replace('-', '_')

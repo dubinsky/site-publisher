@@ -12,7 +12,8 @@ final class StoreIndex(
   val title: Option[Xml.Element],
   val description: Option[Xml.Element],
   val body: Option[Xml.Element],
-  val isCollection: Boolean
+  val isCollection: Boolean,
+  val alias: Option[String]
 ):
   def displayName: Option[String] =
     names.find(_.lang.contains("ru")).orElse(names.headOption).map(_.n)
@@ -36,7 +37,8 @@ object StoreIndex:
         title = storeTitle(xml),
         description = storeDescription(xml),
         body = storeBody(xml),
-        isCollection = xml.localName == "collection"
+        isCollection = xml.localName == "collection",
+        alias = xml.get("alias").map(_.trim).filter(_.nonEmpty)
       )
 
   private def storeTitle(root: Xml.Element): Option[Xml.Element] =

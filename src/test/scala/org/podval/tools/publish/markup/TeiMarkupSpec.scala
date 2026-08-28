@@ -142,6 +142,11 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(index.selector.contains("category"), index.selector)
   }
 
+  test("store and collection harvest optional alias") {
+    assert(StoreIndex(parse("""<store alias="rgada"><title>x</title></store>""")).get.alias.contains("rgada"))
+    assert(StoreIndex(parse("""<collection n="3140"><title>x</title></collection>""")).get.alias.isEmpty)
+  }
+
   test("person has no document title") {
     val (xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
     assert(title.isEmpty, render(xml))

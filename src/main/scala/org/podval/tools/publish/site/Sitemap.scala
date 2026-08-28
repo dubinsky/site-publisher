@@ -33,7 +33,7 @@ final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
     .pages
     .filter(_.path.extension.contains(HtmlMarkup.extension))
     .map: page =>
-      val loc = Xml.element("loc").setText(s"${site.uri}${site.pages.publishedPath(page)}")
+      val loc = Xml.element("loc").setText(s"${site.uri}${page.publishedPath}")
       // Date format: 2009-08-07T14:30:00-04:00
       val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date =>
         Xml.element("lastmod").setText(date.toString)

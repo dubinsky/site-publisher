@@ -10,7 +10,7 @@ final class Link(
   val fragment: Option[Link.ToFragment],
   val isIntrapage: Boolean
 ):
-  def url: String = withFragment(page.real.site.pages.publishedPath(page.real).toString, _.id)
+  def url: String = withFragment(page.real.publishedPath.toString, _.id)
   def title: String = withFragment(page.title, _.title)
   def titleReal: String = withFragment(page.real.title, _.title)
 

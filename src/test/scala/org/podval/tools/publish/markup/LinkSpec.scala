@@ -19,9 +19,6 @@ final class LinkSpec extends AnyFunSuite:
           |url: http://link.test
           |author: Test
           |email: test@link.test
-          |aliases:
-          |  - name: rgada
-          |    to: /archive/rgada/category/VII/inventory/2/case/3140
           |""".stripMargin
       )
       Files.write(
@@ -81,7 +78,7 @@ final class LinkSpec extends AnyFunSuite:
       )
       Files.write(
         File(dir, "archive/rgada/category/VII/inventory/2/case/3140.xml"),
-        """<collection n="3140">
+        """<collection n="3140" alias="rgada">
           |  <title>Case 3140</title>
           |</collection>
           |""".stripMargin
@@ -195,7 +192,7 @@ final class LinkSpec extends AnyFunSuite:
       assert(dottedWiki.url == "/short/255.2.html")
   }
 
-  test("site-config alias prefix resolves a TEI collection and shortens hrefs") {
+  test("collection XML alias prefix resolves and shortens hrefs") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
       val doc: Link = Link.resolve("/rgada/003", None, home).get

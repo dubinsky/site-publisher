@@ -19,18 +19,10 @@ final class Config(
   val paginatePosts: Option[Int] = None,
   val headerPages: List[String] = List.empty,
   val home: Option[String] = None,
-  val aliases: List[Config.CollectionAlias] = List.empty,
   val social: Config.Social = Config.Social()
 )
 
 object Config:
-  /** Site-level short name → collection/store path. Not a Refresh page; used for
-    * `Pages.find`, emitted hrefs, and local/Worker path rewrite. */
-  final class CollectionAlias(
-    val name: String,
-    val to: String
-  )
-
   final class Social(
     val github: Option[String] = None,
     val twitter: Option[String] = None,

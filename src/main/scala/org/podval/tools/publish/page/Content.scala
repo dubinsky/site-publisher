@@ -134,6 +134,7 @@ final class StoreContent(
   def body: Option[Xml.Element] = index.body
   def isCollection: Boolean = index.isCollection
   def displayName: Option[String] = index.displayName
+  def alias: Option[String] = index.alias
 
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")

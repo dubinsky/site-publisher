@@ -193,15 +193,13 @@ home: /book/book/index.html
 
 `/index.html` is then a meta Refresh to that page (not an HTTP 301). Do not also author `index.md` / `index.adoc`. Other root files stay on the site; they are just not listed at `/`.
 
-Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) belong in `_site_config.yml`, not as front-matter `permalink` on the collection file:
+Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are an optional `alias` on the TEI `store` / `collection` root, not site config and not front-matter `permalink`:
 
 ----
-aliases:
-  - name: rgada
-    to: /archive/rgada/category/VII/inventory/2/case/3140
+<collection n="3140" directory="3140" alias="rgada">
 ----
 
-`name` is the URL prefix (`/rgada`, `/rgada/003`). `to` is the collection/store page (absolute or site path). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
+`alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
 A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
 

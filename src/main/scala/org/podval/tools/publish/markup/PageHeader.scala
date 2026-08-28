@@ -99,7 +99,7 @@ object PageHeader:
 
   private def ancestorLine(page: Page): Xml.Element =
     val name: Xml.Element =
-      Xml.element("a").setHref(page.site.pages.publishedPath(page).toString).setText(pageDisplayName(page))
+      Xml.element("a").setHref(page.publishedPath.toString).setText(pageDisplayName(page))
     headingLine(
       selector = selectorName(page),
       name = Chunk(name),

@@ -120,36 +120,31 @@ final class Pages(site: Site):
       .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
   private def installCollectionAliases(): Unit =
-    site.config.aliases.foreach: spec =>
-      val name: String = spec.name.trim
-      val to: String = spec.to.trim
-      val short: Path = Path.fromHref(name)
-      if name.isEmpty || short.path.isEmpty then
-        site.error(Path.fromHref(to), PageError.Unresolved, s"collection alias has an empty name")
-      else
-        val key: Seq[String] = short.path
-        val requested: Path = Path.fromHref(to)
-        pageForSpec(to) match
-          case None =>
-            site.error(requested, PageError.Unresolved, s"collection alias '$name' target not found: $to")
-          case Some(target) =>
-            aliasByPrefix.get(key) match
-              case Some(existing) =>
-                site.error(
-                  short.html,
-                  PageError.Duplicate,
-                  s"collection alias '$name' collides with $existing"
-                )
-              case None =>
-                get(short.html) match
-                  case Some(page) =>
-                    site.error(
-                      short.html,
-                      PageError.Duplicate,
-                      s"collection alias '$name' collides with $page"
-                    )
-                  case None =>
-                    aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, target.real, short.html))
+    pages.foreach: page =>
+      page.store.flatMap(_.alias).foreach: name =>
+        val short: Path = Path.fromHref(name)
+        val source: Path = page.sourcePath.getOrElse(page.path)
+        if short.path.isEmpty then
+          site.error(source, PageError.Unresolved, s"collection alias is empty")
+        else
+          val key: Seq[String] = short.path
+          aliasByPrefix.get(key) match
+            case Some(existing) =>
+              site.error(
+                source,
+                PageError.Duplicate,
+                s"collection alias '$name' collides with $existing"
+              )
+            case None =>
+              get(short.html) match
+                case Some(other) =>
+                  site.error(
+                    source,
+                    PageError.Duplicate,
+                    s"collection alias '$name' collides with $other"
+                  )
+                case None =>
+                  aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, page.real, short.html))
 
   private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
 

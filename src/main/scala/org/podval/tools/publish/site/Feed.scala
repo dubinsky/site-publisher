@@ -76,7 +76,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
       ))
   
   private def entry(page: Page): Xml.Element =
-    val url: String = absoluteUrl(site.pages.publishedPath(page))
+    val url: String = absoluteUrl(page.publishedPath)
     val published: String = page.date.map(formatDate).getOrElse(formatInstant(Instant.now))
     // TODO move out from here
     val updated: String =
@@ -97,7 +97,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           ),
           el("published", published),
           el("updated", updated),
-          el("id", absoluteUrl(site.pages.publishedPath(page).withoutHtml)),
+          el("id", absoluteUrl(page.publishedPath.withoutHtml)),
           Xml
             .element("author")
             .setChildren(Chunk(el("name", author(page))))

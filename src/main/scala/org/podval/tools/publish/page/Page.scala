@@ -42,6 +42,9 @@ abstract class Page(
   
   final def targetFile: File = path.file(site.targetDirectory)
 
+  /** Public href: directory/store XML `alias` or permalink prefix, else `path`. */
+  final def publishedPath: Path = site.pages.publishedPath(this)
+
   def up: Option[Page] = parent
 
   // Not lazy: selector hops are known only after `Pages.resolveStores`.
