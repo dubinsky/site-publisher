@@ -193,6 +193,18 @@ home: /book/book/index.html
 
 `/index.html` is then a meta Refresh to that page (not an HTTP 301). Do not also author `index.md` / `index.adoc`. Other root files stay on the site; they are just not listed at `/`.
 
+Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) belong in `_site_config.yml`, not as front-matter `permalink` on the collection file:
+
+----
+aliases:
+  - name: rgada
+    to: /archive/rgada/category/VII/inventory/2/case/3140
+----
+
+`name` is the URL prefix (`/rgada`, `/rgada/003`). `to` is the collection/store page (absolute or site path). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
+
+A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
+
 A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Children are listed in include order (`name: title`). The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label; the body is only the directory list. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). Selector labels (`category` → `разряд`) come from the bundled `Selector.xml` (Russian name when present). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error. Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them.
 
 - directory structure

@@ -113,5 +113,5 @@ object EntityLists:
       .element("a")
       .addClass("page-ref")
       .addClass(kind.nameElement)
-      .setHref(page.real.path.toString)
+      .setHref(page.site.pages.publishedPath(page.real).toString)
       .setText(displayName(page))

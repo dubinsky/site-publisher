@@ -6,11 +6,12 @@ import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
-import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
+import com.sun.net.httpserver.{HttpExchange, HttpServer, SimpleFileServer}
 import com.microsoft.playwright.{Browser, Playwright}
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.{File, UncheckedIOException}
-import java.net.{BindException, InetSocketAddress, URI, URISyntaxException}
+import java.net.{BindException, InetSocketAddress, URI, URISyntaxException, URLConnection}
+import java.nio.file.Files as NioFiles
 
 final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
@@ -208,7 +209,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   private def httpServer: HttpServer = synchronized:
     httpServerVar.getOrElse:
-      val result: HttpServer = Site.startHttpServer(targetDirectory)
+      val result: HttpServer = Site.startHttpServer(targetDirectory, pages.rewriteRequest)
       val port: Int = result.getAddress.getPort
       if port != Site.defaultHttpPort then
         log.info(s"Port ${Site.defaultHttpPort} in use; HTTP server on $port")
@@ -307,22 +308,60 @@ object Site:
   // Prefer 8000 so `serve()` has a stable URL. If it is taken (another serve,
   // CI sibling, …), bind an ephemeral port; callers read the real port from
   // `httpServerPort` / `Page.uri`.
-  private[site] def startHttpServer(targetDirectory: File): HttpServer =
+  private[site] def startHttpServer(
+    targetDirectory: File,
+    rewrite: Path => Option[Path] = _ => None
+  ): HttpServer =
     val root: java.nio.file.Path = targetDirectory.getAbsoluteFile.toPath
     try
-      startHttpServerOn(root, defaultHttpPort)
+      startHttpServerOn(root, defaultHttpPort, rewrite)
     catch
       case e: UncheckedIOException if e.getCause.isInstanceOf[BindException] =>
-        startHttpServerOn(root, 0)
+        startHttpServerOn(root, 0, rewrite)
+      case e: java.io.IOException if e.getCause.isInstanceOf[BindException] =>
+        startHttpServerOn(root, 0, rewrite)
+      case e: java.net.BindException =>
+        startHttpServerOn(root, 0, rewrite)
 
-  private def startHttpServerOn(root: java.nio.file.Path, port: Int): HttpServer =
-    val result: HttpServer = SimpleFileServer.createFileServer(
-      InetSocketAddress(localhost, port),
-      root,
-      SimpleFileServer.OutputLevel.NONE
+  private def startHttpServerOn(
+    root: java.nio.file.Path,
+    port: Int,
+    rewrite: Path => Option[Path]
+  ): HttpServer =
+    val address: InetSocketAddress = InetSocketAddress(localhost, port)
+    val files = SimpleFileServer.createFileHandler(root)
+    val result: HttpServer = HttpServer.create(address, 0)
+    result.createContext("/", (ex: HttpExchange) =>
+      val raw: String = Option(ex.getRequestURI.getPath).getOrElse("/")
+      val requested: Path = Path.fromHref(raw)
+      rewrite(requested) match
+        case Some(target) =>
+          val file: File = target.file(root.toFile)
+          if file.isFile then sendFile(ex, file)
+          else
+            ex.sendResponseHeaders(404, -1)
+            ex.close()
+        case None =>
+          files.handle(ex)
     )
+    result.setExecutor(null)
     result.start()
     result
+
+  private def sendFile(ex: HttpExchange, file: File): Unit =
+    val mime: String =
+      Option(URLConnection.guessContentTypeFromName(file.getName)).getOrElse("application/octet-stream")
+    val bytes: Array[Byte] = NioFiles.readAllBytes(file.toPath)
+    ex.getResponseHeaders.set("Content-Type", mime)
+    val writeBody: Boolean = !ex.getRequestMethod.equalsIgnoreCase("HEAD")
+    if writeBody then
+      ex.sendResponseHeaders(200, bytes.length.toLong)
+      val out = ex.getResponseBody
+      out.write(bytes)
+      out.close()
+    else
+      ex.sendResponseHeaders(200, -1)
+      ex.close()
 
   def main(args: Array[String]): Unit = Site(SiteOptions.forArgs(args)).generate()
 

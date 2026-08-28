@@ -53,6 +53,7 @@ final class Pages(site: Site):
     if get(Feed.path).isEmpty then add(Feed(site))
 
     installHome()
+    installCollectionAliases()
     headerPagesVar = resolveHeaderPages()
     resolveStores()
 
@@ -118,7 +119,57 @@ final class Pages(site: Site):
     find(requested, isAbsolute = true, kind = None)
       .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
+  private def installCollectionAliases(): Unit =
+    site.config.aliases.foreach: spec =>
+      val name: String = spec.name.trim
+      val to: String = spec.to.trim
+      val short: Path = Path.fromHref(name)
+      if name.isEmpty || short.path.isEmpty then
+        site.error(Path.fromHref(to), PageError.Unresolved, s"collection alias has an empty name")
+      else
+        val key: Seq[String] = short.path
+        val requested: Path = Path.fromHref(to)
+        pageForSpec(to) match
+          case None =>
+            site.error(requested, PageError.Unresolved, s"collection alias '$name' target not found: $to")
+          case Some(target) =>
+            aliasByPrefix.get(key) match
+              case Some(existing) =>
+                site.error(
+                  short.html,
+                  PageError.Duplicate,
+                  s"collection alias '$name' collides with $existing"
+                )
+              case None =>
+                get(short.html) match
+                  case Some(page) =>
+                    site.error(
+                      short.html,
+                      PageError.Duplicate,
+                      s"collection alias '$name' collides with $page"
+                    )
+                  case None =>
+                    aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, target.real, short.html))
+
   private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
+
+  /** Public href for `page`: longest directory/store alias prefix, else the written path. */
+  def publishedPath(page: Page): Path = publishedPath(page.real.path)
+
+  def publishedPath(path: Path): Path =
+    val realSegs: Seq[String] = path.withoutHtml.path
+    val hits: Seq[Path] = aliasByPrefix.iterator.toSeq.flatMap: (short, alias) =>
+      aliasDirectory(alias.real).flatMap: dir =>
+        val targetSegs: Seq[String] = alias.real.path.withoutHtml.path
+        if realSegs == targetSegs then Some(Path(short, path.extension))
+        else Option.when(realSegs.startsWith(dir) && realSegs.length > dir.length)(
+          Path(short ++ realSegs.drop(dir.length), path.extension)
+        )
+    hits.minByOption(hit => (hit.path.length, hit.toString)).getOrElse(path)
+
+  /** Map an inbound URL onto the written file path (Worker / local `serve()`). */
+  def rewriteRequest(request: Path): Option[Path] =
+    findViaAlias(request).map(_.real.path)
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
@@ -346,29 +397,38 @@ final class Pages(site: Site):
   private def findWalk(path: Path, isAbsolute: Boolean): Option[Page] =
     pages.flatMap(page => is(page, path, isAbsolute)).headOption
 
-  // `/short/child` is `child` under the page that permalink/alias `short` names, when that page is a directory.
+  // `/short/child` is `child` under the page that permalink/alias `short` names, when that
+  // page is a directory or a TEI `store`/`collection`. Exact `/short` is the target itself.
   // Does not recurse through `find` (the expanded path still starts with the alias prefix).
   private def findViaAlias(path: Path): Option[Page] =
     val segments: Seq[String] = path.path
-    if segments.length < 2 then None
+    if segments.isEmpty then None
     else
-      (segments.length - 1 until 0 by -1)
+      (segments.length until 0 by -1)
         .flatMap: prefixLen =>
           aliasByPrefix.get(segments.take(prefixLen)).flatMap: alias =>
-            findUnderAliased(alias.real, segments.drop(prefixLen), path.extension)
+            val remainder: Seq[String] = segments.drop(prefixLen)
+            if remainder.isEmpty then Some(alias.real)
+            else findUnderAliased(alias.real, remainder, path.extension)
         .headOption
+
+  private def aliasDirectory(page: Page): Option[Seq[String]] =
+    if page.isDirectory then Some(page.path.path.init)
+    else if page.store.isDefined then Some(page.path.withoutHtml.path)
+    else None
 
   private def findUnderAliased(
     real: Page,
     remainder: Seq[String],
     extension: Option[String]
   ): Option[Page] =
-    if !real.isDirectory || remainder.isEmpty then None
+    if remainder.isEmpty then None
     else
-      val joined: Path = Path(Path.normalize(real.path.path.init ++ remainder), extension)
-      findExact(joined)
-        .orElse(findBySourceUnder(real, remainder))
-        .orElse(findWalk(joined, isAbsolute = true))
+      aliasDirectory(real).flatMap: dir =>
+        val joined: Path = Path(Path.normalize(dir ++ remainder), extension)
+        findExact(joined)
+          .orElse(findBySourceUnder(real, remainder))
+          .orElse(findWalk(joined, isAbsolute = true))
 
   private def findBySourceUnder(real: Page, remainder: Seq[String]): Option[Page] =
     real.sourcePath.flatMap: source =>

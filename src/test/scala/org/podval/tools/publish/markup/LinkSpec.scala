@@ -19,6 +19,9 @@ final class LinkSpec extends AnyFunSuite:
           |url: http://link.test
           |author: Test
           |email: test@link.test
+          |aliases:
+          |  - name: rgada
+          |    to: /archive/rgada/category/VII/inventory/2/case/3140
           |""".stripMargin
       )
       Files.write(
@@ -75,6 +78,21 @@ final class LinkSpec extends AnyFunSuite:
       Files.write(
         File(dir, "aliased/255.2.md"),
         "Dotted document id under the aliased directory.\n"
+      )
+      Files.write(
+        File(dir, "archive/rgada/category/VII/inventory/2/case/3140.xml"),
+        """<collection n="3140">
+          |  <title>Case 3140</title>
+          |</collection>
+          |""".stripMargin
+      )
+      Files.write(
+        File(dir, "archive/rgada/category/VII/inventory/2/case/3140/003.xml"),
+        """<TEI>
+          |  <teiHeader><fileDesc><titleStmt><title>Document 003</title></titleStmt></fileDesc></teiHeader>
+          |  <text><body><p>Body of 003.</p></body></text>
+          |</TEI>
+          |""".stripMargin
       )
       val target: File = File(dir, "_site")
       val site: Site = Site(SiteOptions(
@@ -165,16 +183,32 @@ final class LinkSpec extends AnyFunSuite:
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
       val absolute: Link = Link.resolve("/short/child", None, home).get
-      assert(absolute.url == "/aliased/child.html")
+      assert(absolute.url == "/short/child.html")
       val wiki: Link = Link.resolve("short/child", None, home).get
-      assert(wiki.url == "/aliased/child.html")
+      assert(wiki.url == "/short/child.html")
       val collection: Link = Link.resolve("/short", None, home).get
-      assert(collection.url == "/aliased/index.html")
+      assert(collection.url == "/short.html")
       assert(Link.resolve("/short/missing", None, home).isEmpty)
       val dotted: Link = Link.resolve("/short/255.2", None, home).get
-      assert(dotted.url == "/aliased/255.2.html")
+      assert(dotted.url == "/short/255.2.html")
       val dottedWiki: Link = Link.resolve("short/255.2", None, home).get
-      assert(dottedWiki.url == "/aliased/255.2.html")
+      assert(dottedWiki.url == "/short/255.2.html")
+  }
+
+  test("site-config alias prefix resolves a TEI collection and shortens hrefs") {
+    withSite: site =>
+      val home: Page = pageNamed(site, "Home")
+      val doc: Link = Link.resolve("/rgada/003", None, home).get
+      assert(doc.url == "/rgada/003.html")
+      val collection: Link = Link.resolve("/rgada", None, home).get
+      assert(collection.url == "/rgada.html")
+      val long: Link = Link.resolve(
+        "/archive/rgada/category/VII/inventory/2/case/3140/003",
+        None,
+        home
+      ).get
+      assert(long.url == "/rgada/003.html")
+      assert(!site.pages.pages.exists(_.path == Path("rgada").html))
   }
 
   test("leaf alias does not prefix-resolve a remainder") {
