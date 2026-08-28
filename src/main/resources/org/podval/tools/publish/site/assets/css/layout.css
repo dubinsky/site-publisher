@@ -304,6 +304,39 @@ html.wide .page-content > .wrapper {
     --content-width: 1800px;
 }
 
+html.facsimile .page-content > .wrapper {
+    --content-width: 1100px;
+}
+
+.facsimile-scroller {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.facsimile-scroller img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    scroll-margin-top: 4rem;
+}
+
+.facsimile-scroller figure {
+    margin: 0;
+    max-width: 100%;
+    scroll-margin-top: 4rem;
+}
+
+a.pb {
+    text-decoration: none;
+}
+
+a.pb .icon-span {
+    padding-right: 0;
+}
+
 .page-heading {
     font-size: 2rem;
 }

@@ -166,7 +166,9 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</TEI>""".stripMargin
     ))
     assert(dumped.contains("""id="p000-1""""), dumped)
-    assert(dumped.contains("⎙"), dumped)
+    assert(dumped.contains("""class="pb""""), dumped)
+    assert(dumped.contains("fa-images"), dumped)
+    assert(!dumped.contains("⎙"), dumped)
   }
 
   test("document header harvests lang and pbs from the raw tree") {
@@ -183,6 +185,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(header.pbs.map(_.n) == Seq("001-1", "001-2"), header.pbs.map(_.n))
     assert(!header.pbs.head.isMissing, header.pbs.head)
     assert(header.pbs.last.isMissing && header.pbs.last.isEmpty, header.pbs.last)
+    assert(header.pbs.forall(_.facs.isEmpty), header.pbs.map(_.facs))
   }
 
   test("person has no document title") {

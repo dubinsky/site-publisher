@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{DirectoryPage, Page, PdfPage, StoreContent}
+import org.podval.tools.publish.page.{DirectoryPage, FacsimilePage, Page, PdfPage, StoreContent}
 import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
@@ -46,6 +46,7 @@ object CollectionIndex:
     directory.site.pages.pages
       .filterNot(_.isDirectory)
       .filterNot(_.isInstanceOf[PdfPage])
+      .filterNot(_.isInstanceOf[FacsimilePage])
       .filter(_.path.path.init == directory.path.path.init)
       .filterNot(isTranslation)
       .sortBy(baseName)

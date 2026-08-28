@@ -32,7 +32,7 @@ header-pages:
 
 Omitted or empty means no header links (up/prev/next and format icons still appear). Unknown entries are recorded on the Errors page.
 
-Optional `facsimiles-url` is the base URL of a facsimile site (JPEG bucket; trailing slash as in the collector `tei@facsimilesUrl`). Omitted means none. TEI facsimile viewer pages are not generated yet.
+Optional `facsimiles-url` is the base URL of a facsimile JPEG site (trailing slash as in the collector `tei@facsimilesUrl`). Omitted means none. See <<facsimiles>>.
 
 ----
 facsimiles-url: https://storage.googleapis.com/facsimiles.alter-rebbe.org/
@@ -54,6 +54,7 @@ This here is a static site generator. It:
 - supports <<chunking>>;
 - supports <<paging>>;
 - supports <<pdf>> generation;
+- supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
 
 Supported markup constructs:
@@ -205,16 +206,27 @@ Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are 
 <collection n="3140" directory="3140" alias="rgada">
 ----
 
-`alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
+`alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>). Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
 A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
 
-A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Store children are listed in include order (`name: title`). A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not a page list. Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book` (numeric). A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip translations. `text/@xml:lang` must match the suffix. The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). Selector labels (`category` → `разряд`) come from the bundled `Selector.xml` (Russian name when present). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error (translations are not). Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them. Missing `pb@missing` photos are listed under the table.
+A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Store children are listed in include order (`name: title`). A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not a page list. Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book` (numeric). A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip translations. `text/@xml:lang` must match the suffix. The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). Selector labels (`category` → `разряд`) come from the bundled `Selector.xml` (Russian name when present). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error (translations are not). Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them. Missing `pb@missing` photos are listed under the table. Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the <<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
 
 - directory structure
 - navigation
 - header pages
 - icons
+
+[#facsimiles]
+== Facsimiles
+
+When `_site_config.yml` has `facsimiles-url`, each TEI document with at least one non-missing `pb` gets a viewer at `P/facsimile.html` (published `/alias/P/facsimile.html` when the collection has `alias`). Old collector bookmarks `/alias/facsimile/P` (and `/alias/facsimile/P.html`) still resolve to that viewer, including translation `/alias/facsimile/P-xx` (shared original). `#p{n}` fragments are unchanged. New pages emit only the new URL.
+
+The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`. A trailing slash on the config value is optional. `pb@facs` overrides that URL. Missing `pb@missing` pages are omitted from the scroller.
+
+In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"`. The site-header format icon does the same without a fragment. Each photo in the viewer links back to that `pb` in the transcription (`target="text"`). `{base}-{xx}` translations share the original's viewer.
+
+Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
 
 [#blog-posts]
 == Blog Posts

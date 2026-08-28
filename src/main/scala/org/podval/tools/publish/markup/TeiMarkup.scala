@@ -15,7 +15,6 @@ object TeiMarkup extends Markup(
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):
-  private val facsimileSymbol: String = "⎙"
 
   override def rootElements: Set[String] =
     Set("TEI", "store", "collection", "entityLists") ++ EntityKind.values.map(_.element).toSet
@@ -140,8 +139,7 @@ object TeiMarkup extends Markup(
 
       case "pb" =>
         val n: Option[String] = stripped.get("n").map(_.trim).filter(_.nonEmpty)
-        val withId: Xml.Element = n.fold(stripped)(n => stripped.setId(Pb.pageId(n)))
-        renameElement("a", withId.setText(facsimileSymbol))
+        Pb.anchor(n)
 
       case _ =>
         stripped

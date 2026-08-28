@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids,
-  Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Facsimile, Footnote,
+  Glossary, Ids, Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html}
@@ -202,6 +202,8 @@ final class PageContent private(
 
     // Turn footnote links into footnote references
     result = Footnote.resolveLink(result, footnotes, attachTips)
+
+    result = Facsimile.resolveLink(result, source.page)
 
     val isRef: Boolean = tips.exists(_.isRef(result))
     result.setChildren(result.getChildren.map(child =>

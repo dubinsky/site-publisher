@@ -1,9 +1,9 @@
 package org.podval.tools.publish.site
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{CollectionIndex, EntityLists, LinkKind, Markup, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.markup.{CollectionIndex, EntityLists, Facsimile, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
-  FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
+  FacsimilePage, FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.Xml
 import java.io.File
@@ -28,6 +28,11 @@ final class Pages(site: Site):
 
   // TODO make a map for quick lookups:
   private def get(path: Path): Option[Page] = pages.find(_.path == path)
+
+  def facsimilePage(page: Page): Option[FacsimilePage] =
+    val original: Page = Facsimile.original(page)
+    pages.collectFirst:
+      case viewer: FacsimilePage if viewer.document.path == original.path => viewer
 
   def load(): Unit =
     // Add embedded assets
@@ -169,7 +174,8 @@ final class Pages(site: Site):
         )
     hits.minByOption(hit => (hit.path.length, hit.toString)).getOrElse(path)
 
-  /** Map an inbound URL onto the written file path (Worker / local `serve()`). */
+  /** Map an inbound URL onto the written file path (Worker / local `serve()`).
+    * Includes collection-alias prefix and collector `/alias/facsimile/P`. */
   def rewriteRequest(request: Path): Option[Path] =
     findViaAlias(request).map(_.real.path)
 
@@ -185,6 +191,7 @@ final class Pages(site: Site):
       page.aliases.foreach(add)
       if page.chunk then page.chunks.foreach(add)
       if page.pdf then add(PdfPage(page))
+      if Facsimile.needed(page) then add(FacsimilePage(page))
       
   private var selectorHopsVar: Set[Seq[String]] = Set.empty
 
@@ -434,10 +441,22 @@ final class Pages(site: Site):
     if remainder.isEmpty then None
     else
       aliasDirectory(real).flatMap: dir =>
-        val joined: Path = Path(Path.normalize(dir ++ remainder), extension)
-        findExact(joined)
-          .orElse(findBySourceUnder(real, remainder))
-          .orElse(findWalk(joined, isAbsolute = true))
+        def lookup(segs: Seq[String]): Option[Page] =
+          val joined: Path = Path(Path.normalize(dir ++ segs), extension)
+          findExact(joined)
+            .orElse(findBySourceUnder(real, segs))
+            .orElse(findFacsimileOf(real, dir, segs))
+            .orElse(findWalk(joined, isAbsolute = true))
+        Facsimile.inboundRemainder(remainder).flatMap(lookup).orElse(lookup(remainder))
+
+  // Translation `/alias/facsimile/P-xx` has no viewer page; use the original's.
+  private def findFacsimileOf(real: Page, dir: Seq[String], segs: Seq[String]): Option[Page] =
+    segs match
+      case Seq(name, Facsimile.fileName) =>
+        findExact(Path(Path.normalize(dir :+ name)))
+          .orElse(findBySourceUnder(real, Seq(name)))
+          .flatMap(facsimilePage)
+      case _ => None
 
   private def findBySourceUnder(real: Page, remainder: Seq[String]): Option[Page] =
     real.sourcePath.flatMap: source =>

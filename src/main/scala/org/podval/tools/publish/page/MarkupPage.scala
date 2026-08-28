@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
-import org.podval.tools.publish.markup.CollectionIndex
+import org.podval.tools.publish.markup.{CollectionIndex, Facsimile}
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
@@ -58,21 +58,41 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   // is a FullMarkupPage or one of its chunks.
   protected def formatSourcePage: Option[FullMarkupPage] = None
   protected def formatIsChunked: Boolean = false
+  protected def formatIsFacsimile: Boolean = false
+  protected def isFacsimileViewer: Boolean = false
 
   final def formatLinks: Seq[Html.Element] = formatSourcePage.toSeq.flatMap: page =>
-    val onePage: Option[Html.Element] = Option.when(formatIsChunked)(
-      formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
-    )
-    val chunked: Option[Html.Element] = Option.when(!formatIsChunked && page.chunk)(
-      formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
-    )
+    val onePage: Option[Html.Element] =
+      if formatIsFacsimile then
+        Some(formatLink(
+          page.publishedPath.toString,
+          Icon.fileLines,
+          "Transcription",
+          Some(Facsimile.textTarget)
+        ))
+      else Option.when(formatIsChunked)(
+        formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
+      )
+    val chunked: Option[Html.Element] =
+      Option.when(!formatIsChunked && !formatIsFacsimile && page.chunk)(
+        formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
+      )
     val pdf: Option[Html.Element] = Option.when(page.pdf)(
       formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")
     )
-    Seq(onePage, chunked, pdf).flatten
+    val facsimile: Option[Html.Element] = Option.when(!formatIsFacsimile)(
+      site.pages.facsimilePage(page).map: viewer =>
+        formatLink(
+          viewer.publishedPath.toString,
+          Icon.images,
+          "Facsimile",
+          Some(Facsimile.facsimileTarget)
+        )
+    ).flatten
+    Seq(onePage, chunked, pdf, facsimile).flatten
 
   final def translationLinks: Seq[Html.Element] =
-    CollectionIndex.translationsToLink(this).flatMap: translation =>
+    CollectionIndex.translationsToLink(formatSourcePage.getOrElse(this)).flatMap: translation =>
       CollectionIndex.langOf(translation).map: lang =>
         a(
           className := "nav-item translation",
@@ -80,12 +100,18 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           s"[$lang]"
         )
 
-  private def formatLink(url: String, icon: Icon, label: String): Html.Element =
+  private def formatLink(
+    url: String,
+    icon: Icon,
+    label: String,
+    target: Option[String] = None
+  ): Html.Element =
     a(
       className := "nav-item page-format",
       href := url,
       titleAttr := label,
       aria("label") := label,
+      target.map(name => attr("target") := name),
       icon.html
     )
 
@@ -147,6 +173,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         libraries.flatMap(_.scripts)
       )
     ).when(isCollectionIndex)(className := "wide")
+     .when(isFacsimileViewer)(className := "facsimile")
 
   private def isCollectionIndex: Boolean =
     doc.exists(_.wide)
