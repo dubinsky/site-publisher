@@ -20,12 +20,20 @@ object Pb:
   def is(element: Xml.Element): Boolean = element.isA && element.has(Class)
 
   def anchor(n: Option[String]): Xml.Element =
-    var result: Xml.Element = Xml.element("a").add(Class).setChildren(Chunk(Icon.images.xml: Xml.Node))
+    var result: Xml.Element = viewerLink(href = None)
     n.foreach: n =>
       result = result
         .setId(pageId(n))
-        .set("title", "Facsimile")
         .set("aria-label", s"Facsimile page $n")
+    result
+
+  def viewerLink(href: Option[String]): Xml.Element =
+    var result: Xml.Element = Xml.element("a")
+      .add(Class)
+      .set("title", "Facsimile")
+      .set("target", "facsimile")
+      .setChildren(Chunk(Icon.images.xml: Xml.Node))
+    href.foreach(value => result = result.setHref(value))
     result
 
   def harvest(xml: Xml.Element): Seq[Pb] =

@@ -224,7 +224,7 @@ When `_site_config.yml` has `facsimiles-url`, each TEI document with at least on
 
 The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`. A trailing slash on the config value is optional. `pb@facs` overrides that URL. Missing `pb@missing` pages are omitted from the scroller.
 
-In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"`. The site-header format icon does the same without a fragment. Each photo in the viewer links back to that `pb` in the transcription (`target="text"`). `{base}-{xx}` translations share the original's viewer.
+In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"`. The site-header format icon does the same without a fragment. Collection **Страницы** keeps page numbers on the transcription `#p{n}` and adds the same icon to the viewer (omitted for `pb@missing`). Each photo in the viewer links back to that `pb` in the transcription (`target="text"`). `{base}-{xx}` translations share the original's viewer.
 
 Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
 

@@ -30,7 +30,8 @@ object Icon:
   val errors = Icon("circle-xmark", Regular)
   val pdf = Icon("file-pdf", Regular)
   val fileLines = Icon("file-lines", Regular)
-  val images = Icon("images", Regular)
+  // Solid: Regular `images` is Font Awesome Pro and renders as an empty icon.
+  val images = Icon("images", Solid)
   val tableList = Icon("table-list", Solid)
   val book = Icon("book", Solid)
   val gear = Icon("gear", Solid)

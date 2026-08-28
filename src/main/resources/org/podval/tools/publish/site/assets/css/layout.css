@@ -331,6 +331,7 @@ html.facsimile .page-content > .wrapper {
 
 a.pb {
     text-decoration: none;
+    margin-left: 0.15em;
 }
 
 a.pb .icon-span {
