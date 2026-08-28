@@ -67,7 +67,9 @@ final class CollectionIndexSpec extends AnyFunSuite:
         |  <part n="2" from="002"><title>Second arrest</title></part>
         |</collection>
         |""".stripMargin,
-    "col/000.xml" -> tei("Cover of <persName ref=\"alter-rebbe\">him</persName>."),
+    "col/000.xml" -> tei(
+      "Cover of <persName ref=\"alter-rebbe\">him</persName>.<note place=\"end\">when exactly</note>"
+    ),
     "col/001.xml" -> tei(
       abstractText = "Hebrew testimony",
       lang = "he",
@@ -140,6 +142,18 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(index.contains("002об"), index)
       assert(index.contains("Отсутствуют фотографии 1 пустых страниц:"), index)
       assert(index.contains("003"), index)
+  }
+
+  test("abstract endnotes become numbered footnotes, not inline text") {
+    withSite(): (_, target) =>
+      def noteNotInline(page: String): Unit =
+        val footnotesAt: Int = page.indexOf("""class="footnotes"""")
+        assert(footnotesAt >= 0, page)
+        assert(page.contains("""class="footnote-link""""), page)
+        assert(!page.contains("<note"), page)
+        assert(page.substring(footnotesAt).contains("when exactly"), page.substring(footnotesAt))
+      noteNotInline(html(target, "col/index.html"))
+      noteNotInline(html(target, "col/000.html"))
   }
 
   test("translations are language links, not table rows") {

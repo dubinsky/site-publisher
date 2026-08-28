@@ -23,8 +23,10 @@
     --border-color-03: var(--brand-color-dark);
 
     --table-text-color: color-mix(in oklab, var(--heading-color), white 18%);
-    --table-zebra-color: color-mix(in oklab, var(--brand-color), white 46%);
-    --table-header-bg-color: color-mix(in oklab, var(--brand-color), white 43%);
-    --table-header-border: color-mix(in oklab, var(--brand-color), white 37%);
-    --table-border-color: var(--border-color-01);
+    /* Collector Minima: #f0f0f0 head, #f7f7f7 even rows, #dedede / #c9c9c9 head border. */
+    --table-zebra-color: #f7f7f7;
+    --table-header-bg-color: #f0f0f0;
+    --table-header-border: #dedede;
+    --table-header-border-bottom: #c9c9c9;
+    --table-border-color: #e8e8e8;
 }

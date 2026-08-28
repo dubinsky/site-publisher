@@ -50,6 +50,17 @@ object Footnote:
       ))
     )
 
+  /** Harvest bodies, append the list while stubs still have ids, then number the links. */
+  def finish(xml: Xml.Element): Xml.Element =
+    val (footnotes: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
+    if footnotes.isEmpty then xml
+    else
+      val withBodies: Xml.Element = appendReferenced(stripped, footnotes)
+      withBodies.transform(
+        element => resolveLink(element, footnotes, attachTip = true),
+        stopAtCode = false
+      )
+
   /** Number footnotes in document-link order, then drop bodies from the tree. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
     val numbers: Map[String, Int] = linkIds(xml).zipWithIndexFrom(1).toMap

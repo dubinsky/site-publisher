@@ -80,14 +80,14 @@ object PageHeader:
       Xml.element("l").addClass("store-by").setText(s"${Selector.displayName(selector)}:")
     )
     val table: Xml.Nodes = Chunk.from(documentHeaderTable(page).toSeq)
-    Xml.element("header").addClass("store-header").setChildren(
+    TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
       Chunk.from(ancestors.map(el => el: Xml.Node)) ++
         Chunk(head: Xml.Node) ++
         table ++
         description ++
         body ++
         byLabel
-    )
+    ))
 
   private def collectorAncestors(page: Page): Seq[Page] =
     def loop(opt: Option[Page]): List[Page] = opt match

@@ -712,6 +712,7 @@ table {
     th {
         background-color: var(--table-header-bg-color);
         border: 1px solid var(--table-header-border);
+        border-bottom-color: var(--table-header-border-bottom);
     }
     td {
         border: 1px solid var(--table-border-color);

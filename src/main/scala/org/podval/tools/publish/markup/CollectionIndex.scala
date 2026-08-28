@@ -37,7 +37,7 @@ object CollectionIndex:
     ).map(el => el: Xml.Node))
     val table: Xml.Element =
       Xml.element("table").addClass("collection-index").setChildren(header +: body)
-    Xml.element("div").setChildren(table +: missingNotes(store, originals))
+    TeiMarkup.finishFootnotes(Xml.element("div").setChildren(table +: missingNotes(store, originals)))
 
   def listingChildren(store: StoreContent, children: List[Page]): List[Page] =
     if store.isCollection then children.filterNot(isTranslation) else children
