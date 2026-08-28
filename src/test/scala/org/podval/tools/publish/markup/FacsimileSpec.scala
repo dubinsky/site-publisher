@@ -147,7 +147,8 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""id="p000-1""""), transcription)
       assert(transcription.contains("""href="/col/000/facsimile.html#p000-1""""), transcription)
       assert(transcription.contains("""target="facsimile""""), transcription)
-      assert(transcription.contains("fa-images"), transcription)
+      assert(transcription.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), transcription)
+      assert(!transcription.contains("tei-class="), transcription)
       assert(transcription.contains("""title="Facsimile""""), transcription)
   }
 

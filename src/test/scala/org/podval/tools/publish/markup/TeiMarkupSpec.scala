@@ -15,7 +15,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     processResult(input)._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlDialect.render(element)
+    HtmlXmlDialect.render(element).replaceAll("\\s+", " ").replace("= ", "=")
 
   test("titleStmt title is extracted as tei-title; teiHeader stays") {
     val (xml, title) = processResult(
@@ -167,7 +167,8 @@ final class TeiMarkupSpec extends AnyFunSuite:
     ))
     assert(dumped.contains("""id="p000-1""""), dumped)
     assert(dumped.contains("""class="pb""""), dumped)
-    assert(dumped.contains("fa-images"), dumped)
+    assert(dumped.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), dumped)
+    assert(!dumped.contains("tei-class"), dumped)
     assert(!dumped.contains("⎙"), dumped)
   }
 

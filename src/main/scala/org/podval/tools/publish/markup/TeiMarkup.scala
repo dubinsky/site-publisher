@@ -38,7 +38,7 @@ object TeiMarkup extends Markup(
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
     // Xml2Html prefixes reserved HTML attributes (`class` → `tei-class`, `lang` → `tei-lang`).
-    // Convert footnotes, glossary, quotes, and code in a second pass so IR `class` values are kept.
+    // Convert footnotes, glossary, quotes, pb, and code in a second pass so IR `class` values are kept.
     val converted: Xml.Element = xml.transform(
       element => convertSpecial(tei2Html.convert(element)),
       stopAtCode = false
@@ -63,6 +63,7 @@ object TeiMarkup extends Markup(
         result = convertBibliographyPlaceholder(result)
         result = convertQuote(result)
         result = convertFigure(result)
+        result = convertPb(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if result.getName != "pre" then
           result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
@@ -137,10 +138,6 @@ object TeiMarkup extends Markup(
       case name if isEntityList(name) =>
         convertEntityList(stripped)
 
-      case "pb" =>
-        val n: Option[String] = stripped.get("n").map(_.trim).filter(_.nonEmpty)
-        Pb.anchor(n)
-
       case _ =>
         stripped
 
@@ -180,6 +177,13 @@ object TeiMarkup extends Markup(
 
   private def xmlId(element: Xml.Element): Option[String] =
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
+
+  // After Xml2Html so `a.pb` / icon `class` is not prefixed to `tei-class`.
+  private def convertPb(element: Xml.Element): Xml.Element =
+    if element.localName != "pb" then element
+    else
+      val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
+      Pb.anchor(n)
 
   // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
   // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.
