@@ -305,6 +305,7 @@ object Site:
   val localhost: String = "127.0.0.1"
   val defaultHttpPort: Int = 8000
 
+  // TODO disentangle from Path and move into util.Http
   // Prefer 8000 so `serve()` has a stable URL. If it is taken (another serve,
   // CI sibling, …), bind an ephemeral port; callers read the real port from
   // `httpServerPort` / `Page.uri`.
@@ -333,8 +334,7 @@ object Site:
     val result: HttpServer = HttpServer.create(address, 0)
     result.createContext("/", (ex: HttpExchange) =>
       val raw: String = Option(ex.getRequestURI.getPath).getOrElse("/")
-      val requested: Path = Path.fromHref(raw)
-      rewrite(requested) match
+      rewrite(Path.fromHref(raw)) match
         case Some(target) =>
           val file: File = target.file(root.toFile)
           if file.isFile then sendFile(ex, file)

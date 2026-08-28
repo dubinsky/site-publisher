@@ -129,6 +129,8 @@ final class Pages(site: Site):
         else
           val key: Seq[String] = short.path
           aliasByPrefix.get(key) match
+            case Some(existing) if existing.real == page.real =>
+              ()
             case Some(existing) =>
               site.error(
                 source,
@@ -137,6 +139,11 @@ final class Pages(site: Site):
               )
             case None =>
               get(short.html) match
+                case Some(other) if other.real == page.real =>
+                  aliasByPrefix = aliasByPrefix.updated(key, other match
+                    case alias: Alias => alias
+                    case _ => new Alias(site, page.real, short.html)
+                  )
                 case Some(other) =>
                   site.error(
                     source,
