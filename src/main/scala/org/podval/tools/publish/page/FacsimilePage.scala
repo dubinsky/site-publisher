@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Facsimile, PageHeader}
+import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml2Html}
 import scala.annotation.tailrec

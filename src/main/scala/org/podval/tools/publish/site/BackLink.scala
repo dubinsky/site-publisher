@@ -1,5 +1,6 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.site
 
+import org.podval.tools.publish.markup.{Ids, Link, LinkKind, WikiLink}
 import org.podval.tools.publish.page.FullMarkupPage
 import org.podval.xml.Xml
 
@@ -21,7 +22,7 @@ object BackLink:
     val kind: Option[LinkKind] = LinkKind.of(element)
     for
       ref <- element.getHref
-      to <- Link.resolve(ref, kind, from)
+      to <- from.site.pages.resolve(ref, kind, from)
       id <- element.getId
     yield
       val toFrom: Link = Link(from, fragment = ids.resolve(id), isIntrapage = false)

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.EntityLists
+import org.podval.tools.publish.markup.EntityLists as EntityListSpecs
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml2Html}
@@ -9,7 +9,7 @@ import zio.blocks.html.*
 final class EntityListPage(
   site: Site,
   path: Path,
-  val spec: EntityLists.Spec,
+  val spec: EntityListSpecs.Spec,
   val members: Seq[Page]
 ) extends SyntheticMarkupPage(site, path):
   private var siblingsVar: Seq[EntityListPage] = Seq(this)

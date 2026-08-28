@@ -1,7 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.PagedList
-import org.podval.tools.publish.page.{DirectoryPage, Page, PagedMarkupPage, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{DirectoryPage, Page, PagedList, PagedMarkupPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*

@@ -1,4 +1,4 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.page
 
 import org.podval.xml.Html
 import zio.blocks.html.{nav as navEl, *}

@@ -8,6 +8,9 @@ import java.io.File
 import java.nio.file.{Files as NioFiles, Path as NioPath}
 
 final class LinkSpec extends AnyFunSuite:
+  private def resolve(ref: String, kind: Option[LinkKind], from: Page): Option[Link] =
+    from.site.pages.resolve(ref, kind, from)
+
   private def withSite(body: Site => Unit): Unit =
     val path: NioPath = NioFiles.createTempDirectory("site-publisher-links")
     try
@@ -109,31 +112,31 @@ final class LinkSpec extends AnyFunSuite:
   test("resolves a page by file name and by title") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val byName: Link = Link.resolve("notes", None, home).get
+      val byName: Link = resolve("notes", None, home).get
       assert(!byName.isIntrapage)
       assert(byName.url == "/notes.html")
       assert(byName.fragment.isEmpty)
-      val byTitle: Link = Link.resolve("Notes Title", None, home).get
+      val byTitle: Link = resolve("Notes Title", None, home).get
       assert(byTitle.url == "/notes.html")
   }
 
   test("absolute /notes matches the source path") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val link: Link = Link.resolve("/notes", None, home).get
+      val link: Link = resolve("/notes", None, home).get
       assert(link.url == "/notes.html")
   }
 
   test("missing page is unresolved") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      assert(Link.resolve("missing-page", None, home).isEmpty)
+      assert(resolve("missing-page", None, home).isEmpty)
   }
 
   test("first # splits path from fragment; nested section is Alpha#One") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val link: Link = Link.resolve("notes#Alpha#One", None, home).get
+      val link: Link = resolve("notes#Alpha#One", None, home).get
       assert(link.url == "/notes.html#One")
       assert(link.fragment.map(_.id).contains("One"))
   }
@@ -141,10 +144,10 @@ final class LinkSpec extends AnyFunSuite:
   test("intrapage #Alpha and block #^blk") {
     withSite: site =>
       val notes: Page = pageNamed(site, "notes")
-      val section: Link = Link.resolve("#Alpha", None, notes).get
+      val section: Link = resolve("#Alpha", None, notes).get
       assert(section.isIntrapage)
       assert(section.url == "#Alpha")
-      val block: Link = Link.resolve("#^blk", None, notes).get
+      val block: Link = resolve("#^blk", None, notes).get
       assert(block.isIntrapage)
       assert(block.fragment.map(_.id).contains("blk"))
       assert(block.url == "#blk")
@@ -153,7 +156,7 @@ final class LinkSpec extends AnyFunSuite:
   test("interpage block notes#^blk") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val link: Link = Link.resolve("notes#^blk", None, home).get
+      val link: Link = resolve("notes#^blk", None, home).get
       assert(!link.isIntrapage)
       assert(link.url == "/notes.html#blk")
   }
@@ -161,45 +164,45 @@ final class LinkSpec extends AnyFunSuite:
   test("chunked TOC /book/book/index.html is not rewritten to /book/book.html") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val toc: Link = Link.resolve("/book/book/index.html", None, home).get
+      val toc: Link = resolve("/book/book/index.html", None, home).get
       assert(toc.url == "/book/book/index.html")
-      val full: Link = Link.resolve("/book/book.html", None, home).get
+      val full: Link = resolve("/book/book.html", None, home).get
       assert(full.url == "/book/book.html")
-      val wiki: Link = Link.resolve("Nested Book", None, home).get
+      val wiki: Link = resolve("Nested Book", None, home).get
       assert(wiki.url == "/book/book.html")
   }
 
   test("relative index.html from a section chunk is the TOC") {
     withSite: site =>
       val alpha: Page = site.pages.pages.find(_.path == Path("book", "book", "Alpha").html).get
-      val link: Link = Link.resolve("index.html", None, alpha).get
+      val link: Link = resolve("index.html", None, alpha).get
       assert(link.url == "/book/book/index.html")
   }
 
   test("permalink prefix /short/child and wiki short/child resolve under the aliased directory") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val absolute: Link = Link.resolve("/short/child", None, home).get
+      val absolute: Link = resolve("/short/child", None, home).get
       assert(absolute.url == "/short/child.html")
-      val wiki: Link = Link.resolve("short/child", None, home).get
+      val wiki: Link = resolve("short/child", None, home).get
       assert(wiki.url == "/short/child.html")
-      val collection: Link = Link.resolve("/short", None, home).get
+      val collection: Link = resolve("/short", None, home).get
       assert(collection.url == "/short.html")
-      assert(Link.resolve("/short/missing", None, home).isEmpty)
-      val dotted: Link = Link.resolve("/short/255.2", None, home).get
+      assert(resolve("/short/missing", None, home).isEmpty)
+      val dotted: Link = resolve("/short/255.2", None, home).get
       assert(dotted.url == "/short/255.2.html")
-      val dottedWiki: Link = Link.resolve("short/255.2", None, home).get
+      val dottedWiki: Link = resolve("short/255.2", None, home).get
       assert(dottedWiki.url == "/short/255.2.html")
   }
 
   test("collection XML alias prefix resolves and shortens hrefs") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val doc: Link = Link.resolve("/rgada/003", None, home).get
+      val doc: Link = resolve("/rgada/003", None, home).get
       assert(doc.url == "/rgada/003.html")
-      val collection: Link = Link.resolve("/rgada", None, home).get
+      val collection: Link = resolve("/rgada", None, home).get
       assert(collection.url == "/rgada.html")
-      val long: Link = Link.resolve(
+      val long: Link = resolve(
         "/archive/rgada/category/VII/inventory/2/case/3140/003",
         None,
         home
@@ -211,9 +214,9 @@ final class LinkSpec extends AnyFunSuite:
   test("leaf alias does not prefix-resolve a remainder") {
     withSite: site =>
       val home: Page = pageNamed(site, "Home")
-      val alias: Link = Link.resolve("/notes-alias", None, home).get
+      val alias: Link = resolve("/notes-alias", None, home).get
       assert(alias.url == "/notes.html")
-      assert(Link.resolve("/notes-alias/nope", None, home).isEmpty)
+      assert(resolve("/notes-alias/nope", None, home).isEmpty)
   }
 
   test("mailto is not a self-link when site url has no host") {

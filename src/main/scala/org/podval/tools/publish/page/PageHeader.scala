@@ -1,12 +1,11 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.{FullMarkupPage, Page, StoreContent}
+import org.podval.tools.publish.markup.{DocumentHeader, Selector, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, Xml2Html}
 import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
-// TODO move this to `page`.
 object PageHeader:
   def of(page: FullMarkupPage): Html.Element =
     if isCollector(page) then collectorPageHeader(page) else pageHeader(page)
@@ -153,7 +152,7 @@ object PageHeader:
     page.store.flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
       resolvedFragment(page, title).getChildren
 
-  private[markup] def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
+  private[page] def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
     val converted: Xml.Element = TeiMarkup.convertFragment(xml)
     page.content.fold(converted)(_.resolveConverted(converted))
 
@@ -184,11 +183,11 @@ object PageHeader:
       Xml.element("td").addClass("value").setChildren(convertedNodes(page, nodes))
     ))
 
-  private[markup] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
+  private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
     date.fold(Chunk.empty[Xml.Node]): el =>
       el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Chunk(Xml.text(when)))
 
-  private[markup] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
+  private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
     val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)
     inners match
       case Seq() => Chunk.empty

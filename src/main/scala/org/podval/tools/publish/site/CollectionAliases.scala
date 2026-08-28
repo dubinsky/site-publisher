@@ -1,6 +1,7 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.{CollectionIndex, Facsimile, HtmlMarkup}
+import org.podval.tools.publish.markup.{Facsimile, HtmlMarkup}
+import org.podval.tools.publish.page.CollectionIndex
 import org.podval.tools.publish.util.Files
 import java.io.File
 

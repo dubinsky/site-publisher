@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{FacsimilePage, FullMarkupPage, Page}
+import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, Page}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{HtmlClass, Xml}
 import zio.blocks.chunk.Chunk

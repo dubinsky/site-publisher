@@ -1,5 +1,6 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.site
 
+import org.podval.tools.publish.markup.Link
 import org.podval.xml.Xml
 
 final class LinkContext private(

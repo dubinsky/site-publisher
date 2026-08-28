@@ -1,6 +1,6 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.{DirectoryPage, FacsimilePage, Page, PdfPage, StoreContent}
+import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
 import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk

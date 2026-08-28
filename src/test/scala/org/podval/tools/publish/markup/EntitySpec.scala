@@ -8,6 +8,9 @@ import java.io.File
 import java.nio.file.{Files as NioFiles, Path as NioPath}
 
 final class EntitySpec extends AnyFunSuite:
+  private def resolve(ref: String, kind: Option[LinkKind], from: Page): Option[Link] =
+    from.site.pages.resolve(ref, kind, from)
+
   private val siteConfig: String =
     """title: Entity Fixture
       |description: Entity ref tests
@@ -105,11 +108,11 @@ final class EntitySpec extends AnyFunSuite:
   test("resolves entity refs by kind and filename") {
     withSite(): (site, target) =>
       val from: Page = pageNamed(site, "Entities")
-      val person: Link = Link.resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).get
+      val person: Link = resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).get
       assert(person.url == "/people/alter-rebbe.html")
-      val place: Link = Link.resolve("Вильна", Some(LinkKind.Entity(EntityKind.Place)), from).get
+      val place: Link = resolve("Вильна", Some(LinkKind.Entity(EntityKind.Place)), from).get
       assert(place.url == "/places/Вильна.html")
-      val org: Link = Link.resolve("кагал", Some(LinkKind.Entity(EntityKind.Organization)), from).get
+      val org: Link = resolve("кагал", Some(LinkKind.Entity(EntityKind.Organization)), from).get
       assert(org.url == "/orgs/кагал.html")
 
       val page: String = html(target, "doc.html")
@@ -124,10 +127,10 @@ final class EntitySpec extends AnyFunSuite:
   test("kind mismatch, missing id, and displayed name do not resolve") {
     withSite(): (site, target) =>
       val from: Page = pageNamed(site, "Entities")
-      assert(Link.resolve("Вильна", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
-      assert(Link.resolve("nobody", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
-      assert(Link.resolve("Zalman", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
-      assert(Link.resolve("alter-rebbe", None, from).nonEmpty)
+      assert(resolve("Вильна", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
+      assert(resolve("nobody", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
+      assert(resolve("Zalman", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
+      assert(resolve("alter-rebbe", None, from).nonEmpty)
 
       val page: String = html(target, "doc.html")
       assert(page.contains("unresolved-link"), page)
@@ -141,16 +144,16 @@ final class EntitySpec extends AnyFunSuite:
   test("same filename different kinds") {
     withSite(): (site, _) =>
       val from: Page = pageNamed(site, "Entities")
-      val person: Link = Link.resolve("ab", Some(LinkKind.Entity(EntityKind.Person)), from).get
+      val person: Link = resolve("ab", Some(LinkKind.Entity(EntityKind.Person)), from).get
       assert(person.url == "/people/ab.html")
-      val place: Link = Link.resolve("ab", Some(LinkKind.Entity(EntityKind.Place)), from).get
+      val place: Link = resolve("ab", Some(LinkKind.Entity(EntityKind.Place)), from).get
       assert(place.url == "/places/ab.html")
   }
 
   test("markdown page with the same title does not steal a person ref") {
     withSite(): (site, target) =>
       val from: Page = pageNamed(site, "Entities")
-      val person: Link = Link.resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).get
+      val person: Link = resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).get
       assert(person.url == "/people/alter-rebbe.html")
       val page: String = html(target, "doc.html")
       assert(page.contains("""href="/people/alter-rebbe.html""""), page)
@@ -214,7 +217,7 @@ final class EntitySpec extends AnyFunSuite:
   test("wiki link still finds an entity by file name") {
     withSite(): (site, target) =>
       val home: Page = pageNamed(site, "Home")
-      val link: Link = Link.resolve("кагал", None, home).get
+      val link: Link = resolve("кагал", None, home).get
       assert(link.url == "/orgs/кагал.html")
       val page: String = html(target, "index.html")
       assert(page.contains("""href="/orgs/кагал.html""""), page)
@@ -239,7 +242,7 @@ final class EntitySpec extends AnyFunSuite:
           |""".stripMargin
     )): (site, target) =>
       val from: Page = pageNamed(site, "Entities")
-      assert(Link.resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
+      assert(resolve("alter-rebbe", Some(LinkKind.Entity(EntityKind.Person)), from).isEmpty)
       val errors: String = html(target, "errors.html")
       assert(errors.contains("duplicate"), errors)
       assert(errors.contains("person"), errors)

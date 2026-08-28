@@ -1,6 +1,5 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.BackLink
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage}
 import org.podval.xml.Html
 import zio.blocks.html.*

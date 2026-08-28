@@ -1,6 +1,5 @@
-package org.podval.tools.publish.markup
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.{MarkupPage, Page}
 import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite

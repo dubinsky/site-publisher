@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Facsimile, Footnote,
+import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Facsimile, Footnote,
   Glossary, Ids, Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
@@ -193,7 +193,7 @@ final class PageContent private(
     if Link.isInternal(result) then result.getHref.foreach: ref =>
       result = resolveInternalLink(result, ref, isChunked, attachTips)
 
-    result = AssetRef.resolve(
+    result = source.page.site.pages.resolveAsset(
       result,
       source.page,
       source,
@@ -222,7 +222,7 @@ final class PageContent private(
     attachTips: Boolean
   ): Xml.Element =
     val kind: Option[LinkKind] = LinkKind.of(element)
-    Link.resolve(ref, kind, source.page) match
+    source.page.site.pages.resolve(ref, kind, source.page) match
       case None =>
         // Report error for the full page only, not for chunks.
         if !isChunked then

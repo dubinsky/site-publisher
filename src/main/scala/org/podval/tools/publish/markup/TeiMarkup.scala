@@ -157,7 +157,7 @@ object TeiMarkup extends Markup(
         stripped
 
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`). */
-  private[markup] def convertFragment(xml: Xml.Element): Xml.Element =
+  private[publish] def convertFragment(xml: Xml.Element): Xml.Element =
     val tei2Html: Xml2Html = Xml2Html("tei")
     xml.transform(
       element => convertSpecial(tei2Html.convert(element)),
@@ -166,7 +166,7 @@ object TeiMarkup extends Markup(
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */
-  private[markup] def finishFootnotes(xml: Xml.Element): Xml.Element =
+  private[publish] def finishFootnotes(xml: Xml.Element): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val converted: Xml.Element = xml.transform(
       element => element.setChildren(

@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.page.EntityLists as EntityListHtml
 import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
@@ -105,7 +106,7 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(page.contains("""href="#jews""""), page)
       assert(page.contains("""class="entity-lists-toc""""), page)
       assert(page.contains("<li"), page)
-      assert(page.contains(EntityLists.expand), page)
+      assert(page.contains(EntityListHtml.expand), page)
       assert(page.contains("""href="/names/jews.html""""), page)
       assert(!page.contains("Начальство"), page)
       assert(!page.contains("Организации"), page)

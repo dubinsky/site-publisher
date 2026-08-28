@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{CollectionIndex, CollectionPart, DocumentHeader, EntityKind, EntityLists,
+import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, EntityLists as EntityListSpecs,
   Footnote, Ids, PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Html, Xml, Xml2Html}
@@ -222,7 +222,7 @@ object StoreContent:
 
 final class EntityListsContent(
   val title: Option[Xml.Element],
-  val index: EntityLists.Index
+  val index: EntityListSpecs.Index
 ) extends Content:
   override def xml: Xml.Element = Xml.element("entityLists")
   override def suppressDirectoryListing: Boolean = true
@@ -263,5 +263,5 @@ object EntityListsContent:
       title = xml.getChildren.flatMap(_.asElement)
         .find(el => el.localName == "title" || el.localName == "tei-title")
         .filter(_.getText.trim.nonEmpty),
-      index = EntityLists.harvest(xml).get
+      index = EntityListSpecs.harvest(xml).get
     )

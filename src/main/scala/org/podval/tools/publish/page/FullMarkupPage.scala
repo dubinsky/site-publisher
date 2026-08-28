@@ -1,6 +1,5 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.PageHeader
 import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
 import org.podval.xml.Html
 

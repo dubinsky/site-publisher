@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
-import org.podval.tools.publish.markup.{CollectionIndex, Facsimile}
+import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}

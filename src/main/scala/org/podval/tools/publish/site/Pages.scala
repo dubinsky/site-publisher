@@ -1,10 +1,10 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.markup.{CollectionIndex, EntityKind, EntityLists, Facsimile, LinkKind, Markup,
-  TeiMarkup, XmlMarkup}
-import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
-  FacsimilePage, FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
-import org.podval.tools.publish.util.Files
+import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, Link, LinkKind, Markup, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage, EmbeddedAsset,
+  EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource, PdfPage,
+  SimpleMarkupPage}
+import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
 
@@ -497,6 +497,88 @@ final class Pages(site: Site):
   private def findEntity(path: Path, entityKind: EntityKind): Option[Page] =
     if path.extension.nonEmpty || path.path.size != 1 then None
     else entityByKindAndId.get((entityKind, path.fileName))
+
+  // path could be `name`, `path/name`(?) - or empty, for intrapage links.
+  // fragment could be `#section`, `#section#subsection`, `#^block`, or #id.
+  def resolve(
+    ref: String,
+    kind: Option[LinkKind],
+    from: Page
+  ): Option[Link] =
+    val (pathStringRaw: String, fragmentStr: Option[String]) = Strings.splitFirst(ref, '#')
+    val pathString: String = pathStringRaw.trim
+    val isAbsolute: Boolean = pathString.startsWith("/")
+    val isFileHref: Boolean = isAbsolute || Path.isRelativeFileHref(pathString)
+    val path: Path =
+      if pathString.isEmpty then Path.root
+      else if isFileHref then from.path.resolveFrom(pathString)
+      else Path.fromHref(pathString)
+
+    val to: Option[Page] =
+      if pathString.isEmpty
+      then Some(from)
+      else find(path, isFileHref, kind)
+
+    to.map: to =>
+      val fragment: Option[Link.ToFragment] = fragmentStr.flatMap: fragment =>
+        val content: Option[PageContent] = to.real.content
+        if fragment.startsWith("^")
+        then content.flatMap(_.blocks.resolve(id = fragment.substring(1).trim))
+        else if fragment.contains("#")
+        then content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq))
+        else content.flatMap(_.ids.resolve(fragment)).orElse(
+          content.map(_.toc).flatMap(_.resolveSection(names = Seq(fragment.trim)))
+        )
+
+      Link(
+        page = to,
+        isIntrapage = from == to,
+        fragment = fragment
+      )
+
+  def resolveAsset(
+    element: Xml.Element,
+    from: Page,
+    errorReporter: PageErrorReporter,
+    reportMissing: Boolean
+  ): Xml.Element =
+    AssetRef.resourceAttr(element).flatMap(attr =>
+      element.get(attr).map(_.trim).filter(_.nonEmpty).map(attr -> _)
+    ) match
+      case None => element
+      case Some((attr, ref)) =>
+        val (pathStringRaw: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
+        val pathString: String = pathStringRaw.trim
+        val isWiki: Boolean = AssetRef.isWikiEmbed(element)
+        val stripped: Xml.Element = AssetRef.clearWikiEmbed(element)
+        if pathString.isEmpty || !from.site.isInternalLink(pathString, errorReporter) then stripped
+        else if !isAssetPath(pathString) then stripped
+        else lookupAsset(pathString, from, isWiki) match
+          case None =>
+            if reportMissing then
+              errorReporter.error(PageError.MissingAsset, s"missing asset '$ref'")
+            stripped.add(AssetRef.UnresolvedClass)
+          case Some(page) =>
+            val url: String = page.path.toString + fragment.fold("")(f => s"#$f")
+            stripped.set(attr, url)
+
+  private def isAssetPath(pathString: String): Boolean =
+    Files.nameAndExtension(
+      pathString.split('/').map(_.trim).filterNot(_.isEmpty).lastOption.getOrElse(pathString)
+    )._2.exists(Media.isAsset)
+
+  private def lookupAsset(pathString: String, from: Page, isWiki: Boolean): Option[Page] =
+    val path: Path =
+      if isWiki && !pathString.startsWith("/") && pathString.contains("/")
+      then from.path.resolveFrom("/" + pathString)
+      else from.path.resolveFrom(pathString)
+    find(path, isAbsolute = true, kind = None).orElse:
+      if !isWiki || pathString.contains('/') then None
+      else
+        val parsed: Path = Path.fromHref(pathString)
+        findByFileName(parsed.fileName, parsed.extension) match
+          case Seq(one) => Some(one)
+          case _ => None
 
   private def resolveEntityLists(): Unit =
     pages.foreach:
