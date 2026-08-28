@@ -8,6 +8,8 @@ final class Ids private(anchors: Seq[Ids.Id]):
   def resolve(id: String): Option[Link.ToId] = getById(id).map(anchor => Link.ToId(anchor.id))
 
 object Ids:
+  val empty: Ids = new Ids(Seq.empty)
+
   private final class Id(
     val id: String,
     val sectionId: Option[String]

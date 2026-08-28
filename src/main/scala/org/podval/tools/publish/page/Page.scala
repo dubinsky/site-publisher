@@ -76,6 +76,8 @@ abstract class Page(
 
   final def content: Option[PageContent] = source.map(_.content)
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
+  final def doc: Option[Content] = content.map(_.doc)
+  final def store: Option[StoreContent] = doc.flatMap(_.asStore)
   
   protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
@@ -96,7 +98,7 @@ abstract class Page(
   /** Directory listing label: store `name: title` when the child is a store; first TEI name for an entity. */
   final def listTitle: String =
     entityDisplayName.getOrElse:
-      content.flatMap(_.storeIndex).flatMap(_.displayName) match
+      doc.flatMap(_.listTitle) match
         case Some(name) =>
           val t: String = title.trim
           if t.isEmpty || t == name || t == titleFromPath then name
@@ -124,20 +126,11 @@ abstract class Page(
 
   protected def iconDefault: Icon
 
-  final def entityKind: Option[EntityKind] = content(content =>
-    EntityKind.values.find(entityKind => content.xml.getName == entityKind.element)
-  )
+  final def entityKind: Option[EntityKind] = doc.flatMap(_.entityKind)
 
-  final def entityRole: Option[String] =
-    content(c => c.xml.get("role").map(_.trim).filter(_.nonEmpty))
+  final def entityRole: Option[String] = doc.flatMap(_.entityRole)
 
-  final def entityDisplayName: Option[String] =
-    entityKind.flatMap: kind =>
-      content.flatMap: c =>
-        c.xml.getChildren.flatMap(_.asElement)
-          .find(el => el.getName == kind.nameElement || el.hasClass(kind.nameElement))
-          .map(_.getText.trim)
-          .filter(_.nonEmpty)
+  final def entityDisplayName: Option[String] = doc.flatMap(_.entityDisplayName)
   
   final def ref(
     cls: Option[String] = None,

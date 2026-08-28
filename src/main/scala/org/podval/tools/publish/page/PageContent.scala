@@ -1,8 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, DocumentHeader, EntityLists,
-  Footnote, Glossary, Ids, Link, LinkKind, Section, StoreIndex, Tip, Toc, WikiBlocks, WikiLink}
-import org.podval.tools.publish.page.PageSource
+import org.podval.tools.publish.markup.{AssetRef, Bibliography, BibliographyItem, Citation, Footnote, Glossary, Ids,
+  Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html}
@@ -15,8 +14,7 @@ object PageContent:
     frontMatter: FrontMatter,
     xml: Xml.Element
   ): PageContent =
-    // Run markup-specific processors and extract title
-    val (xmlProcessed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
+    val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml)
 
     (frontMatter.title, title) match
       case (Some(frontMatterTitle), Some(contentTitle))
@@ -27,6 +25,17 @@ object PageContent:
         )
       case _ =>
 
+    new PageContent(
+      source = source,
+      frontMatter = frontMatter,
+      title = title,
+      doc = doc
+    )
+
+  private[page] def prepareAuthored(
+    source: PageSource,
+    xmlProcessed: Xml.Element
+  ): Content.Prepared =
     // Prepare to calculate Toc and backlinks.
     // Footnote *links* stay in the tree; bodies are harvested then stripped.
     val ids: IdGenerator = IdGenerator("_generated_id")
@@ -36,20 +45,14 @@ object PageContent:
       catch case e: IllegalStateException =>
         throw IllegalStateException(s"${source.sourcePath}: ${e.getMessage}", e)
 
-    new PageContent(
-      source = source,
-      frontMatter = frontMatter,
-      title = title,
+    new Content.Prepared(
       xml = result,
       toc = Toc(result, source),
       ids = Ids(result),
       blocks = WikiBlocks(result, source),
       footnotes = footnotes,
       glossaryDefinitions = Glossary.definitions(result),
-      bibliographyDefinitions = BibliographyItem.definitions(result),
-      storeIndex = StoreIndex(xml),
-      entityListsIndex = EntityLists.harvest(xml),
-      documentHeader = DocumentHeader.harvest(xml)
+      bibliographyDefinitions = BibliographyItem.definitions(result)
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */
@@ -81,32 +84,38 @@ final class PageContent private(
   val source: PageSource,
   val frontMatter: FrontMatter,
   val title: Option[Xml.Element],
-  val xml: Xml.Element,
-  val toc: Toc,
-  val ids: Ids,
-  val blocks: WikiBlocks,
-  val footnotes: Map[String, Footnote],
-  val glossaryDefinitions: Map[String, Xml.Nodes],
-  val bibliographyDefinitions: Map[String, Xml.Nodes],
-  val storeIndex: Option[StoreIndex],
-  val entityListsIndex: Option[EntityLists.Index],
-  val documentHeader: Option[DocumentHeader]
+  val doc: Content
 ):
+  def xml: Xml.Element = doc.xml
+  def toc: Toc = doc.toc
+  def ids: Ids = doc.ids
+  def blocks: WikiBlocks = doc.blocks
+  def footnotes: Map[String, Footnote] = doc.footnotes
+  def glossaryDefinitions: Map[String, Xml.Nodes] = doc.glossaryDefinitions
+  def bibliographyDefinitions: Map[String, Xml.Nodes] = doc.bibliographyDefinitions
+
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 
   def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
+  ): Option[Html.Element] =
+    doc.markupBody(this, sectionId, isTerminal)
+
+  private[page] def renderAuthored(
+    authored: AuthoredContent,
+    sectionId: Option[String],
+    isTerminal: Boolean
   ): Html.Element =
     val isChunked: Boolean = sectionId.isDefined || !isTerminal
 
-    // Select XML to include
-    val selected: Xml.Element = stripTeiHeaderIfDocument(
+    val selected: Xml.Element = authored.selectedXml(
       toc.select(
         xml = xml,
         sectionId = sectionId,
         isTerminal = isTerminal
-      )
+      ),
+      source.page
     )
 
     // Add bodies of the footnotes referenced in the selected XML
@@ -119,25 +128,10 @@ final class PageContent private(
     if !isChunked then unknownCitations.foreach: label =>
       source.error(PageError.UnknownCitation, s"unknown citation '$label'")
 
-    // After backlink harvest (Site.load walks PageContent.xml). Index → entity hrefs are display-only.
-    val withLists: Xml.Element = entityListsIndex.fold(withCitations)(index =>
-      EntityLists.fill(withCitations, source.page, index)
-    )
-
-    val withLinks: Xml.Element = resolveLinks(withLists, isChunked, attachTips = true)
+    val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
 
     // Convert to HTML
     insertToc(Xml2Html.fromXml(withLinks), sectionId, isChunked)
-
-  private def stripTeiHeaderIfDocument(element: Xml.Element): Xml.Element =
-    if documentHeader.isEmpty || !underCollection then element
-    else if element.localName != "TEI" then element
-    else element.setChildren(element.getChildren.filterNot(node =>
-      node.asElement.exists(_.localName == "teiHeader")
-    ))
-
-  private def underCollection: Boolean =
-    source.page.parent.exists(_.content.flatMap(_.storeIndex).exists(_.isCollection))
 
   /** Resolve `a@href` in already-converted XML (collector header titles). */
   def resolveConverted(xml: Xml.Element): Xml.Element =

@@ -138,6 +138,8 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     ))
 
 object Toc:
+  val empty: Toc = new Toc(Seq.empty)
+
   object PlaceholderClass extends HtmlClass("toc-placeholder")
 
   def placeholder: Xml.Element = Xml.element("div").add(PlaceholderClass)

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tei.EntityKind
-import org.podval.tools.publish.markup.{EntityLists, LinkKind, Markup, StoreIndex, TeiMarkup, XmlMarkup}
+import org.podval.tools.publish.markup.{EntityLists, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, DirectoryPage, EmbeddedAsset, EntityListPage,
   FrontMatter, MarkupPage, Page, PageSource, PdfPage, SimpleMarkupPage}
 import org.podval.tools.publish.util.Files
@@ -298,74 +298,28 @@ final class Pages(site: Site):
 
   private def resolveStores(): Unit =
     var hops: Set[Seq[String]] = Set.empty
+    def isAuthoredDirectory(dir: Seq[String]): Boolean =
+      get(Path(dir :+ DirectoryPage.fileName *).html).exists(_.source.isDefined)
     pages.foreach:
-      case page: MarkupPage if page.source.exists(_.markup == TeiMarkup) =>
-        page.content.flatMap(_.storeIndex).filter(_.hrefs.nonEmpty).foreach: index =>
-          hops = hops ++ resolveStore(page, index)
+      case page: MarkupPage =>
+        page.store.filter(_.hrefs.nonEmpty).foreach: store =>
+          val (children, pageHops) = store.bind(page, findBySource, isAuthoredDirectory)
+          page match
+            case directory: DirectoryPage => directory.setStoreChildren(children)
+            case _ =>
+          hops = hops ++ pageHops
       case _ =>
 
     selectorHopsVar = hops
     pagesVar = pagesVar.filterNot(isHopPage)
     pages.foreach:
-      case page: MarkupPage if page.source.exists(_.markup == TeiMarkup) =>
-        page.content.flatMap(_.storeIndex).filter(_.hrefs.nonEmpty).foreach: index =>
-          reportUnlisted(page, index)
+      case page: MarkupPage =>
+        page.store.filter(_.hrefs.nonEmpty).foreach: store =>
+          store.reportUnlisted(page, pages)
       case _ =>
-
-  private def resolveStore(page: MarkupPage, index: StoreIndex): Set[Seq[String]] =
-    val sourcePath: Path = page.sourcePath.get
-    val indexed: Seq[String] = sourcePath.path
-    val children: List[Page] = index.hrefs.toList.flatMap: href =>
-      val resolved: Path = sourcePath.resolveFrom(href)
-      findBySource(resolved) match
-        case None =>
-          site.error(sourcePath, PageError.Unresolved, s"unresolved store include '$href'")
-          None
-        case Some(child) =>
-          Some(child)
-
-    page match
-      case directory: DirectoryPage => directory.setStoreChildren(children)
-      case _ =>
-
-    index.hrefs.flatMap(href => hopDirectories(indexed, sourcePath.resolveFrom(href).path)).toSet
-
-  private def hopDirectories(indexed: Seq[String], target: Seq[String]): Set[Seq[String]] =
-    if !target.startsWith(indexed) then Set.empty
-    else
-      val between: Seq[String] = target.drop(indexed.length).dropRight(1)
-      between.indices.map(i => indexed ++ between.take(i + 1)).toSet.filterNot: dir =>
-        get(Path(dir :+ DirectoryPage.fileName *).html).exists(_.source.isDefined)
 
   private def isHopPage(page: Page): Boolean =
     page.isDirectory && page.source.isEmpty && selectorHopsVar.contains(page.path.path.init)
-
-  private def reportUnlisted(page: MarkupPage, index: StoreIndex): Unit =
-    val sourcePath: Path = page.sourcePath.get
-    val indexed: Seq[String] = sourcePath.path
-    val listed: Set[Path] = index.hrefs.map(sourcePath.resolveFrom).toSet
-
-    pages.foreach: extra =>
-      extra.sourcePath.foreach: extraSource =>
-        if isUnlisted(extraSource, sourcePath, indexed, listed) then
-          site.error(
-            extraSource,
-            PageError.NotInStore,
-            s"not listed in store $sourcePath"
-          )
-
-  private def isUnlisted(
-    extraSource: Path,
-    storeSource: Path,
-    indexed: Seq[String],
-    listed: Set[Path]
-  ): Boolean =
-    extraSource != storeSource &&
-    extraSource.path.startsWith(indexed) &&
-    !listed.contains(extraSource) &&
-    !listed.exists(listedSource =>
-      extraSource.path.startsWith(listedSource.path) && extraSource.path.length > listedSource.path.length
-    )
 
   private def findBySource(sourcePath: Path): Option[Page] =
     pages.find(_.sourcePath.contains(sourcePath))
@@ -453,26 +407,12 @@ final class Pages(site: Site):
   private def resolveEntityLists(): Unit =
     pages.foreach:
       case directory: DirectoryPage =>
-        directory.content.flatMap(_.entityListsIndex).foreach: index =>
+        directory.doc.flatMap(_.asEntityLists).foreach: lists =>
           val entities: Seq[Page] = EntityLists.entitiesUnder(directory)
           directory.setStoreChildren(
             entities.sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)).toList
           )
-          val listPages: List[EntityListPage] = index.lists.toList.flatMap: spec =>
-            val members: Seq[Page] = EntityLists.members(directory, spec)
-            if members.isEmpty then None
-            else
-              val listPath: Path = EntityLists.listPath(directory, spec)
-              get(listPath) match
-                case Some(existing) =>
-                  site.error(
-                    listPath,
-                    PageError.Duplicate,
-                    s"entity list '${spec.id}' collides with $existing"
-                  )
-                  None
-                case None =>
-                  Some(EntityListPage(site, listPath, spec, members))
+          val listPages: List[EntityListPage] = lists.listPages(directory, get)
           listPages.foreach(add)
           listPages.foreach(_.setSiblings(listPages))
       case _ =>

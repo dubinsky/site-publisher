@@ -6,8 +6,8 @@ import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
 import zio.blocks.chunk.Chunk
 
-/** TEI `entityLists` directory index: kind + role buckets filled from sibling entity files.
-  * Harvested from the raw tree. */
+/** TEI `entityLists` directory index: kind + role buckets from sibling entity files.
+  * Specs harvested from the raw tree; member lists generated at render. */
 object EntityLists:
   val expand: String = "⇗"
 
@@ -47,22 +47,18 @@ object EntityLists:
       .map(_.getText.trim)
       .filter(_.nonEmpty)
 
-  def fill(xml: Xml.Element, page: Page, index: Index): Xml.Element =
-    val (children: Chunk[Xml.Node], kept: Seq[Spec]) =
-      xml.getChildren.foldLeft((Chunk.empty[Xml.Node], Vector.empty[Spec])):
-        case ((acc, specs), node) =>
-          node.asElement.flatMap(el => specFor(el, index)) match
-            case None =>
-              (acc :+ node, specs)
-            case Some(spec) =>
-              val mem: Seq[Page] = members(page, spec)
-              if mem.isEmpty then (acc, specs)
-              else (acc :+ listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec))), specs :+ spec)
-
-    val withToc: Chunk[Xml.Node] =
-      if kept.isEmpty then children
-      else tocXml(kept, page) +: children
-    xml.setChildren(withToc)
+  /** Built at render so the index XML `Site.load` walks has no member hrefs (no backlinks). */
+  def generate(page: Page, index: Index): Xml.Element =
+    val kept: Seq[(Spec, Seq[Page])] = index.lists.flatMap: spec =>
+      val mem: Seq[Page] = members(page, spec)
+      Option.when(mem.nonEmpty)(spec -> mem)
+    val lists: Chunk[Xml.Node] = Chunk.from(kept.map((spec, mem) =>
+      listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec))): Xml.Node
+    ))
+    val children: Chunk[Xml.Node] =
+      if kept.isEmpty then lists
+      else tocXml(kept.map(_._1), page) +: lists
+    Xml.element("entityLists").setChildren(children)
 
   def listXml(
     spec: Spec,
@@ -95,11 +91,6 @@ object EntityLists:
 
   def displayName(page: Page): String =
     page.entityDisplayName.getOrElse(page.title)
-
-  private def specFor(element: Xml.Element, index: Index): Option[Spec] =
-    val id: Option[String] =
-      element.getId.filter(_.nonEmpty).orElse(element.get("n").map(_.trim).filter(_.nonEmpty))
-    id.flatMap(want => index.lists.find(_.id == want))
 
   private def tocXml(specs: Seq[Spec], page: Page): Xml.Element =
     val items: Chunk[Xml.Node] = Chunk.from(specs.map: spec =>

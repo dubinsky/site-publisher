@@ -7,6 +7,8 @@ final class WikiBlocks private(blocks: Seq[WikiBlock]):
   def resolve(id: String): Option[Link.ToBlock] = blocks.find(_.id == id).map(Link.ToBlock(_))
 
 object WikiBlocks:
+  val empty: WikiBlocks = new WikiBlocks(Seq.empty)
+
   def apply(
     xml: Xml.Element,
     errorReporter: PageErrorReporter

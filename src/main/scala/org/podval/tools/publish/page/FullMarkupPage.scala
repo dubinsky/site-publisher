@@ -9,8 +9,7 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
   override def next: Option[Page] = parent.flatMap(_.next(this))
 
   final override def markupContent: Option[Html.Element] =
-    if content.flatMap(_.storeIndex).isDefined then None
-    else markupContent(sectionId = None, isTerminal = true)
+    markupContent(sectionId = None, isTerminal = true)
   final override def pageHeader: Option[Html.Element] = Option.when(source.isDefined)(PageHeader.of(this))
   final def chunks: Seq[ChunkedMarkupPage] = content.map(_.toc.chunks(this)).getOrElse(Seq.empty)
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(this)

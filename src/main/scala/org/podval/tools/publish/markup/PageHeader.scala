@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{FullMarkupPage, Page}
+import org.podval.tools.publish.page.{FullMarkupPage, Page, StoreContent}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, Xml2Html}
 import zio.blocks.chunk.Chunk
@@ -12,7 +12,7 @@ object PageHeader:
     if isCollector(page) then collectorPageHeader(page) else pageHeader(page)
 
   private def isCollector(page: FullMarkupPage): Boolean =
-    page.content.flatMap(_.storeIndex).isDefined || collectorAncestors(page).nonEmpty
+    page.store.isDefined || collectorAncestors(page).nonEmpty
 
   def pageHeader(page: FullMarkupPage): Html.Element =
     header(className := "post-header",
@@ -72,7 +72,7 @@ object PageHeader:
   private def collectorHeaderXml(page: FullMarkupPage): Xml.Element =
     val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
     val head: Xml.Element = currentHead(page)
-    val index: Option[StoreIndex] = page.content.flatMap(_.storeIndex)
+    val index: Option[StoreContent] = page.store
     val description: Xml.Nodes = Chunk.from(index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml)))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Chunk.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
@@ -94,7 +94,7 @@ object PageHeader:
       case None => Nil
       case Some(parent) =>
         val rest: List[Page] = loop(parent.parent)
-        if parent.content.flatMap(_.storeIndex).isDefined then rest :+ parent else rest
+        if parent.store.isDefined then rest :+ parent else rest
     loop(page.parent)
 
   private def ancestorLine(page: Page): Xml.Element =
@@ -107,7 +107,7 @@ object PageHeader:
     )
 
   private def currentHead(page: FullMarkupPage): Xml.Element =
-    val nameFromIndex: Option[Xml.Element] = page.content.flatMap(_.storeIndex).flatMap: index =>
+    val nameFromIndex: Option[Xml.Element] = page.store.flatMap: index =>
       index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
     val name: Xml.Nodes = nameFromIndex.fold(Chunk(Xml.text(pageDisplayName(page))))(n => Chunk(n))
     headingLine(
@@ -131,11 +131,11 @@ object PageHeader:
     * directory segment that is a known selector (`archive/` → архив). */
   private def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
-      val parentIndex: Option[StoreIndex] = parent.content.flatMap(_.storeIndex)
+      val parentIndex: Option[StoreContent] = parent.store
       parentIndex.flatMap(_.selector)
         .orElse:
           Option.when(
-            parentIndex.exists(_.isCollection) && page.content.flatMap(_.storeIndex).isEmpty
+            parentIndex.exists(_.isCollection) && page.store.isEmpty
           )("document")
         .orElse(directorySelector(parent))
 
@@ -147,10 +147,10 @@ object PageHeader:
     Option.when(Selector.find(segment).isDefined)(segment)
 
   private def pageDisplayName(page: Page): String =
-    page.content.flatMap(_.storeIndex).flatMap(_.displayName).getOrElse(page.titleFromPath)
+    page.store.flatMap(_.displayName).getOrElse(page.titleFromPath)
 
   private def storeTitleInner(page: Page): Xml.Nodes =
-    page.content.flatMap(_.storeIndex).flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
+    page.store.flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
       resolvedFragment(page, title).getChildren
 
   private def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
@@ -163,7 +163,7 @@ object PageHeader:
     result
 
   private def documentHeaderTable(page: FullMarkupPage): Option[Xml.Element] =
-    val header: Option[DocumentHeader] = page.content.flatMap(_.documentHeader)
+    val header: Option[DocumentHeader] = page.doc.flatMap(_.documentHeader)
     Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
       val meta: DocumentHeader = header.get
       Xml.element("table").addClass("document-header").setChildren(Chunk(
@@ -175,8 +175,8 @@ object PageHeader:
       ))
 
   private def isCollectionDocument(page: Page): Boolean =
-    page.content.flatMap(_.storeIndex).isEmpty &&
-      collectorAncestors(page).exists(_.content.flatMap(_.storeIndex).exists(_.isCollection))
+    page.store.isEmpty &&
+      collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
   private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Xml.Element =
     Xml.element("tr").setChildren(Chunk(

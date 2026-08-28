@@ -165,7 +165,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     // Load all pages
     pages.load()
 
-    // Gather back-links
+    // Gather back-links from authored trees. Store / entity-lists `xml` is an empty
+    // root, so generated index → entity hrefs are not backlinks.
     for
       page <- pages.pages.flatMap(_.asFullMarkupPage)
       content <- page.content

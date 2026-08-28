@@ -48,7 +48,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   final def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] = content.map(_.markupContent(sectionId, isTerminal))
+  ): Option[Html.Element] = content.flatMap(_.markupContent(sectionId, isTerminal))
 
   // TODO maybe remove this in favour of PageHeader?
   def pageHeader: Option[Html.Element]
@@ -139,4 +139,4 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     ).when(isCollectionIndex)(className := "wide")
 
   private def isCollectionIndex: Boolean =
-    content.flatMap(_.storeIndex).exists(_.isCollection)
+    doc.exists(_.wide)
