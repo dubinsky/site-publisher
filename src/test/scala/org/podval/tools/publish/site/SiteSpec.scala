@@ -537,6 +537,17 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""itemtype="http://schema.org/WebPage""""), page)
   }
 
+  test("root store gets collections tree and flat index") {
+    exists("stores-collections.html")
+    exists("stores-index.html")
+    val tree: String = html("stores-collections.html")
+    assert(tree.contains("""class="tree-index""""), tree)
+    assert(tree.contains("Stores Fixture"), tree)
+    assert(tree.contains("zebra"), tree)
+    val flat: String = html("stores-index.html")
+    assert(flat.contains("Дела"), flat)
+  }
+
   test("store index lists includes in document order; extras error; hops are not pages") {
     val listing: String = html("stores/index.html")
     val zebraHref: Int = listing.indexOf("""href="/stores/item/zebra.html"""")

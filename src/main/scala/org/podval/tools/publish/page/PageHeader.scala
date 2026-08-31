@@ -88,7 +88,7 @@ object PageHeader:
         byLabel
     ))
 
-  private def collectorAncestors(page: Page): Seq[Page] =
+  private[page] def collectorAncestors(page: Page): Seq[Page] =
     def loop(opt: Option[Page]): List[Page] = opt match
       case None => Nil
       case Some(parent) =>
@@ -128,7 +128,7 @@ object PageHeader:
 
   /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
     * directory segment that is a known selector (`archive/` → архив). */
-  private def selectorName(page: Page): Option[String] =
+  private[page] def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
       parentIndex.flatMap(_.selector)
@@ -145,14 +145,14 @@ object PageHeader:
       else parent.path.fileName
     Option.when(Selector.find(segment).isDefined)(segment)
 
-  private def pageDisplayName(page: Page): String =
+  private[page] def pageDisplayName(page: Page): String =
     page.store.flatMap(_.displayName).getOrElse(page.titleFromPath)
 
   private def storeTitleInner(page: Page): Xml.Nodes =
     page.store.flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
       resolvedFragment(page, title).getChildren
 
-  private[page] def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
+  def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
     val converted: Xml.Element = TeiMarkup.convertFragment(xml)
     page.content.fold(converted)(_.resolveConverted(converted))
 

@@ -143,6 +143,10 @@ final class StoreContent(
   def pageType: PageType = index.pageType
   def pageTypeName: Option[String] = index.pageTypeName
 
+  private var boundChildrenVar: List[Page] = Nil
+  def setBoundChildren(children: List[Page]): Unit = boundChildrenVar = children
+  def boundChildren: List[Page] = boundChildrenVar
+
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")
 

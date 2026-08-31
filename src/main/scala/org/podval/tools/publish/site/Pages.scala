@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, Link, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage, EmbeddedAsset,
   EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource, PdfPage,
-  SimpleMarkupPage}
+  SimpleMarkupPage, StoreIndexPage, StoreIndexes}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -57,10 +57,11 @@ final class Pages(site: Site):
     if get(Robots.path).isEmpty then add(Robots(site))
     if get(Feed.path).isEmpty then add(Feed(site))
 
+    resolveStores()
+    addStoreIndexes()
     installHome()
     installCollectionAliases()
     headerPagesVar = resolveHeaderPages()
-    resolveStores()
 
     // Report conflicting pages
     pages
@@ -163,8 +164,12 @@ final class Pages(site: Site):
   /** Store/directory alias prefixes for the Worker table (`from` → collection directory `to`). */
   def collectionAliasEntries: Seq[CollectionAliases.Entry] =
     aliasByPrefix.toSeq.flatMap: (from, alias) =>
-      aliasDirectory(alias.real).map: to =>
+      aliasTargetDirectory(alias.real).map: to =>
         CollectionAliases.Entry(from, to, alias.real.path)
+
+  private def aliasTargetDirectory(page: Page): Option[Seq[String]] =
+    aliasDirectory(page).orElse:
+      Option.when(page.isInstanceOf[StoreIndexPage])(page.path.withoutHtml.path)
 
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)
@@ -371,15 +376,19 @@ final class Pages(site: Site):
         page.store.foreach: store =>
           if store.hrefs.nonEmpty then
             val (children, pageHops) = store.bind(page, findBySource, isAuthoredDirectory)
+            val listed: List[Page] = CollectionIndex.listingChildren(store, children)
+            store.setBoundChildren(listed)
             page match
               case directory: DirectoryPage =>
-                directory.setStoreChildren(CollectionIndex.listingChildren(store, children))
+                directory.setStoreChildren(listed)
               case _ =>
             hops = hops ++ pageHops
           else if store.isCollection then
             page match
               case directory: DirectoryPage =>
-                directory.setStoreChildren(CollectionIndex.originalsUnder(directory))
+                val originals: List[Page] = CollectionIndex.originalsUnder(directory)
+                store.setBoundChildren(originals)
+                directory.setStoreChildren(originals)
               case _ =>
       case _ =>
 
@@ -396,6 +405,50 @@ final class Pages(site: Site):
 
   private def findBySource(sourcePath: Path): Option[Page] =
     pages.find(_.sourcePath.contains(sourcePath))
+
+  private def addStoreIndexes(): Unit =
+    val roots: Seq[Page] = pages.filter(StoreIndexes.isRootStore)
+    val trees: Seq[StoreIndexPage] = roots.map: root =>
+      val tree: StoreIndexPage = StoreIndexPage.tree(site, root)
+      add(tree)
+      tree
+    roots.foreach: root =>
+      add(StoreIndexPage.flat(site, root))
+    trees match
+      case Seq(tree) =>
+        installLeafAlias(StoreIndexes.collectionsAlias, tree)
+      case _ =>
+
+  private def installLeafAlias(name: String, target: Page): Unit =
+    val short: Path = Path.fromHref(name)
+    val key: Seq[String] = short.path
+    if key.isEmpty then
+      site.error(target.path, PageError.Unresolved, s"store index alias '$name' is empty")
+    else
+      aliasByPrefix.get(key) match
+        case Some(existing) if existing.real == target.real =>
+          ()
+        case Some(existing) =>
+          site.error(
+            target.path,
+            PageError.Duplicate,
+            s"store index alias '$name' collides with $existing"
+          )
+        case None =>
+          get(short.html) match
+            case Some(other) if other.real == target.real =>
+              aliasByPrefix = aliasByPrefix.updated(key, other match
+                case alias: Alias => alias
+                case _ => new Alias(site, target.real, short.html)
+              )
+            case Some(other) =>
+              site.error(
+                target.path,
+                PageError.Duplicate,
+                s"store index alias '$name' collides with $other"
+              )
+            case None =>
+              aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, target.real, short.html))
 
   // Entity refs (`persName` / `placeName` / `orgName` `@ref`) look up (kind, filename)
   // and do not title-walk. Other LinkKind values still fall through to path/title search.

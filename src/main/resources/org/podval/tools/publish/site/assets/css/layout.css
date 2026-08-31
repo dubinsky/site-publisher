@@ -329,6 +329,16 @@ html.facsimile .page-content > .wrapper {
     scroll-margin-top: 4rem;
 }
 
+.tree-index ul {
+    list-style-type: none;
+    margin-bottom: 1em;
+    margin-left: 0;
+}
+
+.tree-index ul li {
+    margin-left: 1em;
+}
+
 a.pb {
     text-decoration: none;
     margin-left: 0.15em;

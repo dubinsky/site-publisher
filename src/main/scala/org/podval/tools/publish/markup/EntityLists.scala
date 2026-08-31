@@ -2,6 +2,16 @@ package org.podval.tools.publish.markup
 
 import org.podval.xml.Xml
 
+//// TODO derive it from By (with a transparent Selector)!
+//final class EntityList(
+//  override val fromUrl: FromUrl,
+//  override val names: Names,
+//  val entityType: EntityType,
+//  val role: Option[String],
+//  val title: Title.Value,
+//) extends
+//  Pure[Entity]
+
 /** TEI `entityLists` directory index specs: kind + role buckets.
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`. */
 object EntityLists:
