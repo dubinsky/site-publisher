@@ -94,7 +94,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   ): Unit = errors.error(PageError(sourcePath, kind, message, cause))
 
   // Logging
-  Logging.configureLogBack(level = options.logLevel, useLogStash = false)
+  Logging.configureLogBack(level = options.logLevel)
   val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   log.info(s"source directory: $sourceDirectory")

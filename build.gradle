@@ -39,7 +39,6 @@ dependencies {
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.7.1.202607240634-r'
   implementation 'org.slf4j:slf4j-api:2.0.18'
   implementation 'ch.qos.logback:logback-classic:1.6.3'
-  compileOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
   implementation 'de.undercouch:citeproc-java:3.5.2'
   implementation 'org.citationstyles:styles:26.8'
   implementation 'org.citationstyles:locales:26.8'

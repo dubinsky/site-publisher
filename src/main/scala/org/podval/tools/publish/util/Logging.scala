@@ -6,42 +6,30 @@ import ch.qos.logback.classic.{LoggerContext, Level as LogBackLevel, Logger as L
 import ch.qos.logback.core.ConsoleAppender
 import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.status.InfoStatus
-import net.logstash.logback.encoder.LogstashEncoder
 import org.slf4j.event.Level
 import org.slf4j.{Logger, LoggerFactory}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object Logging:
-  def configureLogBack(
-    level: String,
-    useLogStash: Boolean
-  ): Unit = LoggerFactory.getILoggerFactory match
+  def configureLogBack(level: String): Unit = LoggerFactory.getILoggerFactory match
     case loggerContext: LoggerContext => configureLogback(
       loggerContext,
-      Level.valueOf(level.toUpperCase),
-      useLogStash
+      Level.valueOf(level.toUpperCase)
     )
     case _ =>
 
   private def configureLogback(
     loggerContext: LoggerContext,
-    level: Level,
-    useLogStash: Boolean
+    level: Level
   ): Unit =
     val statusManager = loggerContext.getStatusManager
     if statusManager != null then statusManager.add(InfoStatus("Configuring logger", loggerContext))
     loggerContext.reset()
 
-    if !useLogStash then
-      val encoder = new PatternLayoutEncoder
-      // Simplify default pattern
-      encoder.setPattern("[%-5level] %msg%n")
-      useEncoder(loggerContext, encoder, "simple")
-    else
-      val encoder = new LogstashEncoder
-      // Ignore default logging fields
-      encoder.setExcludeMdcKeyNames(List("timestamp", "version", "logger", "thread", "level", "levelValue").asJava)
-      useEncoder(loggerContext, encoder, "json")
+    val encoder = new PatternLayoutEncoder
+    // Simplify default pattern
+    encoder.setPattern("[%-5level] %msg%n")
+    useEncoder(loggerContext, encoder, "simple")
 
     val rootLogger: LogBackLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
 
