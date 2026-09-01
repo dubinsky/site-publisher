@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlUtil}
+import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement, XmlUtil}
 
 // Details of the footnote internal representation.
 object Footnote:
@@ -125,7 +125,7 @@ final class Footnote(
   private def bodyId: String = s"_footnote_$number"
 
   def link: Xml.Element = Xml
-    .element(HtmlElement.A)
+    .element(XmlElement.A)
     .add(Footnote.LinkClass)
     .setId(linkId)
     .setHref(s"#$bodyId")
@@ -138,7 +138,7 @@ final class Footnote(
     .setChildren(backLink +: nodes)
 
   private def backLink: Xml.Element = Xml
-    .element(HtmlElement.A)
+    .element(XmlElement.A)
     .add(Footnote.BackLinkClass)
     .setHref(s"#$linkId")
     .setText(number.toString)

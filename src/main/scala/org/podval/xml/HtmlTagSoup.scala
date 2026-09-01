@@ -7,7 +7,7 @@ import org.xml.sax.helpers.XMLFilterImpl
 // Note: TagSoup is not suitable for case-sensitive or namespaced XML dialects such as TEI, since it:
 // - does not support namespaces at all;
 // - lower-cases element and attribute names.
-object TagSoup:
+object HtmlTagSoup:
   def reader: XMLReader =
     val tagSoup: XMLReader = TagSoupParser()
     tagSoup.setFeature(TagSoupParser.rootBogonsFeature, true)

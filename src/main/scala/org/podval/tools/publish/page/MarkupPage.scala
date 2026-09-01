@@ -4,7 +4,7 @@ import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, HtmlElement, HtmlXmlDialect}
+import org.podval.xml.{Html, HtmlXmlDialect, XmlElement}
 import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
 
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
@@ -121,7 +121,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     syntheticContent: Option[Html.Element]
   ): Html.Element =
     def getLanguages(element: Html.Element): Seq[String] =
-      if element.isElement(HtmlElement.Code)
+      if element.isElement(XmlElement.Code)
       then element.getPrefixedClasses("language")
       else element.flatMapElements(getLanguages)
 

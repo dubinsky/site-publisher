@@ -18,4 +18,4 @@ object XmlParser:
     XmlParserSax.parse(content = content, reader = SAXParserFactory.newInstance.newSAXParser.getXMLReader)
 
   private def parseSaxHtml(content: String): Either[Throwable, Xml.Element] =
-    XmlParserSax.parse(content = content, reader = TagSoup.reader)
+    XmlParserSax.parse(content = content, reader = HtmlTagSoup.reader)

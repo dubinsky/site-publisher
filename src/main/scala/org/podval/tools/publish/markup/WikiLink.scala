@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.{Files, Media, Strings}
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
+import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
 
 object WikiLink:
   private object WikiLinkClass extends HtmlClass("wiki-link")
@@ -15,7 +15,7 @@ object WikiLink:
   def isTranscluded(element: Xml.Element): Boolean = element.has(TranscludeClass)
 
   def make(transclude: Boolean, ref: String, title: Option[String]): Xml.Element = Xml
-    .element(HtmlElement.A)
+    .element(XmlElement.A)
     .add(WikiLinkClass)
     .add(Option.when(transclude)(TranscludeClass))
     .set(XmlAttribute.Href, Option.when(ref.nonEmpty)(ref))

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
-import zio.blocks.chunk.Chunk
+import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral video IR. CSS styles only these classes.
   * Local file: `<video class="video" controls>`. YouTube/Vimeo: `<iframe class="video-embed">`. */
@@ -24,7 +23,7 @@ object Video:
       .set("src", href)
       .set("controls", "controls")
       .set("aria-label", text)
-      .setChildren(Chunk(openLink(href, text)))
+      .setChildren(Seq(openLink(href, text)))
 
   def normalize(element: Xml.Element): Xml.Element =
     if element.getName == "video" then normalizeLocal(element)
@@ -45,7 +44,7 @@ object Video:
         .get("aria-label")
         .filter(_.nonEmpty)
         .getOrElse(src.get.split('/').lastOption.getOrElse(src.get))
-      withControls.setChildren(Chunk(openLink(src.get, label)))
+      withControls.setChildren(Seq(openLink(src.get, label)))
 
   private def isRemotePlayer(element: Xml.Element): Boolean =
     element.getName == "iframe" && element.get("src").exists: src =>
@@ -55,4 +54,4 @@ object Video:
       lower.contains("player.vimeo.com/video")
 
   private def openLink(href: String, label: String): Xml.Element =
-    Xml.element(HtmlElement.A).set(XmlAttribute.Href, href).setText(s"Open video: $label")
+    Xml.element(XmlElement.A).set(XmlAttribute.Href, href).setText(s"Open video: $label")

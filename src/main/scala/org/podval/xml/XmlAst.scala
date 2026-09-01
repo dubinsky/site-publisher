@@ -11,6 +11,7 @@ trait XmlAst[ELEMENT]:
 
   type Node >: Element
 
+  // TODO replace Seq[Node] with Nodes throughout
   final type Nodes = Seq[Node]
 
   def text(text: String): Node
@@ -57,7 +58,7 @@ trait XmlAst[ELEMENT]:
 
     def isElement(elem: XmlElement): Boolean = element.getName == elem.name
     
-    def isA: Boolean = isElement(HtmlElement.A)
+    def isA: Boolean = isElement(XmlElement.A)
   
   // Children
   extension (element: Element)

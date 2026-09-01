@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import de.undercouch.citeproc.CSL
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItemBuilder}
-import org.podval.xml.{HtmlElement, Xml, XmlParser}
+import org.podval.xml.{Xml, XmlElement, XmlParser}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import java.io.{File, FileInputStream}
 
@@ -103,7 +103,7 @@ object Bibliography:
 
   private def wrapCite(html: String, keys: Seq[String]): Xml.Element =
     val cite: Xml.Element = Xml
-      .element(HtmlElement.A)
+      .element(XmlElement.A)
       .add(Citation.CiteClass)
       .setChildren(parseFragment(html))
     keys.headOption.fold(cite)(key => cite.setHref(Citation.entryHref(key)))
