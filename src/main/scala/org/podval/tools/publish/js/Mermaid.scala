@@ -14,7 +14,7 @@ object Mermaid extends JSLibrary:
         |await mermaid.run({ querySelector: '.language-mermaid', });
         |""".stripMargin
 
-  override def cdn: String =
-    if JSLibrary.preferCloudFlare
-    then s"${JSLibrary.cloudFlare}mermaid/$version"
-    else s"${JSLibrary.jsDelivr}mermaid@$version/dist"
+  override def cdn: String = cdn(
+    s"${JSLibrary.cloudFlare}mermaid/$version",
+    s"${JSLibrary.jsDelivr}mermaid@$version/dist"
+  )

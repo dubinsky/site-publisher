@@ -5,8 +5,7 @@ object FontAwesome extends JSLibrary:
 
   override val stylesheet: Some[String] = Some("/css/all.min.css")
   
-  override def cdn: String =
-    if JSLibrary.preferCloudFlare
-    then s"${JSLibrary.cloudFlare}font-awesome/$version"
-    else s"${JSLibrary.jsDelivr}@fortawesome/fontawesome-free@$version"
-
+  override def cdn: String = cdn(
+    s"${JSLibrary.cloudFlare}font-awesome/$version",
+    s"${JSLibrary.jsDelivr}@fortawesome/fontawesome-free@$version"
+  )

@@ -7,19 +7,18 @@ final class Highlights(languages: Set[String]) extends JSLibrary:
 
   override val stylesheet: Some[String] = Some("/styles/default.min.css")
 
-  override def imports: List[String] =
-    List("highlight.min.js") ++ languages
-      .flatMap(Highlights.languageFile)
-      .toList
-      .sorted
-      .map(language => s"languages/$language.min.js")
+  override def imports: List[String] = List("highlight.min.js") ++ languages
+    .flatMap(Highlights.languageFile)
+    .toList
+    .sorted
+    .map(language => s"languages/$language.min.js")
 
   override val inlineJs: Some[Js] = Some(js"hljs.highlightAll();")
 
-  override def cdn: String =
-    if JSLibrary.preferCloudFlare
-    then s"${JSLibrary.cloudFlare}highlight.js/$version"
-    else s"${JSLibrary.jsDelivr}@highlightjs/cdn-assets@$version"
+  override def cdn: String = cdn(
+    s"${JSLibrary.cloudFlare}highlight.js/$version",
+    s"${JSLibrary.jsDelivr}@highlightjs/cdn-assets@$version"
+  )
 
 object Highlights:
   /**
@@ -28,8 +27,7 @@ object Highlights:
    */
   private def languageFile(language: String): Option[String] =
     val name: String = language.toLowerCase
-    if unsupported.contains(name) then None
-    else Some(aliases.getOrElse(name, name))
+    Option.when(!unsupported.contains(name))(aliases.getOrElse(name, name))
 
   // No CDN grammar (or handled by another library).
   private val unsupported: Set[String] = Set(

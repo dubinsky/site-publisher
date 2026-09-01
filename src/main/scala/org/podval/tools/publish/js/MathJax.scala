@@ -12,7 +12,7 @@ object MathJax extends JSLibrary:
 
   override val inlineJs: Some[Js] = Some(js"MathJax = { tex: { inlineMath: {'[+]': [['$$', '$$']]} } };")
 
-  override def cdn: String =
-    if JSLibrary.preferCloudFlare
-    then s"${JSLibrary.cloudFlare}mathjax/$version"
-    else s"${JSLibrary.jsDelivr}mathjax@$version"
+  override def cdn: String = cdn(
+    s"${JSLibrary.cloudFlare}mathjax/$version",
+    s"${JSLibrary.jsDelivr}mathjax@$version"
+  )

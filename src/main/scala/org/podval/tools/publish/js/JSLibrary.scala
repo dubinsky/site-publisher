@@ -6,6 +6,11 @@ import zio.blocks.html.Dom.Element.Script
 abstract class JSLibrary:
   def cdn: String
 
+  final protected def cdn(forCloudFlare: => String, forJsDelivr: => String): String =
+    if JSLibrary.preferCloudFlare
+    then forCloudFlare
+    else forJsDelivr
+
   def stylesheet: Option[String] = None
 
   def imports: List[String] = List.empty
