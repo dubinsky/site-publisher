@@ -6,8 +6,8 @@ import zio.blocks.chunk.Chunk
 /** Markup-neutral aside IR. CSS styles only these classes.
   * Untyped auxiliary content (`<aside class="aside">`), optional title. */
 object Aside:
-  object Class extends HtmlClass("aside")
-  object TitleClass extends HtmlClass("aside-title")
+  private object Class extends HtmlClass("aside")
+  private object TitleClass extends HtmlClass("aside-title")
 
   def is(element: Xml.Element): Boolean =
     element.getName == "aside" && element.has(Class)
@@ -23,5 +23,6 @@ object Aside:
       .setChildren(Chunk.from(titleElement.toSeq) ++ body.filterNot(_.isWhitespace))
 
   def normalize(element: Xml.Element): Xml.Element =
-    if element.getName != "aside" || is(element) then element
+    if element.getName != "aside" || is(element)
+    then element
     else element.add(Class)

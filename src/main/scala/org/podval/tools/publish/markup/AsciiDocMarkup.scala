@@ -81,11 +81,13 @@ object AsciiDocMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
-    HtmlMarkup.process(cleanup(xml), errorReporter)
+  ): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.process(
+    cleanup(xml), 
+    errorReporter
+  )
 
   private[markup] def cleanup(xml: Xml.Element): Xml.Element =
-    val cleaned: Xml.Element = xml.transform((element: Xml.Element) =>
+    var cleaned: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
 
       val classes: Chunk[String] = result.getClasses
@@ -101,6 +103,7 @@ object AsciiDocMarkup extends Markup(
           .setClasses(result.getClasses.filterNot(asciidoctorGlossaryClasses.contains))
           .add(Glossary.ListClass)
       children = convertCalloutMarks(children)
+      
       result = result.setChildren(children)
       result = convertTaskList(result)
       result = convertFootnoteLink(result).getOrElse(result)
@@ -113,11 +116,13 @@ object AsciiDocMarkup extends Markup(
       result = convertVideoBlock(result)
       result
     )
-    // Default transform does not recurse into `<code>`, where listing callouts live.
-    rewriteCalloutMarks(Footnote.unwrapLeftovers(
+    cleaned = Footnote.unwrapLeftovers(
       cleaned,
       el => el.getName == "div" && el.getId.contains("footnotes")
-    ))
+    )
+    // Default transform does not recurse into `<code>`, where listing callouts live.
+    cleaned = rewriteCalloutMarks(cleaned)
+    cleaned
 
   private def rewriteCalloutMarks(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = convertCalloutMarks(element.getChildren).map: node =>
