@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml}
-import zio.blocks.chunk.Chunk
 import java.io.File
 
 object HtmlMarkup extends Markup(
@@ -20,7 +19,7 @@ object HtmlMarkup extends Markup(
         head <- tail.headOption.map(_.asElement.get)
         if head.getName == "p"
       yield
-        Chunk(element.setChildren(init ++ head.getChildren ++ tail.tail))
+        Seq(element.setChildren(init ++ head.getChildren ++ tail.tail))
 
   def headerLevel(element: Xml.Element): Option[Int] =
     val qName: String = element.getName
@@ -65,7 +64,7 @@ object HtmlMarkup extends Markup(
   //     <p>...</p>
   //   </div>
   private[markup] def nestSections(nodes: Xml.Nodes): Xml.Nodes =
-    val headerLevels: Chunk[Int] = nodes.flatMap(_.asElement).flatMap(HtmlMarkup.headerLevel)
+    val headerLevels: Seq[Int] = nodes.flatMap(_.asElement).flatMap(HtmlMarkup.headerLevel)
     if headerLevels.isEmpty then nodes else
       val headerLevel: Int = headerLevels.head
       val (preamble: Xml.Nodes, rest: Xml.Nodes) = nodes.span(
@@ -80,6 +79,6 @@ object HtmlMarkup extends Markup(
         val id: Option[String] = header.getId.filter(_.nonEmpty)
         Section.mark(Xml.element("div"))
           .setId(id)
-          .setChildren(Chunk(Section.markHeading(header.setId(""))) ++ nestSections(body))
+          .setChildren(Seq(Section.markHeading(header.setId(""))) ++ nestSections(body))
 
-      preamble ++ Chunk(section) ++ nestSections(tail)
+      preamble ++ Seq(section) ++ nestSections(tail)

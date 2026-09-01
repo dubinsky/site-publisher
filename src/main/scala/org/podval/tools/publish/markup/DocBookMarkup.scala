@@ -5,7 +5,6 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
 import zio.blocks.chunk.Chunk
-
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -95,7 +94,7 @@ object DocBookMarkup extends Markup(
   private def isDbTitle(element: Xml.Element): Boolean = element.getName == "db-title"
 
   private def documentTitle(root: Xml.Element): Option[Xml.Element] =
-    val children: Seq[Xml.Element] = root.getChildren.flatMap(_.asElement).toSeq
+    val children: Seq[Xml.Element] = root.getChildren.flatMap(_.asElement)
     children.find(isDbTitle).orElse:
       children.filter(el => infoElements.contains(el.getName))
         .flatMap(_.getChildren.flatMap(_.asElement).find(isDbTitle))
@@ -197,7 +196,7 @@ object DocBookMarkup extends Markup(
     if value.startsWith("#") then value else s"#$value"
 
   private def fillEmptyLink(element: Xml.Element): Xml.Element =
-    if !element.isA || element.getChildren.filterNot(_.isWhitespace).nonEmpty then element
+    if !element.isA || !element.getChildren.forall(_.isWhitespace) then element
     else
       val label: Option[String] =
         element.get("xreflabel").map(_.trim).filter(_.nonEmpty)
@@ -238,7 +237,7 @@ object DocBookMarkup extends Markup(
       element
     else
       val titles: Xml.Nodes = element.getChildren.filter(node => node.asElement.exists(isDbTitle))
-      val entries: Chunk[Xml.Element] = element.gather(
+      val entries: Seq[Xml.Element] = element.gather(
         el => Option.when(el.getName == "glossentry")(convertGlossEntry(el)),
         stopAtCode = false
       )
@@ -246,7 +245,7 @@ object DocBookMarkup extends Markup(
       if titles.isEmpty then dl else Xml.element("div").setChildren(titles ++ Chunk(dl))
 
   private def convertGlossEntry(entry: Xml.Element): Xml.Element =
-    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement).toSeq
+    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
     val term: Option[Xml.Element] = children.find(_.getName == "glossterm")
     val definition: Option[Xml.Element] = children.find(_.getName == "glossdef")
     val dt: Xml.Element =
@@ -269,7 +268,7 @@ object DocBookMarkup extends Markup(
       Xml.element("dl").setChildren(items)
 
   private def convertVarListEntry(entry: Xml.Element): Xml.Nodes =
-    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement).toSeq
+    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
     val dts: Seq[Xml.Element] = children.filter(_.getName == "term").map: term =>
       Xml.element("dt").setChildren(term.getChildren.filterNot(_.isWhitespace))
     val dds: Seq[Xml.Element] = children.filter(_.getName == "listitem").map: item =>
@@ -317,7 +316,7 @@ object DocBookMarkup extends Markup(
       val captions: Xml.Nodes = children.filter: node =>
         node.asElement.exists(el => isDbTitle(el) || el.getName == "caption")
       val body: Xml.Nodes = children.filterNot(node => captions.exists(_ eq node))
-      val caption: Seq[Xml.Node] = captions.toSeq.flatMap: node =>
+      val caption: Xml.Nodes = captions.flatMap: node =>
         node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace).toSeq)
       Figure.make(caption, body).setId(xmlId(element))
 
@@ -361,7 +360,7 @@ object DocBookMarkup extends Markup(
       stopAtCode = false
     ).flatMap(entryIds).toSet
 
-  private def entryIds(list: Xml.Element): Chunk[String] =
+  private def entryIds(list: Xml.Element): Seq[String] =
     list.getChildren.flatMap(_.asElement)
       .filter(isBibliographyEntry)
       .flatMap(xmlId)

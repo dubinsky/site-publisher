@@ -1,7 +1,6 @@
 package org.podval.xml
 
 import org.typelevel.paiges.Doc
-import zio.blocks.chunk.Chunk
 
 object XmlWriter:
   private val indent: Int = 2
@@ -29,7 +28,7 @@ object XmlWriter:
     canBreakLeft: Boolean,
     canBreakRight: Boolean
   )(using dialect: XmlDialect)(using ast: XmlAst[Element]): Doc =
-    val attributeValues: Chunk[(String, String)] = element.getAttributes
+    val attributeValues: Seq[(String, String)] = element.getAttributes
     val attributes: Doc =
       if attributeValues.isEmpty then Doc.empty
       else Doc.lineOrSpace + Doc.intercalate(Doc.lineOrSpace, attributeValues.map((name, value) =>
@@ -200,7 +199,7 @@ object XmlWriter:
     .getOrElse(Doc.paragraph(node.getText))
 
   private def preformatElement[Element: XmlAst](element: Element): Seq[String] =
-    val attributeValues: Chunk[(String, String)] = element.getAttributes
+    val attributeValues: Seq[(String, String)] = element.getAttributes
     val attributes: String = if attributeValues.isEmpty then "" else attributeValues
       .map((name, value) => s"$name=${XmlEncode.quote(value)}") // TODO escapeSpecials?
       .mkString(" ", ", ", "")

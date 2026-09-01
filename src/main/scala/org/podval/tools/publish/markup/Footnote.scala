@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute, XmlUtil}
-import zio.blocks.chunk.Chunk
 
 // Details of the footnote internal representation.
 object Footnote:
@@ -35,7 +34,7 @@ object Footnote:
     .set(CorrelationId, correlationId)
     .setChildren(content)
 
-  def linkIds(xml: Xml.Element): Chunk[String] =
+  def linkIds(xml: Xml.Element): Seq[String] =
     xml.gather(element =>
       Option.when(isLink(element))(getCorrelationId(element))
     )
@@ -63,7 +62,7 @@ object Footnote:
 
   /** Number footnotes in document-link order, then drop bodies from the tree. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = linkIds(xml).zipWithIndexFrom(1).toMap
+    val numbers: Map[String, Int] = linkIds(xml).zipWithIndex.toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
@@ -73,7 +72,7 @@ object Footnote:
             )
           correlationId -> Footnote(
             correlationId = correlationId,
-            number = numbers(correlationId),
+            number = numbers(correlationId) + 1,
             nodes = element.getChildren
           )
       )
@@ -93,7 +92,7 @@ object Footnote:
     xml: Xml.Element,
     footnotes: Map[String, Footnote]
   ): Xml.Element =
-    val toAdd: Chunk[Footnote] = linkIds(xml).map(footnotes)
+    val toAdd: Seq[Footnote] = linkIds(xml).map(footnotes)
     if toAdd.isEmpty then xml
     else
       val footnotesDiv: Xml.Element = Xml

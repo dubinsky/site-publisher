@@ -5,7 +5,6 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
 import zio.blocks.chunk.Chunk
-
 import java.io.File
 
 // TODO @xmlAttribute("id") and @xmlNamespace() annotations mentioned in the documentation
@@ -253,7 +252,7 @@ object TeiMarkup extends Markup(
       .flatMap(entryIds)
       .toSet
 
-  private def entryIds(list: Xml.Element): Chunk[String] =
+  private def entryIds(list: Xml.Element): Seq[String] =
     list.getChildren.flatMap(_.asElement)
       .filter(isBibliographyEntry)
       .flatMap(xmlId)

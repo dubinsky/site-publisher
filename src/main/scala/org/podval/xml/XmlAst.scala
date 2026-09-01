@@ -1,7 +1,5 @@
 package org.podval.xml
 
-import zio.blocks.chunk.Chunk
-
 // AST that represents XML and provides operations on it;
 // abstracts over the underlying representation:
 // - ZIO Blocks XML
@@ -13,10 +11,10 @@ trait XmlAst[ELEMENT]:
 
   type Node >: Element
 
-  final type Nodes = Chunk[Node]
+  final type Nodes = Seq[Node]
 
   def text(text: String): Node
-  
+
   def cdata(text: String): Node
 
   final def element(elem: XmlElement): Element = element(elem.name)
@@ -26,7 +24,7 @@ trait XmlAst[ELEMENT]:
   // Concatenate only: text nodes already carry author whitespace. Joining with a space
   // puts a gap before punctuation after inline markup (`</persName>,` → "е ,").
   final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString
-  
+
   // Conversions
   extension (node: Node)
     def asElement: Option[Element]
@@ -34,7 +32,7 @@ trait XmlAst[ELEMENT]:
     def asAtom: Option[String]
 
     def asText: Option[String]
-    
+
     def asCData: Option[String]
 
     def isWhitespace: Boolean = node.asAtom.exists(_.trim.isEmpty)
@@ -67,12 +65,12 @@ trait XmlAst[ELEMENT]:
 
     def setChildren(children: Nodes): Element
 
-    def setText(text: String): Element = element.setChildren(Chunk(this.text(text)))
+    def setText(text: String): Element = element.setChildren(Seq(this.text(text)))
 
     // Remove markup
     def getTextOpt: Option[String] = Option.when(element.getChildren.nonEmpty)(element.getText)
 
-    def flatMapElements[A](f: Element => Chunk[A]): Chunk[A] = element
+    def flatMapElements[A](f: Element => Seq[A]): Seq[A] = element
       .getChildren
       .flatMap(_.asElement)
       .flatMap(element => f(element))
@@ -91,13 +89,13 @@ trait XmlAst[ELEMENT]:
     def gather[A](
       gatherElement: Element => Option[A],
       stopAtCode: Boolean = true
-    ): Chunk[A] =
-      def loop(element: Element): Chunk[A] =
+    ): Seq[A] =
+      def loop(element: Element): Seq[A] =
         val fromElement: Option[A] = gatherElement(element)
-        val fromChildren: Chunk[A] =
-          if stopAtCode && element.getName == "code" then Chunk.empty
+        val fromChildren: Seq[A] =
+          if stopAtCode && element.getName == "code" then Seq.empty
           else element.flatMapElements(loop)
-        Chunk.from(fromElement) ++ fromChildren
+        fromElement.toSeq ++ fromChildren
       loop(element)
 
     def gatherWithContext[A](
@@ -105,14 +103,14 @@ trait XmlAst[ELEMENT]:
       isContext: Element => Boolean,
       stopAtCode: Boolean = true
     ): Seq[A] =
-      def loop(element: Element, context: Option[Element]): Chunk[A] =
+      def loop(element: Element, context: Option[Element]): Seq[A] =
         val fromElement: Option[A] = gatherElement(element, context)
-        val fromChildren: Chunk[A] =
-          if stopAtCode && element.getName == "code" then Chunk.empty
+        val fromChildren: Seq[A] =
+          if stopAtCode && element.getName == "code" then Seq.empty
           else
             val contextNew: Option[Element] = if isContext(element) then Some(element) else context
             element.flatMapElements(loop(_, contextNew))
-        Chunk.from(fromElement) ++ fromChildren
+        fromElement.toSeq ++ fromChildren
       loop(element, None)
 
     def gatherWithParent[A](
@@ -128,9 +126,9 @@ trait XmlAst[ELEMENT]:
 
   // Attributes
   extension (element: Element)
-    def getAttributes: Chunk[(String, String)]
+    def getAttributes: Seq[(String, String)]
 
-    def setAttributes(attributes: Chunk[(String, String)]): Element
+    def setAttributes(attributes: Seq[(String, String)]): Element
 
     def get(attribute: XmlAttribute): Option[String] =
       get(attribute.name)
@@ -142,7 +140,7 @@ trait XmlAst[ELEMENT]:
       set(attribute.name, value)
 
     def set(attribute: String, value: String): Element =
-      val otherAttributes: Chunk[(String, String)] = element.getAttributes.filterNot(_._1 == attribute)
+      val otherAttributes: Seq[(String, String)] = element.getAttributes.filterNot(_._1 == attribute)
       element.setAttributes(
         if value.nonEmpty
         then otherAttributes.appended(attribute -> value)
@@ -158,7 +156,7 @@ trait XmlAst[ELEMENT]:
     def getId: Option[String] = get(XmlAttribute.Id)
 
     def setId(value: String): Element = set(XmlAttribute.Id, value)
-    
+
     def setId(value: Option[String]): Element = set(XmlAttribute.Id, value)
 
     def copyXmlId: Element =
@@ -172,14 +170,16 @@ trait XmlAst[ELEMENT]:
 
   // HTML 'class' attribute
   extension (element: Element)
-    def getClasses: Chunk[String] = element
+    def getClasses: Seq[String] = element
       .get(HtmlClass)
-      .fold(Chunk.empty): element =>
-        Chunk.from(element.split(' '))
+      .fold(Seq.empty): element =>
+        element
+          .split(' ')
+          .toIndexedSeq
           .map(_.trim)
           .filterNot(_.isEmpty)
 
-    def setClasses(values: Chunk[String]): Element =
+    def setClasses(values: Seq[String]): Element =
       element.set(HtmlClass, values.mkString(" "))
 
     def has(htmlClass: HtmlClass): Boolean = hasClass(htmlClass.name)
@@ -198,7 +198,7 @@ trait XmlAst[ELEMENT]:
       then element
       else element.setClasses(list.appended(htmlClass))
 
-    def getPrefixedClasses(prefix: String): Chunk[String] = element
+    def getPrefixedClasses(prefix: String): Seq[String] = element
       .getClasses
       .filter(_.startsWith(s"$prefix-"))
       .map(_.substring(prefix.length + 1))

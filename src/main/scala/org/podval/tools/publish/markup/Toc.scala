@@ -4,7 +4,6 @@ import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMark
 import org.podval.xml.{Html, HtmlClass, Xml, XmlUtil}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
-import zio.blocks.chunk.Chunk
 
 final class Toc(sections: Seq[Section]) extends Sections(sections):
   private val id2section: Map[String, Section] = flatten
@@ -148,7 +147,7 @@ object Toc:
     element: Xml.Element,
     errorReporter: PageErrorReporter
   ): Toc =
-    def sections(element: Xml.Element): Chunk[Section] =
+    def sections(element: Xml.Element): Seq[Section] =
       if !Section.is(element) then element.flatMapElements(sections) else element.getId match
         case None =>
           errorReporter.error(PageError.NoId, s"Defect: No id on section $element")
@@ -162,7 +161,7 @@ object Toc:
               id
             case Some(text) =>
               text
-          Chunk(Section(
+          Seq(Section(
             id,
             title,
             element.flatMapElements(sections)

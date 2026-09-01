@@ -4,7 +4,6 @@ import de.undercouch.citeproc.CSL
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItemBuilder}
 import org.podval.xml.{HtmlElement, Xml, XmlParser}
-import zio.blocks.chunk.Chunk
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import java.io.{File, FileInputStream}
 
@@ -132,7 +131,7 @@ object Bibliography:
         case None => node
     walk(nodes)
 
-  private def parseFragment(html: String): Chunk[Xml.Node] =
+  private def parseFragment(html: String): Xml.Nodes =
     XmlParser.parse(s"<div>$html</div>", isXml = false) match
       case Right(wrapper) => wrapper.getChildren
-      case Left(_) => Chunk(Xml.text(html))
+      case Left(_) => Seq(Xml.text(html))

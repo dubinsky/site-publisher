@@ -5,8 +5,8 @@ import zio.blocks.html.Dom as XML
 
 // XML AST for ZIO Blocks HTML
 given Html: XmlAst[XML.Element]:
-  type Node = XML
-  
+  override type Node = XML
+
   override def text(text: String): Node = XML.text(text)
 
   override def cdata(text: String): Node = Html.text(XmlEncode.escape(text))
@@ -44,13 +44,13 @@ given Html: XmlAst[XML.Element]:
     override def setChildren(children: Nodes): Element = XML.Element.Generic(
       tag = element.tag,
       attributes = element.attributes,
-      children = children
+      children = Chunk.from(children)
     )
 
-    override def setAttributes(attributes: Chunk[(String, String)]): Element = XML.Element.Generic(
+    override def setAttributes(attributes: Seq[(String, String)]): Element = XML.Element.Generic(
       tag = element.tag,
       children = element.children,
-      attributes = attributes.map((name, value) => mkAttribute(name, value))
+      attributes = Chunk.from(attributes).map((name, value) => mkAttribute(name, value))
     )
 
     /**
@@ -58,7 +58,7 @@ given Html: XmlAst[XML.Element]:
      * as Dom.render does: last `:=` is the base, then every `+=` in order.
      * One pair per name, sorted by name. Boolean attributes pass through.
      */
-    override def getAttributes: Chunk[(String, String)] =
+    override def getAttributes: Seq[(String, String)] =
       Chunk.from(element.attributes.groupBy(attributeName).view.mapValues(mergeAttribute))
         .sortBy(_._1)
 

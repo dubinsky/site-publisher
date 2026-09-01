@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
-import zio.blocks.chunk.Chunk
 
 object MarkdownWikiBlock:
   // Paragraph: `text ^id` on the same block. Lists, tables, quotes, and code fences:
@@ -14,7 +13,7 @@ object MarkdownWikiBlock:
     convertTrailing(hoisted, errorReporter).orElse(Option.when(hoistedAny)(hoisted))
 
   private def convertTrailing(element: Xml.Element, errorReporter: PageErrorReporter): Option[Xml.Element] =
-    val children: Chunk[Xml.Node] = element.getChildren
+    val children: Xml.Nodes = element.getChildren
     if children.isEmpty then None else children.last.asText.flatMap: text =>
       blockIdIn(text).map: (before, id) =>
         val stripped: Xml.Element = element.setChildren(
@@ -41,7 +40,7 @@ object MarkdownWikiBlock:
                 changed = true
           case None =>
             acc = acc :+ node
-      if !changed then (element, false) else (element.setChildren(Chunk.from(acc)), true)
+      if !changed then (element, false) else (element.setChildren(acc), true)
 
   private def standaloneBlockId(element: Xml.Element): Option[String] =
     if element.getName != "p" || element.getChildren.exists(_.asElement.isDefined) then None

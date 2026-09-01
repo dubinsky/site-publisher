@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
-import zio.blocks.chunk.Chunk
 import java.io.File
 
 // TODO deal with
@@ -90,7 +89,7 @@ object AsciiDocMarkup extends Markup(
     var cleaned: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
 
-      val classes: Chunk[String] = result.getClasses
+      val classes: Seq[String] = result.getClasses
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
@@ -178,7 +177,7 @@ object AsciiDocMarkup extends Markup(
           node.asElement.filter(_.getName == "li").fold(node)(asBibliographyItem)
         val converted: Xml.Element =
           ul.add(Citation.ListClass).setId(element.getId).setChildren(items)
-        title.fold(Chunk[Xml.Node](converted))(heading => Chunk(heading, converted))
+        title.fold(Seq[Xml.Node](converted))(heading => Seq(heading, converted))
 
   // Mark an entry and hoist a leading empty `<a id>` (AsciiDoc `[[[id]]]`).
   private def asBibliographyItem(element: Xml.Element): Xml.Element =
@@ -232,7 +231,7 @@ object AsciiDocMarkup extends Markup(
                 List(node)
           case None =>
             List(node)
-    Chunk.from(result)
+    result
 
   private def convertCalloutMark(element: Xml.Element): Option[Xml.Element] =
     val fromIcon: Option[String] =
@@ -294,7 +293,7 @@ object AsciiDocMarkup extends Markup(
       val attribution: Xml.Nodes =
         rest.flatMap(_.asElement)
           .find(el => el.getName == "div" && el.hasClass("attribution"))
-          .fold(Chunk.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
+          .fold(Seq.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
       val body: Xml.Nodes =
         inner.fold(rest.filterNot(isQuoteAttribution)): quote =>
           removeSpuriousDivs(quote.getChildren)
@@ -313,7 +312,7 @@ object AsciiDocMarkup extends Markup(
               (children.dropRight(1), Some(heading.getText.trim).filter(_.nonEmpty))
             case None =>
               (children, None)
-      val extra: Chunk[String] = element.getClasses.filterNot(_ == "imageblock")
+      val extra: Seq[String] = element.getClasses.filterNot(_ == "imageblock")
       extra.foldLeft(Figure.make(caption, body).setId(element.getId))(_.addClass(_))
 
   // Asciidoctor: <div class="videoblock"> optional div.title, then video or youtube/vimeo iframe.
@@ -332,7 +331,7 @@ object AsciiDocMarkup extends Markup(
         child.getName == "video" || child.getName == "iframe"
       inner.fold(element): media =>
         val normalized: Xml.Element = Video.normalize(media).setId(element.getId.filter(_ => title.isEmpty))
-        title.fold(normalized)(caption => Figure.make(Some(caption), Chunk(normalized)).setId(element.getId))
+        title.fold(normalized)(caption => Figure.make(Some(caption), Seq(normalized)).setId(element.getId))
 
   private def isQuoteAttribution(node: Xml.Node): Boolean =
     node.asElement.exists(el => el.getName == "div" && el.hasClass("attribution"))
@@ -345,11 +344,11 @@ object AsciiDocMarkup extends Markup(
         element.getClasses.find(asciidocAdmonitionTypes.contains).getOrElse("note")
       val cells: Seq[Xml.Element] = element.gather(el =>
         Option.when(el.getName == "td")(el)
-      ).toSeq
+      )
       val icon: Option[Xml.Element] = cells.find(_.hasClass("icon"))
       val content: Option[Xml.Element] = cells.find(_.hasClass("content"))
       val contentChildren: Xml.Nodes =
-        content.fold(Chunk.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
+        content.fold(Seq.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
       val (titleFromContent: Option[String], body: Xml.Nodes) =
         contentChildren.headOption.flatMap(_.asElement)
           .filter(child => child.getName == "div" && child.hasClass("title")) match
@@ -373,14 +372,14 @@ object AsciiDocMarkup extends Markup(
         element.getChildren.flatMap(_.asElement).find(_.getName == "ol")
       val fromTable: Option[Xml.Element] =
         element.getChildren.flatMap(_.asElement).find(_.getName == "table").map: table =>
-          val rows: Seq[Xml.Element] = table.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
+          val rows: Seq[Xml.Element] = table.getChildren.flatMap(_.asElement).flatMap: child =>
             if child.getName == "tr" then Seq(child)
-            else child.getChildren.flatMap(_.asElement).filter(_.getName == "tr").toSeq
+            else child.getChildren.flatMap(_.asElement).filter(_.getName == "tr")
           val items: Seq[Xml.Element] = rows.map: tr =>
             val cells: Seq[Xml.Element] =
-              tr.getChildren.flatMap(_.asElement).filter(_.getName == "td").toSeq
-            Xml.element("li").setChildren(cells.lift(1).fold(Chunk.empty[Xml.Node])(_.getChildren))
-          Xml.element("ol").setChildren(Chunk.from(items))
+              tr.getChildren.flatMap(_.asElement).filter(_.getName == "td")
+            Xml.element("li").setChildren(cells.lift(1).fold(Seq.empty[Xml.Node])(_.getChildren))
+          Xml.element("ol").setChildren(items)
       innerOl.orElse(fromTable).fold(element)(_.add(Callout.ListClass))
 
   // Asciidoctor: <div class="dlist glossary"><dl> sibling dt/dd.
@@ -490,7 +489,8 @@ object AsciiDocMarkup extends Markup(
         // after the 'a' child
         var body: Xml.Nodes = element
           .getChildren
-          .dropUntil(_.asElement.isDefined)
+          .dropWhile(_.asElement.isEmpty)
+          .tail
 
         body.head.asText.foreach: text => 
           if text.startsWith(".") then

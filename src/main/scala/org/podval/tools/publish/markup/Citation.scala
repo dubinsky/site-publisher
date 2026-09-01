@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, HtmlXmlDialect, Xml, XmlAttribute}
-import zio.blocks.chunk.Chunk
 
 object Citation:
   object CiteClass extends HtmlClass("citation")
@@ -45,7 +44,7 @@ object Citation:
       .element("span")
       .add(CiteClass)
       .set(ModeAttr, mode.attr)
-      .setChildren(Chunk.from(items.map(itemToElement)))
+      .setChildren(items.map(itemToElement))
 
   def listPlaceholder: Xml.Element =
     Xml.element("div").add(ListClass)
@@ -67,9 +66,8 @@ object Citation:
           locator = item.get(LocatorAttr).filter(_.nonEmpty)
         )
       .filter(_.key.nonEmpty)
-      .toSeq
 
-  def gather(xml: Xml.Element): Chunk[Xml.Element] =
+  def gather(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(isCite(element))(element))
 
   def isBibKey(token: String): Boolean =
