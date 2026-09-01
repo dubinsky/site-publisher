@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Strings
-import org.podval.xml.{HtmlAttribute, HtmlClass, HtmlElement, Xml}
+import org.podval.xml.{HtmlClass, HtmlElement, Xml, XmlAttribute}
 import zio.blocks.chunk.Chunk
 
 /** Markup-neutral PDF embed IR. CSS styles only these classes.
@@ -66,7 +66,7 @@ object PdfEmbed:
     make(src, label, height)
 
   private def openLink(href: String, label: String): Xml.Element =
-    Xml.element(HtmlElement.A).set(HtmlAttribute.Href, href).setText(s"Open PDF: $label")
+    Xml.element(HtmlElement.A).set(XmlAttribute.Href, href).setText(s"Open PDF: $label")
 
   private def parseParams(fragment: Option[String]): Map[String, String] =
     fragment.toList

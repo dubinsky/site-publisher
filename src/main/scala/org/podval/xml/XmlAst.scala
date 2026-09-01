@@ -164,9 +164,9 @@ trait XmlAst[ELEMENT]:
       then element
       else element.setId(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
     
-    def getHref: Option[String] = get(HtmlAttribute.Href)
+    def getHref: Option[String] = get(XmlAttribute.Href)
     
-    def setHref(value: String): Element = set(HtmlAttribute.Href, value)
+    def setHref(value: String): Element = set(XmlAttribute.Href, value)
 
   // HTML 'class' attribute
   extension (element: Element)

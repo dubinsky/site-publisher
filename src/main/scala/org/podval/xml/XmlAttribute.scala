@@ -8,4 +8,6 @@ object XmlAttribute:
 
   object Xmlns extends XmlAttribute("xmlns"):
     def apply(ns: String): XmlAttribute = XmlAttribute(s"$name:$ns")
-    
+
+  object Href extends XmlAttribute("href")
+  
