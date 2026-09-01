@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAttribute}
+import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
 import zio.blocks.chunk.Chunk
 
@@ -256,7 +256,7 @@ object DocBookMarkup extends Markup(
     val id: Option[String] =
       xmlId(entry).orElse(term.flatMap(xmlId)).orElse:
         val text: String = dt.getText.trim
-        Option.when(text.nonEmpty)(Xml.toId(text))
+        Option.when(text.nonEmpty)(XmlUtil.toId(text))
     Glossary.item(id, Chunk.from(dt +: dd.toSeq))
 
   private def convertVariableList(element: Xml.Element): Xml.Element =

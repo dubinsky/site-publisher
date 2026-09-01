@@ -184,7 +184,7 @@ object MarkdownMarkup extends Markup(
     val term: Xml.Element = if fromDt.isEmpty then dt else dt.setId("")
     val id: Option[String] = fromDt.orElse:
       val text: String = term.getText.trim
-      Option.when(text.nonEmpty)(Xml.toId(text))
+      Option.when(text.nonEmpty)(XmlUtil.toId(text))
     (id, term)
 
   // Note: without FootnotesExtension, FlexMark treats footnotes as links,

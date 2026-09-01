@@ -9,6 +9,8 @@ given Xml: XmlAst[XML.Element]:
 
   override def text(text: String): Node = XML.Text(text)
 
+  override def cdata(text: String): Node = XML.CData(text)
+
   override def element(name: String): Element = XmlBuilder.element(name).build
 
   extension (node: Node)
@@ -20,6 +22,10 @@ given Xml: XmlAst[XML.Element]:
       case XML.Text(value) => Some(value)
       case _ => None
 
+    override def asCData: Option[String] = node match
+      case XML.CData(value) => Some(value)
+      case _ => None
+    
     override def asAtom: Option[String] = node match
       case XML.Text(value) => Some(value)
       case XML.CData(value) => Some(value)

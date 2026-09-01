@@ -3,6 +3,8 @@ package org.podval.xml
 import zio.blocks.chunk.Chunk
 
 object XmlUtil:
+  def toId(text: String): String = text.trim.replace(' ', '-')
+
   def convertText(
     element: Xml.Element,
     converter: String => Xml.Nodes

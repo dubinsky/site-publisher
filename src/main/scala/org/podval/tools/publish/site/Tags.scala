@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
+import org.podval.xml.{Html, XmlUtil}
 import zio.blocks.html.*
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
@@ -27,7 +27,7 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
 
   def tagRef(tag: String): Html.Element = a(
     className := "page-tag",
-    href := s"$path#${Html.toId(tag)}",
+    href := s"$path#${XmlUtil.toId(tag)}",
     Icon.tag.html,
     tag
   )
@@ -39,7 +39,7 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
       h2("Pages by tags"),
       ul(tagsAll.map(tag =>
         li(
-          h3(className := "page-tag", id := Html.toId(tag), tag),
+          h3(className := "page-tag", id := XmlUtil.toId(tag), tag),
           Page.pageList(withTag(tag), cls = Some("post-link"))
         )
       ))

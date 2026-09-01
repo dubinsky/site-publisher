@@ -405,7 +405,7 @@ object TeiMarkup extends Markup(
       val id: Option[String] =
         xmlId(label).orElse(item.flatMap(xmlId)).orElse:
           val text: String = dt.getText.trim
-          Option.when(text.nonEmpty)(Xml.toId(text))
+          Option.when(text.nonEmpty)(XmlUtil.toId(text))
       result = result :+ Glossary.item(id, Chunk.from(dt +: dd.toSeq))
 
     nodes.foreach: node =>

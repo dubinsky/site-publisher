@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{HtmlClass, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
 
 final class Section(
@@ -62,7 +62,7 @@ object Section:
     if is(result) then
       if result.getId.isEmpty then
         val title: Option[String] = heading(result).map(headingText)
-        result = result.setId(title.map(Xml.toId).getOrElse(ids.generate()))
+        result = result.setId(title.map(XmlUtil.toId).getOrElse(ids.generate()))
       result = addPermalink(result)
     result
 

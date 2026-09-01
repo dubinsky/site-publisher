@@ -9,6 +9,8 @@ given Html: XmlAst[XML.Element]:
   
   override def text(text: String): Node = XML.text(text)
 
+  override def cdata(text: String): Node = Html.text(XmlEncode.escape(text))
+
   override def element(name: String): Element = XML.Element.Generic(
     tag = name,
     children = Chunk.empty,
@@ -19,6 +21,8 @@ given Html: XmlAst[XML.Element]:
     override def asElement: Option[Element] = node match
       case element: XML.Element => Some(element)
       case _ => None
+
+    override def asCData: Option[String] = None
 
     override def asText: Option[String] = node.asAtom
 

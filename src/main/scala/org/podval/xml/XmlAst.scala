@@ -16,24 +16,26 @@ trait XmlAst[ELEMENT]:
   final type Nodes = Chunk[Node]
 
   def text(text: String): Node
+  
+  def cdata(text: String): Node
 
   final def element(elem: XmlElement): Element = element(elem.name)
 
   def element(name: String): Element
 
   // Concatenate only: text nodes already carry author whitespace. Joining with a space
-  // put a gap before punctuation after inline markup (`</persName>,` → "е ,").
+  // puts a gap before punctuation after inline markup (`</persName>,` → "е ,").
   final def toString(nodes: Nodes): String = nodes.map(_.getText).mkString
-
-  final def toId(text: String): String = text.trim.replace(' ', '-')
-
+  
   // Conversions
   extension (node: Node)
     def asElement: Option[Element]
     
     def asAtom: Option[String]
-    
+
     def asText: Option[String]
+    
+    def asCData: Option[String]
 
     def isWhitespace: Boolean = node.asAtom.exists(_.trim.isEmpty)
 
