@@ -1,9 +1,9 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, EntityLists as EntityListSpecs,
-  Footnote, Ids, PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks}
+import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
+  TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
-import org.podval.xml.{Html, Xml, Xml2Html}
+import org.podval.xml.{Html, Xml, XmlUtil}
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
 sealed abstract class Content:
@@ -161,7 +161,7 @@ final class StoreContent(
     isTerminal: Boolean
   ): Option[Html.Element] =
     if !isCollection then None
-    else Some(Xml2Html.fromXml(CollectionIndex.generate(pageContent.source.page, this)))
+    else Some(XmlUtil.xml2html(CollectionIndex.generate(pageContent.source.page, this)))
 
   def bind(
     page: MarkupPage,
@@ -239,7 +239,7 @@ final class EntityListsContent(
   ): Option[Html.Element] =
     // Hrefs are already published paths / intrapage `#id`; do not mark-and-resolve
     // (`#jews` would lose the fragment because index `xml` has no ids).
-    Some(Xml2Html.fromXml(EntityLists.generate(pageContent.source.page, index)))
+    Some(XmlUtil.xml2html(EntityLists.generate(pageContent.source.page, index)))
 
   def listPages(
     directory: DirectoryPage,

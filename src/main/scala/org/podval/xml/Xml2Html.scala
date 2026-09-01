@@ -9,15 +9,8 @@ object Xml2Html:
   //   too, so it is renamed (`tei-p`). TEI `div` stays `div`.
   private val reservedHtmlElements: Set[String] = Set("head", "body", "title", "p")
 
-  // Note: I do not see any reason to recognize elements (like 'script') or attributes (like 'hidden')...
-  def fromXml(element: Xml.Element): Html.Element = Html
-    .element(element.getName)
-    .setAttributes(element.getAttributes)
-    .setChildren(element.getChildren.flatMap: child =>
-      // ZIO Blocks HTML does not support comments nor processing instructions
-      child.asElement.map(fromXml)
-        .orElse(child.asAtom.map(Html.text))
-    )
+  private val reservedAttributes: Set[String] = Set("class", "target", "lang", "frame")
+
 
 /*
 I tried to define CSS namespaces like this:
@@ -40,7 +33,7 @@ final class Xml2Html(prefix: String):
   def convert(element: Xml.Element): Xml.Element =
     val attributesConverted: Xml.Element = element.setAttributes(element.getAttributes.map((name, value) =>
       val nameNew: String =
-        if !HtmlAttribute.reservedAttributes.contains(name)
+        if !Xml2Html.reservedAttributes.contains(name)
         then name
         else withPrefix(name)
       (nameNew, value)

@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.EntityLists as EntityListSpecs
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml2Html}
+import org.podval.xml.{Html, XmlUtil}
 import zio.blocks.html.*
 
 final class EntityListPage(
@@ -32,4 +32,4 @@ final class EntityListPage(
   override def next: Option[Page] = siblingsVar.dropWhile(_ != this).drop(1).headOption
 
   override protected def syntheticContent: Html.Element =
-    Xml2Html.fromXml(EntityLists.listXml(spec, members, withHead = false, jump = None))
+    XmlUtil.xml2html(EntityLists.listXml(spec, members, withHead = false, jump = None))
