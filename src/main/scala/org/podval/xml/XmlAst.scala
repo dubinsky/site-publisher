@@ -158,6 +158,7 @@ trait XmlAst[ELEMENT]:
     def getId: Option[String] = get(XmlAttribute.Id)
 
     def setId(value: String): Element = set(XmlAttribute.Id, value)
+    
     def setId(value: Option[String]): Element = set(XmlAttribute.Id, value)
 
     def copyXmlId: Element =
