@@ -1,0 +1,4 @@
+<Languages xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="language-ru.xml"/>
+  <Language ident="he"/>
+</Languages>

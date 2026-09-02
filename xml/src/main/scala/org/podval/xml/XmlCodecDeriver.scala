@@ -344,7 +344,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         idx += 1
 
       if extrasIndex >= 0 then
-        val leftoverAttrs: Seq[(String, String)] = attrs.iterator.filterNot((key, _) => isXmlns(key)).toSeq
+        val leftoverAttrs: Seq[(String, String)] = attrs.iterator.filterNot((key, _) => isIgnoredLeftoverAttribute(key)).toSeq
         val hasTextField: Boolean = fieldInfos.exists(_.kind == FieldKind.Text)
         val leftoverNodes: Seq[XmlNode] = nodes.zipWithIndex.flatMap: (node, nodeIdx) =>
           val leftoverElement: Boolean = available.contains(nodeIdx)
@@ -352,7 +352,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
           if leftoverElement || leftoverText then XmlNode.fromNode(using ast)(node) else None
         store(regs, fieldInfos(extrasIndex).offset, 0, XmlExtras(leftoverAttrs, leftoverNodes))
       else
-        val leftoverAttrs: Seq[String] = attrs.keys.iterator.filterNot(isXmlns).toSeq
+        val leftoverAttrs: Seq[String] = attrs.keys.iterator.filterNot(isIgnoredLeftoverAttribute).toSeq
         if leftoverAttrs.nonEmpty then throw XmlError(s"Unparsed attributes: ${leftoverAttrs.mkString(", ")}")
         val leftoverElements: Seq[String] = nodes.zipWithIndex.flatMap: (node, nodeIdx) =>
           if available.contains(nodeIdx) then node.asElement.map(ast.getName) else None
@@ -556,6 +556,10 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
     if colon < 0 then name else name.substring(colon + 1)
 
   private def isXmlns(name: String): Boolean = name == "xmlns" || name.startsWith("xmlns:")
+
+  /** `xmlns*` is not content. `xml:base` is written by XInclude on included roots. */
+  private def isIgnoredLeftoverAttribute(name: String): Boolean =
+    isXmlns(name) || name == XmlAttribute.XmlBase.name
 
   private def configValue(modifiers: Seq[Modifier], key: String): Option[String] =
     modifiers.collectFirst { case Modifier.config(`key`, value) => value }

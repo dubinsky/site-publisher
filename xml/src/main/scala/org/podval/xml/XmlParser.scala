@@ -70,7 +70,16 @@ object XmlParser:
     name: String,
     codec: XmlCodec[A]
   ): Either[Throwable, Seq[A]] =
-    parseResource(loader, resource).flatMap: root =>
+    parseCatalog(loader, resource, name, codec, xinclude = false)
+
+  def parseCatalog[A](
+    loader: Class[?],
+    resource: String,
+    name: String,
+    codec: XmlCodec[A],
+    xinclude: Boolean
+  ): Either[Throwable, Seq[A]] =
+    parseResource(loader, resource, xinclude).flatMap: root =>
       codec.decodeCatalog(root, name).left.map(e => e: Throwable)
 
   def parseHtml(content: String): Either[Throwable, Xml.Element] =

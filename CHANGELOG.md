@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- xml: leftover checks ignore `xml:base` (XInclude writes it on included roots)
+- xml: `parseCatalog` can expand XInclude (Tanach.xml includes the chumash books)
 - xml: ignore comments, PIs, and text outside the document element (catalog files with a prologue comment)
 - xml: `XmlCodec.decodeCatalog` / `XmlParser.parseCatalog` load a named wrapper and decode each child (Selector catalog uses it)
 - xml: `XmlParser` loads from URL, file, and classpath; XInclude is off by default (store `xi:include` stays a page ref); `xinclude = true` expands includes and sets `xml:base` relative to the initial document

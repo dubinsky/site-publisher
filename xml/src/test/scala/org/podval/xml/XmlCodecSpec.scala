@@ -137,6 +137,12 @@ final class XmlCodecSpec extends AnyFunSuite:
     assert(result.isLeft)
   }
 
+  test("xml:base is not a leftover attribute") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val decoded: Language = codec.decode(parse("""<Language ident="ru" xml:base="x.xml"/>""")).toOption.get
+    assert(decoded.ident == "ru")
+  }
+
   test("parseCatalog loads a classpath catalog") {
     val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
     val decoded: Seq[Language] = XmlParser.parseCatalog(
@@ -144,6 +150,29 @@ final class XmlCodecSpec extends AnyFunSuite:
       "languages.xml",
       "Languages",
       codec
+    ).toOption.get
+    assert(decoded.map(_.ident) == Seq("ru", "he"))
+  }
+
+  test("parseCatalog does not expand XInclude by default") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val result: Either[Throwable, Seq[Language]] = XmlParser.parseCatalog(
+      classOf[XmlCodecSpec],
+      "languages-include.xml",
+      "Languages",
+      codec
+    )
+    assert(result.isLeft)
+  }
+
+  test("parseCatalog expands XInclude") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val decoded: Seq[Language] = XmlParser.parseCatalog(
+      classOf[XmlCodecSpec],
+      "languages-include.xml",
+      "Languages",
+      codec,
+      xinclude = true
     ).toOption.get
     assert(decoded.map(_.ident) == Seq("ru", "he"))
   }
