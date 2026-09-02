@@ -59,10 +59,23 @@ object XmlParser:
       case None => Left(XmlError(s"Resource not found: $name"))
       case Some(url) => parseXml(url, xinclude)
 
+  /** Class simple name without a trailing `$` (`Selector$` → `Selector`). */
+  def className(loader: Class[?]): String = loader.getSimpleName.replace("$", "")
+
   /** Parse a catalog resource: wrapper `name`, each child decoded with `codec`. */
   def parseCatalog[A](resource: String, name: String, codec: XmlCodec[A]): Either[Throwable, Seq[A]] =
     parseResource(resource).flatMap: root =>
       codec.decodeCatalog(root, name).left.map(e => e: Throwable)
+
+  def parseCatalog[A](loader: Class[?], codec: XmlCodec[A]): Either[Throwable, Seq[A]] =
+    parseCatalog(loader, codec, xinclude = false)
+
+  def parseCatalog[A](loader: Class[?], codec: XmlCodec[A], xinclude: Boolean): Either[Throwable, Seq[A]] =
+    val name: String = className(loader)
+    parseCatalog(loader, s"$name.xml", name, codec, xinclude)
+
+  def parseCatalog[A](loader: Class[?], name: String, codec: XmlCodec[A]): Either[Throwable, Seq[A]] =
+    parseCatalog(loader, s"$name.xml", name, codec, xinclude = false)
 
   def parseCatalog[A](
     loader: Class[?],
@@ -81,6 +94,20 @@ object XmlParser:
   ): Either[Throwable, Seq[A]] =
     parseResource(loader, resource, xinclude).flatMap: root =>
       codec.decodeCatalog(root, name).left.map(e => e: Throwable)
+
+  /** Like [[parseCatalog]] but throws. Catalog file and wrapper name come from
+    * `from.getClass` (`Foo` → `Foo.xml` / `<Foo>`). */
+  def loadCatalog[A](from: AnyRef, codec: XmlCodec[A]): Seq[A] =
+    unwrap(parseCatalog(from.getClass, codec))
+
+  def loadCatalog[A](from: AnyRef, codec: XmlCodec[A], xinclude: Boolean): Seq[A] =
+    unwrap(parseCatalog(from.getClass, codec, xinclude))
+
+  def loadCatalog[A](from: AnyRef, name: String, codec: XmlCodec[A]): Seq[A] =
+    unwrap(parseCatalog(from.getClass, name, codec))
+
+  private def unwrap[A](result: Either[Throwable, Seq[A]]): Seq[A] =
+    result.fold(error => throw error, identity)
 
   def parseHtml(content: String): Either[Throwable, Xml.Element] =
     XmlParserSax.parse(reader = HtmlTagSoup.reader, content = content)

@@ -143,6 +143,11 @@ final class XmlCodecSpec extends AnyFunSuite:
     assert(decoded.ident == "ru")
   }
 
+  test("className strips a trailing $") {
+    assert(XmlParser.className(classOf[XmlCodecSpec]) == "XmlCodecSpec")
+    assert(XmlParser.className(XmlParser.getClass) == "XmlParser")
+  }
+
   test("parseCatalog loads a classpath catalog") {
     val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
     val decoded: Seq[Language] = XmlParser.parseCatalog(

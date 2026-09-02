@@ -35,5 +35,4 @@ object Selector:
   lazy val all: Seq[Selector] = load()
 
   private def load(): Seq[Selector] =
-    XmlParser.parseCatalog(classOf[Selector], "Selector.xml", "Selector", codec)
-      .fold(error => throw error, identity)
+    XmlParser.loadCatalog(this, codec)
