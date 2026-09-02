@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 /** Markup-neutral aside IR. CSS styles only these classes.
   * Untyped auxiliary content (`<aside class="aside">`), optional title. */
@@ -20,7 +19,7 @@ object Aside:
     Xml
       .element("aside")
       .add(Class)
-      .setChildren(Chunk.from(titleElement.toSeq) ++ body.filterNot(_.isWhitespace))
+      .setChildren(titleElement.toSeq ++ body.filterNot(_.isWhitespace))
 
   def normalize(element: Xml.Element): Xml.Element =
     if element.getName != "aside" || is(element)

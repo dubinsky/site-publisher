@@ -4,7 +4,6 @@ import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml, XmlAttribute}
-import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
 object Sitemap:
@@ -26,7 +25,7 @@ final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
     .set(XmlAttribute.Xmlns("xsi"), "http://www.w3.org/2001/XMLSchema-instance")
     .set("xsi:schemaLocation", "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd")
     .set(XmlAttribute.Xmlns, "http://www.sitemaps.org/schemas/sitemap/0.9")
-    .setChildren(Chunk.from(urls))
+    .setChildren(urls)
 
   private def urls: List[Xml.Element] = site
     .pages
@@ -39,4 +38,4 @@ final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
         Xml.element("lastmod").setText(date.toString)
       Xml
         .element("url")
-        .setChildren(Chunk.from(Seq(loc) ++ lastmod.toSeq))
+        .setChildren(Seq(loc) ++ lastmod.toSeq)

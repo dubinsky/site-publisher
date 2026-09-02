@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 final class Tip(prefix: String):
   object RefClass extends HtmlClass(s"$prefix-ref")
@@ -22,7 +21,7 @@ final class Tip(prefix: String):
     Xml
       .element("span")
       .add(RefClass)
-      .setChildren(Chunk(wrappedLink, tip))
+      .setChildren(Seq(wrappedLink, tip))
 
   def isRef(element: Xml.Element): Boolean = element.has(RefClass)
 

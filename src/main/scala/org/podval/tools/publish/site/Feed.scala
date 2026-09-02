@@ -3,7 +3,6 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, HtmlXmlDialect, Xml, XmlAttribute, XmlEncode}
-import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 import java.time.{Instant, LocalTime, ZoneId}
 import scala.util.Try
@@ -62,7 +61,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
       el("updated", updated),
       Xml
         .element("author")
-        .setChildren(Chunk(
+        .setChildren(Seq(
           el("name", site.config.author),
           el("email", site.config.email)
         ))
@@ -71,9 +70,9 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
     Xml
       .element("feed")
       .set(XmlAttribute.Xmlns, "http://www.w3.org/2005/Atom")
-      .setChildren(Chunk.from(
+      .setChildren(
         prologue ++ posts.map(entry)
-      ))
+      )
   
   private def entry(page: Page): Xml.Element =
     val url: String = absoluteUrl(page.publishedPath)
@@ -86,7 +85,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
 
     Xml
       .element("entry")
-      .setChildren(Chunk.from(
+      .setChildren(
         Seq(
           el("title", page.title).set("type", "html"),
           link(
@@ -100,7 +99,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           el("id", absoluteUrl(page.publishedPath.withoutHtml)),
           Xml
             .element("author")
-            .setChildren(Chunk(el("name", author(page))))
+            .setChildren(Seq(el("name", author(page))))
         ) ++
           tags(page).map(tag => Xml.element("category").set("term", tag)) ++
           //<![CDATA[ Years ago, I wrote a piece on the sbt build tool: [[2011-11-08-sbt-why]]. Although I dislike how sbt works (and since I looked at the sbt internals I dislike it even more), my main complaint was not about how, but about the fact that sbt exists at all. ]]>
@@ -119,7 +118,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
               )
             case _ => None    
           ).toSeq
-      ))
+      )
   
   private def author(page: Page): String =
     page.asFullMarkupPage.flatMap(_.author).getOrElse(site.config.author)

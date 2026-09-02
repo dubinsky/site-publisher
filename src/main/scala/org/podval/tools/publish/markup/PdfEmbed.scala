@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
-import zio.blocks.chunk.Chunk
 
 /** Markup-neutral PDF embed IR. CSS styles only these classes.
   * Wrapper `div.pdf-embed`: `<object type="application/pdf">` (inner fallback link)
@@ -31,9 +30,9 @@ object PdfEmbed:
       .set("data", href)
       .set("type", PdfType)
       .set("aria-label", text)
-      .setChildren(Chunk(openLink(href, text)))
-    val sibling: Xml.Element = Xml.element("p").add(LinkClass).setChildren(Chunk(openLink(href, text)))
-    val wrapper: Xml.Element = Xml.element("div").add(Class).setChildren(Chunk(objectElement, sibling))
+      .setChildren(Seq(openLink(href, text)))
+    val sibling: Xml.Element = Xml.element("p").add(LinkClass).setChildren(Seq(openLink(href, text)))
+    val wrapper: Xml.Element = Xml.element("div").add(Class).setChildren(Seq(objectElement, sibling))
     height.map(_.trim).filter(_.nonEmpty).fold(wrapper): raw =>
       wrapper.set("style", s"$HeightVar: ${cssHeight(raw)}")
 

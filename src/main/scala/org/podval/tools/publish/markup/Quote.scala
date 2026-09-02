@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 /** Markup-neutral quote IR. CSS styles only these classes.
   * `<blockquote class="quote">`, optional title and attribution. */
@@ -33,9 +32,9 @@ object Quote:
       .element("blockquote")
       .add(Class)
       .setChildren(
-        Chunk.from(titleElement.toSeq) ++
+        titleElement.toSeq ++
         body.filterNot(_.isWhitespace) ++
-        Chunk.from(attributionElement.toSeq)
+        attributionElement.toSeq
       )
 
   def normalize(element: Xml.Element): Xml.Element =

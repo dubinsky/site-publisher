@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 /** TEI `pb` harvested from the raw tree for collection `Страницы`, missing-photo notes, and facsimile JPEGs. */
 final class Pb(
@@ -31,7 +30,7 @@ object Pb:
       .add(Class)
       .set("title", "Facsimile")
       .set("target", "facsimile")
-      .setChildren(Chunk(Icon.images.xml: Xml.Node))
+      .setChildren(Seq(Icon.images.xml: Xml.Node))
     n.foreach: n =>
       result = result
         .setId(pageId(n))

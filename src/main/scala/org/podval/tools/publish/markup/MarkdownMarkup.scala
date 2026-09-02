@@ -2,8 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
-import zio.blocks.chunk.Chunk
-
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -62,7 +60,7 @@ object MarkdownMarkup extends Markup(
       var result: Xml.Element = element
       result = MarkdownWikiBlock.convert(result, errorReporter).getOrElse(result)
       if !result.isA then
-        result = XmlUtil.convertText(result, MarkdownWikiLink.convert(Chunk.empty, _))
+        result = XmlUtil.convertText(result, MarkdownWikiLink.convert(Seq.empty, _))
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
@@ -101,7 +99,7 @@ object MarkdownMarkup extends Markup(
     for
       first <- children.headOption.flatMap(_.asElement).filter(_.getName == "p")
       (typeName, fold, title, firstBody) <- splitObsidianMarker(first)
-    yield Admonition.make(typeName, title, firstBody ++ Chunk.from(children.tail), fold)
+    yield Admonition.make(typeName, title, firstBody ++ children.tail, fold)
 
   private def splitObsidianMarker(
     paragraph: Xml.Element
@@ -120,8 +118,8 @@ object MarkdownMarkup extends Markup(
             if afterNewline.isEmpty then Nil else List(Xml.text(afterNewline))
           dropLeadingBreaks(fromText ++ nodes.tail)
         val firstBody: Xml.Nodes =
-          if leftover.isEmpty then Chunk.empty
-          else Chunk(paragraph.setChildren(Chunk.from(leftover)))
+          if leftover.isEmpty then Seq.empty
+          else Seq(paragraph.setChildren(leftover))
         (typeName, fold, title, firstBody)
 
   @tailrec
@@ -163,7 +161,7 @@ object MarkdownMarkup extends Markup(
           result = result :+ (if isGlossary then convertDl(dl) else dl)
         case None =>
           result = result :+ node
-    Chunk.from(result)
+    result
 
   private def consumeGlossaryMarker(
     dl: Xml.Element,
@@ -274,7 +272,7 @@ object MarkdownMarkup extends Markup(
       .flatMap(_.asElement.filter(_.getName == "p"))
     val significant: Int = body.count(node => !node.isWhitespace)
     if paras.isEmpty || paras.length != significant then body
-    else paras.map(_.getChildren).reduce((a, b) => a ++ Chunk(Xml.text(" ")) ++ b)
+    else paras.map(_.getChildren).reduce((a, b) => a ++ Seq(Xml.text(" ")) ++ b)
 
   // Top-level children of the Markdown wrapper only: not lists, quotes, or code.
   // First match wins (`insertToc` also replaces only the first placeholder).

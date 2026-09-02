@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlClass, Xml, XmlUtil}
-import zio.blocks.chunk.Chunk
 
 final class Section(
   val id: String,
@@ -96,14 +95,14 @@ object Section:
       .setHref(href)
       .set("aria-hidden", "true")
     val children: Xml.Nodes =
-      if containsAnchor(header) then Chunk(anchor) ++ header.getChildren
+      if containsAnchor(header) then Seq(anchor) ++ header.getChildren
       else
         val link: Xml.Element = Xml
           .element("a")
           .add(LinkClass)
           .setHref(href)
           .setChildren(header.getChildren)
-        Chunk(anchor, link)
+        Seq(anchor, link)
     header.setChildren(children)
 
   private def containsAnchor(element: Xml.Element): Boolean =
