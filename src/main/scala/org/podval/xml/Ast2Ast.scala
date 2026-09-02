@@ -4,19 +4,19 @@ package org.podval.xml
 // when converting to Html...
 // ZIO Blocks HTML does not support comments nor processing instructions
 abstract class Ast2Ast[FromElement, ToElement](from: XmlAst[FromElement], to: XmlAst[ToElement]):
-  def convert(element: from.Element): to.Element =
-    var result: to.Element = to.element(from.getName(element))
-    result = to.setAttributes(result)(from.getAttributes(element))
-    result = to.setChildren(result)(convertChildren(from.getChildren(element)))
-    result
+  def convert(element: FromElement): ToElement =
+    val named: ToElement = to.element(from.getName(element))
+    val attributed: ToElement = to.setAttributes(named)(from.getAttributes(element))
+    to.setChildren(attributed)(convertChildren(from.getChildren(element)))
 
-  private def convertChildren(children: from.Nodes): to.Nodes = children
-    .foldLeft(Seq.empty[to.Node]): (acc, child) =>
-      child.asElement.map(convert)
-        .orElse(child.asAtom.map(to.text))
-        .fold(acc)(acc :+ _)
+  private def convertChildren(children: from.Nodes): to.Nodes =
+    val buf = List.newBuilder[to.Node]
+    children.foreach: child =>
+      from.asElement(child).map(convert)
+        .orElse(from.asCData(child).map(to.cdata))
+        .orElse(from.asAtom(child).map(to.text))
+        .foreach(node => buf += node)
+    buf.result()
 
 object Ast2Ast:
-  object Xml2Html extends Ast2Ast(Xml, Html)
-  
-  
+  object XmlToHtml extends Ast2Ast(Xml, Html)

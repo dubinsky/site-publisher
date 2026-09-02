@@ -1,7 +1,7 @@
 package org.podval.xml
 
 object XmlUtil:
-  def xml2html(element: Xml.Element): Html.Element = Ast2Ast.Xml2Html.convert(element)
+  def xml2html(element: Xml.Element): Html.Element = Ast2Ast.XmlToHtml.convert(element)
   
   def toId(text: String): String = text.trim.replace(' ', '-')
 

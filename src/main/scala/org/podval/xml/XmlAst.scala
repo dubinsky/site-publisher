@@ -4,7 +4,7 @@ package org.podval.xml
 // abstracts over the underlying representation:
 // - ZIO Blocks XML
 // - ZIO Blocks HTML
-// - potentially Scala XML
+// - Scala XML
 // - potentially DOM
 trait XmlAst[ELEMENT]:
   final type Element = ELEMENT
@@ -118,11 +118,6 @@ trait XmlAst[ELEMENT]:
       stopAtCode: Boolean = true
     ): Seq[A] =
       element.gatherWithContext(gatherElement, _ => true, stopAtCode)
-
-  // For ScalaXML, I had to deal with the namespace, and had getAttributes(parent) parameter:
-  //    val parentNamespaces: Seq[Namespace] = parent.fold[Seq[Namespace]](Seq.empty)(Namespace.getAll)
-  //    Namespace.getAll(element).filterNot(parentNamespaces.contains).map(_.attributeValue) ++
-  //    Attribute.get(element).filterNot(_.value.isEmpty)
 
   // Attributes
   extension (element: Element)
