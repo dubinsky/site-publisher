@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlUtil}
-import zio.blocks.chunk.Chunk
 import scala.annotation.tailrec
 
 object MarkdownCite:
@@ -9,7 +8,7 @@ object MarkdownCite:
     val converted: Xml.Element =
       if isBibliographyFence(element)
       then Citation.listPlaceholder
-      else XmlUtil.convertText(element, convert(Chunk.empty, _))
+      else XmlUtil.convertText(element, convert(Seq.empty, _))
     converted.setChildren(converted.getChildren.map(child =>
       child.asElement.fold(child)(convertElement)
     ))
@@ -18,7 +17,7 @@ object MarkdownCite:
     element.getName == "p" && element.getText.trim == ":::bibliography"
 
   @tailrec
-  def convert(result: Chunk[Xml.Node], text: String): Xml.Nodes =
+  def convert(result: Xml.Nodes, text: String): Xml.Nodes =
     if text.isEmpty then result
     else
       val bracket: Int = text.indexOf("[@")
@@ -34,7 +33,7 @@ object MarkdownCite:
         else if narrative == -1 || nextBracket <= narrative then
           (nextBracket, if text.startsWith("[-@", nextBracket) then Kind.Suppress else Kind.Parenthetical)
         else (narrative, Kind.Narrative)
-      if start == -1 then result ++ Chunk(Xml.text(text))
+      if start == -1 then result ++ Seq(Xml.text(text))
       else
         val before: String = text.substring(0, start)
         val (cite, after) = kind match
@@ -53,7 +52,7 @@ object MarkdownCite:
               val items: Seq[Citation.Item] = parseBracket(inner)
               (Citation.cite(mode, items), text.substring(close + 1))
         convert(
-          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Chunk(cite),
+          result ++ Option.when(before.nonEmpty)(Xml.text(before)).toSeq ++ Seq(cite),
           after
         )
 

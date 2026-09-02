@@ -11,7 +11,6 @@ trait XmlAst[ELEMENT]:
 
   type Node >: Element
 
-  // TODO replace Seq[Node] with Nodes throughout
   final type Nodes = Seq[Node]
 
   def text(text: String): Node

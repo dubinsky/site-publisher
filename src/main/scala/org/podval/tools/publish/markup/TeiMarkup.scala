@@ -210,7 +210,7 @@ object TeiMarkup extends Markup(
       val body: Xml.Nodes =
         children.filterNot: node =>
           heads.exists(_ eq node) || (heads.isEmpty && descs.exists(_ eq node))
-      val caption: Seq[Xml.Node] = captionSource.flatMap: node =>
+      val caption: Xml.Nodes = captionSource.flatMap: node =>
         node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace).toSeq)
       Figure.make(caption, body).setId(xmlId(element))
 
@@ -388,7 +388,7 @@ object TeiMarkup extends Markup(
         .add(Glossary.ListClass)
 
   private def groupGlossEntries(nodes: Xml.Nodes): Xml.Nodes =
-    var result: List[Xml.Node] = Nil
+    var result: Xml.Nodes = Nil
     var pendingLabel: Option[Xml.Element] = None
 
     def asDt(label: Xml.Element): Xml.Element =

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 /** Markup-neutral figure IR. CSS styles only these classes.
   * `<figure class="figure">`, optional `figcaption.figure-caption`. */
@@ -18,15 +17,15 @@ object Figure:
   def make(caption: Option[String], body: Xml.Nodes): Xml.Element =
     make(caption.map(_.trim).filter(_.nonEmpty).map(Xml.text).toSeq, body)
 
-  def make(caption: Seq[Xml.Node], body: Xml.Nodes): Xml.Element =
+  def make(caption: Xml.Nodes, body: Xml.Nodes): Xml.Element =
     val captionElement: Option[Xml.Element] =
       Option.when(caption.nonEmpty)(
-        Xml.element("figcaption").add(CaptionClass).setChildren(Chunk.from(caption))
+        Xml.element("figcaption").add(CaptionClass).setChildren(caption)
       )
     Xml
       .element("figure")
       .add(Class)
-      .setChildren(body.filterNot(_.isWhitespace) ++ Chunk.from(captionElement.toSeq))
+      .setChildren(body.filterNot(_.isWhitespace) ++ captionElement.toSeq)
 
   def normalize(element: Xml.Element): Xml.Element =
     if element.getName == "figure" then
@@ -51,7 +50,7 @@ object Figure:
       if isStandaloneImage(only)
     yield
       val (caption: Option[String], body: Xml.Element) = takeTitle(only)
-      make(caption, Chunk(body))
+      make(caption, Seq(body))
 
   private def isStandaloneImage(element: Xml.Element): Boolean =
     element.getName == "img" ||

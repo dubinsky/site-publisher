@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
 import zio.blocks.chunk.Chunk
+
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -12,7 +13,9 @@ import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
+
 import java.io.File
+import scala.annotation.tailrec
 
 object MarkdownMarkup extends Markup(
   name = "Markdown",
@@ -45,7 +48,7 @@ object MarkdownMarkup extends Markup(
     .build
 
   // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
-  def parseAndRenderMarkdown(content: String): String = renderer.render(parser.parse(content))
+  private def parseAndRenderMarkdown(content: String): String = renderer.render(parser.parse(content))
 
   override def xmlContent(content: String, sourceFile: File): String =
     // Wrap Markdown rendered as HTML in a 'div'.
@@ -94,7 +97,7 @@ object MarkdownMarkup extends Markup(
     else obsidianAdmonition(element).getOrElse(element)
 
   private def obsidianAdmonition(quote: Xml.Element): Option[Xml.Element] =
-    val children: List[Xml.Node] = quote.getChildren.filterNot(_.isWhitespace).toList
+    val children: Xml.Nodes = quote.getChildren.filterNot(_.isWhitespace).toList
     for
       first <- children.headOption.flatMap(_.asElement).filter(_.getName == "p")
       (typeName, fold, title, firstBody) <- splitObsidianMarker(first)
@@ -103,7 +106,7 @@ object MarkdownMarkup extends Markup(
   private def splitObsidianMarker(
     paragraph: Xml.Element
   ): Option[(String, Option[Boolean], Option[String], Xml.Nodes)] =
-    val nodes: List[Xml.Node] = paragraph.getChildren.toList
+    val nodes: Xml.Nodes = paragraph.getChildren.toList
     nodes.headOption.flatMap(_.asText).flatMap: text =>
       val nl: Int = text.indexOf('\n')
       val firstLine: String = if nl < 0 then text else text.substring(0, nl)
@@ -112,8 +115,8 @@ object MarkdownMarkup extends Markup(
         val typeName: String = matched.group(1).toLowerCase
         val fold: Option[Boolean] = Option(matched.group(2)).map(_ == "+")
         val title: Option[String] = Option(firstLine.substring(matched.end).trim).filter(_.nonEmpty)
-        val leftover: List[Xml.Node] =
-          val fromText: List[Xml.Node] =
+        val leftover: Xml.Nodes =
+          val fromText: Xml.Nodes =
             if afterNewline.isEmpty then Nil else List(Xml.text(afterNewline))
           dropLeadingBreaks(fromText ++ nodes.tail)
         val firstBody: Xml.Nodes =
@@ -121,7 +124,8 @@ object MarkdownMarkup extends Markup(
           else Chunk(paragraph.setChildren(Chunk.from(leftover)))
         (typeName, fold, title, firstBody)
 
-  private def dropLeadingBreaks(nodes: List[Xml.Node]): List[Xml.Node] =
+  @tailrec
+  private def dropLeadingBreaks(nodes: Xml.Nodes): Xml.Nodes =
     nodes match
       case head :: tail if head.isWhitespace => dropLeadingBreaks(tail)
       case head :: tail if head.asElement.exists(_.getName == "br") => dropLeadingBreaks(tail)
@@ -147,8 +151,8 @@ object MarkdownMarkup extends Markup(
   private val glossaryIal = """\{:\s*\.glossary\s*\}""".r
 
   private def convertDescriptionLists(nodes: Xml.Nodes): Xml.Nodes =
-    var result: List[Xml.Node] = Nil
-    var rest: List[Xml.Node] = nodes.toList
+    var result: Xml.Nodes = Nil
+    var rest: Xml.Nodes = nodes.toList
     while rest.nonEmpty do
       val node: Xml.Node = rest.head
       rest = rest.tail
@@ -163,8 +167,8 @@ object MarkdownMarkup extends Markup(
 
   private def consumeGlossaryMarker(
     dl: Xml.Element,
-    rest: List[Xml.Node]
-  ): (Boolean, List[Xml.Node]) =
+    rest: Xml.Nodes
+  ): (Boolean, Xml.Nodes) =
     val markedOnDl: Boolean = dl.hasClass("glossary")
     val (_, remaining) = rest.span(_.isWhitespace)
     remaining.headOption.flatMap(_.asElement).filter(isGlossaryIal) match

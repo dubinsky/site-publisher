@@ -26,9 +26,9 @@ object MarkdownWikiBlock:
     element: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Boolean) =
-    val children: List[Xml.Node] = element.getChildren.toList
+    val children: Xml.Nodes = element.getChildren.toList
     if children.size < 2 then (element, false) else
-      var acc: List[Xml.Node] = Nil
+      var acc: Xml.Nodes = Nil
       var changed: Boolean = false
       for node <- children do
         node.asElement.flatMap(standaloneBlockId) match

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 object DescriptionList:
   def groupItems(
@@ -9,8 +8,8 @@ object DescriptionList:
     itemClass: HtmlClass,
     takeTermId: Xml.Element => (Option[String], Xml.Element)
   ): Xml.Nodes =
-    var result: List[Xml.Node] = Nil
-    var group: List[Xml.Node] = Nil
+    var result: Xml.Nodes = Nil
+    var group: Xml.Nodes = Nil
     var groupId: Option[String] = None
 
     def flush(): Unit =
@@ -19,7 +18,7 @@ object DescriptionList:
           .element("div")
           .add(itemClass)
           .setId(groupId)
-          .setChildren(Chunk.from(group))
+          .setChildren(group)
         group = Nil
         groupId = None
 
@@ -29,7 +28,7 @@ object DescriptionList:
           flush()
           val (id, dt) = takeTermId(element)
           groupId = id
-          group = List(dt)
+          group = Seq(dt)
         case Some(element) if element.getName == "dd" =>
           if group.isEmpty then result = result :+ element
           else group = group :+ element
@@ -42,4 +41,4 @@ object DescriptionList:
             result = result :+ node
 
     flush()
-    Chunk.from(result)
+    result

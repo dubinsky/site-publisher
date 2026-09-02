@@ -3,7 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{DocumentHeader, Selector, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, XmlUtil}
-import zio.blocks.chunk.Chunk
 import zio.blocks.html.*
 
 object PageHeader:
@@ -72,16 +71,15 @@ object PageHeader:
     val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
     val head: Xml.Element = currentHead(page)
     val index: Option[StoreContent] = page.store
-    val description: Xml.Nodes = Chunk.from(index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml)))
-    val body: Xml.Nodes = index.flatMap(_.body).fold(Chunk.empty[Xml.Node]): bodyEl =>
+    val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
+    val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
-    val byLabel: Xml.Nodes = Chunk.from(index.flatMap(_.selector).toSeq.map: selector =>
+    val byLabel: Xml.Nodes = index.flatMap(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${Selector.displayName(selector)}:")
-    )
-    val table: Xml.Nodes = Chunk.from(documentHeaderTable(page).toSeq)
+    val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
-      Chunk.from(ancestors.map(el => el: Xml.Node)) ++
-        Chunk(head: Xml.Node) ++
+      ancestors.map(el => el: Xml.Node) ++
+        Seq(head: Xml.Node) ++
         table ++
         description ++
         body ++
@@ -101,14 +99,14 @@ object PageHeader:
       Xml.element("a").setHref(page.publishedPath.toString).setText(pageDisplayName(page))
     headingLine(
       selector = selectorName(page),
-      name = Chunk(name),
+      name = Seq(name),
       title = storeTitleInner(page)
     )
 
   private def currentHead(page: FullMarkupPage): Xml.Element =
     val nameFromIndex: Option[Xml.Element] = page.store.flatMap: index =>
       index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
-    val name: Xml.Nodes = nameFromIndex.fold(Chunk(Xml.text(pageDisplayName(page))))(n => Chunk(n))
+    val name: Xml.Nodes = nameFromIndex.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
     headingLine(
       selector = selectorName(page),
       name = name,
@@ -120,10 +118,10 @@ object PageHeader:
     name: Xml.Nodes,
     title: Xml.Nodes
   ): Xml.Element =
-    val sel: Xml.Nodes = selector.fold(Chunk.empty[Xml.Node]): s =>
-      Chunk(Xml.text(Selector.displayName(s)), Xml.text(" "))
+    val sel: Xml.Nodes = selector.fold(Seq.empty[Xml.Node]): s =>
+      Seq(Xml.text(Selector.displayName(s)), Xml.text(" "))
     val colon: Xml.Nodes =
-      if name.nonEmpty && title.nonEmpty then Chunk(Xml.text(": ")) else Chunk.empty
+      if name.nonEmpty && title.nonEmpty then Seq(Xml.text(": ")) else Seq.empty
     Xml.element("l").setChildren(sel ++ name ++ colon ++ title)
 
   /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
@@ -149,7 +147,7 @@ object PageHeader:
     page.store.flatMap(_.displayName).getOrElse(page.titleFromPath)
 
   private def storeTitleInner(page: Page): Xml.Nodes =
-    page.store.flatMap(_.title).fold(Chunk.empty[Xml.Node]): title =>
+    page.store.flatMap(_.title).fold(Seq.empty[Xml.Node]): title =>
       resolvedFragment(page, title).getChildren
 
   def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
@@ -165,11 +163,11 @@ object PageHeader:
     val header: Option[DocumentHeader] = page.doc.flatMap(_.documentHeader)
     Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
       val meta: DocumentHeader = header.get
-      Xml.element("table").addClass("document-header").setChildren(Chunk(
-        headerRow(page, "Описание", meta.description.fold(Chunk.empty[Xml.Node])(_.getChildren)),
+      Xml.element("table").addClass("document-header").setChildren(Seq(
+        headerRow(page, "Описание", meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
         headerRow(page, "Дата", dateCell(meta.date)),
         headerRow(page, "Кто", joinedInner(meta.authors)),
-        headerRow(page, "Кому", Chunk.from(meta.addressee.toSeq.map(el => el: Xml.Node))),
+        headerRow(page, "Кому", meta.addressee.toSeq.map(el => el: Xml.Node)),
         headerRow(page, "Расшифровка", joinedInner(meta.transcribers))
       ))
 
@@ -178,22 +176,22 @@ object PageHeader:
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
   private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Xml.Element =
-    Xml.element("tr").setChildren(Chunk(
+    Xml.element("tr").setChildren(Seq(
       Xml.element("td").addClass("heading").setText(heading),
       Xml.element("td").addClass("value").setChildren(convertedNodes(page, nodes))
     ))
 
   private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
-    date.fold(Chunk.empty[Xml.Node]): el =>
-      el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Chunk(Xml.text(when)))
+    date.fold(Seq.empty[Xml.Node]): el =>
+      el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Seq(Xml.text(when)))
 
   private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
     val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)
     inners match
-      case Seq() => Chunk.empty
+      case Seq() => Seq.empty
       case Seq(one) => one
-      case many => many.reduce((left, right) => left ++ Chunk(Xml.text(", ")) ++ right)
+      case many => many.reduce((left, right) => left ++ Seq(Xml.text(", ")) ++ right)
 
   private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
-    if nodes.isEmpty then Chunk.empty
+    if nodes.isEmpty then Seq.empty
     else resolvedFragment(page, Xml.element("span").setChildren(nodes)).getChildren

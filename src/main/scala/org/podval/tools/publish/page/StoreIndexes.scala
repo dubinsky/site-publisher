@@ -3,8 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.Selector
 import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
-import org.podval.xml.XmlUtil.*
-import zio.blocks.chunk.Chunk
 
 /** Collector `Index.Tree` / `Index.Flat` for a root TEI `store`: nested archive tree and
   * a flat list of descendant collections. Generated at render so listing hrefs are not backlinks. */
@@ -34,28 +32,28 @@ object StoreIndexes:
     treeIndex(root)
 
   def flat(root: Page): Xml.Element =
-    val items: Chunk[Xml.Node] = Chunk.from(collectionsUnder(root).map(flatItem(root, _)))
+    val items: Xml.Nodes = collectionsUnder(root).map(flatItem(root, _))
     Xml.element("ul").setChildren(items)
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
       storePage.store.flatMap(_.selector).map(Selector.displayName).getOrElse("")
-    val items: Chunk[Xml.Node] = Chunk.from(childrenOf(storePage).map(treeItem))
-    Xml.element("div").addClass("tree-index").setChildren(Chunk(
-      Xml.element("ul").setChildren(Chunk(
-        Xml.element("li").setChildren(Chunk(Xml.element("em").setText(selectorLabel))),
-        Xml.element("li").setChildren(Chunk(
+    val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
+    Xml.element("div").addClass("tree-index").setChildren(Seq(
+      Xml.element("ul").setChildren(Seq(
+        Xml.element("li").setChildren(Seq(Xml.element("em").setText(selectorLabel))),
+        Xml.element("li").setChildren(Seq(
           Xml.element("ul").setChildren(items)
         ))
       ))
     ))
 
   private def treeItem(page: Page): Xml.Element =
-    val nested: Chunk[Xml.Node] =
+    val nested: Xml.Nodes =
       if page.store.exists(!_.isCollection) && childrenOf(page).nonEmpty
-      then Chunk(treeIndex(page))
-      else Chunk.empty
-    Xml.element("li").setChildren(Chunk(treeLink(page)) ++ nested)
+      then Seq(treeIndex(page))
+      else Seq.empty
+    Xml.element("li").setChildren(Seq(treeLink(page)) ++ nested)
 
   private def treeLink(page: Page): Xml.Element =
     Xml.element("a")
@@ -83,7 +81,7 @@ object StoreIndexes:
     // blank line between items on `/`.
     val description: Xml.Element = collection.store.flatMap(_.description).fold(Xml.element("abstract")): xml =>
       PageHeader.resolvedFragment(collection, xml)
-    Xml.element("li").setChildren(Chunk(link, description))
+    Xml.element("li").setChildren(Seq(link, description))
 
   def pathHeaderHorizontal(page: Page, root: Page): String =
     val chain: Seq[Page] =

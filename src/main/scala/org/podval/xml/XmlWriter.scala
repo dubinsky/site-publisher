@@ -35,11 +35,11 @@ object XmlWriter:
         Doc.text(s"$name=") + Doc.lineOrEmpty + Doc.text(XmlEncode.quote(encodeXmlSpecials(value)))
       ))
 
-    val nodes: List[ast.Node] =
+    val nodes: ast.Nodes =
       atomize(List.empty, element.getChildren.toList)
 //      xml.children(element).toList
 
-    val chunks: Seq[Seq[ast.Node]] = chunkify(Seq.empty, List.empty, nodes, flush = false)
+    val chunks: Seq[Seq[ast.Node]] = chunkify(Seq.empty, List.empty, nodes.toList, flush = false)
     val noText: Boolean = chunks.forall(_.forall(_.asAtom.isEmpty))
     val whitespaceLeft: Boolean = nodes.headOption.exists(_.isWhitespace)
     val whitespaceRight: Boolean = nodes.lastOption.exists(_.isWhitespace)
@@ -103,12 +103,12 @@ object XmlWriter:
   private def atomize(
     using ast: XmlAst[?]
   )(
-    result: List[ast.Node],
-    nodes: List[ast.Node]
-  ): List[ast.Node] = if nodes.isEmpty then result else
-    val (atoms: List[ast.Node], tail: List[ast.Node]) = nodes.span(_.asAtom.isDefined)
+    result: ast.Nodes,
+    nodes: ast.Nodes
+  ): ast.Nodes = if nodes.isEmpty then result else
+    val (atoms: ast.Nodes, tail: ast.Nodes) = nodes.span(_.asAtom.isDefined)
 
-    val resultNew: List[ast.Node] =
+    val resultNew: ast.Nodes =
       if atoms.isEmpty
       then result
       else result ++ processText(Seq.empty, squashBigWhitespace(atoms.map(_.asAtom.get).mkString("")))
@@ -125,11 +125,11 @@ object XmlWriter:
   private def processText(
     using ast: XmlAst[?]
   )(
-    result: Seq[ast.Node],
+    result: ast.Nodes,
     text: String
-  ): Seq[ast.Node] = if text.isEmpty then result else
+  ): ast.Nodes = if text.isEmpty then result else
     val (spaces: String, tail: String) = text.span(_ == ' ')
-    val resultNew: Seq[ast.Node] = if spaces.isEmpty then result else result :+ ast.text(" ")
+    val resultNew: ast.Nodes = if spaces.isEmpty then result else result :+ ast.text(" ")
     val (word: String, tail2: String) = tail.span(_ != ' ')
     if word.isEmpty
     then resultNew
@@ -137,7 +137,7 @@ object XmlWriter:
 
   @scala.annotation.tailrec
   private def chunkify(using dialect: XmlDialect, ast: XmlAst[?])(
-    result: Seq[Seq[ast.Node]],
+    result: Seq[ast.Nodes],
     current: List[ast.Node],
     nodes: List[ast.Node],
     flush: Boolean
@@ -169,7 +169,7 @@ object XmlWriter:
               else chunkify(result, current, nodes, flush = true)
 
   private def fromChunk(using dialect: XmlDialect, ast: XmlAst[?])(
-    nodes: Seq[ast.Node],
+    nodes: ast.Nodes,
     canBreakLeft: Boolean,
     canBreakRight: Boolean
   ): Doc =

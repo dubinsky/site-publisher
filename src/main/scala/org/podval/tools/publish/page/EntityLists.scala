@@ -3,7 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{EntityKind, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
-import zio.blocks.chunk.Chunk
 
 /** Member lists for a TEI `entityLists` index, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */
@@ -15,10 +14,10 @@ object EntityLists:
     val kept: Seq[(EntityListSpecs.Spec, Seq[Page])] = index.lists.flatMap: spec =>
       val mem: Seq[Page] = members(page, spec)
       Option.when(mem.nonEmpty)(spec -> mem)
-    val lists: Chunk[Xml.Node] = Chunk.from(kept.map((spec, mem) =>
+    val lists: Xml.Nodes = kept.map((spec, mem) =>
       listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec))): Xml.Node
-    ))
-    val children: Chunk[Xml.Node] =
+    )
+    val children: Xml.Nodes =
       if kept.isEmpty then lists
       else tocXml(kept.map(_._1), page) +: lists
     Xml.element("entityLists").setChildren(children)
@@ -29,12 +28,12 @@ object EntityLists:
     withHead: Boolean,
     jump: Option[Path]
   ): Xml.Element =
-    val head: Chunk[Xml.Node] =
-      if !withHead then Chunk.empty
-      else Chunk(Xml.element("tei-head").setChildren(headChildren(spec, jump)))
-    val lines: Chunk[Xml.Node] = Chunk.from(members.map(member =>
-      Xml.element("l").setChildren(Chunk(memberLink(member, spec.kind)))
-    ))
+    val head: Xml.Nodes =
+      if !withHead then Seq.empty
+      else Seq(Xml.element("tei-head").setChildren(headChildren(spec, jump)))
+    val lines: Xml.Nodes = members.map(member =>
+      Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
+    )
     Xml.element(spec.kind.listElement).setId(spec.id).setChildren(head ++ lines)
 
   def entitiesUnder(indexPage: Page): Seq[Page] =
@@ -56,19 +55,18 @@ object EntityLists:
     page.entityDisplayName.getOrElse(page.title)
 
   private def tocXml(specs: Seq[EntityListSpecs.Spec], page: Page): Xml.Element =
-    val items: Chunk[Xml.Node] = Chunk.from(specs.map: spec =>
-      Xml.element("li").setChildren(Chunk(
+    val items: Xml.Nodes = specs.map: spec =>
+      Xml.element("li").setChildren(Seq(
         Xml.element("a").setHref(s"#${spec.id}").setText(spec.title),
         Xml.text(" "),
         Xml.element("a").setHref(listPath(page, spec).toString).setText(expand)
       ))
-    )
     Xml.element("ul").addClass("entity-lists-toc").setChildren(items)
 
-  private def headChildren(spec: EntityListSpecs.Spec, jump: Option[Path]): Chunk[Xml.Node] =
-    val title: Chunk[Xml.Node] = Chunk(Xml.text(spec.title))
+  private def headChildren(spec: EntityListSpecs.Spec, jump: Option[Path]): Xml.Nodes =
+    val title: Xml.Nodes = Seq(Xml.text(spec.title))
     jump.fold(title)(path =>
-      title ++ Chunk(Xml.text(" "), Xml.element("a").setHref(path.toString).setText(expand))
+      title ++ Seq(Xml.text(" "), Xml.element("a").setHref(path.toString).setText(expand))
     )
 
   private def memberLink(page: Page, kind: EntityKind): Xml.Element =

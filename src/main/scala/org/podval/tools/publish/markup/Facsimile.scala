@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, Page}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{HtmlClass, Xml}
-import zio.blocks.chunk.Chunk
 
 /** Per-document facsimile viewer: JPEG URLs and scroller XML. `pb` hrefs are filled at render. */
 object Facsimile:
@@ -69,9 +68,9 @@ object Facsimile:
     val sourceDir: Seq[String] = document.sourcePath.map(_.path.init).getOrElse(Seq.empty)
     val pbs: Seq[Pb] =
       document.doc.flatMap(_.documentHeader).toSeq.flatMap(_.pbs).filterNot(_.isMissing)
-    val figures: Chunk[Xml.Node] = Chunk.from(
-      pbs.map(pb => pageFigure(document, pageType, base, sourceDir, pb): Xml.Node)
-    )
+    val figures: Xml.Nodes =
+      pbs.map(pb => pageFigure(document, pageType, base, sourceDir, pb))
+
     Xml.element("div").add(ScrollerClass).setChildren(figures)
 
   private def pageFigure(
@@ -90,5 +89,5 @@ object Facsimile:
     val link: Xml.Element = Xml.element("a")
       .setHref(s"${document.publishedPath}#$id")
       .set("target", textTarget)
-      .setChildren(Chunk(img: Xml.Node))
-    Figure.make(Seq(Xml.text(display)), Chunk(link: Xml.Node))
+      .setChildren(Seq(img: Xml.Node))
+    Figure.make(Seq(Xml.text(display)), Seq(link: Xml.Node))

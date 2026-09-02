@@ -3,7 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
 import org.podval.tools.publish.site.PageError
 import org.podval.xml.Xml
-import zio.blocks.chunk.Chunk
 
 /** Collection directory index: collector `table.collection-index`, generated at render.
   * Originals are rows; `{base}-{xx}` translations are Язык links, not rows. */
@@ -29,12 +28,12 @@ object CollectionIndex:
       error(page, s"unknown pageType '$name'")
     val originals: Seq[Page] = listingOriginals(page)
     val parts: Seq[(Option[Xml.Element], Seq[Page])] = splitParts(page, store.parts, originals)
-    val header: Xml.Element = Xml.element("tr").setChildren(Chunk.from(columns.map: column =>
+    val header: Xml.Element = Xml.element("tr").setChildren(columns.map: column =>
       Xml.element("th").addClass(column.cssClass).setText(column.heading): Xml.Node
-    ))
-    val body: Chunk[Xml.Node] = Chunk.from(parts.flatMap((title, documents) =>
+    )
+    val body: Xml.Nodes = parts.flatMap((title, documents) =>
       titleRow(page, title).toSeq ++ documents.map(documentRow(store, _))
-    ).map(el => el: Xml.Node))
+    ).map(el => el: Xml.Node)
     val table: Xml.Element =
       Xml.element("table").addClass("collection-index").setChildren(header +: body)
     TeiMarkup.finishFootnotes(Xml.element("div").setChildren(table +: missingNotes(store, originals)))
@@ -50,7 +49,6 @@ object CollectionIndex:
       .filter(_.path.path.init == directory.path.path.init)
       .filterNot(isTranslation)
       .sortBy(baseName)
-      .toList
 
   def isTranslation(page: Page): Boolean = splitLang(fileName(page))._2.isDefined
 
@@ -100,41 +98,40 @@ object CollectionIndex:
     val header: Option[DocumentHeader] = document.doc.flatMap(_.documentHeader)
     val translations: Seq[Page] = translationsOf(document)
     val cells: Seq[Xml.Element] = Seq(
-      cell("description", convertedNodes(document, header.flatMap(_.description).fold(Chunk.empty)(_.getChildren))),
+      cell("description", convertedNodes(document, header.flatMap(_.description).fold(Seq.empty)(_.getChildren))),
       cell("date", convertedNodes(document, PageHeader.dateCell(header.flatMap(_.date)))),
       cell("author", convertedNodes(document, PageHeader.joinedInner(header.toSeq.flatMap(_.authors)))),
-      cell("addressee", convertedNodes(document, Chunk.from(header.flatMap(_.addressee).toSeq.map(el => el: Xml.Node)))),
+      cell("addressee", convertedNodes(document, header.flatMap(_.addressee).toSeq.map(el => el: Xml.Node))),
       cell("language", languageCell(document, header, translations)),
-      cell("document", Chunk(documentLink(document, baseName(document)))),
+      cell("document", Seq(documentLink(document, baseName(document)))),
       cell("pages", pagesCell(document, header, store.pageType)),
       cell("transcriber", convertedNodes(document, PageHeader.joinedInner(header.toSeq.flatMap(_.transcribers))))
     )
-    Xml.element("tr").setChildren(Chunk.from(cells.map(el => el: Xml.Node)))
+    Xml.element("tr").setChildren(cells.map(el => el: Xml.Node))
 
   private def languageCell(
     document: Page,
     header: Option[DocumentHeader],
     translations: Seq[Page]
   ): Xml.Nodes =
-    val lang: Xml.Nodes = header.flatMap(_.lang).orElse(langOf(document)).fold(Chunk.empty[Xml.Node])(l => Chunk(Xml.text(l)))
-    val links: Xml.Nodes = Chunk.from(translations.flatMap: translation =>
+    val lang: Xml.Nodes = header.flatMap(_.lang).orElse(langOf(document)).fold(Seq.empty[Xml.Node])(l => Seq(Xml.text(l)))
+    val links: Xml.Nodes = translations.flatMap: translation =>
       Seq(Xml.text(" "), langLink(translation): Xml.Node)
-    )
     lang ++ links
 
   private def pagesCell(document: Page, header: Option[DocumentHeader], pageType: PageType): Xml.Nodes =
     val groups: Seq[Xml.Nodes] = header.toSeq.flatMap(_.pbs).map: pb =>
-      Chunk(
+      Seq(
         Xml.element("a")
           .setHref(s"${document.publishedPath}#${Pb.pageId(pb.n)}")
           .setText(pageType.displayName(pb.n)): Xml.Node
       )
     groups match
-      case Seq() => Chunk.empty
+      case Seq() => Seq.empty
       case Seq(one) => one
-      case many => many.reduce((left, right) => left ++ Chunk(Xml.text(" ")) ++ right)
+      case many => many.reduce((left, right) => left ++ Seq(Xml.text(" ")) ++ right)
 
-  private def missingNotes(store: StoreContent, originals: Seq[Page]): Chunk[Xml.Node] =
+  private def missingNotes(store: StoreContent, originals: Seq[Page]): Xml.Nodes =
     val missing: Seq[(Page, Pb)] = originals.sortBy(baseName).flatMap: document =>
       document.doc.flatMap(_.documentHeader).toSeq.flatMap(_.pbs).filter(_.isMissing).map(document -> _)
     def note(flavour: String, keep: Pb => Boolean): Option[Xml.Element] =
@@ -144,19 +141,19 @@ object CollectionIndex:
         Xml.element("p").setText(
           s"Отсутствуют фотографии ${pages.length} $flavour страниц: ${pages.mkString(" ")}"
         )
-    Chunk.from(Seq(
+    Seq(
       note("пустых", _.isEmpty),
       note("непустых", pb => !pb.isEmpty)
-    ).flatten.map(el => el: Xml.Node))
+    ).flatten.map(el => el: Xml.Node)
 
   private def titleRow(page: Page, title: Option[Xml.Element]): Option[Xml.Element] =
     title.map: xml =>
       val inner: Xml.Element = Xml.element("span").addClass("part-title")
         .setChildren(convertedNodes(page, xml.getChildren))
-      Xml.element("tr").setChildren(Chunk(
+      Xml.element("tr").setChildren(Seq(
         Xml.element("td")
           .set("colspan", columns.length.toString)
-          .setChildren(Chunk(inner: Xml.Node)): Xml.Node
+          .setChildren(Seq(inner: Xml.Node)): Xml.Node
       ))
 
   private def cell(cssClass: String, nodes: Xml.Nodes): Xml.Element =
@@ -169,7 +166,7 @@ object CollectionIndex:
     documentLink(translation, langOf(translation).getOrElse(fileName(translation)))
 
   private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
-    if nodes.isEmpty then Chunk.empty
+    if nodes.isEmpty then Seq.empty
     else PageHeader.resolvedFragment(page, Xml.element("span").setChildren(nodes)).getChildren
 
   private def splitParts(

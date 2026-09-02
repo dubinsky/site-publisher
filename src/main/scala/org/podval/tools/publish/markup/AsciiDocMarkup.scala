@@ -216,21 +216,21 @@ object AsciiDocMarkup extends Markup(
   // and a table in the colist. Convert both to Callout IR.
   private def convertCalloutMarks(nodes: Xml.Nodes): Xml.Nodes =
     var skipGuardBold: Boolean = false
-    val result: List[Xml.Node] = nodes.toList.flatMap: node =>
+    val result: Xml.Nodes = nodes.toList.flatMap: node =>
       if skipGuardBold then
         skipGuardBold = false
-        node.asElement.filter(isGuardBold).fold(List(node))(_ => Nil)
+        node.asElement.filter(isGuardBold).fold(Seq(node))(_ => Nil)
       else
         node.asElement match
           case Some(element) =>
             convertCalloutMark(element) match
               case Some(mark) =>
                 skipGuardBold = isConumIcon(element)
-                List(mark)
+                Seq(mark)
               case None =>
-                List(node)
+                Seq(node)
           case None =>
-            List(node)
+            Seq(node)
     result
 
   private def convertCalloutMark(element: Xml.Element): Option[Xml.Element] =
