@@ -6,8 +6,8 @@ plugins {
   id 'org.podval.tools.scalajs' version '1.0.4'
 }
 
-description = 'XML AST, dialects, and derived Scala codecs'
-group = 'org.podval.tools' // TODO org.podval
+description = 'XML AST, pretty-printing, and derived Scala codecs'
+group = 'org.podval'
 version = '0.0.1'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
