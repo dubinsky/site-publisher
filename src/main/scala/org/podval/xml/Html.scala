@@ -11,10 +11,10 @@ given Html: XmlAst[XML.Element]:
 
   override def cdata(text: String): Node = Html.text(XmlEncode.escape(text))
 
-  override def element(name: String): Element = XML.Element.Generic(
+  override def element(name: String, attributes: Seq[(String, String)], children: Nodes): Element = XML.Element.Generic(
     tag = name,
-    children = Chunk.empty,
-    attributes = Chunk.empty
+    attributes = Chunk.from(attributes).map((name, value) => mkAttribute(name, value)),
+    children = Chunk.from(children)
   )
 
   extension (node: Node)

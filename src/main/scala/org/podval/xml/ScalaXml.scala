@@ -8,14 +8,15 @@ given ScalaXml: XmlAst[scala.xml.Elem]:
 
   override def cdata(text: String): Node = scala.xml.PCData(text)
 
-  override def element(name: String): Element =
+  override def element(name: String, attributes: Seq[(String, String)], children: Nodes): Element =
     val (prefix, label) = splitQualified(name)
     scala.xml.Elem(
       prefix = prefix,
       label = label,
-      attributes = scala.xml.Null,
+      attributes = toMetaData(attributes),
       scope = scala.xml.TopScope,
-      minimizeEmpty = false
+      minimizeEmpty = false,
+      child = children*
     )
 
   extension (node: Node)
@@ -53,11 +54,7 @@ given ScalaXml: XmlAst[scala.xml.Elem]:
       .toSeq
 
     override def setAttributes(attributes: Seq[(String, String)]): Element =
-      val metadata: scala.xml.MetaData = attributes.foldRight(scala.xml.Null: scala.xml.MetaData):
-        case ((key, value), next) =>
-          val (prefix, local) = splitQualified(key)
-          scala.xml.Attribute(prefix, local, value, next)
-      element.copy(attributes = metadata)
+      element.copy(attributes = toMetaData(attributes))
 
   // scala.xml rejects prefix ""; unprefixed names use null.
   private def splitQualified(name: String): (String, String) =
@@ -67,3 +64,9 @@ given ScalaXml: XmlAst[scala.xml.Elem]:
 
   private def qualifiedName(prefix: String, label: String): String =
     if prefix == null then label else s"$prefix:$label"
+
+  private def toMetaData(attributes: Seq[(String, String)]): scala.xml.MetaData =
+    attributes.foldRight(scala.xml.Null: scala.xml.MetaData):
+      case ((key, value), next) =>
+        val (prefix, local) = splitQualified(key)
+        scala.xml.Attribute(prefix, local, value, next)

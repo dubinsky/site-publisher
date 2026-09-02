@@ -10,6 +10,17 @@ final class ScalaXmlSpec extends AnyFunSuite:
     assert(el.prefix == null)
   }
 
+  test("element takes attributes and children") {
+    val el: ScalaXml.Element = ScalaXml.element(
+      "p",
+      Seq("xml:id" -> "x"),
+      Seq(ScalaXml.text("a"))
+    )
+    assert(ScalaXml.getName(el) == "p")
+    assert(ScalaXml.getAttributes(el) == Seq("xml:id" -> "x"))
+    assert(ScalaXml.getChildren(el).flatMap(ScalaXml.asText) == Seq("a"))
+  }
+
   test("qualified element names round-trip prefix and label") {
     val el: ScalaXml.Element = ScalaXml.element("tei:p")
     assert(ScalaXml.getName(el) == "tei:p")
@@ -62,7 +73,7 @@ final class ScalaXmlSpec extends AnyFunSuite:
   test("Ast2Ast round-trips CDATA through ScalaXml") {
     object XmlToScalaXml extends Ast2Ast(Xml, ScalaXml)
     object ScalaXmlToXml extends Ast2Ast(ScalaXml, Xml)
-    val xml: Xml.Element = Xml.element("p").setChildren(Seq(Xml.cdata("a<b")))
+    val xml: Xml.Element = Xml.element("p", Seq.empty, Seq(Xml.cdata("a<b")))
     val scalaXml: ScalaXml.Element = XmlToScalaXml.convert(xml)
     assert(ScalaXml.getChildren(scalaXml).flatMap(ScalaXml.asCData) == Seq("a<b"))
     val round: Xml.Element = ScalaXmlToXml.convert(scalaXml)

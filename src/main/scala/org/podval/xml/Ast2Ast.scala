@@ -4,10 +4,11 @@ package org.podval.xml
 // when converting to Html...
 // ZIO Blocks HTML does not support comments nor processing instructions
 abstract class Ast2Ast[FromElement, ToElement](from: XmlAst[FromElement], to: XmlAst[ToElement]):
-  def convert(element: FromElement): ToElement =
-    val named: ToElement = to.element(from.getName(element))
-    val attributed: ToElement = to.setAttributes(named)(from.getAttributes(element))
-    to.setChildren(attributed)(convertChildren(from.getChildren(element)))
+  def convert(element: FromElement): ToElement = to.element(
+    from.getName(element),
+    from.getAttributes(element),
+    convertChildren(from.getChildren(element))
+  )
 
   private def convertChildren(children: from.Nodes): to.Nodes =
     val buf = List.newBuilder[to.Node]

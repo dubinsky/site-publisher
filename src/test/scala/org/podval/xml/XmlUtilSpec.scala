@@ -50,7 +50,7 @@ final class XmlUtilSpec extends AnyFunSuite:
   }
 
   test("xml2html turns CDATA into escaped HTML text") {
-    val xml: Xml.Element = Xml.element("p").setChildren(Seq(Xml.cdata("a<b")))
+    val xml: Xml.Element = Xml.element("p", Seq.empty, Seq(Xml.cdata("a<b")))
     val html: Html.Element = XmlUtil.xml2html(xml)
     assert(html.getChildren.flatMap(_.asAtom) == Seq("a&lt;b"))
     val dumped: String = HtmlXmlDialect.render(html)

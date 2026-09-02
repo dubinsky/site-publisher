@@ -19,7 +19,9 @@ trait XmlAst[ELEMENT]:
 
   final def element(elem: XmlElement): Element = element(elem.name)
 
-  def element(name: String): Element
+  final def element(name: String): Element = element(name, Seq.empty, Seq.empty)
+
+  def element(name: String, attributes: Seq[(String, String)], children: Nodes): Element
 
   // Concatenate only: text nodes already carry author whitespace. Joining with a space
   // puts a gap before punctuation after inline markup (`</persName>,` → "е ,").

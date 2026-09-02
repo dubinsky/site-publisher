@@ -1,7 +1,7 @@
 package org.podval.xml
 
 import zio.blocks.chunk.Chunk
-import zio.blocks.schema.xml.{XmlBuilder, XmlName, Xml as XML}
+import zio.blocks.schema.xml.{XmlName, Xml as XML}
 
 // XML AST for ZIO Blocks XML
 given Xml: XmlAst[XML.Element]:
@@ -11,7 +11,11 @@ given Xml: XmlAst[XML.Element]:
 
   override def cdata(text: String): Node = XML.CData(text)
 
-  override def element(name: String): Element = XmlBuilder.element(name).build
+  override def element(name: String, attributes: Seq[(String, String)], children: Nodes): Element = XML.Element(
+    name = XmlName(name),
+    attributes = Chunk.from(attributes).map((name, value) => (XmlName(name), value)),
+    children = Chunk.from(children)
+  )
 
   extension (node: Node)
     override def asElement: Option[Element] = node match
