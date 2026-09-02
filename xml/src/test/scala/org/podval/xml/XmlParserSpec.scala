@@ -75,6 +75,16 @@ final class XmlParserSpec extends AnyFunSuite:
     assert(result.swap.toOption.get.getMessage.contains("Resource not found"))
   }
 
+  test("comment before the root element is ignored") {
+    val xml: Xml.Element = XmlParser.parseXml(
+      """<?xml version="1.0"?>
+        |<!-- prologue -->
+        |<Day><names/></Day>""".stripMargin
+    ).toOption.get
+    assert(xml.getName == "Day")
+    assert(children(xml).map(_.getName) == Seq("names"))
+  }
+
   test("parseHtml from URL matches string parse") {
     val fromString: Xml.Element = XmlParser.parseHtml("<p>a<b>c</b></p>").toOption.get
     val url = classOf[XmlParserSpec].getResource("fragment.html")

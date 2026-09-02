@@ -4,6 +4,8 @@ import zio.blocks.schema.xml.Xml
 import scala.collection.mutable
 
 // TODO abstract this and XmlParser over XmlAst
+// TODO make XML prologue and epilogue comments/processing instructions
+// round-trippable
 final class XmlBuilder:
   private val elements: mutable.Stack[Xml.Element] = mutable.Stack.empty
 
@@ -26,8 +28,9 @@ final class XmlBuilder:
     else root = Some(element)
     
   private def addChild(child: Xml): Unit =
-    val parent: Xml.Element = elements.pop()
-    elements.push(parent.copy(children = parent.children :+ child))
+    if elements.nonEmpty then
+      val parent: Xml.Element = elements.pop()
+      elements.push(parent.copy(children = parent.children :+ child))
 
   def processingInstruction(target: String, data: String): Unit =
     flushCharacters()
