@@ -43,6 +43,34 @@ object XmlCodec:
   def derived[A, K](tagField: String, tag: XmlTag[K])(using schema: Schema[A], typeId: TypeId[A]): XmlCodec[A] =
     schema.derive(XmlCodecDeriver.tagged(tagField, tag))
 
+  extension [A](codec: XmlCodec[A])
+    /** Decode each element child of `root`. Whitespace and comments are ignored;
+      * leftover character content is an error. */
+    def decodeChildren[E: XmlAst](root: E): Either[XmlError, Seq[A]] =
+      val ast: XmlAst[E] = summon[XmlAst[E]]
+      val nodes: ast.Nodes = ast.getChildren(root)
+      val leftover: Seq[String] = nodes
+        .filter(_.asElement.isEmpty)
+        .flatMap(_.asAtom)
+        .map(_.trim)
+        .filter(_.nonEmpty)
+      if leftover.nonEmpty then Left(XmlError(s"Unparsed characters: ${leftover.mkString}"))
+      else
+        nodes.flatMap(_.asElement).foldLeft(Right(Vector.empty[A]): Either[XmlError, Vector[A]]): (acc, element) =>
+          for
+            items <- acc
+            item <- codec.decode(element)
+          yield items :+ item
+        .map(_.toSeq)
+
+    /** `wrappedSeq(name)`: require wrapper `name`, then [[decodeChildren]]. */
+    def decodeCatalog[E: XmlAst](root: E, name: String): Either[XmlError, Seq[A]] =
+      val ast: XmlAst[E] = summon[XmlAst[E]]
+      val found: String = ast.getName(root)
+      if found != name && ast.localName(root) != name then
+        Left(XmlError(s"Expected catalog '$name', found '$found'"))
+      else codec.decodeChildren(root)
+
 trait XmlCodec[A]:
   def elementName: String
 

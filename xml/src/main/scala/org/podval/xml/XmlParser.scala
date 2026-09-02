@@ -59,6 +59,20 @@ object XmlParser:
       case None => Left(XmlError(s"Resource not found: $name"))
       case Some(url) => parseXml(url, xinclude)
 
+  /** Parse a catalog resource: wrapper `name`, each child decoded with `codec`. */
+  def parseCatalog[A](resource: String, name: String, codec: XmlCodec[A]): Either[Throwable, Seq[A]] =
+    parseResource(resource).flatMap: root =>
+      codec.decodeCatalog(root, name).left.map(e => e: Throwable)
+
+  def parseCatalog[A](
+    loader: Class[?],
+    resource: String,
+    name: String,
+    codec: XmlCodec[A]
+  ): Either[Throwable, Seq[A]] =
+    parseResource(loader, resource).flatMap: root =>
+      codec.decodeCatalog(root, name).left.map(e => e: Throwable)
+
   def parseHtml(content: String): Either[Throwable, Xml.Element] =
     XmlParserSax.parse(reader = HtmlTagSoup.reader, content = content)
 

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.util.Files
-import org.podval.xml.{Xml, XmlCodec, XmlParser}
+import org.podval.xml.{XmlCodec, XmlParser}
 import zio.blocks.schema.{Modifier, Schema}
 
 /** A store/collection `by/@selector` (or a document facet). Loaded from `Selector.xml`
@@ -36,10 +35,5 @@ object Selector:
   lazy val all: Seq[Selector] = load()
 
   private def load(): Seq[Selector] =
-    val xml: Xml.Element = XmlParser.parseXml(
-      Files.readResource("/org/podval/tools/publish/markup/Selector.xml")
-    ) match
-      case Right(root) => root
-      case Left(error) => throw error
-    xml.getChildren.flatMap(_.asElement).flatMap: element =>
-      codec.decode(element).toOption.filter(_.names.nonEmpty)
+    XmlParser.parseCatalog(classOf[Selector], "Selector.xml", "Selector", codec)
+      .fold(error => throw error, identity)

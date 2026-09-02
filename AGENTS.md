@@ -12,7 +12,8 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `org.podval.xml` (Gradle subproject `xml/`, artifact `org.podval:org.podval.xml`) —
     dialect-aware XML (parsing from string/URL/file/classpath, writing, transform/gather, Xml2Html) and derived document
     codecs (`org.podval.xml.XmlCodec`) over any `XmlAst`. `XmlParser` does not expand `xi:include` unless
-    `xinclude = true` (publisher stores treat `xi:include/@href` as a page ref).
+    `xinclude = true` (publisher stores treat `xi:include/@href` as a page ref). Catalog files
+    (`Selector.xml`) use `parseCatalog` / `decodeCatalog` (wrapper root, child codec).
   - `org.podval.tei` — TEI XML dialect + entity handling
 - Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
 - Tests: `src/test/scala/...` and `xml/src/test/scala/...` — ScalaTest `AnyFunSuite`

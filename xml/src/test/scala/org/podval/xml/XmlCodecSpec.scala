@@ -112,6 +112,42 @@ final class XmlCodecSpec extends AnyFunSuite:
     assert(withTitle.title.map(_.value).contains("Go"))
   }
 
+  test("decodeCatalog reads wrapper children") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val xml: String = """<Languages>
+      |  <Language ident="ru"/>
+      |  <Language ident="he"/>
+      |</Languages>""".stripMargin
+    val decoded: Seq[Language] = codec.decodeCatalog(parse(xml), "Languages").toOption.get
+    assert(decoded.map(_.ident) == Seq("ru", "he"))
+  }
+
+  test("decodeCatalog rejects the wrong wrapper name") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val result: Either[XmlError, Seq[Language]] =
+      codec.decodeCatalog(parse("""<No><Language ident="ru"/></No>"""), "Languages")
+    assert(result.isLeft)
+    assert(result.swap.toOption.get.getMessage.contains("Expected catalog 'Languages'"))
+  }
+
+  test("decodeCatalog fails on a child that does not decode") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val result: Either[XmlError, Seq[Language]] =
+      codec.decodeCatalog(parse("""<Languages><Language ident="ru"/><extra/></Languages>"""), "Languages")
+    assert(result.isLeft)
+  }
+
+  test("parseCatalog loads a classpath catalog") {
+    val codec: XmlCodec[Language] = XmlCodec.derived(using Language.schema)
+    val decoded: Seq[Language] = XmlParser.parseCatalog(
+      classOf[XmlCodecSpec],
+      "languages.xml",
+      "Languages",
+      codec
+    ).toOption.get
+    assert(decoded.map(_.ident) == Seq("ru", "he"))
+  }
+
 final case class Language(
   @Modifier.config(XmlCodec.Attribute, "") ident: String
 ) derives CanEqual
