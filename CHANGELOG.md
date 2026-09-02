@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- xml: `XmlParser` loads from URL, file, and classpath; XInclude is off by default (store `xi:include` stays a page ref); `xinclude = true` expands includes and sets `xml:base` relative to the initial document
 - xml: Gradle subproject `org.podval.xml` with a Schema-derived document binder (`XmlCodec`) over any `XmlAst` (unwrapped sequences, leaf-record attributes, `XmlNode` identity, leftover `XmlExtras`)
 - xml: removed `RawXml` / `WithRawXml`; `Entity` / `EntityReference` keep leftovers in `XmlExtras`
 - xml: `XmlCodec` lives in `org.podval.xml`; Selector, collection parts, and entity-lists decode with it

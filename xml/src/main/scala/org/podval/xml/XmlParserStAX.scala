@@ -3,7 +3,7 @@ package org.podval.xml
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.xml.{Xml, XmlName}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import java.io.StringReader
+import java.io.{InputStream, Reader, StringReader}
 import javax.xml.namespace.QName
 import javax.xml.stream.{XMLEventReader, XMLInputFactory, XMLStreamException}
 import javax.xml.stream.events.{Attribute, Characters, Comment, EndElement, EntityReference, ProcessingInstruction,
@@ -11,21 +11,34 @@ import javax.xml.stream.events.{Attribute, Characters, Comment, EndElement, Enti
 
 object XmlParserStAX:
   def parse(content: String): Either[XMLStreamException, Xml.Element] =
-    try Right(parseInternal(content))
+    parse(StringReader(content))
+
+  def parse(reader: Reader): Either[XMLStreamException, Xml.Element] =
+    try parseEventReader(factory.createXMLEventReader(reader))
     catch case e: XMLStreamException => Left(e)
 
-  private def parseInternal(content: String): Xml.Element =
+  def parse(stream: InputStream): Either[XMLStreamException, Xml.Element] =
+    try parseEventReader(factory.createXMLEventReader(stream))
+    catch case e: XMLStreamException => Left(e)
+
+  private def factory: XMLInputFactory =
     // Built-in: com.sun.xml.internal.stream.XMLInputFactoryImp
-    val factory: XMLInputFactory = XMLInputFactory.newInstance
+    val result: XMLInputFactory = XMLInputFactory.newInstance
     // Store `xi:include` is a page reference. Do not expand XInclude or load a DTD/external
     // subset (there is no standard StAX XInclude switch; the JDK factory leaves it off).
-    factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false)
-    factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
-    factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)
-    val reader: XMLEventReader = factory.createXMLEventReader(new StringReader(content))
+    result.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false)
+    result.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
+    result.setProperty(XMLInputFactory.SUPPORT_DTD, false)
+    result
 
+  private def parseEventReader(reader: XMLEventReader): Either[XMLStreamException, Xml.Element] =
+    try Right(read(reader))
+    catch case e: XMLStreamException => Left(e)
+    finally reader.close()
+
+  private def read(reader: XMLEventReader): Xml.Element =
     val builder: XmlBuilder = XmlBuilder()
-    
+
     while reader.hasNext do reader.nextEvent match
       case startElement: StartElement =>
         builder.startElement(Xml.Element(
@@ -62,7 +75,7 @@ object XmlParserStAX:
           data = processingInstruction.getData
         )
 
-      case xmlEvent => ()
+      case _ => ()
 
     builder.result
 
