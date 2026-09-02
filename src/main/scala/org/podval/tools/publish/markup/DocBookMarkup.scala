@@ -8,7 +8,7 @@ import java.io.File
 
 object DocBookMarkup extends Markup(
   name = "DocBook",
-  xmlDialect = DocBookXmlDialect,
+  xmlWriterConfig = DocBookXmlWriterConfig,
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):

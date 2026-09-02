@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.Files
-import org.podval.xml.{Html, Xml, XmlDialect, XmlEncode, XmlParser}
+import org.podval.xml.{Html, Xml, XmlWriterConfig, XmlEncode, XmlParser}
 import java.io.File
 
 // TODO because of the cross-markup transclusion,
@@ -13,9 +13,9 @@ import java.io.File
 abstract class Markup(
   final val name: String,
   // Write policy (`render`, `plus`).
-  // TODO use xmlDialect.plus(HtmlXmlDialect) for printing mixed HTML
-  // and xmlDialect for pretty-printing native.
-  final val xmlDialect: XmlDialect,
+  // TODO use xmlWriterConfig.plus(HtmlXmlWriterConfig) for printing mixed HTML
+  // and xmlWriterConfig for pretty-printing native.
+  final val xmlWriterConfig: XmlWriterConfig,
   final val extension: String,
   additionalExtensions: Set[String] = Set.empty,
   rendersToXml: Boolean

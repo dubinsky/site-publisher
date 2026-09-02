@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
@@ -9,7 +9,7 @@ final class MarkdownWikiLinkSpec extends AnyFunSuite:
     MarkdownWikiLink.convert(Chunk.empty, text)
 
   private def render(nodes: Xml.Nodes): String =
-    HtmlXmlDialect.render(Xml.element("p").setChildren(nodes))
+    HtmlXmlWriterConfig.render(Xml.element("p").setChildren(nodes))
 
   private def links(nodes: Xml.Nodes): Seq[Xml.Element] =
     nodes.flatMap(_.asElement).filter(_.isA).toSeq

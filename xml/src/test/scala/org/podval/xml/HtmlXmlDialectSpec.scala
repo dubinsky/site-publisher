@@ -5,7 +5,7 @@ import zio.blocks.chunk.Chunk
 
 final class HtmlXmlDialectSpec extends AnyFunSuite:
   private def render(element: Xml.Element, width: Int = 40): String =
-    HtmlXmlDialect.render(element, width)
+    HtmlXmlWriterConfig.render(element, width)
 
   test("span with two element children is not indented (no HTML space inside)") {
     val ref: Xml.Element = Xml

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class TeiMarkupSpec extends AnyFunSuite:
@@ -15,7 +15,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     processResult(input)._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlDialect.render(element).replaceAll("\\s+", " ").replace("= ", "=")
+    HtmlXmlWriterConfig.render(element).replaceAll("\\s+", " ").replace("= ", "=")
 
   test("titleStmt title is extracted as tei-title; teiHeader stays") {
     val (xml, title) = processResult(
@@ -313,7 +313,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
       val xml: Xml.Element = process(input)
       val (notes, harvested) = Footnote.harvest(xml)
       val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
-      HtmlXmlDialect.render(resolved, width)
+      HtmlXmlWriterConfig.render(resolved, width)
 
     def compact(html: String): String = html.replaceAll("\\s+", " ").replace("= ", "=")
 

@@ -1,10 +1,10 @@
 package org.podval.xml
 
-object XmlDialect:
-  object Plain extends XmlDialect()
+object XmlWriterConfig:
+  object Plain extends XmlWriterConfig()
 
 // Describes how to write an XML dialect.
-open class XmlDialect(
+open class XmlWriterConfig(
   val preformat: Set[String] = Set.empty,
   val stack: Set[String] = Set.empty,
   val unStack: Set[String] = Set.empty,
@@ -21,7 +21,7 @@ open class XmlDialect(
   // TODO do not double-encode what you did not decode ;)
   val encodeXmlSpecials: Boolean = false
 ):
-  def plus(other: XmlDialect): XmlDialect = XmlDialect(
+  def plus(other: XmlWriterConfig): XmlWriterConfig = XmlWriterConfig(
     preformat = preformat ++ other.preformat,
     stack = stack ++ other.stack,
     unStack = unStack ++ other.unStack,

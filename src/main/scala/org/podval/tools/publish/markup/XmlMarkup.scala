@@ -1,13 +1,13 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{Xml, XmlDialect}
+import org.podval.xml.{Xml, XmlWriterConfig}
 import java.io.File
 
 // Note: this exists only to parse XML to disambiguate the dialect
 object XmlMarkup extends Markup(
   name = "XML",
-  xmlDialect = XmlDialect.Plain,
+  xmlWriterConfig = XmlWriterConfig.Plain,
   rendersToXml = true,
   extension = "xml"
 ):

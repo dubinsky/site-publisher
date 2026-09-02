@@ -13,12 +13,12 @@ object XmlWriter:
   // Also, element start and end tags must not be separated from the children by newlines...
   private val hiddenNewline: String = "\\n"
 
-  def render[Element: XmlAst](dialect: XmlDialect, element: Element, width: Int): String =
+  def render[Element: XmlAst](config: XmlWriterConfig, element: Element, width: Int): String =
     fromElement(
       element,
       canBreakLeft = true,
       canBreakRight = true
-    )(using dialect)
+    )(using config)
       .render(width)
       .replace(XmlWriter.hiddenNewline, "\n")
       .appended('\n')
@@ -27,7 +27,7 @@ object XmlWriter:
     element: Element,
     canBreakLeft: Boolean,
     canBreakRight: Boolean
-  )(using dialect: XmlDialect)(using ast: XmlAst[Element]): Doc =
+  )(using config: XmlWriterConfig)(using ast: XmlAst[Element]): Doc =
     val attributeValues: Seq[(String, String)] = element.getAttributes
     val attributes: Doc =
       if attributeValues.isEmpty then Doc.empty
@@ -61,7 +61,7 @@ object XmlWriter:
 
     if children.isEmpty then
       Doc.text(s"<$name") + attributes + Doc.lineOrEmpty + (
-        if dialect.selfClose.contains(name)
+        if config.selfClose.contains(name)
         then Doc.text("/>")
         else Doc.text(s"></$name>")
       )
@@ -71,8 +71,8 @@ object XmlWriter:
 
       val stack: Boolean =
         noText &&
-        !dialect.unStack.contains(name) &&
-        ((children.length >= 2) || ((children.length == 1) && dialect.stack.contains(name)))
+        !config.unStack.contains(name) &&
+        ((children.length >= 2) || ((children.length == 1) && config.stack.contains(name)))
 
       if stack then
         // If this is clearly a bunch of elements - stack 'em with an indent:
@@ -82,7 +82,7 @@ object XmlWriter:
           Doc.hardLine,
           end
         ))
-      else if dialect.nest.contains(name) then
+      else if config.nest.contains(name) then
         // If this is forced-nested element - nest it:
         Doc.intercalate(Doc.lineOrSpace, children).tightBracketBy(left = start, right = end, XmlWriter.indent)
       else
@@ -90,7 +90,7 @@ object XmlWriter:
         // character content should stick to the opening and closing tags.
         // unStack (phrasing): a break after the start tag or before the end tag is a visible
         // HTML space, e.g. "(<span>\n  <a>posuk</a>" → "( posuk".
-        val breakAtTags: Boolean = !dialect.unStack.contains(name)
+        val breakAtTags: Boolean = !config.unStack.contains(name)
         Doc.cat(Seq(
           start,
           if breakAtTags && canBreakLeft && !charactersLeft then Doc.lineOrEmpty else Doc.empty,
@@ -136,7 +136,7 @@ object XmlWriter:
     else processText(resultNew :+ ast.text(word), tail2)
 
   @scala.annotation.tailrec
-  private def chunkify(using dialect: XmlDialect, ast: XmlAst[?])(
+  private def chunkify(using dialect: XmlWriterConfig, ast: XmlAst[?])(
     result: Seq[ast.Nodes],
     current: List[ast.Node],
     nodes: List[ast.Node],
@@ -168,7 +168,7 @@ object XmlWriter:
               then chunkify(result, node :: current, tail, flush = false)
               else chunkify(result, current, nodes, flush = true)
 
-  private def fromChunk(using dialect: XmlDialect, ast: XmlAst[?])(
+  private def fromChunk(using dialect: XmlWriterConfig, ast: XmlAst[?])(
     nodes: ast.Nodes,
     canBreakLeft: Boolean,
     canBreakRight: Boolean
@@ -182,7 +182,7 @@ object XmlWriter:
       fromNode(nodes.last, canBreakLeft = false, canBreakRight)
     )
   
-  private def fromNode(using dialect: XmlDialect, ast: XmlAst[?])(
+  private def fromNode(using dialect: XmlWriterConfig, ast: XmlAst[?])(
     node: ast.Node,
     canBreakLeft: Boolean,
     canBreakRight: Boolean
@@ -228,6 +228,6 @@ object XmlWriter:
   // For untrusted or multi-author content this is XSS/HTML injection risk; even for trusted content it can corrupt markup.
   //- Suggestion: Escape text and attributes on render (use full `Strings.escape` for attributes).
   // Prefer encoding on output always; only skip for preformatted trusted raw HTML islands if needed.
-  private def encodeXmlSpecials(using dialect: XmlDialect)(string: String): String =
+  private def encodeXmlSpecials(using dialect: XmlWriterConfig)(string: String): String =
     if dialect.encodeXmlSpecials then XmlEncode.encodeXmlSpecials(string) else string
 

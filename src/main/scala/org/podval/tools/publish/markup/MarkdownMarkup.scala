@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlUtil}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -19,7 +19,7 @@ object MarkdownMarkup extends Markup(
   name = "Markdown",
   extension = "md",
   rendersToXml = true,
-  xmlDialect = HtmlXmlDialect,
+  xmlWriterConfig = HtmlXmlWriterConfig,
 ):
   private val extensionsCommon: List[Parser.ParserExtension & HtmlRenderer.HtmlRendererExtension] = List(
     DefinitionExtension.create,

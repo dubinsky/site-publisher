@@ -12,7 +12,7 @@ import zio.blocks.typeid.TypeId
 //)
 final case class Entity(
   @Modifier.config(XmlCodec.Attribute, "") id: Option[String] = None,
-//  val entityType: EntityType,
+//  kind: EntityKind,
   @Modifier.config(XmlCodec.Attribute, "") role: Option[String] = None,
   @Modifier.config(XmlCodec.Element, "persName")
   @Modifier.alias("placeName")

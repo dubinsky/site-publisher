@@ -21,7 +21,7 @@ import java.io.File
 //)
 object TeiMarkup extends Markup(
   name = "TEI",
-  xmlDialect = TeiXmlDialect,
+  xmlWriterConfig = TeiXmlWriterConfig,
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):

@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlUtil}
 import java.io.File
 
 // TODO deal with
@@ -18,7 +18,7 @@ object AsciiDocMarkup extends Markup(
   // Note: by supplying `htmlsyntax=xml` we ensure that Asciidoctor produces well-formed XML;
   // the only markup with `rendersToXml=true` is HTML ;)
   rendersToXml = true,
-  xmlDialect = HtmlXmlDialect
+  xmlWriterConfig = HtmlXmlWriterConfig
 ):
   private var asciidoctorVar: Option[Asciidoctor] = None
   def asciidoctor: Asciidoctor = synchronized:

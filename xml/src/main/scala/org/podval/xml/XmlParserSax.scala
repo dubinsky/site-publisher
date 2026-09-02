@@ -88,7 +88,7 @@ private def fromName(uri: String, localName: String, qName: String): XmlName =
     localName = local,
     prefix = prefix,
     // TagSoup puts the XHTML namespace on every HTML element; drop it.
-    namespace = noneIfEmpty(uri).filterNot(_ == HtmlXmlDialect.namespace)
+    namespace = noneIfEmpty(uri).filterNot(_ == XmlNamespace.xhtml)
   )
 
 private def fromAttributes(attributes: Attributes): Chunk[(XmlName, String)] =

@@ -1,14 +1,14 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import java.io.File
 
 object HtmlMarkup extends Markup(
   name = "HTML",
   extension = "html",
   rendersToXml = false,
-  xmlDialect = HtmlXmlDialect,
+  xmlWriterConfig = HtmlXmlWriterConfig,
 ):
   // Unwrap a lone leading <p> in td/li/dd (Asciidoctor and FlexMark both emit these).
   private[markup] def unwrapSpuriousParagraph(element: Xml.Element): Option[Xml.Nodes] =

@@ -13,7 +13,7 @@ final class HtmlAttributesSpec extends AnyFunSuite:
     val attrs = el.getAttributes
     assert(attrs.count(_._1 == "class") == 1)
     assert(attrs.find(_._1 == "class").map(_._2).contains("icon-span grey fa-classic fa-regular fa-file"))
-    val rendered = HtmlXmlDialect.render(el)
+    val rendered = HtmlXmlWriterConfig.render(el)
     assert(rendered.contains("""class="icon-span grey fa-classic fa-regular fa-file""""))
     assert(!rendered.matches("""(?s).*class="[^"]*".*class=".*"""))
   }
@@ -41,7 +41,7 @@ final class HtmlAttributesSpec extends AnyFunSuite:
       val fromGet = el.getAttributes.find(_._1 == "class").map(_._2).getOrElse("")
       assert(el.getAttributes.count(_._1 == "class") == 1, el.render)
       assert(fromGet == classOf(el.render), s"get=$fromGet render=${el.render}")
-      assert(fromGet == classOf(HtmlXmlDialect.render(el)), s"get=$fromGet xml=${HtmlXmlDialect.render(el)}")
+      assert(fromGet == classOf(HtmlXmlWriterConfig.render(el)), s"get=$fromGet xml=${HtmlXmlWriterConfig.render(el)}")
 
     check(span(className += "icon-span", className += "grey fa-classic fa-regular", className += "fa-file"))
     check(div(className := "base", className += "extra"))

@@ -23,7 +23,7 @@ final class XmlUtilSpec extends AnyFunSuite:
   }
 
   test("xml2html keeps mixed text and elements") {
-    val dumped: String = HtmlXmlDialect.render(XmlUtil.xml2html(parse("<p>a<x/>b</p>")))
+    val dumped: String = HtmlXmlWriterConfig.render(XmlUtil.xml2html(parse("<p>a<x/>b</p>")))
     assert(dumped.contains("a"), dumped)
     assert(dumped.contains("b"), dumped)
     assert(dumped.contains("<x"), dumped)
@@ -53,7 +53,7 @@ final class XmlUtilSpec extends AnyFunSuite:
     val xml: Xml.Element = Xml.element("p", Seq.empty, Seq(Xml.cdata("a<b")))
     val html: Html.Element = XmlUtil.xml2html(xml)
     assert(html.getChildren.flatMap(_.asAtom) == Seq("a&lt;b"))
-    val dumped: String = HtmlXmlDialect.render(html)
+    val dumped: String = HtmlXmlWriterConfig.render(html)
     assert(dumped.contains("a&lt;b"), dumped)
     assert(!dumped.contains("a<b"), dumped)
   }

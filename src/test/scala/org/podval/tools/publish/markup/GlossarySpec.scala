@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -25,7 +25,7 @@ final class GlossarySpec extends AnyFunSuite:
     DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlDialect.render(element)
+    HtmlXmlWriterConfig.render(element)
 
   private def definitionText(defs: Map[String, Xml.Nodes], id: String): String =
     Xml.toString(defs(id)).trim

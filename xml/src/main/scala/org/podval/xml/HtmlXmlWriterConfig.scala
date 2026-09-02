@@ -1,6 +1,6 @@
 package org.podval.xml
 
-object HtmlXmlDialect extends XmlDialect(
+object HtmlXmlWriterConfig extends XmlWriterConfig(
   preformat = Set("pre"),
   stack = Set("nav", "header", "main", "div"),
   // Phrasing wrappers: never indent children (that would become a visible HTML space).
@@ -19,5 +19,4 @@ object HtmlXmlDialect extends XmlDialect(
     "area", "base", "br", "col", "embed", "hr", "img", "input",
     "link", "meta", "source", "track", "wbr"
   )
-):
-  val namespace: String = "http://www.w3.org/1999/xhtml"
+)

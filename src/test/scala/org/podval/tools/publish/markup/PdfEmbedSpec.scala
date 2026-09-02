@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlDialect, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
 final class PdfEmbedSpec extends AnyFunSuite:
-  private def render(element: Xml.Element): String = HtmlXmlDialect.render(element)
+  private def render(element: Xml.Element): String = HtmlXmlWriterConfig.render(element)
 
   private def parse(xml: String): Xml.Element = XmlParser.parseXml(xml).toOption.get
 

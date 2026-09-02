@@ -1,17 +1,17 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlDialect, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
 final class FootnoteSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String =
-    HtmlXmlDialect.render(element)
+    HtmlXmlWriterConfig.render(element)
 
   private def published(xml: Xml.Element, width: Int = 40): String =
     val (notes, harvested) = Footnote.harvest(xml)
     val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
-    HtmlXmlDialect.render(resolved, width)
+    HtmlXmlWriterConfig.render(resolved, width)
 
   test("attachTip wraps the link and tip as siblings") {
     val footnote = Footnote(
