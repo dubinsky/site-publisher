@@ -1,27 +1,30 @@
 package org.podval.xml
 
-import zio.blocks.chunk.Chunk
-
 object XmlUtil:
   def toId(text: String): String = text.trim.replace(' ', '-')
+
+  // ZIO Blocks `Chunk.flatMap` / `++` (Scala `appendedAll`) take ClassTag from the first
+  // inner chunk, so a leading text node then an element (or the reverse) throws
+  // ArrayStoreException. `:+` uses an AnyRef buffer, as the SAX builder does.
+  def flatMapNodes(nodes: Xml.Nodes, f: Xml.Node => Xml.Nodes): Xml.Nodes =
+    nodes.foldLeft(Seq.empty[Xml.Node]): (acc, node) =>
+      f(node).foldLeft(acc)(_ :+ _)
 
   def convertText(
     element: Xml.Element,
     converter: String => Xml.Nodes
   ): Xml.Element =
-    element.setChildren(
-      element.getChildren.foldLeft(Chunk.empty[Xml.Node]): (acc, xml) =>
-        acc ++ xml.asText.fold(Chunk(xml))(converter)
-    )
+    element.setChildren(flatMapNodes(element.getChildren, xml =>
+      xml.asText.fold(Seq(xml))(converter)
+    ))
 
   def convertElements(
     children: Xml.Nodes,
     converter: Xml.Element => Option[Xml.Nodes]
   ): Xml.Nodes =
-    // Do not use `Chunk.flatMap`: it takes ClassTag from the first inner chunk, so a
-    // leading text node then an element (or the reverse) throws ArrayStoreException.
-    children.foldLeft(Chunk.empty[Xml.Node]): (acc, child) =>
-      acc ++ child.asElement.flatMap(converter).getOrElse(Chunk(child))
+    flatMapNodes(children, child =>
+      child.asElement.flatMap(converter).getOrElse(Seq(child))
+    )
 
   def renameElement(
     name: String,
@@ -51,8 +54,10 @@ object XmlUtil:
   def xml2html(element: Xml.Element): Html.Element = Html
     .element(element.getName)
     .setAttributes(element.getAttributes)
-    .setChildren(element.getChildren.flatMap: child =>
-      // ZIO Blocks HTML does not support comments nor processing instructions
-      child.asElement.map(xml2html)
-        .orElse(child.asAtom.map(Html.text))
+    .setChildren(
+      element.getChildren.foldLeft(Seq.empty[Html.Node]): (acc, child) =>
+        // ZIO Blocks HTML does not support comments nor processing instructions
+        child.asElement.map(xml2html)
+          .orElse(child.asAtom.map(Html.text))
+          .fold(acc)(acc :+ _)
     )

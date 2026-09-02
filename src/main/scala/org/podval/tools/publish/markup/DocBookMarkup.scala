@@ -4,7 +4,6 @@ import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
-import zio.blocks.chunk.Chunk
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -104,14 +103,14 @@ object DocBookMarkup extends Markup(
     if root.getChildren.exists(_ eq title) then
       root.setChildren(root.getChildren.filterNot(_ eq title))
     else
-      root.setChildren(root.getChildren.flatMap: node =>
+      root.setChildren(flatMapNodes(root.getChildren, node =>
         node.asElement.filter(el => infoElements.contains(el.getName)) match
           case Some(info) if info.getChildren.exists(_ eq title) =>
             val stripped: Xml.Element = info.setChildren(info.getChildren.filterNot(_ eq title))
-            if stripped.getChildren.forall(_.isWhitespace) then Chunk.empty else Chunk(stripped)
+            if stripped.getChildren.forall(_.isWhitespace) then Seq.empty else Seq(stripped)
           case _ =>
-            Chunk(node)
-      )
+            Seq(node)
+      ))
 
   private def xmlId(element: Xml.Element): Option[String] =
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
@@ -213,14 +212,14 @@ object DocBookMarkup extends Markup(
     nodes.flatMap: node =>
       node.asElement match
         case Some(el) if wrapperElements.contains(el.getName) => flattenWrappers(el.getChildren)
-        case Some(el) if el.getName == "colspec" || el.getName == "spanspec" => Chunk.empty
-        case _ => Chunk(node)
+        case Some(el) if el.getName == "colspec" || el.getName == "spanspec" => Seq.empty
+        case _ => Seq(node)
 
   private def convertFootnote(element: Xml.Element, correlationIds: IdGenerator): Option[Xml.Nodes] =
     if element.getName != "footnote" then None
     else
       val correlationId: String = xmlId(element).getOrElse(correlationIds.generate())
-      Some(Chunk(Footnote.link(correlationId), Footnote.body(correlationId, element.getChildren)))
+      Some(Seq(Footnote.link(correlationId), Footnote.body(correlationId, element.getChildren)))
 
   private def footnoteDefinitionIds(xml: Xml.Element): Set[String] =
     xml.gather(el => Option.when(el.getName == "footnote")(xmlId(el)).flatten, stopAtCode = false).toSet
@@ -230,7 +229,7 @@ object DocBookMarkup extends Markup(
     else
       val fragment: Option[String] =
         element.getHref.filter(_.startsWith("#")).map(_.substring(1)).filter(_.nonEmpty)
-      fragment.filter(footnoteIds.contains).map(id => Chunk(Footnote.link(id)))
+      fragment.filter(footnoteIds.contains).map(id => Seq(Footnote.link(id)))
 
   private def convertGlossary(element: Xml.Element): Xml.Element =
     if !(element.getName == "glosslist" || element.getName == "glossary") || Glossary.isList(element) then
@@ -242,21 +241,21 @@ object DocBookMarkup extends Markup(
         stopAtCode = false
       )
       val dl: Xml.Element = Xml.element("dl").add(Glossary.ListClass).setChildren(entries)
-      if titles.isEmpty then dl else Xml.element("div").setChildren(titles ++ Chunk(dl))
+      if titles.isEmpty then dl else Xml.element("div").setChildren(titles ++ Seq(dl))
 
   private def convertGlossEntry(entry: Xml.Element): Xml.Element =
     val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
     val term: Option[Xml.Element] = children.find(_.getName == "glossterm")
     val definition: Option[Xml.Element] = children.find(_.getName == "glossdef")
     val dt: Xml.Element =
-      Xml.element("dt").setChildren(term.fold(Chunk.empty)(_.getChildren.filterNot(_.isWhitespace)))
+      Xml.element("dt").setChildren(term.fold(Seq.empty)(_.getChildren.filterNot(_.isWhitespace)))
     val dd: Option[Xml.Element] = definition.map: defn =>
       Xml.element("dd").setChildren(defn.getChildren.filterNot(_.isWhitespace))
     val id: Option[String] =
       xmlId(entry).orElse(term.flatMap(xmlId)).orElse:
         val text: String = dt.getText.trim
         Option.when(text.nonEmpty)(XmlUtil.toId(text))
-    Glossary.item(id, Chunk.from(dt +: dd.toSeq))
+    Glossary.item(id, dt +: dd.toSeq)
 
   private def convertVariableList(element: Xml.Element): Xml.Element =
     if element.getName != "variablelist" then element
@@ -264,7 +263,7 @@ object DocBookMarkup extends Markup(
       val items: Xml.Nodes = element.getChildren.flatMap: node =>
         node.asElement.filter(_.getName == "varlistentry") match
           case Some(entry) => convertVarListEntry(entry)
-          case None => Chunk(node)
+          case None => Seq(node)
       Xml.element("dl").setChildren(items)
 
   private def convertVarListEntry(entry: Xml.Element): Xml.Nodes =
@@ -273,7 +272,7 @@ object DocBookMarkup extends Markup(
       Xml.element("dt").setChildren(term.getChildren.filterNot(_.isWhitespace))
     val dds: Seq[Xml.Element] = children.filter(_.getName == "listitem").map: item =>
       Xml.element("dd").setChildren(item.getChildren.filterNot(_.isWhitespace))
-    Chunk.from(dts ++ dds)
+    dts ++ dds
 
   private def convertAdmonition(element: Xml.Element): Xml.Element =
     if !admonitionTypes.contains(element.getName) || Admonition.is(element) then element
@@ -305,7 +304,7 @@ object DocBookMarkup extends Markup(
         attribution.exists(_ eq node)
       val title: Option[String] = titleEl.map(_.getText.trim).filter(_.nonEmpty)
       val attribNodes: Xml.Nodes = attribution.flatMap: node =>
-        node.asElement.fold(Chunk(node))(_.getChildren.filterNot(_.isWhitespace))
+        node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace))
       Quote.make(title, attribNodes, body).setId(xmlId(element))
 
   private def convertFigure(element: Xml.Element): Xml.Element =
@@ -342,9 +341,9 @@ object DocBookMarkup extends Markup(
       val items: Xml.Nodes = element.getChildren.flatMap: node =>
         node.asElement.filter(_.getName == "callout") match
           case Some(callout) =>
-            Chunk(Xml.element("li").setChildren(callout.getChildren.filterNot(_.isWhitespace)))
+            Seq(Xml.element("li").setChildren(callout.getChildren.filterNot(_.isWhitespace)))
           case None =>
-            Chunk(node)
+            Seq(node)
       Xml.element("ol").add(Callout.ListClass).setChildren(items)
 
   private def convertCo(element: Xml.Element, coNumbers: IdGenerator): Option[Xml.Nodes] =
@@ -352,7 +351,7 @@ object DocBookMarkup extends Markup(
     else
       val number: String =
         element.get("label").map(_.trim).filter(_.nonEmpty).getOrElse(coNumbers.generate())
-      Some(Chunk(Callout.marker(number)))
+      Some(Seq(Callout.marker(number)))
 
   private def bibliographyEntryIds(xml: Xml.Element): Set[String] =
     xml.gather(
@@ -410,12 +409,12 @@ object DocBookMarkup extends Markup(
       element.get("language").map(_.trim).filter(_.nonEmpty)
     element.getName match
       case "literal" =>
-        Some(Chunk(withLanguage(renameElement("code", element), language)))
+        Some(Seq(withLanguage(renameElement("code", element), language)))
       case "code" =>
-        Some(Chunk(wrapIfMultiline(withLanguage(element, language))))
+        Some(Seq(wrapIfMultiline(withLanguage(element, language))))
       case "programlisting" | "screen" | "literallayout" =>
         val code: Xml.Element = withLanguage(Xml.element("code").setChildren(element.getChildren), language)
-        Some(Chunk(Xml.element("pre").setChildren(Chunk(code))))
+        Some(Seq(Xml.element("pre").setChildren(Seq(code))))
       case _ =>
         None
 
@@ -425,4 +424,4 @@ object DocBookMarkup extends Markup(
       if element.hasClass(cls) then element else element.addClass(cls)
 
   private def wrapIfMultiline(code: Xml.Element): Xml.Element =
-    if code.getText.contains('\n') then Xml.element("pre").setChildren(Chunk(code)) else code
+    if code.getText.contains('\n') then Xml.element("pre").setChildren(Seq(code)) else code

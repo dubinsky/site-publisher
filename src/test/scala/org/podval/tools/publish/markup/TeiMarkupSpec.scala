@@ -267,6 +267,21 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("tail"), dumped)
   }
 
+  test("pb among whitespace does not throw") {
+    val xml: Xml.Element = process(
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt><author>?</author></titleStmt></fileDesc></teiHeader>
+        |  <text xml:lang="ru"><body>
+        |    <pb n="032-1"/>
+        |    <pb n="032-2"/>
+        |  </body></text>
+        |</TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("032-1"), dumped)
+    assert(dumped.contains("032-2"), dumped)
+  }
+
   test("note place=end becomes footnote IR; class is not tei-class; plain note stays") {
     val xml: Xml.Element = process(
       """<div>

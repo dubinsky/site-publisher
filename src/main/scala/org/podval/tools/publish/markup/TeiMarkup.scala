@@ -4,7 +4,6 @@ import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
-import zio.blocks.chunk.Chunk
 import java.io.File
 
 // TODO @xmlAttribute("id") and @xmlNamespace() annotations mentioned in the documentation
@@ -111,12 +110,12 @@ object TeiMarkup extends Markup(
     nonempty.find(_.get("type").contains("main")).orElse(nonempty.headOption)
 
   private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
-    root.setChildren(root.getChildren.flatMap: node =>
-      if node eq title then Chunk.empty
+    root.setChildren(flatMapNodes(root.getChildren, node =>
+      if node eq title then Seq.empty
       else node.asElement.match
-        case Some(el) => Chunk(stripTitle(el, title))
-        case None => Chunk(node)
-    )
+        case Some(el) => Seq(stripTitle(el, title))
+        case None => Seq(node)
+    ))
 
   // After Xml2Html, `head` is `tei-head`. Transform is parent-first, so this is a second pass.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =
@@ -176,7 +175,7 @@ object TeiMarkup extends Markup(
     Footnote.finish(converted)
 
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.localName match
-    case "store" | "collection" => element.setChildren(Chunk.empty)
+    case "store" | "collection" => element.setChildren(Seq.empty)
     case _ => element
 
   private def dropIncludes(element: Xml.Element): Xml.Element =
@@ -367,14 +366,14 @@ object TeiMarkup extends Markup(
 
   private def unwrapQuoted(node: Xml.Node): Xml.Nodes =
     node.asElement.filter(el => el.getName == "quote" || el.getName == "q")
-      .fold(Chunk(node))(_.getChildren.filterNot(_.isWhitespace))
+      .fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace))
 
   private def asAttribution(node: Xml.Node): Xml.Nodes =
     node.asElement.filter(el => el.getName == "bibl" || el.getName == "biblStruct") match
       case Some(el) =>
-        Chunk(Xml.element("cite").setChildren(el.getChildren.filterNot(_.isWhitespace)))
+        Seq(Xml.element("cite").setChildren(el.getChildren.filterNot(_.isWhitespace)))
       case None =>
-        Chunk(node)
+        Seq(node)
 
   // Glossary in TEI: <list type="gloss"> (also type="glossary") of <label>/<item>.
   // Convert after Xml2Html so Glossary IR classes are not prefixed to tei-class.
@@ -405,7 +404,7 @@ object TeiMarkup extends Markup(
         xmlId(label).orElse(item.flatMap(xmlId)).orElse:
           val text: String = dt.getText.trim
           Option.when(text.nonEmpty)(XmlUtil.toId(text))
-      result = result :+ Glossary.item(id, Chunk.from(dt +: dd.toSeq))
+      result = result :+ Glossary.item(id, dt +: dd.toSeq)
 
     nodes.foreach: node =>
       node.asElement match
@@ -430,7 +429,7 @@ object TeiMarkup extends Markup(
             result = result :+ node
 
     pendingLabel.foreach(emit(_, None))
-    Chunk.from(result)
+    result
 
   // Code in TEI: <code lang="scala"> (tagdocs). Xml2Html leaves the element name
   // and prefixes @lang to tei-lang. Inline stays <code class="language-…">;
@@ -445,9 +444,9 @@ object TeiMarkup extends Markup(
         val cls: String = s"language-${name.toLowerCase}"
         if !code.hasClass(cls) then code = code.addClass(cls)
       val wrapped: Xml.Element =
-        if code.getText.contains('\n') then Xml.element("pre").setChildren(Chunk(code))
+        if code.getText.contains('\n') then Xml.element("pre").setChildren(Seq(code))
         else code
-      Some(Chunk(wrapped))
+      Some(Seq(wrapped))
 
   // Footnotes in TEI:
   // <note place="end" n="3">Footnote body</note>
@@ -456,7 +455,7 @@ object TeiMarkup extends Markup(
     val isFootnote: Boolean = element.getName == "note" && element.get("place").contains("end")
     if !isFootnote then None else Some:
       val correlationId = correlationIds.generate()
-      Chunk(
+      Seq(
         Footnote.link(correlationId),
         Footnote.body(correlationId, element.getChildren)
       )
