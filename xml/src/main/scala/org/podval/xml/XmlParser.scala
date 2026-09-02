@@ -1,6 +1,7 @@
 package org.podval.xml
 
 import zio.blocks.schema.xml.Xml
+import org.xml.sax.InputSource
 import scala.util.Using
 import java.io.File
 import java.net.URL
@@ -13,7 +14,8 @@ import java.net.URL
   * includes. `xml:base` on included roots is relative to the *initial*
   * document, so nested includes do not hit
   * [[https://issues.apache.org/jira/browse/XERCESJ-1102 XERCESJ-1102]].
-  * String parse never expands (there is no base URL).
+  * String parse never expands (there is no base URL). HTML uses TagSoup
+  * (`parseHtml`) from a string, URL, or file; it does not expand XInclude.
   */
 object XmlParser:
   def parse(content: String, isXml: Boolean): Either[Throwable, Xml.Element] =
@@ -58,4 +60,14 @@ object XmlParser:
       case Some(url) => parseXml(url, xinclude)
 
   def parseHtml(content: String): Either[Throwable, Xml.Element] =
-    XmlParserSax.parse(content = content, reader = HtmlTagSoup.reader)
+    XmlParserSax.parse(reader = HtmlTagSoup.reader, content = content)
+
+  def parseHtml(file: File): Either[Throwable, Xml.Element] =
+    parseHtml(file.toURI.toURL)
+
+  def parseHtml(url: URL): Either[Throwable, Xml.Element] =
+    Using(url.openStream()): stream =>
+      val source: InputSource = InputSource(stream)
+      source.setSystemId(url.toString)
+      XmlParserSax.parse(reader = HtmlTagSoup.reader, source = source)
+    .fold(Left(_), identity)

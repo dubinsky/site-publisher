@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - xml: `XmlParser` loads from URL, file, and classpath; XInclude is off by default (store `xi:include` stays a page ref); `xinclude = true` expands includes and sets `xml:base` relative to the initial document
+- xml: `XmlParserSax` accepts `InputSource` / stream / reader (HTML `parseHtml` from URL or file)
 - xml: Gradle subproject `org.podval.xml` with a Schema-derived document binder (`XmlCodec`) over any `XmlAst` (unwrapped sequences, leaf-record attributes, `XmlNode` identity, leftover `XmlExtras`)
 - xml: removed `RawXml` / `WithRawXml`; `Entity` / `EntityReference` keep leftovers in `XmlExtras`
 - xml: `XmlCodec` lives in `org.podval.xml`; Selector, collection parts, and entity-lists decode with it

@@ -5,11 +5,20 @@ import zio.blocks.schema.xml.{Xml, XmlName}
 import org.xml.sax.{Attributes, InputSource, XMLReader}
 import org.xml.sax.ext.LexicalHandler
 import org.xml.sax.helpers.DefaultHandler
-import java.io.StringReader
+import java.io.{InputStream, Reader, StringReader}
 
 // Note: written by Grok, re-written by me ;)
 object XmlParserSax:
   def parse(reader: XMLReader, content: String): Either[Throwable, Xml.Element] =
+    parse(reader, InputSource(StringReader(content)))
+
+  def parse(reader: XMLReader, stream: InputStream): Either[Throwable, Xml.Element] =
+    parse(reader, InputSource(stream))
+
+  def parse(reader: XMLReader, characterReader: Reader): Either[Throwable, Xml.Element] =
+    parse(reader, InputSource(characterReader))
+
+  def parse(reader: XMLReader, source: InputSource): Either[Throwable, Xml.Element] =
     try
       reader.setFeature("http://xml.org/sax/features/namespaces", true)
       // Include xmlns:* in the attribute list so namespace declarations become attributes
@@ -19,10 +28,10 @@ object XmlParserSax:
 
       val builder: XmlBuilder = XmlBuilder()
       val handler: XmlParserSax = XmlParserSax(builder)
-    
+
       reader.setContentHandler(handler)
       reader.setProperty("http://xml.org/sax/properties/lexical-handler", handler)
-      reader.parse(InputSource(StringReader(content)))
+      reader.parse(source)
 
       Right(builder.result)
     catch
