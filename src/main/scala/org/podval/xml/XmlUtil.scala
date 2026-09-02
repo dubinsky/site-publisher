@@ -1,6 +1,8 @@
 package org.podval.xml
 
 object XmlUtil:
+  def xml2html(element: Xml.Element): Html.Element = Ast2Ast.Xml2Html.convert(element)
+  
   def toId(text: String): String = text.trim.replace(' ', '-')
 
   // ZIO Blocks `Chunk.flatMap` / `++` (Scala `appendedAll`) take ClassTag from the first
@@ -49,15 +51,3 @@ object XmlUtil:
 
   def isInclude(element: Xml.Element): Boolean =
     element.localName == "include" && element.get("href").exists(_.trim.nonEmpty)
-
-  // Note: I do not see any reason to recognize elements (like 'script') or attributes (like 'hidden')...
-  def xml2html(element: Xml.Element): Html.Element = Html
-    .element(element.getName)
-    .setAttributes(element.getAttributes)
-    .setChildren(
-      element.getChildren.foldLeft(Seq.empty[Html.Node]): (acc, child) =>
-        // ZIO Blocks HTML does not support comments nor processing instructions
-        child.asElement.map(xml2html)
-          .orElse(child.asAtom.map(Html.text))
-          .fold(acc)(acc :+ _)
-    )
