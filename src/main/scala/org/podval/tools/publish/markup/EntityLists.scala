@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlCodec}
+import zio.blocks.schema.{Modifier, Schema}
 
 //// TODO derive it from By (with a transparent Selector)!
 //final class EntityList(
@@ -15,38 +16,57 @@ import org.podval.xml.Xml
 /** TEI `entityLists` directory index specs: kind + role buckets.
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`. */
 object EntityLists:
-  final class Index(val lists: Seq[Spec])
+  // TODO can this be collapsed?!
+  sealed trait Spec derives CanEqual:
+    def id: String
+    def role: Option[String]
+    def title: String
+    def kind: EntityKind
 
-  final class Spec(
-    val kind: EntityKind,
-    val id: String,
-    val role: Option[String],
-    val title: String
-  )
+  @Modifier.config(XmlCodec.Element, "listPerson")
+  final case class ListPerson(
+    @Modifier.config(XmlCodec.Attribute, "n") id: String,
+    @Modifier.config(XmlCodec.Attribute, "") role: Option[String] = None,
+    @Modifier.config(XmlCodec.Element, "title")
+    @Modifier.alias("tei-title")
+    title: String
+  ) extends Spec derives CanEqual:
+    def kind: EntityKind = EntityKind.Person
+
+  @Modifier.config(XmlCodec.Element, "listPlace")
+  final case class ListPlace(
+    @Modifier.config(XmlCodec.Attribute, "n") id: String,
+    @Modifier.config(XmlCodec.Attribute, "") role: Option[String] = None,
+    @Modifier.config(XmlCodec.Element, "title")
+    @Modifier.alias("tei-title")
+    title: String
+  ) extends Spec derives CanEqual:
+    def kind: EntityKind = EntityKind.Place
+
+  @Modifier.config(XmlCodec.Element, "listOrg")
+  final case class ListOrg(
+    @Modifier.config(XmlCodec.Attribute, "n") id: String,
+    @Modifier.config(XmlCodec.Attribute, "") role: Option[String] = None,
+    @Modifier.config(XmlCodec.Element, "title")
+    @Modifier.alias("tei-title")
+    title: String
+  ) extends Spec derives CanEqual:
+    def kind: EntityKind = EntityKind.Organization
+
+  object Spec:
+    given schema: Schema[Spec] = Schema.derived
+
+  final case class Index(
+    @Modifier.config(XmlCodec.Element, "title")
+    @Modifier.alias("tei-title")
+    title: Option[String] = None,
+    lists: Seq[Spec] = Seq.empty
+  ) derives CanEqual
+
+  object Index:
+    given schema: Schema[Index] = Schema.derived
+    val codec: XmlCodec[Index] = XmlCodec.derived
 
   def harvest(xml: Xml.Element): Option[Index] =
     Option.when(xml.localName == "entityLists"):
-      Index(
-        xml.getChildren.flatMap(_.asElement).flatMap(parseList).toSeq
-      )
-
-  private def parseList(element: Xml.Element): Option[Spec] =
-    for
-      kind <- EntityKind.values.find(_.listElement == element.localName)
-      id <- element.get("n").map(_.trim).filter(_.nonEmpty)
-      title <- listTitle(element)
-    yield Spec(
-      kind = kind,
-      id = id,
-      role = element.get("role").map(_.trim).filter(_.nonEmpty),
-      title = title
-    )
-
-  private def listTitle(element: Xml.Element): Option[String] =
-    element.getChildren.flatMap(_.asElement)
-      .find(el =>
-        val name: String = el.localName
-        name == "title" || name == "tei-title"
-      )
-      .map(_.getText.trim)
-      .filter(_.nonEmpty)
+      Index.codec.decode(xml).fold(err => throw err, identity)

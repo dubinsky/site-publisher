@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.codec.XmlCodec
+import org.podval.xml.XmlCodec
 import zio.blocks.schema.{Modifier, Schema}
 
 final case class EntityName(

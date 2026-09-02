@@ -1,6 +1,5 @@
-package org.podval.xml.codec
+package org.podval.xml
 
-import org.podval.xml.XmlAst
 import zio.blocks.schema.Schema
 import zio.blocks.schema.derive.Deriver
 import scala.util.control.NonFatal

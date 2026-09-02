@@ -263,9 +263,8 @@ final class EntityListsContent(
 
 object EntityListsContent:
   def parse(xml: Xml.Element): EntityListsContent =
+    val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
     new EntityListsContent(
-      title = xml.getChildren.flatMap(_.asElement)
-        .find(el => el.localName == "title" || el.localName == "tei-title")
-        .filter(_.getText.trim.nonEmpty),
-      index = EntityListSpecs.harvest(xml).get
+      title = index.title.filter(_.nonEmpty).map(text => Xml.element("title").setText(text)),
+      index = index
     )

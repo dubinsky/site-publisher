@@ -1,4 +1,4 @@
-package org.podval.xml.codec
+package org.podval.xml
 
 final class XmlError(
   val message: String,

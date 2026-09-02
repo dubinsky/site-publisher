@@ -1,6 +1,5 @@
-package org.podval.xml.codec
+package org.podval.xml
 
-import org.podval.xml.{XmlAst, XmlExtras, XmlNode}
 import zio.blocks.chunk.Chunk
 import zio.blocks.docs.Doc
 import zio.blocks.schema.*

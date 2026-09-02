@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlExtras, XmlNode, XmlParser}
-import org.podval.xml.codec.XmlCodec
+import org.podval.xml.{Xml, XmlCodec, XmlNode, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class EntityCodecSpec extends AnyFunSuite:

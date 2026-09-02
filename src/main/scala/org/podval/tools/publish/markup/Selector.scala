@@ -1,14 +1,15 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Files
-import org.podval.xml.{Xml, XmlParser}
+import org.podval.xml.{Xml, XmlCodec, XmlParser}
+import zio.blocks.schema.{Modifier, Schema}
 
 /** A store/collection `by/@selector` (or a document facet). Loaded from `Selector.xml`
   * (same catalog as the old Open Torah collector). Display name prefers Russian. */
-final class Selector(
-  val names: Seq[Selector.Name],
-  val title: Option[String]
-):
+final case class Selector(
+  @Modifier.config(XmlCodec.Element, "name") names: Seq[Selector.Name],
+  @Modifier.config(XmlCodec.Attribute, "") title: Option[String] = None
+) derives CanEqual:
   def displayName: String =
     names.find(_.lang.contains("ru")).orElse(names.headOption).map(_.n).getOrElse("")
 
@@ -16,10 +17,17 @@ final class Selector(
     names.exists(_.n.equalsIgnoreCase(n))
 
 object Selector:
-  final class Name(
-    val n: String,
-    val lang: Option[String]
-  )
+  final case class Name(
+    @Modifier.config(XmlCodec.Attribute, "") n: String,
+    @Modifier.config(XmlCodec.Attribute, "") lang: Option[String] = None,
+    @Modifier.config(XmlCodec.Attribute, "") transliterated: Option[Boolean] = None
+  ) derives CanEqual
+
+  object Name:
+    given schema: Schema[Name] = Schema.derived
+
+  given schema: Schema[Selector] = Schema.derived
+  val codec: XmlCodec[Selector] = XmlCodec.derived
 
   def displayName(n: String): String = find(n).map(_.displayName).getOrElse(n)
 
@@ -33,13 +41,5 @@ object Selector:
     ) match
       case Right(root) => root
       case Left(error) => throw error
-    xml.getChildren.flatMap(_.asElement).filter(_.localName == "selector").flatMap(parse)
-
-  private def parse(element: Xml.Element): Option[Selector] =
-    val names: Seq[Name] =
-      element.getChildren.flatMap(_.asElement).filter(_.localName == "name").flatMap: el =>
-        el.get("n").map(_.trim).filter(_.nonEmpty).map: n =>
-          Name(n, el.get("lang").map(_.trim).filter(_.nonEmpty))
-    Option.when(names.nonEmpty)(
-      Selector(names, element.get("title").map(_.trim).filter(_.nonEmpty))
-    )
+    xml.getChildren.flatMap(_.asElement).flatMap: element =>
+      codec.decode(element).toOption.filter(_.names.nonEmpty)

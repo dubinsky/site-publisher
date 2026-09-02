@@ -1,6 +1,5 @@
 package org.podval.xml
 
-import org.podval.xml.codec.{XmlCodec, XmlError}
 import zio.blocks.schema.Schema
 
 /** AST-independent XML tree. Identity fields copy through any `XmlAst`. */

@@ -1,6 +1,5 @@
 package org.podval.xml
 
-import org.podval.xml.codec.{XmlCodec, XmlError}
 import zio.blocks.schema.Schema
 
 /** Unclaimed attributes and children of the parent element. Opt-in leftover capture. */

@@ -156,7 +156,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )).get
     assert(index.pageType == PageType.Book, index.pageType)
     assert(index.parts.map(_.from) == Seq("084", "253.1"), index.parts.map(_.from))
-    assert(index.parts.head.title.exists(_.getText.contains("Materials")), index.parts.head.title.map(_.getText))
+    assert(index.parts.head.titleXml.exists(_.getText.contains("Materials")), index.parts.head.titleXml.map(_.getText))
   }
 
   test("pb becomes a facsimile anchor with p{n} id") {
