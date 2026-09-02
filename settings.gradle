@@ -5,6 +5,9 @@ plugins {
 
 rootProject.name = 'org.podval.tools.publisher'
 
+include 'org.podval.xml'
+project(':org.podval.xml').projectDir = file('xml')
+
 dependencyResolutionManagement {
   repositories {
     mavenCentral()

@@ -1,0 +1,121 @@
+plugins {
+  id 'java-library'
+  id 'scala'
+  id 'maven-publish'
+  id 'signing'
+  id 'org.podval.tools.scalajs' version '1.0.4'
+}
+
+description = 'XML AST, dialects, and derived Scala codecs'
+group = 'org.podval.tools'
+version = '0.0.1'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+scala.scalaVersion = '3.9.0'
+
+String zioBlocksVersion = '0.0.51'
+
+dependencies {
+  api "dev.zio:zio-blocks-schema_3:$zioBlocksVersion"
+  api "dev.zio:zio-blocks-schema-xml_3:$zioBlocksVersion"
+  api "dev.zio:zio-blocks-html_3:$zioBlocksVersion"
+  api 'org.scala-lang.modules:scala-xml_3:2.4.0'
+  implementation 'org.ccil.cowan.tagsoup:tagsoup:1.2.1'
+  implementation 'org.typelevel:paiges-core_3:0.4.4'
+  testImplementation 'org.scalatest:scalatest_3:3.2.20'
+}
+
+tasks.withType(ScalaCompile).configureEach {
+  scalaCompileOptions.with {
+    additionalParameters = [
+      '-new-syntax',
+      '-feature',
+      '-language:strictEquality',
+      '-source:future'
+    ]
+  }
+}
+
+jar {
+  manifest {
+    attributes(
+      'Implementation-Title'  : project.description,
+      'Implementation-Version': project.version
+    )
+  }
+}
+
+tasks.register('sourcesJar', Jar) {
+  from sourceSets.main.allSource
+  archiveClassifier.set('sources')
+}
+
+tasks.register('scaladocJar', Jar) {
+  from scaladoc.destinationDir
+  archiveClassifier.set('scaladoc')
+}
+scaladocJar.dependsOn scaladoc
+
+tasks.register('javadocJar', Jar) {
+  from javadoc.destinationDir
+  archiveClassifier.set('javadoc')
+}
+javadocJar.dependsOn(javadoc)
+
+final String gitHubRepository = 'dubinsky/publisher'
+final String gitHubRepositoryUrl = "https://github.com/$gitHubRepository"
+final String orgName = 'Podval Group'
+final String orgUrl = 'https://www.podval.org'
+
+publishing {
+  publications {
+    library(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact scaladocJar
+      artifact javadocJar
+
+      pom {
+        name = project.name
+        description = project.description
+        url = gitHubRepositoryUrl
+        scm {
+          url = gitHubRepositoryUrl
+          connection = "scm:git:git://github.com/${gitHubRepository}.git"
+          developerConnection = "scm:git:ssh://github.com/${gitHubRepository}.git"
+        }
+        licenses {
+          license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution = 'repo'
+            comments = 'A business-friendly OSS license'
+          }
+        }
+        organization {
+          name = orgName
+          url = orgUrl
+        }
+        developers {
+          developer {
+            id = 'dub'
+            name = 'Leonid Dubinsky'
+            email = 'dub@podval.org'
+            url = 'https://dub.podval.org'
+            organization = orgName
+            organizationUrl = orgUrl
+            timezone = '-5'
+          }
+        }
+      }
+    }
+  }
+}
+
+signing {
+  sign publishing.publications.library
+  useInMemoryPgpKeys(
+    findProperty('signingKey') as String,
+    findProperty('signingPassword') as String
+  )
+}

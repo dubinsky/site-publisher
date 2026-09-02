@@ -1,6 +1,5 @@
 package org.podval.xml
 
-import org.podval.tools.publish.util.SchemaUtil
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.Schema
 import zio.blocks.schema.derive.Deriver
@@ -19,7 +18,7 @@ object WithRawXml:
   ): XmlCodec[A] = new XmlCodec[A]:
     val codec: XmlCodec[A] = schema.derive(codecDeriver.getOrElse(XmlFormat.deriver))
 
-    val fieldNames: Set[String] = SchemaUtil.fieldNames(schema)
+    val fieldNames: Set[String] = schema.reflect.asRecord.get.fields.map(_.name).toSet
     def isParsed(xmlName: XmlName): Boolean = fieldNames.contains(xmlName.qualifiedName)
 
     def decodeValue(xml: Xml): A =

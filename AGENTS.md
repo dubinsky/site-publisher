@@ -9,10 +9,12 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `page/` — `PageContent` + `Content` (store / entity lists / TEI document / entity / markup), `PageHeader`, `PagedList`, generated collection/entity-list indexes (`CollectionIndex`, `EntityLists.generate`), front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages` (page graph, `resolve` / `resolveAsset`), `BackLinks` / `BackLink`, config, sitemap, errors
 - Supporting libraries in the same repo:
-  - `org.podval.xml` — dialect-aware XML (parsing, writing, transform/gather, Xml2Html)
+  - `org.podval.xml` (Gradle subproject `xml/`, artifact `org.podval.tools:org.podval.xml`) —
+    dialect-aware XML (parsing, writing, transform/gather, Xml2Html) and derived document
+    codecs (`org.podval.xml.codec.XmlCodec`) over any `XmlAst`
   - `org.podval.tei` — TEI XML dialect + entity handling
 - Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
-- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`
+- Tests: `src/test/scala/...` and `xml/src/test/scala/...` — ScalaTest `AnyFunSuite`
 - Fixture site: `src/test/site` (committed). `SiteSpec` generates into `build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
 
 ## Build & Run Commands
