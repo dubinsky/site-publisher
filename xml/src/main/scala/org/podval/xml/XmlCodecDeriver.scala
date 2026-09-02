@@ -11,9 +11,17 @@ import scala.annotation.switch
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-object XmlCodecDeriver extends XmlCodecDeriver
+object XmlCodecDeriver extends XmlCodecDeriver:
+  def tagged[A, K](tagField: String, tag: XmlTag[K])(using typeId: TypeId[A]): XmlCodecDeriver =
+    val target: String = typeId.fullName
+    val xmlTag: XmlTag[Any] = tag.erased
+    new XmlCodecDeriver:
+      override protected def tagBinding(id: TypeId[?]): Option[(String, XmlTag[Any])] =
+        Option.when(id.fullName == target)((tagField, xmlTag))
 
 class XmlCodecDeriver extends Deriver[XmlCodec]:
+  protected def tagBinding(typeId: TypeId[?]): Option[(String, XmlTag[Any])] = None
+
   override def derivePrimitive[A](
     primitiveType: PrimitiveType[A],
     typeId: TypeId[A],
@@ -49,7 +57,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         var idx: Int = 0
         while idx < fields.length do
           val field: Term[F, A, ?] = fields(idx)
-          fieldInfos(idx) = fieldInfo(field, offset)
+          fieldInfos(idx) = fieldInfo(typeId, field, offset)
           offset = RegisterOffset.add(registerOffset(field.value), offset)
           idx += 1
       new RecordCodec[A](
@@ -57,7 +65,8 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         modifiers = modifiers,
         fieldInfos = fieldInfos,
         constructor = recordBinding.constructor,
-        deconstructor = recordBinding.deconstructor
+        deconstructor = recordBinding.deconstructor,
+        xmlTag = tagBinding(typeId).map(_._2)
       )
 
   override def deriveVariant[F[_, _], A](
@@ -92,7 +101,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         .asInstanceOf[XmlCodec[A]]
     else Lazy:
       val caseCodecs: IndexedSeq[(String, XmlCodec[A], Option[A])] = cases.map: caseTerm =>
-        val name: String = elementNameOf(caseTerm.name, caseTerm.modifiers, caseTerm.value.modifiers)
+        val name: String = configuredElementName(caseTerm.name, caseTerm.modifiers, caseTerm.value.modifiers)
         val codec: XmlCodec[A] = D.instance(caseTerm.value.metadata).force.asInstanceOf[XmlCodec[A]]
         val empty: Option[A] = caseTerm.value.asRecord.filter(_.fields.isEmpty).map: record =>
           val ctor: Constructor[?] = F.record(record.recordBinding).constructor
@@ -103,7 +112,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
       def caseByName(name: String): Option[(String, XmlCodec[A], Option[A])] =
         caseCodecs.find((caseName, _, _) => namesMatch(name, caseName))
       new XmlCodec[A]:
-        override def elementName: String = elementNameOf(typeId.name, Seq.empty, modifiers)
+        override def elementName: String = configuredElementName(typeId.name, Seq.empty, modifiers)
         override def isRecordLike: Boolean = true
         override def isEnumeration: Boolean = enumeration
         override def caseNames: Seq[String] = caseCodecs.map(_._1)
@@ -213,7 +222,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
       D.instance(wrapped.metadata).map: codec =>
         val inner: XmlCodec[B] = codec
         new XmlCodec[A]:
-          override def elementName: String = elementNameOf(typeId.name, Seq.empty, modifiers)
+          override def elementName: String = configuredElementName(typeId.name, Seq.empty, modifiers)
           override def isRecordLike: Boolean = inner.isRecordLike
           override def caseNames: Seq[String] = inner.caseNames
           override def isEnumeration: Boolean = inner.isEnumeration
@@ -240,13 +249,24 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
     modifiers: Seq[Modifier.Reflect],
     fieldInfos: Array[FieldInfo],
     constructor: Constructor[A],
-    deconstructor: Deconstructor[A]
+    deconstructor: Deconstructor[A],
+    xmlTag: Option[XmlTag[Any]]
   ) extends XmlCodec[A]:
-    private val recordName: String = elementNameOf(typeId.name, Seq.empty, modifiers)
+    private val recordName: String = configuredElementName(typeId.name, Seq.empty, modifiers)
     private val namespace: Option[(String, String)] = namespaceOf(modifiers)
+    private val tagField: Option[FieldInfo] = fieldInfos.find(_.kind == FieldKind.Tag)
 
-    override def elementName: String = recordName
+    override def elementName: String = xmlTag.flatMap(_.names.headOption).getOrElse(recordName)
+    override def caseNames: Seq[String] = xmlTag.fold(Seq.empty)(_.names)
     override def isRecordLike: Boolean = true
+
+    override def elementNameOf(value: A): String =
+      (xmlTag, tagField) match
+        case (Some(tag), Some(info)) =>
+          val regs: Registers = Registers(deconstructor.usedRegisters)
+          deconstructor.deconstruct(regs, 0, value)
+          tag.toName(load(regs, info.offset, info.typeTag))
+        case _ => recordName
 
     override def unsafeDecode[E: XmlAst](element: E): A =
       val ast: XmlAst[E] = summon[XmlAst[E]]
@@ -262,6 +282,11 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         val info: FieldInfo = fieldInfos(idx)
         try
           info.kind match
+            case FieldKind.Tag =>
+              val name: String = ast.getName(element)
+              xmlTag.flatMap(tag => tag.fromName(localName(name)).orElse(tag.fromName(name))) match
+                case Some(k) => store(regs, info.offset, info.typeTag, k)
+                case None => throw XmlError(s"Unknown element: $name")
             case FieldKind.Extras => extrasIndex = idx
             case FieldKind.Text =>
               val text: String = characterData(element)
@@ -351,6 +376,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
       while idx < fieldInfos.length do
         val info: FieldInfo = fieldInfos(idx)
         info.kind match
+          case FieldKind.Tag => ()
           case FieldKind.Extras =>
             extras = load(regs, info.offset, 0).asInstanceOf[XmlExtras]
           case FieldKind.Text =>
@@ -395,7 +421,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
         case _ => name
       ast.element(qualified, nsAttrs ++ attributes.toSeq, children.toSeq)
 
-  private def fieldInfo[F[_, _], A](field: Term[F, A, ?], offset: RegisterOffset)(using
+  private def fieldInfo[F[_, _], A](recordTypeId: TypeId[A], field: Term[F, A, ?], offset: RegisterOffset)(using
     F: HasBinding[F],
     D: HasInstance[F]
   ): FieldInfo =
@@ -408,7 +434,8 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
       if sequence then innerReflect.asSequenceUnknown.get.sequence.element else innerReflect
     val codec: XmlCodec[Any] = D.instance(itemReflect.metadata).force.asInstanceOf[XmlCodec[Any]]
     val kind: FieldKind =
-      if isExtrasField(field, itemReflect.typeId) then FieldKind.Extras
+      if tagBinding(recordTypeId).exists(_._1 == field.name) then FieldKind.Tag
+      else if isExtrasField(field, itemReflect.typeId) then FieldKind.Extras
       else configValue(field.modifiers, XmlCodec.Attribute) match
         case Some(attr) => FieldKind.Attribute(if attr.isEmpty then field.name else attr)
         case None if configValue(field.modifiers, XmlCodec.Text).isDefined => FieldKind.Text
@@ -536,7 +563,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
   private def renameOf(modifiers: Seq[Modifier.Term]): Option[String] =
     modifiers.collectFirst { case Modifier.rename(name) => name }
 
-  private def elementNameOf(
+  private def configuredElementName(
     defaultName: String,
     termModifiers: Seq[Modifier.Term],
     reflectModifiers: Seq[Modifier.Reflect]
@@ -607,6 +634,7 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
     case Text
     case Child
     case Extras
+    case Tag
 
   private final class FieldInfo(
     val fieldName: String,

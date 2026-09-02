@@ -2,6 +2,7 @@ package org.podval.xml
 
 import zio.blocks.schema.Schema
 import zio.blocks.schema.derive.Deriver
+import zio.blocks.typeid.TypeId
 import scala.util.control.NonFatal
 
 /** Document-shaped XML codec over any `XmlAst`.
@@ -37,6 +38,11 @@ object XmlCodec:
 
   def derived[A](using schema: Schema[A]): XmlCodec[A] = schema.derive(deriver)
 
+  /** Derive a record whose XML tag comes from `tagField` via `tag`.
+    * Nested records that also tag this way need `.instance(TypeId.of[Nested], Nested.codec)`. */
+  def derived[A, K](tagField: String, tag: XmlTag[K])(using schema: Schema[A], typeId: TypeId[A]): XmlCodec[A] =
+    schema.derive(XmlCodecDeriver.tagged(tagField, tag))
+
 trait XmlCodec[A]:
   def elementName: String
 
@@ -46,7 +52,9 @@ trait XmlCodec[A]:
       case e: XmlError => Left(e)
       case e if NonFatal(e) => Left(XmlError(Option(e.getMessage).getOrElse(e.toString)))
 
-  def encode[E: XmlAst](value: A): E = encodeNamed(elementName, value)
+  def elementNameOf(value: A): String = elementName
+
+  def encode[E: XmlAst](value: A): E = encodeNamed(elementNameOf(value), value)
 
   def encodeNamed[E: XmlAst](name: String, value: A): E
 

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{EntityKind, EntityLists as EntityListSpecs}
+import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
 
@@ -11,7 +11,7 @@ object EntityLists:
 
   /** Built at render so the index XML `Site.load` walks has no member hrefs (no backlinks). */
   def generate(page: Page, index: EntityListSpecs.Index): Xml.Element =
-    val kept: Seq[(EntityListSpecs.Spec, Seq[Page])] = index.lists.flatMap: spec =>
+    val kept: Seq[(EntityList, Seq[Page])] = index.lists.flatMap: spec =>
       val mem: Seq[Page] = members(page, spec)
       Option.when(mem.nonEmpty)(spec -> mem)
     val lists: Xml.Nodes = kept.map((spec, mem) =>
@@ -23,7 +23,7 @@ object EntityLists:
     Xml.element("entityLists").setChildren(children)
 
   def listXml(
-    spec: EntityListSpecs.Spec,
+    spec: EntityList,
     members: Seq[Page],
     withHead: Boolean,
     jump: Option[Path]
@@ -43,18 +43,18 @@ object EntityLists:
       page.sourcePath.exists: sourcePath =>
         sourcePath.path.startsWith(dir) && sourcePath.path.length == dir.length + 1
 
-  def members(indexPage: Page, spec: EntityListSpecs.Spec): Seq[Page] =
+  def members(indexPage: Page, spec: EntityList): Seq[Page] =
     entitiesUnder(indexPage)
       .filter(page => page.entityKind.contains(spec.kind) && page.entityRole == spec.role)
       .sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName))
 
-  def listPath(indexPage: Page, spec: EntityListSpecs.Spec): Path =
+  def listPath(indexPage: Page, spec: EntityList): Path =
     Path(path = indexPage.path.path.init :+ spec.id).html
 
   def displayName(page: Page): String =
     page.entityDisplayName.getOrElse(page.title)
 
-  private def tocXml(specs: Seq[EntityListSpecs.Spec], page: Page): Xml.Element =
+  private def tocXml(specs: Seq[EntityList], page: Page): Xml.Element =
     val items: Xml.Nodes = specs.map: spec =>
       Xml.element("li").setChildren(Seq(
         Xml.element("a").setHref(s"#${spec.id}").setText(spec.title),
@@ -63,7 +63,7 @@ object EntityLists:
       ))
     Xml.element("ul").addClass("entity-lists-toc").setChildren(items)
 
-  private def headChildren(spec: EntityListSpecs.Spec, jump: Option[Path]): Xml.Nodes =
+  private def headChildren(spec: EntityList, jump: Option[Path]): Xml.Nodes =
     val title: Xml.Nodes = Seq(Xml.text(spec.title))
     jump.fold(title)(path =>
       title ++ Seq(Xml.text(" "), Xml.element("a").setHref(path.toString).setText(expand))
