@@ -1,10 +1,15 @@
 package org.podval.tools.publish.markup
 
-import zio.blocks.schema.Modifier
+import org.podval.xml.codec.XmlCodec
+import zio.blocks.schema.{Modifier, Schema}
 
 final case class EntityName(
 //  val entityType: EntityType,
-  @Modifier.config("xml.attribute", "") id: Option[String] = None,
-  @Modifier.config("xml.attribute", "") ref: Option[String] = None,
-  name: String // TODO Text
-)
+  @Modifier.config(XmlCodec.Attribute, "") id: Option[String] = None,
+  @Modifier.config(XmlCodec.Attribute, "") ref: Option[String] = None,
+  @Modifier.config(XmlCodec.Text, "") name: String
+) derives CanEqual
+
+object EntityName:
+  given schema: Schema[EntityName] = Schema.derived
+  val codec: XmlCodec[EntityName] = XmlCodec.derived

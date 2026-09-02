@@ -5,18 +5,12 @@ import org.podval.xml.{HtmlClass, Xml}
 
 /** TEI `pb` harvested from the raw tree for collection `Страницы`, missing-photo notes, and facsimile JPEGs. */
 final class Pb(
+  //  val id: Option[String],
   val n: String,
   val isMissing: Boolean,
   val isEmpty: Boolean,
   val facs: Option[String] = None
 )
-//final class Pb(
-//  val n: String,
-//  val id: Option[String],
-//  val facs: Option[String],
-//  val missing: Boolean = false,
-//  val empty: Boolean = false
-//)
 
 object Pb:
   object Class extends HtmlClass("pb")

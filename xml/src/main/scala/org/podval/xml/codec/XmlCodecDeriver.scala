@@ -421,8 +421,9 @@ class XmlCodecDeriver extends Deriver[XmlCodec]:
           if codec.caseNames.nonEmpty then field.name
           else if codec.isRecordLike then codec.elementName
           else field.name
+    val aliases: Seq[String] = field.modifiers.collect { case Modifier.alias(name) => name }
     val itemNames: Seq[String] =
-      if codec.caseNames.nonEmpty then codec.caseNames else Seq(itemName)
+      if codec.caseNames.nonEmpty then codec.caseNames else (itemName +: aliases).distinct
     val seqParts: Option[SeqParts] =
       if !sequence then None
       else

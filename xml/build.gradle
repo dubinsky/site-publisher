@@ -7,7 +7,7 @@ plugins {
 }
 
 description = 'XML AST, dialects, and derived Scala codecs'
-group = 'org.podval.tools'
+group = 'org.podval.tools' // TODO org.podval
 version = '0.0.1'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -19,7 +19,7 @@ dependencies {
   api "dev.zio:zio-blocks-schema_3:$zioBlocksVersion"
   api "dev.zio:zio-blocks-schema-xml_3:$zioBlocksVersion"
   api "dev.zio:zio-blocks-html_3:$zioBlocksVersion"
-  api 'org.scala-lang.modules:scala-xml_3:2.4.0'
+  api 'org.scala-lang.modules:scala-xml_3:2.4.0' // TODO compile (and test) only
   implementation 'org.ccil.cowan.tagsoup:tagsoup:1.2.1'
   implementation 'org.typelevel:paiges-core_3:0.4.4'
   testImplementation 'org.scalatest:scalatest_3:3.2.20'
