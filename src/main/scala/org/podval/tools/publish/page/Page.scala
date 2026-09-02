@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
-import org.podval.tools.publish.util.{Date, Icon}
+import org.podval.tools.publish.util.{Date, Http, Icon}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 import java.io.File
@@ -32,7 +32,7 @@ abstract class Page(
   def uri: URI = URI(
     "http",
     null,
-    Site.localhost,
+    Http.localhost,
     site.httpServerPort,
     path.toString,
     null,

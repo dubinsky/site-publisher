@@ -1,7 +1,6 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.util
 
 import com.sun.net.httpserver.{HttpServer, SimpleFileServer}
-import org.podval.tools.publish.util.Files
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.{File, UncheckedIOException}
 import java.net.{BindException, InetSocketAddress, URI}
@@ -14,7 +13,7 @@ final class HttpServerSpec extends AnyFunSuite:
     val blocker: Option[HttpServer] =
       try
         val server: HttpServer = SimpleFileServer.createFileServer(
-          InetSocketAddress(Site.localhost, Site.defaultHttpPort),
+          InetSocketAddress(Http.localhost, Http.defaultPort),
           dir.toPath,
           SimpleFileServer.OutputLevel.NONE
         )
@@ -23,11 +22,11 @@ final class HttpServerSpec extends AnyFunSuite:
       catch
         case e: UncheckedIOException if e.getCause.isInstanceOf[BindException] => None
     try
-      val server: HttpServer = Site.startHttpServer(dir)
+      val server: HttpServer = Http.start(dir)
       try
         val port: Int = server.getAddress.getPort
         assert(port > 0, s"server did not bind: $port")
-        assert(port != Site.defaultHttpPort, s"expected ephemeral port, got $port")
+        assert(port != Http.defaultPort, s"expected ephemeral port, got $port")
       finally
         server.stop(0)
     finally
@@ -43,16 +42,17 @@ final class HttpServerSpec extends AnyFunSuite:
     val doc: File = File(File(nested, "3140"), "003.html")
     doc.getParentFile.mkdirs()
     Files.write(doc, "doc-003")
-    val rewrite: Path => Option[Path] =
+    val rewrite: String => Option[String] =
       request =>
-        if request.path == Seq("rgada") then Some(Path("archive", "case", "3140").html)
-        else if request.path == Seq("rgada", "003") then Some(Path("archive", "case", "3140", "003").html)
+        val path: String = if request.endsWith(".html") then request.dropRight(5) else request
+        if path == "/rgada" then Some("/archive/case/3140.html")
+        else if path == "/rgada/003" then Some("/archive/case/3140/003.html")
         else None
-    val server: HttpServer = Site.startHttpServer(dir, rewrite)
+    val server: HttpServer = Http.start(dir, rewrite)
     try
       val port: Int = server.getAddress.getPort
       def get(path: String): String =
-        val in = URI.create(s"http://${Site.localhost}:$port$path").toURL.openStream()
+        val in = URI.create(s"http://${Http.localhost}:$port$path").toURL.openStream()
         try String(in.readAllBytes())
         finally in.close()
       assert(get("/rgada.html").contains("collection-body"))
