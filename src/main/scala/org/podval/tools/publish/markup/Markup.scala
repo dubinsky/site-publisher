@@ -105,15 +105,29 @@ object Markup:
     DocBookMarkup
   )
 
-  // TODO verify that extensions do not overlap
-  private lazy val forExtension: Map[String, Markup] = all
-    .flatMap(markup => markup.extensions.map(_ -> markup))
-    .toMap
+  // `.xml` may be shared by XML dialects (disambiguated by root element).
+  private lazy val forExtension: Map[String, Markup] =
+    val pairs: Seq[(String, Markup)] = all.flatMap(markup => markup.extensions.map(_ -> markup))
+    requireNoOverlap(pairs.filterNot(_._1 == XmlMarkup.extension), "file extensions")
+    pairs.toMap
 
   def forExtension(extension: String): Option[Markup] = forExtension.get(extension)
 
-  private lazy val forElement: Map[String, Markup] = all
-    .flatMap(markup => markup.rootElements.map(_ -> markup))
-    .toMap
+  private lazy val forElement: Map[String, Markup] =
+    val pairs: Seq[(String, Markup)] = all.flatMap(markup => markup.rootElements.map(_ -> markup))
+    requireNoOverlap(pairs, "root elements")
+    pairs.toMap
 
   def forElement(element: String): Option[Markup] = forElement.get(element)
+
+  private def requireNoOverlap(pairs: Seq[(String, Markup)], what: String): Unit =
+    val overlaps: Map[String, Seq[Markup]] = pairs
+      .groupMap(_._1)(_._2)
+      .filter((_, markups) => markups.distinct.size > 1)
+    require(
+      overlaps.isEmpty,
+      s"$what overlap between markups: " +
+        overlaps
+          .map((key, markups) => s"$key -> ${markups.map(_.name).mkString(", ")}")
+          .mkString("; ")
+    )
