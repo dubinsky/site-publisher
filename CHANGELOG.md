@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- use `org.podval.store.Selector` for collector `by/@selector` labels; drop the publisher copy of the type and `Selector.xml`
+- xml: TagSoup is `compileOnly` in the library; declare it here for HTML parse
 - xml: extracted to https://github.com/dubinsky/xml (`org.podval:org.podval.xml`); optional `includeBuild` of sibling `../xml`
 - xml: folded `Pure` into `Stores` (`storesPure` → `stores`, `Stores.With`)
 - xml: `org.podval.store` and `org.podval.metadata` (from OpenTorah `core`); store walks and `HasName.bind` are synchronous

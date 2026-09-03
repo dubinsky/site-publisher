@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.Selector
+import org.podval.store.Selector
 import org.podval.tools.publish.site.Path
 import org.podval.xml.Xml
 
@@ -21,9 +21,9 @@ object StoreIndexes:
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.store.flatMap(_.selector).flatMap(n => Selector.find(n).flatMap(_.title))
+        root.store.flatMap(_.selector).flatMap(n => Selector.forName(n).flatMap(_.title))
       case StoreIndexPage.Kind.Flat =>
-        Selector.find("case").flatMap(_.title)
+        Selector.forName("case").flatMap(_.title)
     fromSelector
       .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
       .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
@@ -37,7 +37,7 @@ object StoreIndexes:
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
-      storePage.store.flatMap(_.selector).map(Selector.displayName).getOrElse("")
+      storePage.store.flatMap(_.selector).map(PageHeader.selectorDisplayName).getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
     Xml.element("div").addClass("tree-index").setChildren(Seq(
       Xml.element("ul").setChildren(Seq(
@@ -89,7 +89,7 @@ object StoreIndexes:
         .filter(_.store.isDefined)
         .dropWhile(_.path == root.path)
     chain.map: node =>
-      val sel: String = PageHeader.selectorName(node).map(Selector.displayName).getOrElse("")
+      val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName).getOrElse("")
       val name: String = PageHeader.pageDisplayName(node)
       s"$sel $name".trim
     .filter(_.nonEmpty)
