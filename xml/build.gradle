@@ -6,7 +6,7 @@ plugins {
   id 'org.podval.tools.scalajs' version '1.0.4'
 }
 
-description = 'XML AST, pretty-printing, and derived Scala codecs'
+description = 'XML AST, codecs, named catalogs, and store path model'
 group = 'org.podval'
 version = '0.0.1'
 
