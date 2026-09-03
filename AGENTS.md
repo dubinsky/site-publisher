@@ -8,18 +8,19 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `markup/` — `Markup` dialects, shared IR (`Citation`, `BibliographyItem`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), `Bibliography` (citeproc), TEI harvest (`StoreIndex`, `EntityLists.harvest`, `DocumentHeader`)
   - `page/` — `PageContent` + `Content` (store / entity lists / TEI document / entity / markup), `PageHeader`, `PagedList`, generated collection/entity-list indexes (`CollectionIndex`, `EntityLists.generate`), front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages` (page graph, `resolve` / `resolveAsset`), `BackLinks` / `BackLink`, config, sitemap, errors
-- Supporting libraries in the same repo:
-  - `org.podval.xml` (Gradle subproject `xml/`, artifact `org.podval:org.podval.xml`) —
+- Supporting libraries:
+  - `org.podval.xml` (`org.podval:org.podval.xml`, repo https://github.com/dubinsky/xml) —
     dialect-aware XML (parsing from string/URL/file/classpath, writing, transform/gather, Xml2Html) and derived document
     codecs (`org.podval.xml.XmlCodec`) over any `XmlAst`. `XmlParser` does not expand `xi:include` unless
     `xinclude = true` (publisher stores treat `xi:include/@href` as a page ref). Catalog files
     (`Selector.xml`) use `parseCatalog` / `decodeCatalog` (wrapper root, child codec).
     Same artifact also has `org.podval.metadata` (multilingual `Name`/`Names`/`Language` catalogs) and
     `org.podval.store` (in-memory named tree, path `resolve`). Publisher `StoreContent` is a filesystem
-    page graph and does not use these types.
+    page graph and does not use these types. Local unreleased xml: optional `includeBuild` of sibling
+    `../xml` (or `-PxmlDir=`).
   - `org.podval.tei` — TEI XML dialect + entity handling
 - Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
-- Tests: `src/test/scala/...` and `xml/src/test/scala/...` — ScalaTest `AnyFunSuite`
+- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`. xml tests live in `dubinsky/xml`.
 - Fixture site: `src/test/site` (committed). `SiteSpec` generates into `build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
 
 ## Build & Run Commands

@@ -20,7 +20,7 @@ String zioBlocksVersion = '0.0.51'
 String flexMarkVersion = '0.64.8'
 
 dependencies {
-  implementation project(':org.podval.xml')
+  implementation 'org.podval:org.podval.xml:0.0.1'
   implementation "dev.zio:zio-blocks-schema-yaml_3:$zioBlocksVersion"
   implementation "dev.zio:zio-blocks-html_3:$zioBlocksVersion"
   implementation "com.vladsch.flexmark:flexmark:$flexMarkVersion"

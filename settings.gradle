@@ -5,12 +5,17 @@ plugins {
 
 rootProject.name = 'org.podval.tools.publisher'
 
-include 'org.podval.xml'
-project(':org.podval.xml').projectDir = file('xml')
-
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
     gradlePluginPortal() // for JIB
   }
+}
+
+// Composite: substitute org.podval:org.podval.xml from a sibling checkout.
+// Override with -PxmlDir=/path/to/xml. If the directory is missing, Gradle
+// resolves the artifact from Maven Central.
+final File xmlDir = file(providers.gradleProperty('xmlDir').getOrElse('../xml'))
+if (xmlDir.isDirectory() && new File(xmlDir, 'settings.gradle').isFile()) {
+  includeBuild(xmlDir)
 }
