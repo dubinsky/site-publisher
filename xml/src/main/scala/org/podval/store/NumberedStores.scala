@@ -3,7 +3,7 @@ package org.podval.store
 import org.podval.metadata.{Language, Name, Names}
 
 // TODO override indexOf()
-trait NumberedStores[+T <: NumberedStore] extends Pure[T]:
+trait NumberedStores[+T <: NumberedStore] extends Stores[T]:
   def minNumber: Int = 1
   // Derived types must override one of the:
   def maxNumber: Int = minNumber + length - 1
@@ -19,7 +19,7 @@ trait NumberedStores[+T <: NumberedStore] extends Pure[T]:
     Name(Language.Hebrew.numberToString(number), Language.Hebrew.toSpec)
   ))
 
-  override def storesPure: Seq[T] = minNumber.to(maxNumber).map(createNumberedStore)
+  override def stores: Seq[T] = minNumber.to(maxNumber).map(createNumberedStore)
 
   protected def createNumberedStore(number: Int): T
 

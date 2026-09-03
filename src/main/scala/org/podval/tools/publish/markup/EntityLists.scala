@@ -12,7 +12,7 @@ import zio.blocks.typeid.TypeId
 //  val role: Option[String],
 //  val title: Title.Value,
 //) extends
-//  Pure[Entity]
+//  Stores[Entity]
 
 /** TEI `entityLists` directory index specs: kind + role buckets.
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`. */

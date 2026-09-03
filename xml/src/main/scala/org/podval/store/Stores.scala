@@ -6,6 +6,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 trait Stores[+T <: Store] extends Store:
+  // TODO maybe pre-calculate a lazy map from all names to stores?
   def stores: Seq[T]
 
   def findByName(name: String): Option[T] = HasValues.find(stores, name)
@@ -44,6 +45,8 @@ trait Stores[+T <: Store] extends Store:
         (next +: acc).reverse
 
 object Stores:
+  trait With[+T <: Store](override val stores: Seq[T]) extends Stores[T]
+
   private def splitUrl(urlRaw: String): Seq[String] =
     val url: String = if urlRaw.isEmpty then "/" else urlRaw
     val startsWithSlash: Boolean = url.startsWith("/")
