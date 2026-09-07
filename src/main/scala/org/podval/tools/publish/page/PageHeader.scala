@@ -4,7 +4,7 @@ import org.podval.metadata.Language
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
-import org.podval.xml.{Html, Xml, XmlUtil}
+import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 
 object PageHeader:
@@ -65,7 +65,7 @@ object PageHeader:
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
   def collectorPageHeader(page: FullMarkupPage): Html.Element =
-    XmlUtil.xml2html(collectorHeaderXml(page))
+    collectorHeaderXml(page).to[Html.Element]
 
   /** Live collector: ancestor `<l>` lines, then this node's `<l>`, then abstract/body,
     * then this store's `by` selector label (the listing itself stays in the body). */

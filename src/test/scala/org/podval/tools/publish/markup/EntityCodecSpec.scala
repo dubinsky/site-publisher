@@ -19,7 +19,7 @@ final class EntityCodecSpec extends AnyFunSuite:
     assert(decoded.role.contains("jew"))
     assert(decoded.names.map(_.name) == Seq("Залман Борухович", "Залман"))
     assert(decoded.names.forall(_.kind == EntityKind.Person))
-    assert(decoded.extras.children.collect { case XmlNode.Element(name, _, _) => name } == Seq("p"))
+    assert(decoded.extras.children.collect { case XmlNode.Element(name, _, _) => name.qualifiedName } == Seq("p"))
     val encoded: Xml.Element = Entity.codec.encode(decoded)
     assert(encoded.getName == "person")
     assert(encoded.get("id").contains("x"))
@@ -55,7 +55,7 @@ final class EntityCodecSpec extends AnyFunSuite:
       case XmlNode.Text(value) => value.contains("the")
       case _ => false
     )
-    assert(decoded.extras.children.collect { case XmlNode.Element(name, _, _) => name } == Seq("hi"))
+    assert(decoded.extras.children.collect { case XmlNode.Element(name, _, _) => name.qualifiedName } == Seq("hi"))
     val encoded: Xml.Element = EntityReference.codec.encode(decoded)
     assert(encoded.getName == "persName")
     assert(encoded.get("ref").contains("alter-rebbe"))

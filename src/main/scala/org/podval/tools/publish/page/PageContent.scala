@@ -4,7 +4,7 @@ import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation
   Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, Xml, XmlUtil}
+import org.podval.xml.{Html, Xml}
 import java.io.File
 
 /** Prepared once per document (`PageContent.apply`); resolved per chunk in `markupContent`. */
@@ -131,7 +131,7 @@ final class PageContent private(
     val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
 
     // Convert to HTML
-    insertToc(XmlUtil.xml2html(withLinks), sectionId, isChunked)
+    insertToc(withLinks.to[Html.Element], sectionId, isChunked)
 
   /** Resolve `a@href` in already-converted XML (collector header titles). */
   def resolveConverted(xml: Xml.Element): Xml.Element =

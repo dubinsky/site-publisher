@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, XmlUtil}
+import org.podval.xml.{Html, Xml}
 import scala.annotation.tailrec
 
 final class FacsimilePage(
@@ -33,7 +33,7 @@ final class FacsimilePage(
   override def next: Option[Page] = nextFacsimile(document.next, _.next)
 
   override protected def syntheticContent: Html.Element =
-    XmlUtil.xml2html(Facsimile.scroller(this))
+    Facsimile.scroller(this).to[Html.Element]
 
   @tailrec
   private def nextFacsimile(page: Option[Page], step: MarkupPage => Option[Page]): Option[Page] =

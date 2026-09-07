@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, XmlUtil}
+import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
 
 /** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections). */
@@ -30,10 +30,10 @@ final class StoreIndexPage(
   override def next: Option[Page] = None
 
   override protected def syntheticContent: Html.Element =
-    XmlUtil.xml2html(kind match
+    (kind match
       case StoreIndexPage.Kind.Tree => StoreIndexes.tree(root)
       case StoreIndexPage.Kind.Flat => StoreIndexes.flat(root)
-    )
+    ).to[Html.Element]
 
 object StoreIndexPage:
   enum Kind derives CanEqual:
