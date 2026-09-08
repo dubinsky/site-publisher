@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral admonition IR. CSS styles only these classes.
   * Type is `data-type` (lowercase). Optional Obsidian fold is a `<details>`. */
@@ -27,10 +27,10 @@ object Admonition:
     val label: String = title.map(_.trim).filter(_.nonEmpty).getOrElse(displayTitle)
     val titleElement: Xml.Element = fold match
       case Some(_) => Xml.element("summary").add(TitleClass).setText(label)
-      case None => Xml.element("div").add(TitleClass).setText(label)
+      case None => Xml.element(XmlElement.Div).add(TitleClass).setText(label)
     val children: Xml.Nodes = titleElement +: body.filterNot(_.isWhitespace)
     val element: Xml.Element = fold match
       case Some(true) => Xml.element("details").set("open", "open")
       case Some(false) => Xml.element("details")
-      case None => Xml.element("div")
+      case None => Xml.element(XmlElement.Div)
     element.add(Class).set(TypeAttr, kind).setChildren(children)

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlWriterConfig, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
@@ -34,7 +34,7 @@ final class FootnoteSpec extends AnyFunSuite:
   }
 
   test("harvest numbers in link order and strips bodies") {
-    val xml: Xml.Element = Xml.element("div").setChildren(Chunk(
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
       Footnote.body("b", Chunk(Xml.text("second"))),
       Footnote.link("a"),
       Footnote.link("b"),
@@ -49,16 +49,16 @@ final class FootnoteSpec extends AnyFunSuite:
   }
 
   test("unwrapLeftovers replaces matching containers with IR bodies") {
-    val leftover: Xml.Element = Xml.element("div").addClass("footnotes").setChildren(Chunk(
+    val leftover: Xml.Element = Xml.element(XmlElement.Div).addClass("footnotes").setChildren(Chunk(
       Xml.element("hr"),
-      Xml.element("ol").setChildren(Chunk(
+      Xml.element(XmlElement.Ol).setChildren(Chunk(
         Footnote.body("a", Chunk(Xml.text("hello")))
       ))
     ))
-    val xml: Xml.Element = Xml.element("div").setChildren(Chunk(Footnote.link("a"), leftover))
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(Footnote.link("a"), leftover))
     val unwrapped: Xml.Element = Footnote.unwrapLeftovers(
       xml,
-      el => el.qName == "div" && el.hasClass("footnotes")
+      el => el.isElement(XmlElement.Div) && el.hasClass("footnotes")
     )
     val dumped: String = render(unwrapped)
     assert(!dumped.contains("""class="footnotes""""), dumped)
@@ -69,7 +69,7 @@ final class FootnoteSpec extends AnyFunSuite:
   }
 
   test("appendReferenced adds only footnotes linked in the selected tree") {
-    val xml: Xml.Element = Xml.element("div").setChildren(Chunk(
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
       Footnote.link("a"),
       Footnote.link("b"),
       Footnote.body("a", Chunk(Xml.text("first"))),
@@ -82,7 +82,7 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(dumped.contains("""class="footnotes""""), dumped)
     assert(dumped.contains("first"), dumped)
     assert(!dumped.contains("second"), dumped)
-    assert(Footnote.appendReferenced(Xml.element("div"), notes).getChildren.isEmpty)
+    assert(Footnote.appendReferenced(Xml.element(XmlElement.Div), notes).getChildren.isEmpty)
   }
 
   test("resolveLink turns a stub into a numbered reference") {
@@ -90,31 +90,31 @@ final class FootnoteSpec extends AnyFunSuite:
     val notes: Map[String, Footnote] = Map("a" -> footnote)
     val resolved: Xml.Element = Footnote.resolveLink(Footnote.link("a"), notes, attachTip = false)
     val dumped: String = render(resolved)
-    assert(resolved.qName == "a")
+    assert(resolved.isA)
     assert(dumped.contains("""href="#_footnote_2""""), dumped)
     assert(dumped.contains(">2</a>") || dumped.contains(">2<"), dumped)
     val withTipEl: Xml.Element = Footnote.resolveLink(Footnote.link("a"), notes, attachTip = true)
     assert(Footnote.tip.isRef(withTipEl))
     val withTip: String = render(withTipEl)
     assert(withTip.contains("footnote-tip"), withTip)
-    assert(Footnote.resolveLink(Xml.element("p"), notes, attachTip = true).qName == "p")
+    assert(Footnote.resolveLink(Xml.element(XmlElement.P), notes, attachTip = true).isElement(XmlElement.P))
   }
 
   test("footnote after text or a preceding element has no separating HTML space") {
-    val afterText: Xml.Element = Xml.element("p").setChildren(Chunk(
+    val afterText: Xml.Element = Xml.element(XmlElement.P).setChildren(Chunk(
       Xml.text("this"),
       Footnote.link("n"),
       Footnote.body("n", Chunk(Xml.text("a note"))),
       Xml.text(".")
     ))
-    val afterEm: Xml.Element = Xml.element("p").setChildren(Chunk(
-      Xml.element("em").setText("this"),
+    val afterEm: Xml.Element = Xml.element(XmlElement.P).setChildren(Chunk(
+      Xml.element(XmlElement.Em).setText("this"),
       Footnote.link("n"),
       Footnote.body("n", Chunk(Xml.text("a note"))),
       Xml.text(".")
     ))
-    val afterA: Xml.Element = Xml.element("p").setChildren(Chunk(
-      Xml.element("a").setHref("#x").setText("this"),
+    val afterA: Xml.Element = Xml.element(XmlElement.P).setChildren(Chunk(
+      Xml.element(XmlElement.A).setHref("#x").setText("this"),
       Footnote.link("n"),
       Footnote.body("n", Chunk(Xml.text("a note"))),
       Xml.text(".")

@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
-import org.podval.xml.{Html, Xml, XmlAttribute}
+import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
 import Html.given
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
@@ -266,6 +266,6 @@ object EntityListsContent:
   def parse(xml: Xml.Element): EntityListsContent =
     val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
     new EntityListsContent(
-      title = index.title.filter(_.nonEmpty).map(text => Xml.element("title").setText(text)),
+      title = index.title.filter(_.nonEmpty).map(text => Xml.element(XmlElement.Title).setText(text)),
       index = index
     )

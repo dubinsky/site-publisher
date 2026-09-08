@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.{Files, SiteOptions}
+import org.podval.xml.XmlElement
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 import java.nio.file.{Files as NioFiles, Path as NioPath}
@@ -111,9 +112,9 @@ final class AssetRefSpec extends AnyFunSuite:
   }
 
   test("resourceAttr is src/data on media IR only") {
-    assert(AssetRef.resourceAttr(org.podval.xml.Xml.element("img")).contains("src"))
+    assert(AssetRef.resourceAttr(org.podval.xml.Xml.element(XmlElement.Img)).contains("src"))
     assert(AssetRef.resourceAttr(org.podval.xml.Xml.element("video")).contains("src"))
     assert(AssetRef.resourceAttr(org.podval.xml.Xml.element("object")).contains("data"))
     assert(AssetRef.resourceAttr(org.podval.xml.Xml.element("iframe")).isEmpty)
-    assert(AssetRef.resourceAttr(org.podval.xml.Xml.element("a")).isEmpty)
+    assert(AssetRef.resourceAttr(org.podval.xml.Xml.element(XmlElement.A)).isEmpty)
   }

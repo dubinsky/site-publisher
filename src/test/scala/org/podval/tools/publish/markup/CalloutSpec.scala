@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -53,7 +53,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.qName == "li")
+    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li))
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)
@@ -80,7 +80,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.qName == "li")
+    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li))
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)

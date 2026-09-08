@@ -2,8 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute}
-import org.podval.xml.Xml2Html.renameElement
+import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
 import java.io.File
 
 object TeiMarkup extends Markup(
@@ -71,7 +70,7 @@ object TeiMarkup extends Markup(
     (markHeadedDivs(withIr), title)
 
   private def isTeiTitle(element: Xml.Element): Boolean =
-    element.qName == "tei-title" || element.qName == "title"
+    element.qName == "tei-title" || element.isElement(XmlElement.Title)
 
   private def documentTitle(root: Xml.Element): Option[Xml.Element] =
     root.qName match
@@ -112,25 +111,25 @@ object TeiMarkup extends Markup(
     val stripped: Xml.Element = dropIncludes(element)
     stripped.qName match
       case "row" =>
-        renameElement("tr", stripped)
+        stripped.renameKeepingClass("tr")
 
       case "cell" =>
-        renameElement("td", stripped.copyAttribute("cols", "colspan"))
+        stripped.copyAttribute("cols", "colspan").renameKeepingClass("td")
 
       case "graphic" =>
-        renameElement("img", stripped.copyAttribute("url", "src"))
+        stripped.copyAttribute("url", "src").renameKeepingClass("img")
 
       case "ref" | "ptr" =>
-        teiHref(stripped).fold(renameElement("a", stripped))(value =>
-          renameElement("a", stripped.setHref(value))
+        teiHref(stripped).fold(stripped.renameKeepingClass("a"))(value =>
+          stripped.setHref(value).renameKeepingClass("a")
         )
 
       case "term" =>
-        teiHref(stripped).fold(stripped)(value => renameElement("a", stripped.setHref(value)))
+        teiHref(stripped).fold(stripped)(value => stripped.setHref(value).renameKeepingClass("a"))
 
       case name if isEntityName(name) =>
         val ref: Option[String] = stripped.get("ref").map(_.trim).filter(_.nonEmpty)
-        ref.fold(stripped)(_ => renameElement("a", stripped.copyAttribute("ref", "href")))
+        ref.fold(stripped)(_ => stripped.copyAttribute("ref", "href").renameKeepingClass("a"))
 
       case name if isEntityList(name) =>
         convertEntityList(stripped)
@@ -199,7 +198,7 @@ object TeiMarkup extends Markup(
       Figure.make(caption, body).setId(xmlId(element))
 
   private def isTeiCaption(node: Xml.Node): Boolean =
-    node.asElement.exists(el => el.qName == "head" || el.qName == "tei-head")
+    node.asElement.exists(el => el.isElement(XmlElement.Head) || el.qName == "tei-head")
 
   private def isFigDesc(node: Xml.Node): Boolean =
     node.asElement.exists(el => el.qName.equalsIgnoreCase("figDesc"))
@@ -345,7 +344,7 @@ object TeiMarkup extends Markup(
 
   private def isCitAttribution(node: Xml.Node): Boolean =
     isBibl(node) || node.asElement.exists(el =>
-      el.qName == "ref" || el.qName == "ptr" || el.qName == "a"
+      el.qName == "ref" || el.qName == "ptr" || el.isA
     )
 
   private def unwrapQuoted(node: Xml.Node): Xml.Nodes =
@@ -367,7 +366,7 @@ object TeiMarkup extends Markup(
       element.get(XmlAttribute.Type).exists(t => t == "gloss" || t == "glossary")
     if !isGlossList then None
     else Some:
-      renameElement("dl", element)
+      element.renameKeepingClass("dl")
         .setChildren(groupGlossEntries(element.getChildren))
         .add(Glossary.ListClass)
 
@@ -376,10 +375,10 @@ object TeiMarkup extends Markup(
     var pendingLabel: Option[Xml.Element] = None
 
     def asDt(label: Xml.Element): Xml.Element =
-      Xml.element("dt").setChildren(label.getChildren.filterNot(_.isWhitespace))
+      Xml.element(XmlElement.Dt).setChildren(label.getChildren.filterNot(_.isWhitespace))
 
     def asDd(item: Xml.Element): Xml.Element =
-      Xml.element("dd").setChildren(item.getChildren.filterNot(_.isWhitespace))
+      Xml.element(XmlElement.Dd).setChildren(item.getChildren.filterNot(_.isWhitespace))
 
     def emit(label: Xml.Element, item: Option[Xml.Element]): Unit =
       val dt: Xml.Element = asDt(label)
@@ -428,7 +427,7 @@ object TeiMarkup extends Markup(
         val cls: String = s"language-${name.toLowerCase}"
         if !code.hasClass(cls) then code = code.addClass(cls)
       val wrapped: Xml.Element =
-        if code.getText.contains('\n') then Xml.element("pre").setChildren(Seq(code))
+        if code.getText.contains('\n') then Xml.element(XmlElement.Pre).setChildren(Seq(code))
         else code
       Some(Seq(wrapped))
 

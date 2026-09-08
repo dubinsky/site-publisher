@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class DocBookMarkupSpec extends AnyFunSuite:
@@ -93,13 +93,13 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("<row"), dumped)
     assert(!dumped.contains("<entry"), dumped)
     val cells: Seq[String] = xml.gather(element =>
-      Option.when(element.qName == "td")(element.getText.trim)
+      Option.when(element.isElement(XmlElement.Td))(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
     assert(cells.contains("1"), dumped)
     assert(cells.contains("2"), dumped)
-    assert(xml.gather(el => Option.when(el.qName == "table")(el)).nonEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.isElement(XmlElement.Table))(el)).nonEmpty, dumped)
   }
 
   test("informaltable becomes table; imagedata becomes img; links become a") {
@@ -133,7 +133,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(!dumped.contains("<section"), dumped)
     assert(!dumped.contains("<sect1"), dumped)
-    val divs: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "div")(el)).toSeq
+    val divs: Seq[Xml.Element] = xml.gather(el => Option.when(el.isElement(XmlElement.Div))(el)).toSeq
     assert(divs.exists(_.hasClass("section")), dumped)
     val sect1: Xml.Element = divs.find(_.hasClass("sect1")).get
     assert(sect1.get("db-class").contains("keep"), dumped)
@@ -188,7 +188,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
         |</article>""".stripMargin
     )
     val dumped: String = render(xml)
-    val img: Xml.Element = xml.gather(el => Option.when(el.qName == "img")(el)).head
+    val img: Xml.Element = xml.gather(el => Option.when(el.isElement(XmlElement.Img))(el)).head
     assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     val video: Xml.Element = xml.gather(el => Option.when(Video.is(el))(el)).head
     assert(video.get(XmlAttribute.Src).contains("clip.mp4"), dumped)
@@ -216,7 +216,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
       """<table><tgroup cols="1"><row><entry morerows="1">A</entry></row></tgroup></table>"""
     )
     val dumped: String = render(xml)
-    val td: Xml.Element = xml.gather(el => Option.when(el.qName == "td")(el)).head
+    val td: Xml.Element = xml.gather(el => Option.when(el.isElement(XmlElement.Td))(el)).head
     assert(td.get("rowspan").contains("2"), dumped)
     assert(!dumped.contains("<entry"), dumped)
   }
@@ -277,7 +277,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(defs.keySet == Set("posuk", "mud"), dumped)
     assert(Xml.toString(defs("posuk")).contains("verse"), dumped)
     assert(xml.gather(el => Option.when(Glossary.isList(el))(el)).size == 1, dumped)
-    val dls: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "dl")(el)).toSeq
+    val dls: Seq[Xml.Element] = xml.gather(el => Option.when(el.isElement(XmlElement.Dl))(el)).toSeq
     assert(dls.size == 2, dumped)
     assert(dls.exists(dl => !Glossary.isList(dl) && dl.getText.contains("alpha")), dumped)
   }

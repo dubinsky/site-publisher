@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.Xml
-
+import org.podval.xml.{Xml, XmlElement}
 /** Markup-neutral strikethrough IR is HTML `<del>`. Browser default is the style. */
 object Strike:
   def is(element: Xml.Element): Boolean = element.qName == "del"
@@ -17,4 +16,4 @@ object Strike:
 
   private def isLineThroughWrapper(element: Xml.Element): Boolean =
     element.hasClass("line-through") &&
-    (element.qName == "span" || element.qName == "mark")
+    (element.isElement(XmlElement.Span) || element.qName == "mark")

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMarkupPage}
-import org.podval.xml.{Html, CssClass, Xml}
+import org.podval.xml.{Html, CssClass, Xml, XmlElement}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 
@@ -141,7 +141,7 @@ object Toc:
 
   object PlaceholderClass extends CssClass("toc-placeholder")
 
-  def placeholder: Xml.Element = Xml.element("div").add(PlaceholderClass)
+  def placeholder: Xml.Element = Xml.element(XmlElement.Div).add(PlaceholderClass)
 
   def apply(
     element: Xml.Element,

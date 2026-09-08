@@ -4,7 +4,7 @@ import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.{ByteArrayInputStream, File}
@@ -50,7 +50,7 @@ final class CitationSpec extends AnyFunSuite:
     cites(xml).flatMap(c => Citation.itemsOf(c).map(Citation.modeOf(c) -> _))
 
   private def wrap(nodes: Xml.Node*): Xml.Element =
-    Xml.element("div").setChildren(Chunk.from(nodes))
+    Xml.element(XmlElement.Div).setChildren(Chunk.from(nodes))
 
   private def withTempDir(body: File => Unit): Unit =
     val path: NioPath = NioFiles.createTempDirectory("site-publisher-bib")
@@ -150,11 +150,11 @@ final class CitationSpec extends AnyFunSuite:
     val bib: Bibliography = bibliography("apa")
     val stub: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("knuth79")))
     val nativeItem: Xml.Element =
-      Xml.element("li").add(BibliographyItem.ItemClass).setId("knuth-book").setText("Knuth book")
+      Xml.element(XmlElement.Li).add(BibliographyItem.ItemClass).setId("knuth-book").setText("Knuth book")
     val nativeList: Xml.Element =
-      Xml.element("ul").add(Citation.ListClass).setChildren(Chunk(nativeItem))
+      Xml.element(XmlElement.Ul).add(Citation.ListClass).setChildren(Chunk(nativeItem))
     val xml: Xml.Element = wrap(
-      Xml.element("p").setChildren(Chunk(stub)),
+      Xml.element(XmlElement.P).setChildren(Chunk(stub)),
       nativeList,
       Citation.listPlaceholder
     )
@@ -342,8 +342,8 @@ final class CitationSpec extends AnyFunSuite:
     val stub: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("knuth79")))
     val unknown: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("missing")))
     val xml: Xml.Element = wrap(
-      Xml.element("p").setChildren(Chunk(stub)),
-      Xml.element("p").setChildren(Chunk(unknown)),
+      Xml.element(XmlElement.P).setChildren(Chunk(stub)),
+      Xml.element(XmlElement.P).setChildren(Chunk(unknown)),
       Citation.listPlaceholder
     )
     val (resolved, labels) = bib.resolve(xml)
@@ -361,7 +361,7 @@ final class CitationSpec extends AnyFunSuite:
   test("resolve appends bibliography when the page has no placeholder") {
     val bib: Bibliography = bibliography("apa")
     val stub: Xml.Element = Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item("knuth79")))
-    val xml: Xml.Element = wrap(Xml.element("p").setChildren(Chunk(stub)))
+    val xml: Xml.Element = wrap(Xml.element(XmlElement.P).setChildren(Chunk(stub)))
     val (resolved, labels) = bib.resolve(xml)
     assert(labels.isEmpty)
     val last: Xml.Element = resolved.getChildren.flatMap(_.asElement).last

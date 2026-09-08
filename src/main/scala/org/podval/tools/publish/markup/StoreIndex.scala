@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
 /** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
   * Harvested from the raw tree (includes are not expanded). Names, title, and abstract are
@@ -50,7 +50,7 @@ object StoreIndex:
 
   private def storeTitle(root: Xml.Element): Option[Xml.Element] =
     val candidates: Seq[Xml.Element] =
-      root.getChildren.flatMap(_.asElement).filter(_.localName == "title")
+      root.getChildren.flatMap(_.asElement).filter(_.localName == XmlElement.Title.localName)
     val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
     nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
@@ -60,7 +60,7 @@ object StoreIndex:
 
   private def storeBody(root: Xml.Element): Option[Xml.Element] =
     root.getChildren.flatMap(_.asElement).find: el =>
-      el.localName == "body" && el.getChildren.nonEmpty
+      el.localName == XmlElement.Body.localName && el.getChildren.nonEmpty
 
   private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
     val fromChildren: Seq[StoreIndex.Name] =

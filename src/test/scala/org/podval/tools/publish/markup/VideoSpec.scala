@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -70,7 +70,7 @@ final class VideoSpec extends AnyFunSuite:
 
   test("WikiLink.embed of a video transclusion") {
     val a: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .addClass("wiki-link")
       .addClass("transclude")
       .setHref("clip.mp4")
@@ -85,7 +85,7 @@ final class VideoSpec extends AnyFunSuite:
 
   test("WikiLink.embed uses alias as label") {
     val a: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .addClass("wiki-link")
       .addClass("transclude")
       .setHref("clip.mp4")

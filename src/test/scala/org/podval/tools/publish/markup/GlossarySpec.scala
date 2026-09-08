@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -175,7 +175,7 @@ final class GlossarySpec extends AnyFunSuite:
     val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("mud"))
     assert(definitionText(defs, "mud") == "wet dirt")
-    assert(Glossary.isList(xml.getChildren.flatMap(_.asElement).find(_.qName == "dl").get))
+    assert(Glossary.isList(xml.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Dl)).get))
   }
 
   test("Markdown term text with spaces becomes a hyphenated id") {
@@ -251,7 +251,7 @@ final class GlossarySpec extends AnyFunSuite:
 
   test("attachTip wraps the link and tip as siblings") {
     val link: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .setId("src")
       .setHref("#posuk")
       .setText("posuk")

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 object DescriptionList:
   def groupItems(
@@ -15,7 +15,7 @@ object DescriptionList:
     def flush(): Unit =
       if group.nonEmpty then
         result = result :+ Xml
-          .element("div")
+          .element(XmlElement.Div)
           .add(itemClass)
           .setId(groupId)
           .setChildren(group)
@@ -24,12 +24,12 @@ object DescriptionList:
 
     nodes.foreach: node =>
       node.asElement match
-        case Some(element) if element.qName == "dt" =>
+        case Some(element) if element.isElement(XmlElement.Dt) =>
           flush()
           val (id, dt) = takeTermId(element)
           groupId = id
           group = Seq(dt)
-        case Some(element) if element.qName == "dd" =>
+        case Some(element) if element.isElement(XmlElement.Dd) =>
           if group.isEmpty then result = result :+ element
           else group = group :+ element
         case Some(element) =>

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 final class Tip(prefix: String):
   object RefClass extends CssClass(s"$prefix-ref")
@@ -10,7 +10,7 @@ final class Tip(prefix: String):
     * `aria-describedby` stays on the `<a>`. */
   def attachTip(link: Xml.Element, definition: Xml.Nodes): Xml.Element =
     var tip: Xml.Element = Xml
-      .element("span")
+      .element(XmlElement.Span)
       .add(TipClass)
       .setChildren(definition)
     var wrappedLink: Xml.Element = link
@@ -19,7 +19,7 @@ final class Tip(prefix: String):
       tip = tip.setId(tipId).set(XmlAttribute.Role, "tooltip")
       wrappedLink = wrappedLink.set("aria-describedby", tipId)
     Xml
-      .element("span")
+      .element(XmlElement.Span)
       .add(RefClass)
       .setChildren(Seq(wrappedLink, tip))
 

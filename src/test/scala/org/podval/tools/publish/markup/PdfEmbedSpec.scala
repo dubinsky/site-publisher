@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -30,12 +30,12 @@ final class PdfEmbedSpec extends AnyFunSuite:
     assert(dumped.contains("--pdf-embed-height: 480px"), dumped)
     val objects: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "object")(el)).toSeq
     assert(objects.size == 1, dumped)
-    assert(objects.head.gather(el => Option.when(el.qName == "a")(el)).nonEmpty, dumped)
+    assert(objects.head.gather(el => Option.when(el.isA)(el)).nonEmpty, dumped)
   }
 
   test("WikiLink.embed of a pdf transclusion") {
     val a: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .addClass("wiki-link")
       .addClass("transclude")
       .setHref("sample.pdf#page=3")
@@ -49,7 +49,7 @@ final class PdfEmbedSpec extends AnyFunSuite:
 
   test("WikiLink.embed uses alias as label") {
     val a: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .addClass("wiki-link")
       .addClass("transclude")
       .setHref("sample.pdf")
@@ -71,7 +71,7 @@ final class PdfEmbedSpec extends AnyFunSuite:
 
   test("HTML that is already IR is unchanged") {
     val ir: Xml.Element = PdfEmbed.make("sample.pdf", "already")
-    val wrapped: Xml.Element = Xml.element("div").setChildren(zio.blocks.chunk.Chunk(ir))
+    val wrapped: Xml.Element = Xml.element(XmlElement.Div).setChildren(zio.blocks.chunk.Chunk(ir))
     val processed: Xml.Element = HtmlIr.normalize(wrapped)
     val dumped: String = render(processed)
     assert(embeds(processed).size == 1, dumped)

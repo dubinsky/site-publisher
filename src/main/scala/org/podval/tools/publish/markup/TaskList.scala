@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral task-list IR. CSS styles only these classes. */
 object TaskList:
@@ -9,10 +9,10 @@ object TaskList:
   object CheckboxClass extends CssClass("task-list-item-checkbox")
 
   def isList(element: Xml.Element): Boolean =
-    (element.qName == "ul" || element.qName == "ol") && element.has(ListClass)
+    (element.isElement(XmlElement.Ul) || element.isElement(XmlElement.Ol)) && element.has(ListClass)
 
   def isItem(element: Xml.Element): Boolean =
-    element.qName == "li" && element.has(ItemClass)
+    element.isElement(XmlElement.Li) && element.has(ItemClass)
 
   def isCheckbox(element: Xml.Element): Boolean =
     element.qName == "input" && (

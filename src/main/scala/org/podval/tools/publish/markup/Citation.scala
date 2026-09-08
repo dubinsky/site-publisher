@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 
 object Citation:
   object CiteClass extends CssClass("citation")
@@ -31,7 +31,7 @@ object Citation:
   )
 
   def isCite(element: Xml.Element): Boolean = element.has(CiteClass)
-  def isList(element: Xml.Element): Boolean = element.qName == "div" && element.has(ListClass)
+  def isList(element: Xml.Element): Boolean = element.isElement(XmlElement.Div) && element.has(ListClass)
   /** Empty `div.bibliography` for citeproc to fill. Native lists are `ul` / `listBibl`, not this. */
   def isPlaceholder(element: Xml.Element): Boolean =
     isList(element) && element.getChildren.forall(_.isWhitespace)
@@ -41,13 +41,13 @@ object Citation:
 
   def cite(mode: Mode, items: Seq[Item]): Xml.Element =
     Xml
-      .element("span")
+      .element(XmlElement.Span)
       .add(CiteClass)
       .set(ModeAttr, mode.attr)
       .setChildren(items.map(itemToElement))
 
   def listPlaceholder: Xml.Element =
-    Xml.element("div").add(ListClass)
+    Xml.element(XmlElement.Div).add(ListClass)
 
   def toHtmlString(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element)
@@ -75,7 +75,7 @@ object Citation:
 
   private def itemToElement(item: Item): Xml.Element =
     Xml
-      .element("span")
+      .element(XmlElement.Span)
       .add(ItemClass)
       .set(KeyAttr, item.key)
       .set(LocatorAttr, item.locator)

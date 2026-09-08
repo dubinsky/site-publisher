@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class TeiMarkupSpec extends AnyFunSuite:
@@ -91,7 +91,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   test("store and collection child title is extracted and stripped") {
     val (store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
     assert(storeTitle.exists(_.getText.contains("Fund 109")), render(store))
-    assert(store.gather(el => Option.when(el.qName == "tei-title" || el.qName == "title")(el)).isEmpty, render(store))
+    assert(store.gather(el => Option.when(el.qName == "tei-title" || el.isElement(XmlElement.Title))(el)).isEmpty, render(store))
     val (collection, collectionTitle) = processResult("""<collection><title>Case 29</title><p>y</p></collection>""")
     assert(collectionTitle.exists(_.getText.contains("Case 29")), render(collection))
   }
@@ -232,7 +232,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )
     val dumped: String = render(xml)
     assert(title.exists(_.getText.contains("Имена")), dumped)
-    assert(xml.gather(el => Option.when(el.qName == "title" || el.qName == "tei-title")(el)).isEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.isElement(XmlElement.Title) || el.qName == "tei-title")(el)).isEmpty, dumped)
     val people: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "listPerson")(el)).toSeq
     assert(people.exists(_.getId.contains("jews")), dumped)
     assert(people.exists(el => el.getChildren.flatMap(_.asElement).exists(h =>
@@ -364,7 +364,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("<row"), dumped)
     assert(!dumped.contains("<cell"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.qName == "td" || element.qName == "th")(element.getText.trim)
+      Option.when(element.isElement(XmlElement.Td) || element.isElement(XmlElement.Th))(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -415,7 +415,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
       Option.when(Glossary.isList(element))(element)
     ).toSeq
     assert(glossLists.size == 2, dumped)
-    assert(glossLists.forall(_.qName == "dl"), dumped)
+    assert(glossLists.forall(_.isElement(XmlElement.Dl)), dumped)
     val leftoverLists: Seq[Xml.Element] = xml.gather( element =>
       Option.when(element.qName == "list")(element)
     ).toSeq
@@ -439,14 +439,14 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("xs.map(f)"), dumped)
     assert(dumped.contains("not code"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "code")(element)
+      Option.when(element.isElement(XmlElement.Code))(element)
     ).toSeq
     assert(codes.exists(c => c.hasClass("language-scala") && !c.getText.contains('\n')), dumped)
     val pres: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "pre")(element)
+      Option.when(element.isElement(XmlElement.Pre))(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.qName == "code").get
+    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Code)).get
     assert(preCode.hasClass("language-java"), dumped)
     assert(preCode.getText.contains("Width"), dumped)
     val plain: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get

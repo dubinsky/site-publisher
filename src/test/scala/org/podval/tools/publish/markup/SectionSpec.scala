@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser}
+import org.podval.xml.{Html, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement}
 import Html.given
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
@@ -28,7 +28,7 @@ final class SectionSpec extends AnyFunSuite:
 
   test("copyXmlId does not overwrite an existing id") {
     val xml: Xml.Element = Xml
-      .element("div")
+      .element(XmlElement.Div)
       .setId("keep")
       .set(XmlAttribute.XmlId, "other")
     assert(xml.copyXmlId.getId.contains("keep"))
@@ -66,7 +66,7 @@ final class SectionSpec extends AnyFunSuite:
       """<div xml:id="meth"><pb n="1"/><fw type="pageNum">3</fw><head>Methodology</head><p>body</p></div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.qName == "head" then element.rename("tei-head") else element
+      if element.isElement(XmlElement.Head) then element.rename("tei-head") else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val header: Xml.Element = Section.heading(marked).get
@@ -84,11 +84,11 @@ final class SectionSpec extends AnyFunSuite:
         |</div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.qName == "head" then element.rename("tei-head") else element
+      if element.isElement(XmlElement.Head) then element.rename("tei-head") else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val outer: Xml.Element = marked.getChildren.flatMap(_.asElement).head
-    val inner: Xml.Element = outer.getChildren.flatMap(_.asElement).find(_.qName == "div").get
+    val inner: Xml.Element = outer.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Div)).get
     assert(!Section.is(marked))
     assert(!Section.is(outer))
     assert(Section.is(inner))
@@ -96,14 +96,14 @@ final class SectionSpec extends AnyFunSuite:
 
   test("Toc walks through non-section wrappers to headed sections") {
     val inner: Xml.Element = Section
-      .mark(Xml.element("div"))
+      .mark(Xml.element(XmlElement.Div))
       .setId("meth")
       .setChildren(Chunk(
         Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
-        Xml.element("p").setChildren(Chunk(Xml.text("body")))
+        Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))
       ))
-    val grouping: Xml.Element = Xml.element("div").setChildren(Chunk(
-      Xml.element("p").setChildren(Chunk(Xml.text("wrapper"))),
+    val grouping: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("wrapper"))),
       inner
     ))
     val root: Xml.Element = Xml.element("TEI").setChildren(Chunk(grouping))
@@ -114,11 +114,11 @@ final class SectionSpec extends AnyFunSuite:
 
   test("normalize adds permalinks for TEI tei-head using the div id") {
     val section: Xml.Element = Section
-      .mark(Xml.element("div"))
+      .mark(Xml.element(XmlElement.Div))
       .set(XmlAttribute.XmlId, "methodology")
       .setChildren(Chunk(
         Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
-        Xml.element("p").setChildren(Chunk(Xml.text("body")))
+        Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))
       ))
     val normalized: Xml.Element = Section.normalize(section, IdGenerator("_id"))
     val rendered: String = render(normalized)
@@ -278,9 +278,9 @@ final class SectionSpec extends AnyFunSuite:
 
   test("marked section without a heading is a defect") {
     val section: Xml.Element = Section
-      .mark(Xml.element("div"))
+      .mark(Xml.element(XmlElement.Div))
       .setId("foo")
-      .setChildren(Chunk(Xml.element("p").setChildren(Chunk(Xml.text("body")))))
+      .setChildren(Chunk(Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))))
     val thrown: IllegalStateException = intercept[IllegalStateException]:
       Toc(section, PageErrorReporter.Silent)
     assert(thrown.getMessage.contains("foo"), thrown.getMessage)
@@ -295,11 +295,11 @@ final class SectionSpec extends AnyFunSuite:
         cause: Option[Throwable] = None
       ): Unit = reported = Some((kind, message))
     val section: Xml.Element = Section
-      .mark(Xml.element("div"))
+      .mark(Xml.element(XmlElement.Div))
       .setId("foo")
       .setChildren(Chunk(
         Section.markHeading(Xml.element("h2")),
-        Xml.element("p").setChildren(Chunk(Xml.text("body")))
+        Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))
       ))
     val toc: Toc = Toc(section, reporter)
     assert(reported.contains((PageError.NoTitle, "No title on section foo")))

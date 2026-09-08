@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import java.io.File
 
 // TODO deal with
@@ -117,7 +117,7 @@ object AsciiDocMarkup extends Markup(
     )
     cleaned = Footnote.unwrapLeftovers(
       cleaned,
-      el => el.qName == "div" && el.getId.contains("footnotes")
+      el => el.isElement(XmlElement.Div) && el.getId.contains("footnotes")
     )
     // Default transform does not recurse into `<code>`, where listing callouts live.
     cleaned = rewriteCalloutMarks(cleaned)
@@ -150,7 +150,7 @@ object AsciiDocMarkup extends Markup(
 
   private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = children.convertElements(element =>
     convertBibliographyWrapper(element).orElse(
-      Option.when(element.qName == "div" && isSpuriousDiv(element))(
+      Option.when(element.isElement(XmlElement.Div) && isSpuriousDiv(element))(
         removeSpuriousDivs(element.getChildren)
       )
     )
@@ -167,14 +167,14 @@ object AsciiDocMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[Xml.Element], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) => (Some(heading), children.drop(1))
             case None => (None, children)
       val list: Option[Xml.Element] =
-        rest.flatMap(_.asElement).find(el => el.qName == "ul" || el.qName == "ol")
+        rest.flatMap(_.asElement).find(el => el.isElement(XmlElement.Ul) || el.isElement(XmlElement.Ol))
       list.map: ul =>
         val items: Xml.Nodes = ul.getChildren.map: node =>
-          node.asElement.filter(_.qName == "li").fold(node)(asBibliographyItem)
+          node.asElement.filter(_.isElement(XmlElement.Li)).fold(node)(asBibliographyItem)
         val converted: Xml.Element =
           ul.add(Citation.ListClass).setId(element.getId).setChildren(items)
         title.fold(Seq[Xml.Node](converted))(heading => Seq(heading, converted))
@@ -196,7 +196,7 @@ object AsciiDocMarkup extends Markup(
       var found: Option[String] = None
       val walked: Xml.Nodes = nodes.map: node =>
         if found.isDefined then node
-        else node.asElement.filter(el => el.qName == "p" || el.qName == "span") match
+        else node.asElement.filter(el => el.isElement(XmlElement.P) || el.isElement(XmlElement.Span)) match
           case Some(wrapper) =>
             val (inner: Option[String], innerNodes: Xml.Nodes) = hoistEmptyIdAnchor(wrapper.getChildren)
             found = inner
@@ -239,7 +239,7 @@ object AsciiDocMarkup extends Markup(
         element.get("data-value").flatMap(calloutNumber).orElse(calloutNumber(element.getText))
       ).flatten
     val fromImg: Option[String] =
-      Option.when(element.qName == "img" && element.get(XmlAttribute.Src).exists(_.contains("callout")))(
+      Option.when(element.isElement(XmlElement.Img) && element.get(XmlAttribute.Src).exists(_.contains("callout")))(
         element.get(XmlAttribute.Alt).flatMap(calloutNumber)
       ).flatten
     fromIcon.orElse(fromImg).map(Callout.marker)
@@ -268,7 +268,7 @@ object AsciiDocMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], body: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) =>
               (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
             case None =>
@@ -283,16 +283,16 @@ object AsciiDocMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) =>
               (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
             case None =>
               (None, children)
       val inner: Option[Xml.Element] =
-        rest.flatMap(_.asElement).find(_.qName == "blockquote")
+        rest.flatMap(_.asElement).find(_.isElement(XmlElement.Blockquote))
       val attribution: Xml.Nodes =
         rest.flatMap(_.asElement)
-          .find(el => el.qName == "div" && el.hasClass("attribution"))
+          .find(el => el.isElement(XmlElement.Div) && el.hasClass("attribution"))
           .fold(Seq.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
       val body: Xml.Nodes =
         inner.fold(rest.filterNot(isQuoteAttribution)): quote =>
@@ -307,7 +307,7 @@ object AsciiDocMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (body: Xml.Nodes, caption: Option[String]) =
         children.lastOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) =>
               (children.dropRight(1), Some(heading.getText.trim).filter(_.nonEmpty))
             case None =>
@@ -322,7 +322,7 @@ object AsciiDocMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], rest: Xml.Nodes) =
         children.headOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) =>
               (Some(heading.getText.trim).filter(_.nonEmpty), children.drop(1))
             case None =>
@@ -334,7 +334,7 @@ object AsciiDocMarkup extends Markup(
         title.fold(normalized)(caption => Figure.make(Some(caption), Seq(normalized)).setId(element.getId))
 
   private def isQuoteAttribution(node: Xml.Node): Boolean =
-    node.asElement.exists(el => el.qName == "div" && el.hasClass("attribution"))
+    node.asElement.exists(el => el.isElement(XmlElement.Div) && el.hasClass("attribution"))
 
   // Asciidoctor: <div class="admonitionblock note"><table> icon + content cells.
   private def convertAdmonition(element: Xml.Element): Xml.Element =
@@ -343,7 +343,7 @@ object AsciiDocMarkup extends Markup(
       val typeName: String =
         element.getClasses.find(asciidocAdmonitionTypes.contains).getOrElse("note")
       val cells: Seq[Xml.Element] = element.gather(el =>
-        Option.when(el.qName == "td")(el)
+        Option.when(el.isElement(XmlElement.Td))(el)
       )
       val icon: Option[Xml.Element] = cells.find(_.hasClass("icon"))
       val content: Option[Xml.Element] = cells.find(_.hasClass("content"))
@@ -351,7 +351,7 @@ object AsciiDocMarkup extends Markup(
         content.fold(Seq.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
       val (titleFromContent: Option[String], body: Xml.Nodes) =
         contentChildren.headOption.flatMap(_.asElement)
-          .filter(child => child.qName == "div" && child.hasClass("title")) match
+          .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
             case Some(heading) =>
               (Some(heading.getText.trim).filter(_.nonEmpty), contentChildren.drop(1))
             case None =>
@@ -369,17 +369,17 @@ object AsciiDocMarkup extends Markup(
     if element.qName != "div" || !element.hasClass("colist") then element
     else
       val innerOl: Option[Xml.Element] =
-        element.getChildren.flatMap(_.asElement).find(_.qName == "ol")
+        element.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Ol))
       val fromTable: Option[Xml.Element] =
-        element.getChildren.flatMap(_.asElement).find(_.qName == "table").map: table =>
+        element.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Table)).map: table =>
           val rows: Seq[Xml.Element] = table.getChildren.flatMap(_.asElement).flatMap: child =>
-            if child.qName == "tr" then Seq(child)
-            else child.getChildren.flatMap(_.asElement).filter(_.qName == "tr")
+            if child.isElement(XmlElement.Tr) then Seq(child)
+            else child.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Tr))
           val items: Seq[Xml.Element] = rows.map: tr =>
             val cells: Seq[Xml.Element] =
-              tr.getChildren.flatMap(_.asElement).filter(_.qName == "td")
-            Xml.element("li").setChildren(cells.lift(1).fold(Seq.empty[Xml.Node])(_.getChildren))
-          Xml.element("ol").setChildren(items)
+              tr.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Td))
+            Xml.element(XmlElement.Li).setChildren(cells.lift(1).fold(Seq.empty[Xml.Node])(_.getChildren))
+          Xml.element(XmlElement.Ol).setChildren(items)
       innerOl.orElse(fromTable).fold(element)(_.add(Callout.ListClass))
 
   // Asciidoctor: <div class="dlist glossary"><dl> sibling dt/dd.
@@ -393,7 +393,7 @@ object AsciiDocMarkup extends Markup(
     else
       val acceptMarkers: Boolean = element.hasClass("checklist")
       val children: Xml.Nodes = element.getChildren.map: node =>
-        node.asElement.filter(_.qName == "li").fold(node)(convertChecklistItem(_, acceptMarkers))
+        node.asElement.filter(_.isElement(XmlElement.Li)).fold(node)(convertChecklistItem(_, acceptMarkers))
       var list: Xml.Element = element.setChildren(children)
       if acceptMarkers then
         list = list.setClasses(list.getClasses.filterNot(_ == "checklist"))
@@ -445,7 +445,7 @@ object AsciiDocMarkup extends Markup(
   private def convertGlossaryLists(nodes: Xml.Nodes): Xml.Nodes =
     nodes.map: node =>
       node.asElement match
-        case Some(dl) if dl.qName == "dl" =>
+        case Some(dl) if dl.isElement(XmlElement.Dl) =>
           dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, takeGlossaryTermId))
         case _ => node
 
@@ -477,7 +477,7 @@ object AsciiDocMarkup extends Markup(
   // To:
   //   <span class="footnote" footnote-correlation-id="N">Footnote Body</span>
   private def convertFootnoteBody(element: Xml.Element): Option[Xml.Element] =
-    val isFootnoteBody: Boolean = element.qName == "div" && element.hasClass("footnote")
+    val isFootnoteBody: Boolean = element.isElement(XmlElement.Div) && element.hasClass("footnote")
     if !isFootnoteBody then None else
       // 'a' child
       for correlationId: String <- element

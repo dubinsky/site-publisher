@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 // Details of the glossary internal representation.
 // Markup processors convert their HTML into this shape; definitions() does not
@@ -17,7 +17,7 @@ object Glossary:
   def isItem(element: Xml.Element): Boolean = element.has(ItemClass)
 
   def item(id: Option[String], children: Xml.Nodes): Xml.Element = Xml
-    .element("div")
+    .element(XmlElement.Div)
     .add(ItemClass)
     .setId(id)
     .setChildren(children)
@@ -37,7 +37,7 @@ object Glossary:
   private def definitionNodes(item: Xml.Element): Option[Xml.Nodes] =
     def dds(element: Xml.Element): Seq[Xml.Element] =
       element.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
-        if child.qName == "dd" then Seq(child) else dds(child)
+        if child.isElement(XmlElement.Dd) then Seq(child) else dds(child)
     dds(item).headOption
       .map(_.getChildren.filterNot(_.isWhitespace))
       .filter(_.nonEmpty)

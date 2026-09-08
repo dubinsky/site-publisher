@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -40,7 +40,7 @@ final class AdmonitionSpec extends AnyFunSuite:
     val found: Seq[Xml.Element] = admonitions(xml)
     assert(found.size == 1, dumped)
     assert(found.head.get(Admonition.TypeAttr).contains("note"), dumped)
-    assert(found.head.qName == "div", dumped)
+    assert(found.head.isElement(XmlElement.Div), dumped)
     assert(dumped.contains("""class="admonition-title""""), dumped)
     assert(dumped.contains("Auxiliary information"), dumped)
     assert(!dumped.contains("admonitionblock"), dumped)
@@ -73,7 +73,7 @@ final class AdmonitionSpec extends AnyFunSuite:
     val found: Seq[Xml.Element] = admonitions(xml)
     assert(found.size == 1, dumped)
     assert(found.head.get(Admonition.TypeAttr).contains("tip"), dumped)
-    assert(found.head.qName == "div", dumped)
+    assert(found.head.isElement(XmlElement.Div), dumped)
     assert(dumped.contains("Save time"), dumped)
     assert(dumped.contains("Use the shortcut"), dumped)
     assert(!dumped.contains("<blockquote"), dumped)

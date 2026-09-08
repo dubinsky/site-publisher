@@ -2,8 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute}
-import org.podval.xml.Xml2Html.renameElement
+import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -119,53 +118,53 @@ object DocBookMarkup extends Markup(
     val el: Xml.Element = element.setChildren(flattenWrappers(element.getChildren))
     el.qName match
       case "para" | "simpara" =>
-        renameElement("p", el)
+        el.renameKeepingClass("p")
 
       case "emphasis" | "phrase" =>
         convertEmphasis(el)
 
       case "itemizedlist" =>
-        renameElement("ul", el)
+        el.renameKeepingClass("ul")
 
       case "orderedlist" =>
-        renameElement("ol", el)
+        el.renameKeepingClass("ol")
 
       case "listitem" =>
-        renameElement("li", el)
+        el.renameKeepingClass("li")
 
       case name if linkElements.contains(name) =>
-        // `renameElement` would add class `link`, which is the section permalink class.
+        // `renameKeepingClass` would add class `link`, which is the section permalink class.
         val linked: Xml.Element = copyLinkHref(el)
         val tagged: Xml.Element =
-          if name == "link" then linked.rename("a") else renameElement("a", linked)
+          if name == "link" then linked.rename("a") else linked.renameKeepingClass("a")
         fillEmptyLink(tagged)
 
       case "imagedata" =>
-        renameElement("img", el.copyAttribute("fileref", "src"))
+        el.copyAttribute("fileref", "src").renameKeepingClass("img")
 
       case "videodata" | "audiodata" =>
         el.copyAttribute("fileref", "src")
 
       case "row" =>
-        renameElement("tr", el)
+        el.renameKeepingClass("tr")
 
       case "entry" =>
-        renameElement("td", copyMorerows(el))
+        copyMorerows(el).renameKeepingClass("td")
 
       case "informaltable" =>
-        renameElement("table", el)
+        el.renameKeepingClass("table")
 
       case "subscript" =>
-        renameElement("sub", el)
+        el.renameKeepingClass("sub")
 
       case "superscript" =>
-        renameElement("sup", el)
+        el.renameKeepingClass("sup")
 
       case "quote" =>
-        renameElement("q", el)
+        el.renameKeepingClass("q")
 
       case name if renameSections && sectionElements.contains(name) =>
-        renameElement("div", el)
+        el.renameKeepingClass("div")
 
       case _ =>
         el
@@ -173,11 +172,11 @@ object DocBookMarkup extends Markup(
   private def convertEmphasis(element: Xml.Element): Xml.Element =
     element.get(XmlAttribute.Role).map(_.trim.toLowerCase) match
       case Some("bold") | Some("strong") =>
-        renameElement("strong", element)
+        element.renameKeepingClass("strong")
       case Some("strikethrough") | Some("line-through") =>
-        renameElement("del", element)
+        element.renameKeepingClass("del")
       case _ if element.qName == "emphasis" =>
-        renameElement("em", element)
+        element.renameKeepingClass("em")
       case _ =>
         element
 
@@ -240,17 +239,17 @@ object DocBookMarkup extends Markup(
         el => Option.when(el.qName == "glossentry")(convertGlossEntry(el)),
         stopAtCode = false
       )
-      val dl: Xml.Element = Xml.element("dl").add(Glossary.ListClass).setChildren(entries)
-      if titles.isEmpty then dl else Xml.element("div").setChildren(titles ++ Seq(dl))
+      val dl: Xml.Element = Xml.element(XmlElement.Dl).add(Glossary.ListClass).setChildren(entries)
+      if titles.isEmpty then dl else Xml.element(XmlElement.Div).setChildren(titles ++ Seq(dl))
 
   private def convertGlossEntry(entry: Xml.Element): Xml.Element =
     val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
     val term: Option[Xml.Element] = children.find(_.qName == "glossterm")
     val definition: Option[Xml.Element] = children.find(_.qName == "glossdef")
     val dt: Xml.Element =
-      Xml.element("dt").setChildren(term.fold(Seq.empty)(_.getChildren.filterNot(_.isWhitespace)))
+      Xml.element(XmlElement.Dt).setChildren(term.fold(Seq.empty)(_.getChildren.filterNot(_.isWhitespace)))
     val dd: Option[Xml.Element] = definition.map: defn =>
-      Xml.element("dd").setChildren(defn.getChildren.filterNot(_.isWhitespace))
+      Xml.element(XmlElement.Dd).setChildren(defn.getChildren.filterNot(_.isWhitespace))
     val id: Option[String] =
       xmlId(entry).orElse(term.flatMap(xmlId)).orElse:
         val text: String = dt.getText.trim
@@ -264,14 +263,14 @@ object DocBookMarkup extends Markup(
         node.asElement.filter(_.qName == "varlistentry") match
           case Some(entry) => convertVarListEntry(entry)
           case None => Seq(node)
-      Xml.element("dl").setChildren(items)
+      Xml.element(XmlElement.Dl).setChildren(items)
 
   private def convertVarListEntry(entry: Xml.Element): Xml.Nodes =
     val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
     val dts: Seq[Xml.Element] = children.filter(_.qName == "term").map: term =>
-      Xml.element("dt").setChildren(term.getChildren.filterNot(_.isWhitespace))
+      Xml.element(XmlElement.Dt).setChildren(term.getChildren.filterNot(_.isWhitespace))
     val dds: Seq[Xml.Element] = children.filter(_.qName == "listitem").map: item =>
-      Xml.element("dd").setChildren(item.getChildren.filterNot(_.isWhitespace))
+      Xml.element(XmlElement.Dd).setChildren(item.getChildren.filterNot(_.isWhitespace))
     dts ++ dds
 
   private def convertAdmonition(element: Xml.Element): Xml.Element =
@@ -341,10 +340,10 @@ object DocBookMarkup extends Markup(
       val items: Xml.Nodes = element.getChildren.flatMap: node =>
         node.asElement.filter(_.qName == "callout") match
           case Some(callout) =>
-            Seq(Xml.element("li").setChildren(callout.getChildren.filterNot(_.isWhitespace)))
+            Seq(Xml.element(XmlElement.Li).setChildren(callout.getChildren.filterNot(_.isWhitespace)))
           case None =>
             Seq(node)
-      Xml.element("ol").add(Callout.ListClass).setChildren(items)
+      Xml.element(XmlElement.Ol).add(Callout.ListClass).setChildren(items)
 
   private def convertCo(element: Xml.Element, coNumbers: IdGenerator): Option[Xml.Nodes] =
     if element.qName != "co" then None
@@ -409,12 +408,12 @@ object DocBookMarkup extends Markup(
       element.get("language").map(_.trim).filter(_.nonEmpty)
     element.qName match
       case "literal" =>
-        Some(Seq(withLanguage(renameElement("code", element), language)))
+        Some(Seq(withLanguage(element.renameKeepingClass("code"), language)))
       case "code" =>
         Some(Seq(wrapIfMultiline(withLanguage(element, language))))
       case "programlisting" | "screen" | "literallayout" =>
-        val code: Xml.Element = withLanguage(Xml.element("code").setChildren(element.getChildren), language)
-        Some(Seq(Xml.element("pre").setChildren(Seq(code))))
+        val code: Xml.Element = withLanguage(Xml.element(XmlElement.Code).setChildren(element.getChildren), language)
+        Some(Seq(Xml.element(XmlElement.Pre).setChildren(Seq(code))))
       case _ =>
         None
 
@@ -424,4 +423,4 @@ object DocBookMarkup extends Markup(
       if element.hasClass(cls) then element else element.addClass(cls)
 
   private def wrapIfMultiline(code: Xml.Element): Xml.Element =
-    if code.getText.contains('\n') then Xml.element("pre").setChildren(Seq(code)) else code
+    if code.getText.contains('\n') then Xml.element(XmlElement.Pre).setChildren(Seq(code)) else code

@@ -24,12 +24,12 @@ object Footnote:
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
   def link(correlationId: String): Xml.Element = Xml
-    .element("span")
+    .element(XmlElement.Span)
     .add(LinkClass)
     .set(CorrelationId, correlationId)
   
   def body(correlationId: String, content: Xml.Nodes): Xml.Element = Xml
-    .element("span")
+    .element(XmlElement.Span)
     .add(BodyClass)
     .set(CorrelationId, correlationId)
     .setChildren(content)
@@ -96,7 +96,7 @@ object Footnote:
     if toAdd.isEmpty then xml
     else
       val footnotesDiv: Xml.Element = Xml
-        .element("div")
+        .element(XmlElement.Div)
         .addClass("footnotes")
         .setChildren(toAdd.map(_.body))
       xml.setChildren(xml.getChildren :+ footnotesDiv)
@@ -132,7 +132,7 @@ final class Footnote(
     .setText(number.toString)
 
   def body: Xml.Element = Xml
-    .element("span")
+    .element(XmlElement.Span)
     .add(Footnote.BodyClass)
     .setId(bodyId)
     .setChildren(backLink +: nodes)

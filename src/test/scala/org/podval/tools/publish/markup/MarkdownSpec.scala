@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -24,7 +24,7 @@ final class MarkdownSpec extends AnyFunSuite:
         |{:toc}
         |""".stripMargin
     )
-    assert(xml.qName == "div")
+    assert(xml.isElement(XmlElement.Div))
   }
 
   private def tocPlaceholders(xml: Xml.Element): Seq[Xml.Element] =
@@ -101,7 +101,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val xml: Xml.Element = process("Intro ^blk\n")
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, render(xml))
-    assert(found.head.qName == "p", render(xml))
+    assert(found.head.isElement(XmlElement.P), render(xml))
     assert(found.head.getId.contains("blk"), render(xml))
     assert(found.head.getText.contains("Intro"), render(xml))
     assert(!found.head.getText.contains("^blk"), render(xml))
@@ -118,7 +118,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "ul" || found.head.qName == "ol", dumped)
+    assert(found.head.isElement(XmlElement.Ul) || found.head.isElement(XmlElement.Ol), dumped)
     assert(found.head.getId.contains("lst"), dumped)
     assert(!dumped.contains("^lst"), dumped)
   }
@@ -132,7 +132,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "li", dumped)
+    assert(found.head.isElement(XmlElement.Li), dumped)
     assert(found.head.getId.contains("item"), dumped)
     assert(found.head.getText.contains("b"), dumped)
   }
@@ -194,7 +194,7 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="footnotes""""), dumped)
     val (notes, stripped) = harvest(xml)
     assert(notes.size == 1)
-    val noteNodes: String = render(Xml.element("span").setChildren(notes.values.head.nodes))
+    val noteNodes: String = render(Xml.element(XmlElement.Span).setChildren(notes.values.head.nodes))
     assert(noteNodes.contains("A note"), noteNodes)
     assert(!noteNodes.contains("<p"), noteNodes)
     assert(!render(stripped).contains("""class="footnotes""""), render(stripped))
@@ -210,7 +210,7 @@ final class MarkdownSpec extends AnyFunSuite:
         |""".stripMargin
     )
     val (notes, _) = harvest(xml)
-    val noteNodes: String = render(Xml.element("span").setChildren(notes.values.head.nodes))
+    val noteNodes: String = render(Xml.element(XmlElement.Span).setChildren(notes.values.head.nodes))
     assert(noteNodes.contains("First paragraph"), noteNodes)
     assert(noteNodes.contains("Second paragraph"), noteNodes)
     assert(!noteNodes.contains("<p"), noteNodes)
@@ -241,7 +241,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(dumped.contains("<table"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.qName == "th" || element.qName == "td")(element.getText.trim)
+      Option.when(element.isElement(XmlElement.Th) || element.isElement(XmlElement.Td))(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -262,15 +262,15 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "code")(element)
+      Option.when(element.isElement(XmlElement.Code))(element)
     ).toSeq
     val inline: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
     assert(inline.getText.contains("map"), dumped)
     val pres: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "pre")(element)
+      Option.when(element.isElement(XmlElement.Pre))(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.qName == "code").get
+    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Code)).get
     assert(preCode.hasClass("language-scala"), dumped)
     assert(preCode.getText.contains("xs.map(f)"), dumped)
   }

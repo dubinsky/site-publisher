@@ -14,7 +14,7 @@ object PdfEmbed:
   private val PdfType: String = "application/pdf"
 
   def is(element: Xml.Element): Boolean =
-    element.qName == "div" && element.has(Class)
+    element.isElement(XmlElement.Div) && element.has(Class)
 
   def fromRef(ref: String, label: String): Xml.Element =
     val (path: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
@@ -31,8 +31,8 @@ object PdfEmbed:
       .set(XmlAttribute.Type, PdfType)
       .set("aria-label", text)
       .setChildren(Seq(openLink(href, text)))
-    val sibling: Xml.Element = Xml.element("p").add(LinkClass).setChildren(Seq(openLink(href, text)))
-    val wrapper: Xml.Element = Xml.element("div").add(Class).setChildren(Seq(objectElement, sibling))
+    val sibling: Xml.Element = Xml.element(XmlElement.P).add(LinkClass).setChildren(Seq(openLink(href, text)))
+    val wrapper: Xml.Element = Xml.element(XmlElement.Div).add(Class).setChildren(Seq(objectElement, sibling))
     height.map(_.trim).filter(_.nonEmpty).fold(wrapper): raw =>
       wrapper.set("style", s"$HeightVar: ${cssHeight(raw)}")
 

@@ -2,8 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.store.Selector
 import org.podval.tools.publish.site.Path
-import org.podval.xml.Xml
-
+import org.podval.xml.{Xml, XmlElement}
 /** Collector `Index.Tree` / `Index.Flat` for a root TEI `store`: nested archive tree and
   * a flat list of descendant collections. Generated at render so listing hrefs are not backlinks. */
 object StoreIndexes:
@@ -33,17 +32,17 @@ object StoreIndexes:
 
   def flat(root: Page): Xml.Element =
     val items: Xml.Nodes = collectionsUnder(root).map(flatItem(root, _))
-    Xml.element("ul").setChildren(items)
+    Xml.element(XmlElement.Ul).setChildren(items)
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
       storePage.store.flatMap(_.selector).map(PageHeader.selectorDisplayName).getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
-    Xml.element("div").addClass("tree-index").setChildren(Seq(
-      Xml.element("ul").setChildren(Seq(
-        Xml.element("li").setChildren(Seq(Xml.element("em").setText(selectorLabel))),
-        Xml.element("li").setChildren(Seq(
-          Xml.element("ul").setChildren(items)
+    Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
+      Xml.element(XmlElement.Ul).setChildren(Seq(
+        Xml.element(XmlElement.Li).setChildren(Seq(Xml.element(XmlElement.Em).setText(selectorLabel))),
+        Xml.element(XmlElement.Li).setChildren(Seq(
+          Xml.element(XmlElement.Ul).setChildren(items)
         ))
       ))
     ))
@@ -53,10 +52,10 @@ object StoreIndexes:
       if page.store.exists(!_.isCollection) && childrenOf(page).nonEmpty
       then Seq(treeIndex(page))
       else Seq.empty
-    Xml.element("li").setChildren(Seq(treeLink(page)) ++ nested)
+    Xml.element(XmlElement.Li).setChildren(Seq(treeLink(page)) ++ nested)
 
   private def treeLink(page: Page): Xml.Element =
-    Xml.element("a")
+    Xml.element(XmlElement.A)
       .setHref(page.publishedPath.toString)
       .setText(treeLabel(page))
 
@@ -76,12 +75,12 @@ object StoreIndexes:
         .getOrElse(collection.listTitle)
     val label: String = if header.isEmpty then title else s"$header: $title"
     val link: Xml.Element =
-      Xml.element("a").setHref(collection.publishedPath.toString).setText(label)
+      Xml.element(XmlElement.A).setHref(collection.publishedPath.toString).setText(label)
     // Collector always emits `<abstract>`, even empty; tei.css `margin-top/bottom: 1em` is the
     // blank line between items on `/`.
     val description: Xml.Element = collection.store.flatMap(_.description).fold(Xml.element("abstract")): xml =>
       PageHeader.resolvedFragment(collection, xml)
-    Xml.element("li").setChildren(Seq(link, description))
+    Xml.element(XmlElement.Li).setChildren(Seq(link, description))
 
   def pathHeaderHorizontal(page: Page, root: Page): String =
     val chain: Seq[Page] =

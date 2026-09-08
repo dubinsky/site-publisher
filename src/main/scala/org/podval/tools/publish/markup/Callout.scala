@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 /** Markup-neutral callout IR. CSS styles only these classes.
   * Markers sit in verbatim (`span.callout`); the numbered list is `ol.callout-list`. */
@@ -11,11 +11,11 @@ object Callout:
   def isMark(element: Xml.Element): Boolean = element.has(MarkClass)
 
   def isList(element: Xml.Element): Boolean =
-    element.qName == "ol" && element.has(ListClass)
+    element.isElement(XmlElement.Ol) && element.has(ListClass)
 
   def marker(number: String): Xml.Element =
     Xml
-      .element("span")
+      .element(XmlElement.Span)
       .add(MarkClass)
       .set("data-value", number)
       .setText(number)

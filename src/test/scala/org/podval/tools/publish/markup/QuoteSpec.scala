@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -43,7 +43,7 @@ final class QuoteSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = quotes(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "blockquote", dumped)
+    assert(found.head.isElement(XmlElement.Blockquote), dumped)
     assert(dumped.contains("""class="quote-title""""), dumped)
     assert(dumped.contains("A title"), dumped)
     assert(dumped.contains("A little rebellion"), dumped)
@@ -254,7 +254,7 @@ final class QuoteSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = quotes(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "blockquote", dumped)
+    assert(found.head.isElement(XmlElement.Blockquote), dumped)
     assert(dumped.contains("A TEI quotation"), dumped)
     assert(!dumped.contains("<quote"), dumped)
     assert(!dumped.contains("tei-class"), dumped)
@@ -361,7 +361,7 @@ final class QuoteSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = quotes(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "blockquote", dumped)
+    assert(found.head.isElement(XmlElement.Blockquote), dumped)
     assert(dumped.contains("A little rebellion"), dumped)
     assert(dumped.contains("""class="quote-title""""), dumped)
     assert(dumped.contains("A title"), dumped)

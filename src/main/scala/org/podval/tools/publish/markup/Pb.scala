@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{CssClass, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** TEI `pb` harvested from the raw tree for collection `Страницы`, missing-photo notes, and facsimile JPEGs. */
 final class Pb(
@@ -20,7 +20,7 @@ object Pb:
   def is(element: Xml.Element): Boolean = element.isA && element.has(Class)
 
   def anchor(n: Option[String]): Xml.Element =
-    var result: Xml.Element = Xml.element("a")
+    var result: Xml.Element = Xml.element(XmlElement.A)
       .add(Class)
       .set(XmlAttribute.Title, "Facsimile")
       .set(XmlAttribute.Target, "facsimile")

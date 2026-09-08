@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{CssClass, Xml, XmlAst}
+import org.podval.xml.{CssClass, Xml, XmlAst, XmlElement}
 
 final class Section(
   val id: String,
@@ -27,7 +27,7 @@ object Section:
   object LinkClass extends CssClass("link")
 
   def mark(element: Xml.Element): Xml.Element =
-    require(element.qName == "div")
+    require(element.isElement(XmlElement.Div))
     element.add(SectionClass)
 
   def markHeading(header: Xml.Element): Xml.Element =
@@ -47,7 +47,7 @@ object Section:
       if found then mark(div.setChildren(children)) else div
 
   def is(element: Xml.Element): Boolean =
-    element.qName == "div" && element.has(SectionClass)
+    element.isElement(XmlElement.Div) && element.has(SectionClass)
 
   def heading(section: Xml.Element): Option[Xml.Element] =
     section.getChildren.flatMap(_.asElement).find(_.has(HeadingClass))
@@ -90,7 +90,7 @@ object Section:
   def addLinks(header: Xml.Element, id: String): Xml.Element =
     val href: String = s"#$id"
     val anchor: Xml.Element = Xml
-      .element("a")
+      .element(XmlElement.A)
       .add(AnchorClass)
       .setHref(href)
       .set("aria-hidden", "true")
@@ -98,7 +98,7 @@ object Section:
       if containsAnchor(header) then Seq(anchor) ++ header.getChildren
       else
         val link: Xml.Element = Xml
-          .element("a")
+          .element(XmlElement.A)
           .add(LinkClass)
           .setHref(href)
           .setChildren(header.getChildren)

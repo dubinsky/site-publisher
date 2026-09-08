@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 /** Markup-neutral aside IR. CSS styles only these classes.
   * Untyped auxiliary content (`<aside class="aside">`), optional title. */
@@ -15,7 +15,7 @@ object Aside:
 
   def make(title: Option[String], body: Xml.Nodes): Xml.Element =
     val titleElement: Option[Xml.Element] = title.map(_.trim).filter(_.nonEmpty).map: label =>
-      Xml.element("div").add(TitleClass).setText(label)
+      Xml.element(XmlElement.Div).add(TitleClass).setText(label)
     Xml
       .element("aside")
       .add(Class)

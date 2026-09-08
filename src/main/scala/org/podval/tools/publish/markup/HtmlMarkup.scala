@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
 import java.io.File
 
 object HtmlMarkup extends Markup(
@@ -12,12 +12,12 @@ object HtmlMarkup extends Markup(
 ):
   // Unwrap a lone leading <p> in td/li/dd (Asciidoctor and FlexMark both emit these).
   private[markup] def unwrapSpuriousParagraph(element: Xml.Element): Option[Xml.Nodes] =
-    val isElementToConvert: Boolean = element.qName == "td" || element.qName == "li" || element.qName == "dd"
+    val isElementToConvert: Boolean = element.isElement(XmlElement.Td) || element.isElement(XmlElement.Li) || element.isElement(XmlElement.Dd)
     if !isElementToConvert then None else
       val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
       for
         head <- tail.headOption.map(_.asElement.get)
-        if head.qName == "p"
+        if head.isElement(XmlElement.P)
       yield
         Seq(element.setChildren(init ++ head.getChildren ++ tail.tail))
 
@@ -77,7 +77,7 @@ object HtmlMarkup extends Markup(
         // Transplant the id from the header to the section.
         val header: Xml.Element = rest.head.asElement.get.copyXmlId
         val id: Option[String] = header.getId.filter(_.nonEmpty)
-        Section.mark(Xml.element("div"))
+        Section.mark(Xml.element(XmlElement.Div))
           .setId(id)
           .setChildren(Seq(Section.markHeading(header.setId(""))) ++ nestSections(body))
 

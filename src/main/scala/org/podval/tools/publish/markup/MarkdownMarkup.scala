@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst, XmlElement}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -68,7 +68,7 @@ object MarkdownMarkup extends Markup(
     )
     HtmlMarkup.process(
       convertTocPlaceholders(convert(MarkdownCite.convertElement(
-        Footnote.unwrapLeftovers(result, el => el.qName == "div" && el.hasClass("footnotes"))
+        Footnote.unwrapLeftovers(result, el => el.isElement(XmlElement.Div) && el.hasClass("footnotes"))
       ))),
       errorReporter
     )
@@ -84,7 +84,7 @@ object MarkdownMarkup extends Markup(
     if element.qName != "ul" && element.qName != "ol" then element
     else
       val children: Xml.Nodes = element.getChildren.map: node =>
-        node.asElement.filter(_.qName == "li").fold(node)(convertFlexMarkItem)
+        node.asElement.filter(_.isElement(XmlElement.Li)).fold(node)(convertFlexMarkItem)
       TaskList.asList(element.setChildren(children))
 
   // Obsidian core callouts: `> [!type] Title` (optional `+`/`-` fold). FlexMark emits a blockquote.
@@ -97,7 +97,7 @@ object MarkdownMarkup extends Markup(
   private def obsidianAdmonition(quote: Xml.Element): Option[Xml.Element] =
     val children: Xml.Nodes = quote.getChildren.filterNot(_.isWhitespace).toList
     for
-      first <- children.headOption.flatMap(_.asElement).filter(_.qName == "p")
+      first <- children.headOption.flatMap(_.asElement).filter(_.isElement(XmlElement.P))
       (typeName, fold, title, firstBody) <- splitObsidianMarker(first)
     yield Admonition.make(typeName, title, firstBody ++ children.tail, fold)
 
@@ -126,7 +126,7 @@ object MarkdownMarkup extends Markup(
   private def dropLeadingBreaks(nodes: Xml.Nodes): Xml.Nodes =
     nodes match
       case head :: tail if head.isWhitespace => dropLeadingBreaks(tail)
-      case head :: tail if head.asElement.exists(_.qName == "br") => dropLeadingBreaks(tail)
+      case head :: tail if head.asElement.exists(_.isElement(XmlElement.Br)) => dropLeadingBreaks(tail)
       case other => other
 
   private def convertFlexMarkItem(li: Xml.Element): Xml.Element =
@@ -154,7 +154,7 @@ object MarkdownMarkup extends Markup(
     while rest.nonEmpty do
       val node: Xml.Node = rest.head
       rest = rest.tail
-      node.asElement.filter(_.qName == "dl") match
+      node.asElement.filter(_.isElement(XmlElement.Dl)) match
         case Some(dl) =>
           val (isGlossary, remaining) = consumeGlossaryMarker(dl, rest)
           rest = remaining
@@ -174,7 +174,7 @@ object MarkdownMarkup extends Markup(
       case None => (markedOnDl, rest)
 
   private def isGlossaryIal(element: Xml.Element): Boolean =
-    element.qName == "p" && glossaryIal.matches(element.getText.trim)
+    element.isElement(XmlElement.P) && glossaryIal.matches(element.getText.trim)
 
   private def convertDl(dl: Xml.Element): Xml.Element =
     dl.setChildren(DescriptionList.groupItems(dl.getChildren, Glossary.ItemClass, takeTermId))
@@ -269,7 +269,7 @@ object MarkdownMarkup extends Markup(
     val paras: List[Xml.Element] = body
       .filterNot(_.isWhitespace)
       .toList
-      .flatMap(_.asElement.filter(_.qName == "p"))
+      .flatMap(_.asElement.filter(_.isElement(XmlElement.P)))
     val significant: Int = body.count(node => !node.isWhitespace)
     if paras.isEmpty || paras.length != significant then body
     else paras.map(_.getChildren).reduce((a, b) => a ++ Seq(Xml.text(" ")) ++ b)
@@ -291,13 +291,13 @@ object MarkdownMarkup extends Markup(
 
   // FlexMark leaves Kramdown `{:toc}` on the last item: `<li>seed {:toc}</li>`.
   private def isKramdownTocList(element: Xml.Element): Boolean =
-    (element.qName == "ul" || element.qName == "ol") &&
+    (element.isElement(XmlElement.Ul) || element.isElement(XmlElement.Ol)) &&
     element.getChildren.flatMap(_.asElement).exists: item =>
-      item.qName == "li" && item.getText.trim.endsWith("{:toc}")
+      item.isElement(XmlElement.Li) && item.getText.trim.endsWith("{:toc}")
 
   // Typora / GitLab `[TOC]` as a whole paragraph, not a link or `[TOC]:` reference.
   private def isBracketToc(element: Xml.Element): Boolean =
-    element.qName == "p" &&
+    element.isElement(XmlElement.P) &&
     element.getChildren.filterNot(_.isWhitespace).toList.match
       case List(node) =>
         node.asText.exists(_.trim.equalsIgnoreCase("[TOC]"))

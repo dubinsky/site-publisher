@@ -4,7 +4,7 @@ import org.podval.metadata.Language
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
-import org.podval.xml.{Html, Xml, XmlAttribute}
+import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
 import Html.given
 import zio.blocks.html.*
 
@@ -99,7 +99,7 @@ object PageHeader:
 
   private def ancestorLine(page: Page): Xml.Element =
     val name: Xml.Element =
-      Xml.element("a").setHref(page.publishedPath.toString).setText(pageDisplayName(page))
+      Xml.element(XmlElement.A).setHref(page.publishedPath.toString).setText(pageDisplayName(page))
     headingLine(
       selector = selectorName(page),
       name = Seq(name),
@@ -161,7 +161,7 @@ object PageHeader:
     page.content.fold(converted)(_.resolveConverted(converted))
 
   private def storeNameXml(name: StoreIndex.Name): Xml.Element =
-    var result: Xml.Element = Xml.element("span").addClass("store-name").setText(name.n)
+    var result: Xml.Element = Xml.element(XmlElement.Span).addClass("store-name").setText(name.n)
     name.lang.foreach(lang => result = result.set(XmlAttribute.Lang, lang))
     result
 
@@ -169,7 +169,7 @@ object PageHeader:
     val header: Option[DocumentHeader] = page.doc.flatMap(_.documentHeader)
     Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
       val meta: DocumentHeader = header.get
-      Xml.element("table").addClass("document-header").setChildren(Seq(
+      Xml.element(XmlElement.Table).addClass("document-header").setChildren(Seq(
         headerRow(page, "Описание", meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
         headerRow(page, "Дата", dateCell(meta.date)),
         headerRow(page, "Кто", joinedInner(meta.authors)),
@@ -182,9 +182,9 @@ object PageHeader:
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
   private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Xml.Element =
-    Xml.element("tr").setChildren(Seq(
-      Xml.element("td").addClass("heading").setText(heading),
-      Xml.element("td").addClass("value").setChildren(convertedNodes(page, nodes))
+    Xml.element(XmlElement.Tr).setChildren(Seq(
+      Xml.element(XmlElement.Td).addClass("heading").setText(heading),
+      Xml.element(XmlElement.Td).addClass("value").setChildren(convertedNodes(page, nodes))
     ))
 
   private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
@@ -200,4 +200,4 @@ object PageHeader:
 
   private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
     if nodes.isEmpty then Seq.empty
-    else resolvedFragment(page, Xml.element("span").setChildren(nodes)).getChildren
+    else resolvedFragment(page, Xml.element(XmlElement.Span).setChildren(nodes)).getChildren

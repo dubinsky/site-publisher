@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlElement}
 import scala.annotation.tailrec
 
 object MarkdownCite:
@@ -14,7 +14,7 @@ object MarkdownCite:
     ))
 
   private def isBibliographyFence(element: Xml.Element): Boolean =
-    element.qName == "p" && element.getText.trim == ":::bibliography"
+    element.isElement(XmlElement.P) && element.getText.trim == ":::bibliography"
 
   @tailrec
   def convert(result: Xml.Nodes, text: String): Xml.Nodes =

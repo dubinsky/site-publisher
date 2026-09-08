@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 /** Markup-neutral quote IR. CSS styles only these classes.
   * `<blockquote class="quote">`, optional title and attribution. */
@@ -10,7 +10,7 @@ object Quote:
   object AttributionClass extends CssClass("quote-attribution")
 
   def is(element: Xml.Element): Boolean =
-    element.qName == "blockquote" && element.has(Class)
+    element.isElement(XmlElement.Blockquote) && element.has(Class)
 
   def isTitle(element: Xml.Element): Boolean = element.has(TitleClass)
 
@@ -23,13 +23,13 @@ object Quote:
     body: Xml.Nodes
   ): Xml.Element =
     val titleElement: Option[Xml.Element] = title.map(_.trim).filter(_.nonEmpty).map: label =>
-      Xml.element("div").add(TitleClass).setText(label)
+      Xml.element(XmlElement.Div).add(TitleClass).setText(label)
     val attributionElement: Option[Xml.Element] =
       Option.when(attribution.nonEmpty)(
         Xml.element("footer").add(AttributionClass).setChildren(attribution)
       )
     Xml
-      .element("blockquote")
+      .element(XmlElement.Blockquote)
       .add(Class)
       .setChildren(
         titleElement.toSeq ++

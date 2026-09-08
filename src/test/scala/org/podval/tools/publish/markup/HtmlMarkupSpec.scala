@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
@@ -29,7 +29,7 @@ final class HtmlMarkupSpec extends AnyFunSuite:
   }
 
   test("addLinks does not nest anchors when the heading already contains a link") {
-    val inner: Xml.Element = Xml.element("a").setHref("#term").setChildren(Chunk(Xml.text("Tisha B’Av")))
+    val inner: Xml.Element = Xml.element(XmlElement.A).setHref("#term").setChildren(Chunk(Xml.text("Tisha B’Av")))
     val header: Xml.Element = Xml.element("h2").setChildren(Chunk(inner))
     val rendered: String = HtmlXmlWriterConfig.render(Section.addLinks(header, "tisha-b-av"))
     assert(rendered.contains("""class="anchor""""))

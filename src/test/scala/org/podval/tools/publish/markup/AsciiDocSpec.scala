@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -161,7 +161,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(dumped.contains("<table"), dumped)
     assert(!dumped.contains("tableblock"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.qName == "th" || element.qName == "td")(element.getText.trim)
+      Option.when(element.isElement(XmlElement.Th) || element.isElement(XmlElement.Td))(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -181,7 +181,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "code")(element)
+      Option.when(element.isElement(XmlElement.Code))(element)
     ).toSeq
     assert(codes.exists(_.hasClass("language-scala")), dumped)
   }

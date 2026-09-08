@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
 final class WikiLinkSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String =
-    HtmlXmlWriterConfig.render(Xml.element("p").setChildren(Chunk(element)))
+    HtmlXmlWriterConfig.render(Xml.element(XmlElement.P).setChildren(Chunk(element)))
 
   private def embedImage(ref: String, title: Option[String]): Xml.Element =
     val a: Xml.Element = WikiLink.make(transclude = true, ref, title)
@@ -15,7 +15,7 @@ final class WikiLinkSpec extends AnyFunSuite:
   test("embed image without size has no width or height") {
     val img: Xml.Element = embedImage("pixel.svg", None)
     val dumped: String = render(img)
-    assert(img.qName == "img", dumped)
+    assert(img.isElement(XmlElement.Img), dumped)
     assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     assert(img.get("width").isEmpty, dumped)
     assert(img.get("height").isEmpty, dumped)

@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -36,7 +36,7 @@ final class TaskListSpec extends AnyFunSuite:
     assert(dumped.contains("""disabled="disabled""""), dumped)
     assert(!dumped.contains("""class="checklist""""), dumped)
     val items: Seq[Xml.Element] = xml.getChildren.flatMap(_.asElement)
-      .filter(el => el.qName == "ul" || el.qName == "ol")
+      .filter(el => el.isElement(XmlElement.Ul) || el.isElement(XmlElement.Ol))
       .flatMap(_.getChildren.flatMap(_.asElement).filter(_.has(TaskList.ItemClass)))
       .toSeq
     assert(items.size == 2, dumped)
@@ -91,11 +91,11 @@ final class TaskListSpec extends AnyFunSuite:
 
   private def assertMixed(xml: Xml.Element, dumped: String): Unit =
     val lists: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.qName == "ul" || element.qName == "ol")(element)
+      Option.when(element.isElement(XmlElement.Ul) || element.isElement(XmlElement.Ol))(element)
     ).toSeq
     val list: Xml.Element = lists.find(_.has(TaskList.ListClass)).getOrElse:
       throw new AssertionError(s"no task-list: $dumped")
-    val lis: Seq[Xml.Element] = list.getChildren.flatMap(_.asElement).filter(_.qName == "li").toSeq
+    val lis: Seq[Xml.Element] = list.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li)).toSeq
     assert(lis.size == 3, dumped)
     assert(lis(0).has(TaskList.ItemClass), dumped)
     assert(!lis(1).has(TaskList.ItemClass), dumped)

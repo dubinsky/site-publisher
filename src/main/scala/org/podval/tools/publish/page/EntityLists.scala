@@ -2,8 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.Path
-import org.podval.xml.Xml
-
+import org.podval.xml.{Xml, XmlElement}
 /** Member lists for a TEI `entityLists` index, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */
 object EntityLists:
@@ -56,22 +55,22 @@ object EntityLists:
 
   private def tocXml(specs: Seq[EntityList], page: Page): Xml.Element =
     val items: Xml.Nodes = specs.map: spec =>
-      Xml.element("li").setChildren(Seq(
-        Xml.element("a").setHref(s"#${spec.id}").setText(spec.title),
+      Xml.element(XmlElement.Li).setChildren(Seq(
+        Xml.element(XmlElement.A).setHref(s"#${spec.id}").setText(spec.title),
         Xml.text(" "),
-        Xml.element("a").setHref(listPath(page, spec).toString).setText(expand)
+        Xml.element(XmlElement.A).setHref(listPath(page, spec).toString).setText(expand)
       ))
-    Xml.element("ul").addClass("entity-lists-toc").setChildren(items)
+    Xml.element(XmlElement.Ul).addClass("entity-lists-toc").setChildren(items)
 
   private def headChildren(spec: EntityList, jump: Option[Path]): Xml.Nodes =
     val title: Xml.Nodes = Seq(Xml.text(spec.title))
     jump.fold(title)(path =>
-      title ++ Seq(Xml.text(" "), Xml.element("a").setHref(path.toString).setText(expand))
+      title ++ Seq(Xml.text(" "), Xml.element(XmlElement.A).setHref(path.toString).setText(expand))
     )
 
   private def memberLink(page: Page, kind: EntityKind): Xml.Element =
     Xml
-      .element("a")
+      .element(XmlElement.A)
       .addClass("page-ref")
       .addClass(kind.nameElement)
       .setHref(page.real.publishedPath.toString)

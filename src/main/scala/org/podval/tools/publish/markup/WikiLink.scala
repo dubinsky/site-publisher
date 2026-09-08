@@ -41,7 +41,7 @@ object WikiLink:
         // and it does not process image sizes...
         val (width: Option[Int], height: Option[Int]) = imageSize(wikiEmbedInner(element))
         Some(Xml
-          .element("img")
+          .element(XmlElement.Img)
           .set(XmlAttribute.Src, path)
           .set(XmlAttribute.Alt, s"Image: $path")
           .set("width", width.map(_.toString))
