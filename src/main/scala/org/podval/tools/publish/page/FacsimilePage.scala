@@ -3,6 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
+import org.podval.xml.html.given
 import scala.annotation.tailrec
 
 final class FacsimilePage(

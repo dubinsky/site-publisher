@@ -5,6 +5,7 @@ import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
+import org.podval.xml.html.given
 import java.io.File
 
 /** Prepared once per document (`PageContent.apply`); resolved per chunk in `markupContent`. */

@@ -5,6 +5,7 @@ import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml}
+import org.podval.xml.html.given
 import zio.blocks.html.*
 
 object PageHeader:

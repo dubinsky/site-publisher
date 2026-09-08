@@ -1,6 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.xml.{Html, HtmlXmlWriterConfig}
+import org.podval.xml.html.given
 import org.scalatest.funsuite.AnyFunSuite
 
 final class PagedListSpec extends AnyFunSuite:

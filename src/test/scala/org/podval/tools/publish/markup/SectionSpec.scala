@@ -4,6 +4,7 @@ import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser}
+import org.podval.xml.html.given
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File

@@ -3,6 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
 import org.podval.xml.{Html, HtmlXmlWriterConfig, Xml, XmlAttribute}
+import org.podval.xml.html.given
 import zio.blocks.html.*
 import java.time.{Instant, LocalTime, ZoneId}
 import scala.util.Try
