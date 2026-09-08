@@ -12,17 +12,17 @@ object HtmlMarkup extends Markup(
 ):
   // Unwrap a lone leading <p> in td/li/dd (Asciidoctor and FlexMark both emit these).
   private[markup] def unwrapSpuriousParagraph(element: Xml.Element): Option[Xml.Nodes] =
-    val isElementToConvert: Boolean = element.getName == "td" || element.getName == "li" || element.getName == "dd"
+    val isElementToConvert: Boolean = element.qName == "td" || element.qName == "li" || element.qName == "dd"
     if !isElementToConvert then None else
       val (init, tail) = element.getChildren.span(_.asElement.isEmpty)
       for
         head <- tail.headOption.map(_.asElement.get)
-        if head.getName == "p"
+        if head.qName == "p"
       yield
         Seq(element.setChildren(init ++ head.getChildren ++ tail.tail))
 
   def headerLevel(element: Xml.Element): Option[Int] =
-    val qName: String = element.getName
+    val qName: String = element.qName
     if !qName.startsWith("h") then None else
       try Some(qName.substring(1).toInt)
       catch case _: NumberFormatException => None

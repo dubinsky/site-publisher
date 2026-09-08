@@ -27,7 +27,7 @@ object Section:
   object LinkClass extends CssClass("link")
 
   def mark(element: Xml.Element): Xml.Element =
-    require(element.getName == "div")
+    require(element.qName == "div")
     element.add(SectionClass)
 
   def markHeading(header: Xml.Element): Xml.Element =
@@ -35,7 +35,7 @@ object Section:
 
   // Stamp `heading` on the first matching child and `section` on the div.
   def markHeaded(div: Xml.Element, isHeader: Xml.Element => Boolean): Xml.Element =
-    if div.getName != "div" then div
+    if div.qName != "div" then div
     else
       var found: Boolean = false
       val children: Xml.Nodes = div.getChildren.map: node =>
@@ -47,7 +47,7 @@ object Section:
       if found then mark(div.setChildren(children)) else div
 
   def is(element: Xml.Element): Boolean =
-    element.getName == "div" && element.has(SectionClass)
+    element.qName == "div" && element.has(SectionClass)
 
   def heading(section: Xml.Element): Option[Xml.Element] =
     section.getChildren.flatMap(_.asElement).find(_.has(HeadingClass))

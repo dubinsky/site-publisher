@@ -14,7 +14,7 @@ object PdfEmbed:
   private val PdfType: String = "application/pdf"
 
   def is(element: Xml.Element): Boolean =
-    element.getName == "div" && element.has(Class)
+    element.qName == "div" && element.has(Class)
 
   def fromRef(ref: String, label: String): Xml.Element =
     val (path: String, fragment: Option[String]) = Strings.splitFirst(ref, '#')
@@ -46,7 +46,7 @@ object PdfEmbed:
       )
 
   private def isPdfObject(element: Xml.Element): Boolean =
-    element.getName == "object" && (
+    element.qName == "object" && (
       element.get(XmlAttribute.Type).exists(_.toLowerCase.contains("pdf")) ||
       element.get("data").exists(data =>
         val path: String = Strings.splitFirst(data, '#')._1

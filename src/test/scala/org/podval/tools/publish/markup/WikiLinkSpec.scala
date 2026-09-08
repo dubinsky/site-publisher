@@ -15,7 +15,7 @@ final class WikiLinkSpec extends AnyFunSuite:
   test("embed image without size has no width or height") {
     val img: Xml.Element = embedImage("pixel.svg", None)
     val dumped: String = render(img)
-    assert(img.getName == "img", dumped)
+    assert(img.qName == "img", dumped)
     assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     assert(img.get("width").isEmpty, dumped)
     assert(img.get("height").isEmpty, dumped)

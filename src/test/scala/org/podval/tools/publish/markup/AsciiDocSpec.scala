@@ -161,7 +161,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(dumped.contains("<table"), dumped)
     assert(!dumped.contains("tableblock"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
+      Option.when(element.qName == "th" || element.qName == "td")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -181,7 +181,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "code")(element)
+      Option.when(element.qName == "code")(element)
     ).toSeq
     assert(codes.exists(_.hasClass("language-scala")), dumped)
   }

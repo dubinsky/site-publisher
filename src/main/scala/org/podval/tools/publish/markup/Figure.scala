@@ -9,10 +9,10 @@ object Figure:
   object CaptionClass extends CssClass("figure-caption")
 
   def is(element: Xml.Element): Boolean =
-    element.getName == "figure" && element.has(Class)
+    element.qName == "figure" && element.has(Class)
 
   def isCaption(element: Xml.Element): Boolean =
-    element.getName == "figcaption" && element.has(CaptionClass)
+    element.qName == "figcaption" && element.has(CaptionClass)
 
   def make(caption: Option[String], body: Xml.Nodes): Xml.Element =
     make(caption.map(_.trim).filter(_.nonEmpty).map(Xml.text).toSeq, body)
@@ -28,16 +28,16 @@ object Figure:
       .setChildren(body.filterNot(_.isWhitespace) ++ captionElement.toSeq)
 
   def normalize(element: Xml.Element): Xml.Element =
-    if element.getName == "figure" then
+    if element.qName == "figure" then
       val withClass: Xml.Element = if is(element) then element else element.add(Class)
       withClass.setChildren(withClass.getChildren.map(normalizeCaptionNode))
-    else if element.getName == "p" then
+    else if element.qName == "p" then
       wrapStandaloneImage(element).getOrElse(element)
     else element
 
   private def normalizeCaptionNode(node: Xml.Node): Xml.Node =
     node.asElement match
-      case Some(el) if el.getName == "figcaption" && !el.has(CaptionClass) =>
+      case Some(el) if el.qName == "figcaption" && !el.has(CaptionClass) =>
         el.add(CaptionClass)
       case _ =>
         node
@@ -53,21 +53,21 @@ object Figure:
       make(caption, Seq(body))
 
   private def isStandaloneImage(element: Xml.Element): Boolean =
-    element.getName == "img" ||
+    element.qName == "img" ||
     (
-      element.getName == "a" &&
+      element.qName == "a" &&
       element.getChildren.filterNot(_.isWhitespace).toList.match
-        case List(child) => child.asElement.exists(_.getName == "img")
+        case List(child) => child.asElement.exists(_.qName == "img")
         case _ => false
     )
 
   private def takeTitle(element: Xml.Element): (Option[String], Xml.Element) =
-    if element.getName == "img" then
+    if element.qName == "img" then
       val caption: Option[String] = element.get(XmlAttribute.Title).map(_.trim).filter(_.nonEmpty)
       (caption, caption.fold(element)(_ => element.set(XmlAttribute.Title, "")))
     else
       val children: Xml.Nodes = element.getChildren
-      val img: Xml.Element = children.flatMap(_.asElement).find(_.getName == "img").get
+      val img: Xml.Element = children.flatMap(_.asElement).find(_.qName == "img").get
       val (caption: Option[String], stripped: Xml.Element) = takeTitle(img)
       val body: Xml.Nodes = children.map: node =>
         if node.asElement.contains(img) then stripped else node

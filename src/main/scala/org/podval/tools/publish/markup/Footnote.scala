@@ -68,7 +68,7 @@ object Footnote:
         Option.when(isBody(element)):
           val correlationId: String = element.get(CorrelationId).getOrElse:
             throw IllegalStateException(
-              s"footnote body without correlation id: <${element.getName} class=${element.getClasses.mkString(" ")}>"
+              s"footnote body without correlation id: <${element.qName} class=${element.getClasses.mkString(" ")}>"
             )
           correlationId -> Footnote(
             correlationId = correlationId,

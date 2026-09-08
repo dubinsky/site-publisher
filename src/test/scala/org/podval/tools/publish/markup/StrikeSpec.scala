@@ -42,7 +42,7 @@ final class StrikeSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = strikes(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.getName == "del", dumped)
+    assert(found.head.qName == "del", dumped)
     assert(dumped.contains("struck out"), dumped)
     assert(!dumped.contains("~~"), dumped)
   }

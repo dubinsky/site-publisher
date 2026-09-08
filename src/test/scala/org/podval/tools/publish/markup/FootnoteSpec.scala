@@ -58,7 +58,7 @@ final class FootnoteSpec extends AnyFunSuite:
     val xml: Xml.Element = Xml.element("div").setChildren(Chunk(Footnote.link("a"), leftover))
     val unwrapped: Xml.Element = Footnote.unwrapLeftovers(
       xml,
-      el => el.getName == "div" && el.hasClass("footnotes")
+      el => el.qName == "div" && el.hasClass("footnotes")
     )
     val dumped: String = render(unwrapped)
     assert(!dumped.contains("""class="footnotes""""), dumped)
@@ -90,14 +90,14 @@ final class FootnoteSpec extends AnyFunSuite:
     val notes: Map[String, Footnote] = Map("a" -> footnote)
     val resolved: Xml.Element = Footnote.resolveLink(Footnote.link("a"), notes, attachTip = false)
     val dumped: String = render(resolved)
-    assert(resolved.getName == "a")
+    assert(resolved.qName == "a")
     assert(dumped.contains("""href="#_footnote_2""""), dumped)
     assert(dumped.contains(">2</a>") || dumped.contains(">2<"), dumped)
     val withTipEl: Xml.Element = Footnote.resolveLink(Footnote.link("a"), notes, attachTip = true)
     assert(Footnote.tip.isRef(withTipEl))
     val withTip: String = render(withTipEl)
     assert(withTip.contains("footnote-tip"), withTip)
-    assert(Footnote.resolveLink(Xml.element("p"), notes, attachTip = true).getName == "p")
+    assert(Footnote.resolveLink(Xml.element("p"), notes, attachTip = true).qName == "p")
   }
 
   test("footnote after text or a preceding element has no separating HTML space") {

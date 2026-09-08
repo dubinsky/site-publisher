@@ -66,11 +66,11 @@ final class SectionSpec extends AnyFunSuite:
       """<div xml:id="meth"><pb n="1"/><fw type="pageNum">3</fw><head>Methodology</head><p>body</p></div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.getName == "head" then element.rename("tei-head") else element
+      if element.qName == "head" then element.rename("tei-head") else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val header: Xml.Element = Section.heading(marked).get
-    assert(header.getName == "tei-head")
+    assert(header.qName == "tei-head")
     assert(header.getText == "Methodology")
     assert(Section.is(marked))
   }
@@ -84,11 +84,11 @@ final class SectionSpec extends AnyFunSuite:
         |</div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.getName == "head" then element.rename("tei-head") else element
+      if element.qName == "head" then element.rename("tei-head") else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val outer: Xml.Element = marked.getChildren.flatMap(_.asElement).head
-    val inner: Xml.Element = outer.getChildren.flatMap(_.asElement).find(_.getName == "div").get
+    val inner: Xml.Element = outer.getChildren.flatMap(_.asElement).find(_.qName == "div").get
     assert(!Section.is(marked))
     assert(!Section.is(outer))
     assert(Section.is(inner))

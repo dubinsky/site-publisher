@@ -11,7 +11,7 @@ object Callout:
   def isMark(element: Xml.Element): Boolean = element.has(MarkClass)
 
   def isList(element: Xml.Element): Boolean =
-    element.getName == "ol" && element.has(ListClass)
+    element.qName == "ol" && element.has(ListClass)
 
   def marker(number: String): Xml.Element =
     Xml

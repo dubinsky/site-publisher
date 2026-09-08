@@ -24,12 +24,12 @@ object DescriptionList:
 
     nodes.foreach: node =>
       node.asElement match
-        case Some(element) if element.getName == "dt" =>
+        case Some(element) if element.qName == "dt" =>
           flush()
           val (id, dt) = takeTermId(element)
           groupId = id
           group = Seq(dt)
-        case Some(element) if element.getName == "dd" =>
+        case Some(element) if element.qName == "dd" =>
           if group.isEmpty then result = result :+ element
           else group = group :+ element
         case Some(element) =>

@@ -9,13 +9,13 @@ object TaskList:
   object CheckboxClass extends CssClass("task-list-item-checkbox")
 
   def isList(element: Xml.Element): Boolean =
-    (element.getName == "ul" || element.getName == "ol") && element.has(ListClass)
+    (element.qName == "ul" || element.qName == "ol") && element.has(ListClass)
 
   def isItem(element: Xml.Element): Boolean =
-    element.getName == "li" && element.has(ItemClass)
+    element.qName == "li" && element.has(ItemClass)
 
   def isCheckbox(element: Xml.Element): Boolean =
-    element.getName == "input" && (
+    element.qName == "input" && (
       element.get(XmlAttribute.Type).contains("checkbox") || element.has(CheckboxClass)
     )
 

@@ -38,7 +38,7 @@ final class FigureSpec extends AnyFunSuite:
     xml.gather(element => Option.when(Figure.is(element))(element)).toSeq
 
   private def imgs(xml: Xml.Element): Seq[Xml.Element] =
-    xml.gather(element => Option.when(element.getName == "img")(element)).toSeq
+    xml.gather(element => Option.when(element.qName == "img")(element)).toSeq
 
   test("FlexMark leaves Obsidian |WIDTH in the alt; no img width or height") {
     val xml: Xml.Element = fromMarkdown("![A square|320](pixel.svg)\n")
@@ -78,7 +78,7 @@ final class FigureSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = figures(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.getName == "figure", dumped)
+    assert(found.head.qName == "figure", dumped)
     assert(dumped.contains("<img"), dumped)
     assert(dumped.contains("pixel.svg"), dumped)
     assert(dumped.contains("""class="figure-caption""""), dumped)

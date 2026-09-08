@@ -21,7 +21,7 @@ object AssetRef:
     element.set(WikiEmbedAttr, "")
 
   def resourceAttr(element: Xml.Element): Option[String] =
-    element.getName match
+    element.qName match
       case "img" | "video" | "audio" | "source" => Some("src")
       case "object" => Some("data")
       case _ => None

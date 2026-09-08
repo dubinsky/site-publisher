@@ -14,7 +14,7 @@ object MarkdownCite:
     ))
 
   private def isBibliographyFence(element: Xml.Element): Boolean =
-    element.getName == "p" && element.getText.trim == ":::bibliography"
+    element.qName == "p" && element.getText.trim == ":::bibliography"
 
   @tailrec
   def convert(result: Xml.Nodes, text: String): Xml.Nodes =

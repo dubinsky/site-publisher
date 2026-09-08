@@ -37,7 +37,7 @@ object Glossary:
   private def definitionNodes(item: Xml.Element): Option[Xml.Nodes] =
     def dds(element: Xml.Element): Seq[Xml.Element] =
       element.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
-        if child.getName == "dd" then Seq(child) else dds(child)
+        if child.qName == "dd" then Seq(child) else dds(child)
     dds(item).headOption
       .map(_.getChildren.filterNot(_.isWhitespace))
       .filter(_.nonEmpty)

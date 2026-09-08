@@ -10,12 +10,12 @@ object Quote:
   object AttributionClass extends CssClass("quote-attribution")
 
   def is(element: Xml.Element): Boolean =
-    element.getName == "blockquote" && element.has(Class)
+    element.qName == "blockquote" && element.has(Class)
 
   def isTitle(element: Xml.Element): Boolean = element.has(TitleClass)
 
   def isAttribution(element: Xml.Element): Boolean =
-    element.getName == "footer" && element.has(AttributionClass)
+    element.qName == "footer" && element.has(AttributionClass)
 
   def make(
     title: Option[String],
@@ -38,11 +38,11 @@ object Quote:
       )
 
   def normalize(element: Xml.Element): Xml.Element =
-    if element.getName != "blockquote" then element
+    if element.qName != "blockquote" then element
     else
       val withClass: Xml.Element = if is(element) then element else element.add(Class)
       withClass.setChildren(withClass.getChildren.map: node =>
-        node.asElement.filter(el => el.getName == "footer" && !el.has(AttributionClass)) match
+        node.asElement.filter(el => el.qName == "footer" && !el.has(AttributionClass)) match
           case Some(footer) => footer.add(AttributionClass)
           case None => node
       )

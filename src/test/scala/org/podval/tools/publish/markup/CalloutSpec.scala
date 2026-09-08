@@ -53,7 +53,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.getName == "li")
+    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.qName == "li")
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)
@@ -80,7 +80,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.getName == "li")
+    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.qName == "li")
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)

@@ -24,7 +24,7 @@ final class MarkdownSpec extends AnyFunSuite:
         |{:toc}
         |""".stripMargin
     )
-    assert(xml.getName == "div")
+    assert(xml.qName == "div")
   }
 
   private def tocPlaceholders(xml: Xml.Element): Seq[Xml.Element] =
@@ -101,7 +101,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val xml: Xml.Element = process("Intro ^blk\n")
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, render(xml))
-    assert(found.head.getName == "p", render(xml))
+    assert(found.head.qName == "p", render(xml))
     assert(found.head.getId.contains("blk"), render(xml))
     assert(found.head.getText.contains("Intro"), render(xml))
     assert(!found.head.getText.contains("^blk"), render(xml))
@@ -118,7 +118,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.getName == "ul" || found.head.getName == "ol", dumped)
+    assert(found.head.qName == "ul" || found.head.qName == "ol", dumped)
     assert(found.head.getId.contains("lst"), dumped)
     assert(!dumped.contains("^lst"), dumped)
   }
@@ -132,7 +132,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = wikiBlocks(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.getName == "li", dumped)
+    assert(found.head.qName == "li", dumped)
     assert(found.head.getId.contains("item"), dumped)
     assert(found.head.getText.contains("b"), dumped)
   }
@@ -142,7 +142,7 @@ final class MarkdownSpec extends AnyFunSuite:
       val xml: Xml.Element = process(source)
       val dumped: String = render(xml)
       val found: Seq[Xml.Element] = wikiBlocks(xml)
-      assert(found.exists(el => el.getName == name && el.getId.contains(id)), dumped)
+      assert(found.exists(el => el.qName == name && el.getId.contains(id)), dumped)
       assert(!dumped.contains(s"^$id"), dumped)
     assertOn(
       """| A | B |
@@ -241,7 +241,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(dumped.contains("<table"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.getName == "th" || element.getName == "td")(element.getText.trim)
+      Option.when(element.qName == "th" || element.qName == "td")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -262,15 +262,15 @@ final class MarkdownSpec extends AnyFunSuite:
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("xs.map(f)"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "code")(element)
+      Option.when(element.qName == "code")(element)
     ).toSeq
     val inline: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
     assert(inline.getText.contains("map"), dumped)
     val pres: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "pre")(element)
+      Option.when(element.qName == "pre")(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.getName == "code").get
+    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.qName == "code").get
     assert(preCode.hasClass("language-scala"), dumped)
     assert(preCode.getText.contains("xs.map(f)"), dumped)
   }

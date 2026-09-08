@@ -77,7 +77,7 @@ object Content:
 
   private def entityName(xml: Xml.Element, kind: EntityKind): Option[String] =
     xml.getChildren.flatMap(_.asElement)
-      .find(el => el.localName == kind.nameElement || el.getName == kind.nameElement)
+      .find(el => el.localName == kind.nameElement || el.qName == kind.nameElement)
       .map(_.getText.trim)
       .filter(_.nonEmpty)
 

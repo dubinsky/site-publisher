@@ -28,11 +28,11 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</TEI>""".stripMargin
     )
     val dumped: String = render(xml)
-    assert(title.exists(_.getName == "tei-title"), dumped)
+    assert(title.exists(_.qName == "tei-title"), dumped)
     assert(title.exists(_.getText.contains("Doc title")), dumped)
-    assert(xml.gather(el => Option.when(el.getName == "teiHeader")(el)).nonEmpty, dumped)
-    assert(xml.gather(el => Option.when(el.getName == "titleStmt")(el)).nonEmpty, dumped)
-    assert(xml.gather(el => Option.when(el.getName == "tei-title")(el)).isEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.qName == "teiHeader")(el)).nonEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.qName == "titleStmt")(el)).nonEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.qName == "tei-title")(el)).isEmpty, dumped)
     assert(dumped.contains("Hello"), dumped)
     assert(dumped.contains("A"), dumped)
   }
@@ -91,7 +91,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   test("store and collection child title is extracted and stripped") {
     val (store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
     assert(storeTitle.exists(_.getText.contains("Fund 109")), render(store))
-    assert(store.gather(el => Option.when(el.getName == "tei-title" || el.getName == "title")(el)).isEmpty, render(store))
+    assert(store.gather(el => Option.when(el.qName == "tei-title" || el.qName == "title")(el)).isEmpty, render(store))
     val (collection, collectionTitle) = processResult("""<collection><title>Case 29</title><p>y</p></collection>""")
     assert(collectionTitle.exists(_.getText.contains("Case 29")), render(collection))
   }
@@ -166,7 +166,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</collection>""".stripMargin
     )).get
     val title: Xml.Element = index.parts.head.title.get
-    assert(title.getChildren.flatMap(_.asElement).map(_.getName) == Seq("hi"), title.getChildren)
+    assert(title.getChildren.flatMap(_.asElement).map(_.qName) == Seq("hi"), title.getChildren)
   }
 
   test("collection part title keeps TEI default xmlns") {
@@ -232,11 +232,11 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )
     val dumped: String = render(xml)
     assert(title.exists(_.getText.contains("Имена")), dumped)
-    assert(xml.gather(el => Option.when(el.getName == "title" || el.getName == "tei-title")(el)).isEmpty, dumped)
-    val people: Seq[Xml.Element] = xml.gather(el => Option.when(el.getName == "listPerson")(el)).toSeq
+    assert(xml.gather(el => Option.when(el.qName == "title" || el.qName == "tei-title")(el)).isEmpty, dumped)
+    val people: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "listPerson")(el)).toSeq
     assert(people.exists(_.getId.contains("jews")), dumped)
     assert(people.exists(el => el.getChildren.flatMap(_.asElement).exists(h =>
-      h.getName == "tei-head" && h.getText.contains("Жиды")
+      h.qName == "tei-head" && h.getText.contains("Жиды")
     )), dumped)
     val index = EntityLists.harvest(parse(
       """<entityLists>
@@ -269,7 +269,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(named("orgName", "кагал").exists(_.getText.contains("the kahal")), dumped)
 
     val leftover: Seq[Xml.Element] = xml.gather(el =>
-      Option.when(el.getName == "persName")(el)
+      Option.when(el.qName == "persName")(el)
     ).toSeq
     assert(leftover.exists(_.getText.contains("bare")), dumped)
     assert(leftover.exists(_.getText.contains("empty")), dumped)
@@ -322,7 +322,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(bodies.size == 1, dumped)
     assert(Footnote.getCorrelationId(bodies.head) == ids.head, dumped)
     val leftover: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "note")(element)
+      Option.when(element.qName == "note")(element)
     ).toSeq
     assert(leftover.size == 1, dumped)
     assert(leftover.head.getText.contains("keep me"), dumped)
@@ -364,7 +364,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("<row"), dumped)
     assert(!dumped.contains("<cell"), dumped)
     val cells: Seq[String] = xml.gather( element =>
-      Option.when(element.getName == "td" || element.getName == "th")(element.getText.trim)
+      Option.when(element.qName == "td" || element.qName == "th")(element.getText.trim)
     ).toSeq.filter(_.nonEmpty)
     assert(cells.contains("A"), dumped)
     assert(cells.contains("B"), dumped)
@@ -415,9 +415,9 @@ final class TeiMarkupSpec extends AnyFunSuite:
       Option.when(Glossary.isList(element))(element)
     ).toSeq
     assert(glossLists.size == 2, dumped)
-    assert(glossLists.forall(_.getName == "dl"), dumped)
+    assert(glossLists.forall(_.qName == "dl"), dumped)
     val leftoverLists: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "list")(element)
+      Option.when(element.qName == "list")(element)
     ).toSeq
     assert(leftoverLists.size == 1, dumped)
   }
@@ -439,20 +439,20 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("xs.map(f)"), dumped)
     assert(dumped.contains("not code"), dumped)
     val codes: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "code")(element)
+      Option.when(element.qName == "code")(element)
     ).toSeq
     assert(codes.exists(c => c.hasClass("language-scala") && !c.getText.contains('\n')), dumped)
     val pres: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "pre")(element)
+      Option.when(element.qName == "pre")(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.getName == "code").get
+    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.qName == "code").get
     assert(preCode.hasClass("language-java"), dumped)
     assert(preCode.getText.contains("Width"), dumped)
     val plain: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
     assert(plain.getText.contains("plain"), dumped)
     val egs: Seq[Xml.Element] = xml.gather( element =>
-      Option.when(element.getName == "eg")(element)
+      Option.when(element.qName == "eg")(element)
     ).toSeq
     assert(egs.size == 1, dumped)
   }
