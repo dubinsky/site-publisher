@@ -156,7 +156,27 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )).get
     assert(index.pageType == PageType.Book, index.pageType)
     assert(index.parts.map(_.from) == Seq("084", "253.1"), index.parts.map(_.from))
-    assert(index.parts.head.titleXml.exists(_.getText.contains("Materials")), index.parts.head.titleXml.map(_.getText))
+    assert(index.parts.head.title.exists(_.getText.contains("Materials")), index.parts.head.title.map(_.getText))
+  }
+
+  test("collection part title keeps inline markup") {
+    val index = StoreIndex(parse(
+      """<collection>
+        |  <part from="000"><title>the <hi>Rebbe</hi></title></part>
+        |</collection>""".stripMargin
+    )).get
+    val title: Xml.Element = index.parts.head.title.get
+    assert(title.getChildren.flatMap(_.asElement).map(_.getName) == Seq("hi"), title.getChildren)
+  }
+
+  test("collection part title keeps TEI default xmlns") {
+    val index = StoreIndex(parse(
+      """<collection>
+        |  <part from="000"><title xmlns="http://www.tei-c.org/ns/1.0">Первый арест</title></part>
+        |</collection>""".stripMargin
+    )).get
+    val title: Xml.Element = index.parts.head.title.get
+    assert(title.getText.contains("Первый арест"), title.getText)
   }
 
   test("pb becomes a facsimile anchor with p{n} id") {

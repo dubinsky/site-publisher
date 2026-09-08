@@ -206,11 +206,11 @@ object CollectionIndex:
   ): (Option[Xml.Element], Seq[Page]) =
     if documents.isEmpty then
       error(page, s"No documents for part from=${part.from}")
-      (part.titleXml, documents)
+      (part.title, documents)
     else
       if baseName(documents.head) != part.from then
         error(page, s"Incorrect 'from' document: expected ${part.from}, got ${baseName(documents.head)}")
-      (part.titleXml, documents)
+      (part.title, documents)
 
   private def error(page: Page, message: String): Unit =
     page.sourcePath.foreach: sourcePath =>

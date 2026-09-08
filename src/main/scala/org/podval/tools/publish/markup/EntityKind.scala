@@ -24,6 +24,4 @@ object EntityKind:
   def forListElement(name: String): Option[EntityKind] =
     values.find(_.listElement == name)
 
-  val asRoot: XmlTag[EntityKind] = XmlTag(_.element, forElement, values.map(_.element).toSeq)
-  val asName: XmlTag[EntityKind] = XmlTag(_.nameElement, forNameElement, values.map(_.nameElement).toSeq)
   val asList: XmlTag[EntityKind] = XmlTag(_.listElement, forListElement, values.map(_.listElement).toSeq)

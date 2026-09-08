@@ -6,19 +6,6 @@ import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
 import org.podval.xml.XmlUtil.*
 import java.io.File
 
-// Binding hints for XmlCodec are @Modifier.config(XmlCodec.Attribute, "") etc.
-// Schema.derived ignores @xmlAttribute / @xmlNamespace (they are not Modifier).
-
-//@Modifier.config(XmlCodec.NamespaceUri, "http://www.tei-c.org/ns/1.0")
-//@Modifier.config(XmlCodec.NamespacePrefix, "tei")
-//final case class TEI(
-//  text: Text
-//)
-//
-//final case class Text(
-//  @Modifier.config(XmlCodec.Attribute, "") lang: Option[String] = None,
-//  body: XmlNode.Element
-//)
 object TeiMarkup extends Markup(
   name = "TEI",
   xmlWriterConfig = TeiXmlWriterConfig,

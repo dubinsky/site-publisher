@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.Files
-import org.podval.xml.{Html, Xml, XmlWriterConfig, XmlEncode, XmlParser}
+import org.podval.xml.{Html, Xml, XmlWriterConfig, XmlParser}
 import java.io.File
 
 // TODO because of the cross-markup transclusion,
@@ -90,7 +90,7 @@ abstract class Markup(
         Xml
           .element(name)
           .addClass(s"malformed-$name")
-          .setText(s"malformed $name: $error\n${XmlEncode.escape(xmlString)}")
+          .setText(s"malformed $name: $error\n$xmlString")
 
     (frontMatter, xml)
 
