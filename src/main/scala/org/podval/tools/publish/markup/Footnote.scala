@@ -1,16 +1,16 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 // Details of the footnote internal representation.
 object Footnote:
   private object CorrelationId extends XmlAttribute("footnote-correlation-id")
 
-  private object LinkClass extends HtmlClass("footnote-link")
+  private object LinkClass extends CssClass("footnote-link")
 
-  private object BodyClass extends HtmlClass("footnote")
+  private object BodyClass extends CssClass("footnote")
 
-  private object BackLinkClass extends HtmlClass("footnote-backlink")
+  private object BackLinkClass extends CssClass("footnote-backlink")
 
   val tip: Tip = Tip("footnote")
 

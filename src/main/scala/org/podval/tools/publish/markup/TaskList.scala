@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Markup-neutral task-list IR. CSS styles only these classes. */
 object TaskList:
-  object ListClass extends HtmlClass("task-list")
-  object ItemClass extends HtmlClass("task-list-item")
-  object CheckboxClass extends HtmlClass("task-list-item-checkbox")
+  object ListClass extends CssClass("task-list")
+  object ItemClass extends CssClass("task-list-item")
+  object CheckboxClass extends CssClass("task-list-item-checkbox")
 
   def isList(element: Xml.Element): Boolean =
     (element.getName == "ul" || element.getName == "ol") && element.has(ListClass)

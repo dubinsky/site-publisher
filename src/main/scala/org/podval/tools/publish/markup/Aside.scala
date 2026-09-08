@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Markup-neutral aside IR. CSS styles only these classes.
   * Untyped auxiliary content (`<aside class="aside">`), optional title. */
 object Aside:
-  private object Class extends HtmlClass("aside")
-  private object TitleClass extends HtmlClass("aside-title")
+  private object Class extends CssClass("aside")
+  private object TitleClass extends CssClass("aside-title")
 
   def is(element: Xml.Element): Boolean =
     element.getName == "aside" && element.has(Class)

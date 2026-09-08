@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, Xml, XmlAttribute}
 
 /** Markup-neutral admonition IR. CSS styles only these classes.
   * Type is `data-type` (lowercase). Optional Obsidian fold is a `<details>`. */
 object Admonition:
-  private object Class extends HtmlClass("admonition")
-  private object TitleClass extends HtmlClass("admonition-title")
+  private object Class extends CssClass("admonition")
+  private object TitleClass extends CssClass("admonition-title")
   
   object TypeAttr extends XmlAttribute("data-type")
 

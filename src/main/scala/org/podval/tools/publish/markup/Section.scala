@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlClass, Xml, XmlAst}
+import org.podval.xml.{CssClass, Xml, XmlAst}
 
 final class Section(
   val id: String,
@@ -21,10 +21,10 @@ final class Section(
   lazy val path: Seq[Section] = parent.fold(Seq(this))(p => p.path :+ this)
 
 object Section:
-  private object SectionClass extends HtmlClass("section")
-  object HeadingClass extends HtmlClass("heading")
-  object AnchorClass extends HtmlClass("anchor")
-  object LinkClass extends HtmlClass("link")
+  private object SectionClass extends CssClass("section")
+  object HeadingClass extends CssClass("heading")
+  object AnchorClass extends CssClass("anchor")
+  object LinkClass extends CssClass("link")
 
   def mark(element: Xml.Element): Xml.Element =
     require(element.getName == "div")

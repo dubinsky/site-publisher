@@ -1,14 +1,14 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 final class WikiBlock(
   val id: String
 )
 
 object WikiBlock:
-  private object BlockClass extends HtmlClass("wiki-block")
+  private object BlockClass extends CssClass("wiki-block")
 
   def is(element: Xml.Element): Boolean = element.has(BlockClass)
 

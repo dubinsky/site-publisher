@@ -1,11 +1,11 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Native in-document bibliography entries (`class="bibliography-item"` + authored id).
   * Not citeproc `csl-entry`. Dialects convert native lists into this IR. */
 object BibliographyItem:
-  object ItemClass extends HtmlClass("bibliography-item")
+  object ItemClass extends CssClass("bibliography-item")
 
   val tip: Tip = Tip("citation")
 

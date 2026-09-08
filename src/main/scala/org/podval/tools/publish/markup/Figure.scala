@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Markup-neutral figure IR. CSS styles only these classes.
   * `<figure class="figure">`, optional `figcaption.figure-caption`. */
 object Figure:
-  object Class extends HtmlClass("figure")
-  object CaptionClass extends HtmlClass("figure-caption")
+  object Class extends CssClass("figure")
+  object CaptionClass extends CssClass("figure-caption")
 
   def is(element: Xml.Element): Boolean =
     element.getName == "figure" && element.has(Class)

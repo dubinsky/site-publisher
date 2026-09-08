@@ -1,11 +1,11 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 object DescriptionList:
   def groupItems(
     nodes: Xml.Nodes,
-    itemClass: HtmlClass,
+    itemClass: CssClass,
     takeTermId: Xml.Element => (Option[String], Xml.Element)
   ): Xml.Nodes =
     var result: Xml.Nodes = Nil

@@ -1,10 +1,10 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 final class Tip(prefix: String):
-  object RefClass extends HtmlClass(s"$prefix-ref")
-  object TipClass extends HtmlClass(s"$prefix-tip")
+  object RefClass extends CssClass(s"$prefix-ref")
+  object TipClass extends CssClass(s"$prefix-tip")
 
   /** Wrap the link and tip as siblings in `span.{prefix}-ref` (CSS hover target).
     * `aria-describedby` stays on the `<a>`. */

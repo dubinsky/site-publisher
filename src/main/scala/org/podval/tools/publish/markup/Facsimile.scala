@@ -2,11 +2,11 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, Page}
 import org.podval.tools.publish.site.Path
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Per-document facsimile viewer: JPEG URLs and scroller XML. `pb` hrefs are filled at render. */
 object Facsimile:
-  object ScrollerClass extends HtmlClass("facsimile-scroller")
+  object ScrollerClass extends CssClass("facsimile-scroller")
 
   val fileName: String = "facsimile"
   val textTarget: String = "text"

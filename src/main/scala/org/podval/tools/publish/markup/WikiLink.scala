@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.{Files, Media, Strings}
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 object WikiLink:
-  private object WikiLinkClass extends HtmlClass("wiki-link")
+  private object WikiLinkClass extends CssClass("wiki-link")
 
-  private object TranscludeClass extends HtmlClass("transclude")
+  private object TranscludeClass extends CssClass("transclude")
 
   private[markup] val startTransclusion: String = "![["
   private[markup] val startLink: String = "[["

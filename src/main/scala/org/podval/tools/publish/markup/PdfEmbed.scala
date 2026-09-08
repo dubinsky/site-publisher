@@ -1,14 +1,14 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Strings
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral PDF embed IR. CSS styles only these classes.
   * Wrapper `div.pdf-embed`: `<object type="application/pdf">` (inner fallback link)
   * plus a sibling `p.pdf-embed-link` that survives print. */
 object PdfEmbed:
-  object Class extends HtmlClass("pdf-embed")
-  object LinkClass extends HtmlClass("pdf-embed-link")
+  object Class extends CssClass("pdf-embed")
+  object LinkClass extends CssClass("pdf-embed-link")
 
   private val HeightVar: String = "--pdf-embed-height"
   private val PdfType: String = "application/pdf"

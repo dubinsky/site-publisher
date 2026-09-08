@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Markup-neutral callout IR. CSS styles only these classes.
   * Markers sit in verbatim (`span.callout`); the numbered list is `ol.callout-list`. */
 object Callout:
-  object MarkClass extends HtmlClass("callout")
-  object ListClass extends HtmlClass("callout-list")
+  object MarkClass extends CssClass("callout")
+  object ListClass extends CssClass("callout-list")
 
   def isMark(element: Xml.Element): Boolean = element.has(MarkClass)
 

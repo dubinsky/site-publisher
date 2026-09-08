@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral video IR. CSS styles only these classes.
   * Local file: `<video class="video" controls>`. YouTube/Vimeo: `<iframe class="video-embed">`. */
 object Video:
-  object Class extends HtmlClass("video")
-  object EmbedClass extends HtmlClass("video-embed")
+  object Class extends CssClass("video")
+  object EmbedClass extends CssClass("video-embed")
 
   def is(element: Xml.Element): Boolean =
     element.getName == "video" && element.has(Class)

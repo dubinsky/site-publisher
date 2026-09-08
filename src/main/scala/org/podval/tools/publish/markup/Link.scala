@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.Page
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 final class Link(
   val page: Page,
@@ -20,9 +20,9 @@ final class Link(
     case Some(fragment) => (if isIntrapage then "" else fromPage) + s"#${get(fragment)}"
 
 object Link:
-  object InternalLinkClass extends HtmlClass("internal-link")
+  object InternalLinkClass extends CssClass("internal-link")
 
-  object UnresolvedLinkClass extends HtmlClass("unresolved-link")
+  object UnresolvedLinkClass extends CssClass("unresolved-link")
 
   def isInternal(element: Xml.Element): Boolean = element.isA && element.has(InternalLinkClass)
 

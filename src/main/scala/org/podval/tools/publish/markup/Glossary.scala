@@ -1,14 +1,14 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 // Details of the glossary internal representation.
 // Markup processors convert their HTML into this shape; definitions() does not
 // know about AsciiDoc `div.dlist.glossary` wrappers or empty `<a id>` term anchors.
 object Glossary:
-  object ListClass extends HtmlClass("glossary")
+  object ListClass extends CssClass("glossary")
 
-  object ItemClass extends HtmlClass("glossary-item")
+  object ItemClass extends CssClass("glossary-item")
 
   val tip: Tip = Tip("glossary")
 

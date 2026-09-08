@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, HtmlXmlWriterConfig, Xml, XmlAttribute}
+import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute}
 
 object Citation:
-  object CiteClass extends HtmlClass("citation")
-  object ItemClass extends HtmlClass("citation-item")
-  object ListClass extends HtmlClass("bibliography")
-  object UnresolvedClass extends HtmlClass("unresolved-citation")
+  object CiteClass extends CssClass("citation")
+  object ItemClass extends CssClass("citation-item")
+  object ListClass extends CssClass("bibliography")
+  object UnresolvedClass extends CssClass("unresolved-citation")
 
   private object ModeAttr extends XmlAttribute("data-mode")
   private object KeyAttr extends XmlAttribute("data-key")

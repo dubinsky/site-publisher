@@ -1,13 +1,13 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** Markup-neutral quote IR. CSS styles only these classes.
   * `<blockquote class="quote">`, optional title and attribution. */
 object Quote:
-  object Class extends HtmlClass("quote")
-  object TitleClass extends HtmlClass("quote-title")
-  object AttributionClass extends HtmlClass("quote-attribution")
+  object Class extends CssClass("quote")
+  object TitleClass extends CssClass("quote-title")
+  object AttributionClass extends CssClass("quote-attribution")
 
   def is(element: Xml.Element): Boolean =
     element.getName == "blockquote" && element.has(Class)

@@ -1,11 +1,11 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml}
+import org.podval.xml.{CssClass, Xml}
 
 /** File refs on media IR (`img@src`, `video`/`audio`/`source@src`, `object@data`).
   * Not page links: no title-walk, backlinks, or tips. Lookup is `Pages.resolveAsset`. */
 object AssetRef:
-  object UnresolvedClass extends HtmlClass("unresolved-asset")
+  object UnresolvedClass extends CssClass("unresolved-asset")
 
   private val WikiEmbedAttr: String = "data-wiki-embed"
 
