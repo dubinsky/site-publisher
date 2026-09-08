@@ -1,8 +1,9 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
+import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs, TeiMarkup}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{Xml, XmlElement}
+
 /** Member lists for a TEI `entityLists` index, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */
 object EntityLists:
@@ -29,7 +30,7 @@ object EntityLists:
   ): Xml.Element =
     val head: Xml.Nodes =
       if !withHead then Seq.empty
-      else Seq(Xml.element("tei-head").setChildren(headChildren(spec, jump)))
+      else Seq(Xml.element(TeiMarkup.tei2Html.elementName(XmlElement.Head)).setChildren(headChildren(spec, jump)))
     val lines: Xml.Nodes = members.map(member =>
       Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
     )

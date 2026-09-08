@@ -10,6 +10,8 @@ import zio.blocks.chunk.Chunk
 import java.io.File
 
 final class SectionSpec extends AnyFunSuite:
+  private def teiHead: String = TeiMarkup.tei2Html.elementName(XmlElement.Head)
+
   private def render(element: Xml.Element): String = HtmlXmlWriterConfig.render(element)
 
   private def normalizeTree(xml: Xml.Element): Xml.Element =
@@ -66,11 +68,11 @@ final class SectionSpec extends AnyFunSuite:
       """<div xml:id="meth"><pb n="1"/><fw type="pageNum">3</fw><head>Methodology</head><p>body</p></div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.isElement(XmlElement.Head) then element.rename("tei-head") else element
+      if element.isElement(XmlElement.Head) then element.rename(teiHead) else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val header: Xml.Element = Section.heading(marked).get
-    assert(header.qName == "tei-head")
+    assert(header.qName == teiHead)
     assert(header.getText == "Methodology")
     assert(Section.is(marked))
   }
@@ -84,7 +86,7 @@ final class SectionSpec extends AnyFunSuite:
         |</div>"""
     ).toOption.get
     val converted: Xml.Element = xml.transform(element =>
-      if element.isElement(XmlElement.Head) then element.rename("tei-head") else element
+      if element.isElement(XmlElement.Head) then element.rename(teiHead) else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val outer: Xml.Element = marked.getChildren.flatMap(_.asElement).head
@@ -99,7 +101,7 @@ final class SectionSpec extends AnyFunSuite:
       .mark(Xml.element(XmlElement.Div))
       .setId("meth")
       .setChildren(Chunk(
-        Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
+        Section.markHeading(Xml.element(teiHead).setChildren(Chunk(Xml.text("Methodology")))),
         Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))
       ))
     val grouping: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
@@ -117,7 +119,7 @@ final class SectionSpec extends AnyFunSuite:
       .mark(Xml.element(XmlElement.Div))
       .set(XmlAttribute.XmlId, "methodology")
       .setChildren(Chunk(
-        Section.markHeading(Xml.element("tei-head").setChildren(Chunk(Xml.text("Methodology")))),
+        Section.markHeading(Xml.element(teiHead).setChildren(Chunk(Xml.text("Methodology")))),
         Xml.element(XmlElement.P).setChildren(Chunk(Xml.text("body")))
       ))
     val normalized: Xml.Element = Section.normalize(section, IdGenerator("_id"))

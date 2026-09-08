@@ -11,6 +11,8 @@ object DocBookMarkup extends Markup(
   rendersToXml = true,
   extension = XmlMarkup.extension
 ):
+  private[publish] val db2Html: Xml2Html = Xml2Html("db")
+
   override def rootElements: Set[String] = Set(
     "article", "book", "chapter", "appendix", "part", "set", "preface", "refentry", "topic"
   )
@@ -41,10 +43,8 @@ object DocBookMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
-    val db2Html: Xml2Html = Xml2Html("db")
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val coNumbers: IdGenerator = IdGenerator("")
-    // Xml2Html prefixes reserved HTML attributes (`class` → `db-class`, `lang` → `db-lang`).
     // Convert footnotes, glossary, quotes, and code in a second pass so IR `class` values are kept.
     val converted: Xml.Element = xml.transform(
       element =>
@@ -82,14 +82,16 @@ object DocBookMarkup extends Markup(
     )
     (markHeadedDivs(withIr), title)
 
-  // After Xml2Html, `title` is `db-title`. Transform is parent-first, so this is a second pass.
+  // Transform is parent-first, so this is a second pass after convert.
   private def markHeadedDivs(xml: Xml.Element): Xml.Element =
     xml.transform(
-      element => Section.markHeaded(element, _.qName == "db-title"),
+      // TODO use isDbTitle
+      element => Section.markHeaded(element, db2Html.is(_, XmlElement.Title)),
       stopAtCode = false
     )
 
-  private def isDbTitle(element: Xml.Element): Boolean = element.qName == "db-title"
+  private def isDbTitle(element: Xml.Element): Boolean =
+    db2Html.is(element, XmlElement.Title)
 
   private def documentTitle(root: Xml.Element): Option[Xml.Element] =
     val children: Seq[Xml.Element] = root.getChildren.flatMap(_.asElement)
@@ -183,7 +185,6 @@ object DocBookMarkup extends Markup(
   private def copyLinkHref(element: Xml.Element): Xml.Element =
     dbHref(element).fold(element)(element.setHref)
 
-  // Xml2Html prefixes reserved HTML attributes (`target` → `db-target`).
   private def dbHref(element: Xml.Element): Option[String] =
     element.getHref.map(_.trim).filter(_.nonEmpty)
       .orElse(element.get("xlink:href").map(_.trim).filter(_.nonEmpty))
