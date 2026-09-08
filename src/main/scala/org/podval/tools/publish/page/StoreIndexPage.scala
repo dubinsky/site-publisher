@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
-import org.podval.xml.html.given
+import Html.given
 import zio.blocks.html.*
 
 /** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections). */

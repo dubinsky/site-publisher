@@ -4,7 +4,7 @@ import org.podval.tools.publish.markup.EntityList
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
-import org.podval.xml.html.given
+import Html.given
 import zio.blocks.html.*
 
 final class EntityListPage(
