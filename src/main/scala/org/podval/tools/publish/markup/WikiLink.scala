@@ -42,15 +42,15 @@ object WikiLink:
         val (width: Option[Int], height: Option[Int]) = imageSize(wikiEmbedInner(element))
         Some(Xml
           .element("img")
-          .set("src", path)
-          .set("alt", s"Image: $path")
+          .set(XmlAttribute.Src, path)
+          .set(XmlAttribute.Alt, s"Image: $path")
           .set("width", width.map(_.toString))
           .set("height", height.map(_.toString))
         )
       case Some(extension) if Media.isAudio(extension) =>
         Some(Xml
           .element("audio")
-          .set("src", path)
+          .set(XmlAttribute.Src, path)
           .set("controls", true.toString)
         )
       case Some(extension) if Media.isVideo(extension) =>

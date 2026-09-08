@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlAttribute}
 
 /** Markup-neutral task-list IR. CSS styles only these classes. */
 object TaskList:
@@ -16,11 +16,11 @@ object TaskList:
 
   def isCheckbox(element: Xml.Element): Boolean =
     element.getName == "input" && (
-      element.get("type").contains("checkbox") || element.has(CheckboxClass)
+      element.get(XmlAttribute.Type).contains("checkbox") || element.has(CheckboxClass)
     )
 
   def checkbox(done: Boolean): Xml.Element =
-    val box: Xml.Element = Xml.element("input").set("type", "checkbox")
+    val box: Xml.Element = Xml.element("input").set(XmlAttribute.Type, "checkbox")
     normalizeCheckbox(if done then box.set("checked", "checked") else box)
 
   def asItem(li: Xml.Element, done: Boolean, rest: Xml.Nodes): Xml.Element =
@@ -36,7 +36,7 @@ object TaskList:
   private def normalizeCheckbox(element: Xml.Element): Xml.Element =
     val done: Boolean = element.get("checked").isDefined
     var result: Xml.Element = element
-      .set("type", "checkbox")
+      .set(XmlAttribute.Type, "checkbox")
       .add(CheckboxClass)
       .set("disabled", "disabled")
       .set("readonly", "")

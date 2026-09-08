@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
-import org.podval.xml.{Html, Xml}
+import org.podval.xml.{Html, Xml, XmlAttribute}
 import Html.given
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
@@ -67,7 +67,7 @@ object Content:
       case name =>
         EntityKind.forElement(name) match
           case Some(kind) =>
-            val role: Option[String] = xml.get("role").map(_.trim).filter(_.nonEmpty)
+            val role: Option[String] = xml.get(XmlAttribute.Role).map(_.trim).filter(_.nonEmpty)
             val displayName: Option[String] = entityName(xml, kind)
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, EntityContent(kind, role, displayName, PageContent.prepareAuthored(source, processed)))

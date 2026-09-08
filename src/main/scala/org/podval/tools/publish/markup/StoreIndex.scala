@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlAttribute}
 
 /** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
   * Harvested from the raw tree (includes are not expanded). Names, title, and abstract are
@@ -36,7 +36,7 @@ object StoreIndex:
           Option.when(el.localName == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
         ).flatten.headOption,
         hrefs = xml.gather(el =>
-          Option.when(el.isInclude)(el.get("href").map(_.trim).filter(_.nonEmpty))
+          Option.when(el.isInclude)(el.get(XmlAttribute.Href).map(_.trim).filter(_.nonEmpty))
         ).flatten,
         names = storeNames(xml),
         title = storeTitle(xml),
@@ -52,7 +52,7 @@ object StoreIndex:
     val candidates: Seq[Xml.Element] =
       root.getChildren.flatMap(_.asElement).filter(_.localName == "title")
     val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
-    nonempty.find(_.get("type").contains("main")).orElse(nonempty.headOption)
+    nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
   private def storeDescription(root: Xml.Element): Option[Xml.Element] =
     root.getChildren.flatMap(_.asElement).find: el =>
@@ -74,5 +74,5 @@ object StoreIndex:
   private def storeName(element: Xml.Element): Option[StoreIndex.Name] =
     val n: String = element.get("n").map(_.trim).filter(_.nonEmpty).getOrElse(element.getText.trim)
     Option.when(n.nonEmpty)(
-      StoreIndex.Name(n, element.get("lang").map(_.trim).filter(_.nonEmpty))
+      StoreIndex.Name(n, element.get(XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty))
     )

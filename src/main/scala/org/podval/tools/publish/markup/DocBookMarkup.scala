@@ -171,7 +171,7 @@ object DocBookMarkup extends Markup(
         el
 
   private def convertEmphasis(element: Xml.Element): Xml.Element =
-    element.get("role").map(_.trim.toLowerCase) match
+    element.get(XmlAttribute.Role).map(_.trim.toLowerCase) match
       case Some("bold") | Some("strong") =>
         renameElement("strong", element)
       case Some("strikethrough") | Some("line-through") =>
@@ -323,10 +323,10 @@ object DocBookMarkup extends Markup(
     if element.getName != "videodata" then element
     else
       val src: Option[String] =
-        element.get("src").orElse(element.get("fileref")).map(_.trim).filter(_.nonEmpty)
+        element.get(XmlAttribute.Src).orElse(element.get("fileref")).map(_.trim).filter(_.nonEmpty)
       src.fold(element): href =>
         if isRemoteVideo(href) then
-          Xml.element("iframe").add(Video.EmbedClass).set("src", href)
+          Xml.element("iframe").add(Video.EmbedClass).set(XmlAttribute.Src, href)
         else
           val label: String = href.split('/').lastOption.getOrElse(href)
           Video.make(href, label).setId(xmlId(element))

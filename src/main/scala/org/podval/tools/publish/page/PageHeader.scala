@@ -4,7 +4,7 @@ import org.podval.metadata.Language
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
-import org.podval.xml.{Html, Xml}
+import org.podval.xml.{Html, Xml, XmlAttribute}
 import Html.given
 import zio.blocks.html.*
 
@@ -162,7 +162,7 @@ object PageHeader:
 
   private def storeNameXml(name: StoreIndex.Name): Xml.Element =
     var result: Xml.Element = Xml.element("span").addClass("store-name").setText(name.n)
-    name.lang.foreach(lang => result = result.set("lang", lang))
+    name.lang.foreach(lang => result = result.set(XmlAttribute.Lang, lang))
     result
 
   private def documentHeaderTable(page: FullMarkupPage): Option[Xml.Element] =

@@ -91,7 +91,7 @@ object TeiMarkup extends Markup(
 
   private def pickTitle(candidates: Seq[Xml.Element]): Option[Xml.Element] =
     val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
-    nonempty.find(_.get("type").contains("main")).orElse(nonempty.headOption)
+    nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
   private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
     root.setChildren(root.getChildren.flatMapNodes(node =>
@@ -169,7 +169,7 @@ object TeiMarkup extends Markup(
   private def teiHref(element: Xml.Element): Option[String] =
     element.getHref
       .orElse(element.get("ref"))
-      .orElse(element.get("target"))
+      .orElse(element.get(XmlAttribute.Target))
       .orElse(element.get("tei-target"))
 
   private def xmlId(element: Xml.Element): Option[String] =
@@ -325,7 +325,7 @@ object TeiMarkup extends Markup(
 
   private def isTeiBibliographyPlaceholder(element: Xml.Element): Boolean =
     val empty: Boolean = element.getChildren.forall(_.isWhitespace)
-    val typed: Boolean = element.get("type").contains("bibliography")
+    val typed: Boolean = element.get(XmlAttribute.Type).contains("bibliography")
     val classed: Boolean =
       element.get("tei-class").exists(_.split(" ").exists(_ == "bibliography"))
     empty && (typed || classed)
@@ -364,7 +364,7 @@ object TeiMarkup extends Markup(
   private def convertGlossary(element: Xml.Element): Option[Xml.Element] =
     val isGlossList: Boolean =
       element.getName == "list" &&
-      element.get("type").exists(t => t == "gloss" || t == "glossary")
+      element.get(XmlAttribute.Type).exists(t => t == "gloss" || t == "glossary")
     if !isGlossList then None
     else Some:
       renameElement("dl", element)
@@ -422,7 +422,7 @@ object TeiMarkup extends Markup(
     if element.getName != "code" then None
     else
       val lang: Option[String] =
-        element.get("lang").orElse(element.get("tei-lang")).map(_.trim).filter(_.nonEmpty)
+        element.get(XmlAttribute.Lang).orElse(element.get("tei-lang")).map(_.trim).filter(_.nonEmpty)
       var code: Xml.Element = element
       lang.foreach: name =>
         val cls: String = s"language-${name.toLowerCase}"

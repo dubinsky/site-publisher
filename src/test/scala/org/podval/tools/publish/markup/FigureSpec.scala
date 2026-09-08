@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -45,12 +45,12 @@ final class FigureSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = imgs(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.get("alt").contains("A square|320"), dumped)
+    assert(found.head.get(XmlAttribute.Alt).contains("A square|320"), dumped)
     assert(found.head.get("width").isEmpty, dumped)
     assert(found.head.get("height").isEmpty, dumped)
     val both: Xml.Element = fromMarkdown("![A square|320x240](pixel.svg)\n")
     val bothImg: Xml.Element = imgs(both).head
-    assert(bothImg.get("alt").contains("A square|320x240"), render(both))
+    assert(bothImg.get(XmlAttribute.Alt).contains("A square|320x240"), render(both))
     assert(bothImg.get("width").isEmpty, render(both))
     assert(bothImg.get("height").isEmpty, render(both))
   }
@@ -60,7 +60,7 @@ final class FigureSpec extends AnyFunSuite:
     val dumped: String = render(positional)
     val found: Seq[Xml.Element] = imgs(positional)
     assert(found.size == 1, dumped)
-    assert(found.head.get("alt").contains("A square"), dumped)
+    assert(found.head.get(XmlAttribute.Alt).contains("A square"), dumped)
     assert(found.head.get("width").contains("320"), dumped)
     assert(found.head.get("height").contains("240"), dumped)
     val named: Xml.Element = fromAsciiDoc("image::pixel.svg[A square, width=320, height=240]\n")

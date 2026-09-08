@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlAttribute}
 
 final class Tip(prefix: String):
   object RefClass extends CssClass(s"$prefix-ref")
@@ -16,7 +16,7 @@ final class Tip(prefix: String):
     var wrappedLink: Xml.Element = link
     link.getId.foreach: id =>
       val tipId: String = s"$id-tip"
-      tip = tip.setId(tipId).set("role", "tooltip")
+      tip = tip.setId(tipId).set(XmlAttribute.Role, "tooltip")
       wrappedLink = wrappedLink.set("aria-describedby", tipId)
     Xml
       .element("span")

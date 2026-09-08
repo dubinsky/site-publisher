@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlAttribute}
 
 /** Markup-neutral figure IR. CSS styles only these classes.
   * `<figure class="figure">`, optional `figcaption.figure-caption`. */
@@ -63,8 +63,8 @@ object Figure:
 
   private def takeTitle(element: Xml.Element): (Option[String], Xml.Element) =
     if element.getName == "img" then
-      val caption: Option[String] = element.get("title").map(_.trim).filter(_.nonEmpty)
-      (caption, caption.fold(element)(_ => element.set("title", "")))
+      val caption: Option[String] = element.get(XmlAttribute.Title).map(_.trim).filter(_.nonEmpty)
+      (caption, caption.fold(element)(_ => element.set(XmlAttribute.Title, "")))
     else
       val children: Xml.Nodes = element.getChildren
       val img: Xml.Element = children.flatMap(_.asElement).find(_.getName == "img").get

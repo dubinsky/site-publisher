@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, Page}
 import org.podval.tools.publish.site.Path
-import org.podval.xml.{CssClass, Xml}
+import org.podval.xml.{CssClass, Xml, XmlAttribute}
 
 /** Per-document facsimile viewer: JPEG URLs and scroller XML. `pb` hrefs are filled at render. */
 object Facsimile:
@@ -58,7 +58,7 @@ object Facsimile:
         element.getId.filter(_.nonEmpty).fold(element): id =>
           element
             .setHref(s"${viewer.publishedPath}#$id")
-            .set("target", facsimileTarget)
+            .set(XmlAttribute.Target, facsimileTarget)
 
   def scroller(viewer: FacsimilePage): Xml.Element =
     val document: FullMarkupPage = viewer.document
@@ -84,10 +84,10 @@ object Facsimile:
     val display: String = pageType.displayName(pb.n)
     val img: Xml.Element = Xml.element("img")
       .setId(id)
-      .set("alt", s"facsimile for page $display")
-      .set("src", imageUrl(base, sourceDir, pb.n, pb.facs))
+      .set(XmlAttribute.Alt, s"facsimile for page $display")
+      .set(XmlAttribute.Src, imageUrl(base, sourceDir, pb.n, pb.facs))
     val link: Xml.Element = Xml.element("a")
       .setHref(s"${document.publishedPath}#$id")
-      .set("target", textTarget)
+      .set(XmlAttribute.Target, textTarget)
       .setChildren(Seq(img: Xml.Node))
     Figure.make(Seq(Xml.text(display)), Seq(link: Xml.Node))

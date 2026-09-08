@@ -28,7 +28,7 @@ object PdfEmbed:
     val objectElement: Xml.Element = Xml
       .element("object")
       .set("data", href)
-      .set("type", PdfType)
+      .set(XmlAttribute.Type, PdfType)
       .set("aria-label", text)
       .setChildren(Seq(openLink(href, text)))
     val sibling: Xml.Element = Xml.element("p").add(LinkClass).setChildren(Seq(openLink(href, text)))
@@ -47,7 +47,7 @@ object PdfEmbed:
 
   private def isPdfObject(element: Xml.Element): Boolean =
     element.getName == "object" && (
-      element.get("type").exists(_.toLowerCase.contains("pdf")) ||
+      element.get(XmlAttribute.Type).exists(_.toLowerCase.contains("pdf")) ||
       element.get("data").exists(data =>
         val path: String = Strings.splitFirst(data, '#')._1
         path.toLowerCase.endsWith(".pdf")
@@ -58,7 +58,7 @@ object PdfEmbed:
     val src: String = element.get("data").filter(_.nonEmpty).getOrElse("")
     val label: String = element
       .get("aria-label")
-      .orElse(element.get("title"))
+      .orElse(element.get(XmlAttribute.Title))
       .filter(_.nonEmpty)
       .getOrElse(Strings.splitFirst(src, '#')._1.split('/').lastOption.getOrElse(src))
     val height: Option[String] = element.get("height")

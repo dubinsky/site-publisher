@@ -20,7 +20,7 @@ object Video:
     Xml
       .element("video")
       .add(Class)
-      .set("src", href)
+      .set(XmlAttribute.Src, href)
       .set("controls", "controls")
       .set("aria-label", text)
       .setChildren(Seq(openLink(href, text)))
@@ -36,7 +36,7 @@ object Video:
     val withControls: Xml.Element =
       if withClass.get("controls").isDefined then withClass
       else withClass.set("controls", "controls")
-    val src: Option[String] = withControls.get("src").filter(_.nonEmpty)
+    val src: Option[String] = withControls.get(XmlAttribute.Src).filter(_.nonEmpty)
     val hasMarkup: Boolean = withControls.getChildren.flatMap(_.asElement).nonEmpty
     if hasMarkup || src.isEmpty then withControls
     else
@@ -47,7 +47,7 @@ object Video:
       withControls.setChildren(Seq(openLink(src.get, label)))
 
   private def isRemotePlayer(element: Xml.Element): Boolean =
-    element.getName == "iframe" && element.get("src").exists: src =>
+    element.getName == "iframe" && element.get(XmlAttribute.Src).exists: src =>
       val lower: String = src.toLowerCase
       lower.contains("youtube.com/embed") ||
       lower.contains("youtube-nocookie.com/embed") ||

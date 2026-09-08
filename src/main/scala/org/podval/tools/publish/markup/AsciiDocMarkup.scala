@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute}
 import java.io.File
 
 // TODO deal with
@@ -239,8 +239,8 @@ object AsciiDocMarkup extends Markup(
         element.get("data-value").flatMap(calloutNumber).orElse(calloutNumber(element.getText))
       ).flatten
     val fromImg: Option[String] =
-      Option.when(element.getName == "img" && element.get("src").exists(_.contains("callout")))(
-        element.get("alt").flatMap(calloutNumber)
+      Option.when(element.getName == "img" && element.get(XmlAttribute.Src).exists(_.contains("callout")))(
+        element.get(XmlAttribute.Alt).flatMap(calloutNumber)
       ).flatten
     fromIcon.orElse(fromImg).map(Callout.marker)
 
@@ -359,7 +359,7 @@ object AsciiDocMarkup extends Markup(
       val titleFromIcon: Option[String] =
         icon.flatMap: cell =>
           val labelled: Option[String] = cell
-            .gather(el => el.get("title"))
+            .gather(el => el.get(XmlAttribute.Title))
             .headOption
             .orElse(Some(cell.getText.trim).filter(_.nonEmpty))
           labelled.map(_.trim).filter(_.nonEmpty)
@@ -421,7 +421,7 @@ object AsciiDocMarkup extends Markup(
 
   private def isInteractiveCheckbox(element: Xml.Element): Boolean =
     element.getName == "input" && (
-      element.get("type").contains("checkbox") || element.get("data-item-complete").isDefined
+      element.get(XmlAttribute.Type).contains("checkbox") || element.get("data-item-complete").isDefined
     )
 
   private def isFaCheckbox(element: Xml.Element): Boolean =

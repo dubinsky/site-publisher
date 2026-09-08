@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlWriterConfig, Xml}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
@@ -16,7 +16,7 @@ final class WikiLinkSpec extends AnyFunSuite:
     val img: Xml.Element = embedImage("pixel.svg", None)
     val dumped: String = render(img)
     assert(img.getName == "img", dumped)
-    assert(img.get("src").contains("pixel.svg"), dumped)
+    assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     assert(img.get("width").isEmpty, dumped)
     assert(img.get("height").isEmpty, dumped)
   }
@@ -24,7 +24,7 @@ final class WikiLinkSpec extends AnyFunSuite:
   test("embed image |WIDTH sets img width") {
     val img: Xml.Element = embedImage("pixel.svg", Some("320"))
     val dumped: String = render(img)
-    assert(img.get("src").contains("pixel.svg"), dumped)
+    assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     assert(img.get("width").contains("320"), dumped)
     assert(img.get("height").isEmpty, dumped)
   }

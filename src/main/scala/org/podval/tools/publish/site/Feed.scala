@@ -46,7 +46,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
 
     val prologue: Seq[Xml.Element] = Seq(
       el("id", absoluteUrl(Feed.path)),
-      el("title", site.config.title).set("type", "html"),
+      el("title", site.config.title).set(XmlAttribute.Type, "html"),
       el("subtitle", site.config.description),
       el("generator", Seo.generatorName).set("uri", Seo.generatorUrl),
       link(
@@ -88,7 +88,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
       .element("entry")
       .setChildren(
         Seq(
-          el("title", page.title).set("type", "html"),
+          el("title", page.title).set(XmlAttribute.Type, "html"),
           link(
             href = url,
             rel = "alternate",
@@ -112,7 +112,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
             case markupPage: MarkupPage => markupPage
               .markupContent
               .map(content => HtmlXmlWriterConfig.render(content).trim)
-              .map(html => htmlEl("content", html).set("xml:base", url))
+              .map(html => htmlEl("content", html).set(XmlAttribute.XmlBase, url))
             case _ => None    
           ).toSeq
       )
@@ -133,10 +133,10 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   ): Xml.Element =
     Xml
       .element("link")
-      .set("href", href)
-      .set("rel", rel)
-      .set("type", `type`)
-      .set("title", title)
+      .set(XmlAttribute.Href, href)
+      .set(XmlAttribute.Rel, rel)
+      .set(XmlAttribute.Type, `type`)
+      .set(XmlAttribute.Title, title)
 
   private def el(name: String, text: String): Xml.Element =
     Xml.element(name).setText(text)
@@ -145,7 +145,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   // Atom document well-formed without encoding those ampersands.
   private def htmlEl(name: String, html: String): Xml.Element = Xml
     .element(name)
-    .set("type", "html")
+    .set(XmlAttribute.Type, "html")
     .setChildren(Seq(Xml.cdata(html)))
 
   private def zone: ZoneId =

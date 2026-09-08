@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class DocBookMarkupSpec extends AnyFunSuite:
@@ -189,9 +189,9 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     )
     val dumped: String = render(xml)
     val img: Xml.Element = xml.gather(el => Option.when(el.getName == "img")(el)).head
-    assert(img.get("src").contains("pixel.svg"), dumped)
+    assert(img.get(XmlAttribute.Src).contains("pixel.svg"), dumped)
     val video: Xml.Element = xml.gather(el => Option.when(Video.is(el))(el)).head
-    assert(video.get("src").contains("clip.mp4"), dumped)
+    assert(video.get(XmlAttribute.Src).contains("clip.mp4"), dumped)
     val hrefs: Set[String] = xml.gather(el => Option.when(el.isA)(el.getHref)).flatten.toSet
     assert(hrefs.contains("#foo"), dumped)
     assert(hrefs.contains("#bar"), dumped)
