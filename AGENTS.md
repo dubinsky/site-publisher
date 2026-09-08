@@ -10,10 +10,10 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `site/` — `Site`, `Pages` (page graph, `resolve` / `resolveAsset`), `BackLinks` / `BackLink`, config, sitemap, errors
 - Supporting libraries:
   - `org.podval.xml` (`org.podval:org.podval.xml`, repo https://github.com/dubinsky/xml) —
-    dialect-aware XML (parsing from string/URL/file/classpath, writing, transform/gather, Xml2Html) and derived document
+    dialect-aware XML (parsing from string or classpath, writing, transform/gather, Xml2Html) and derived document
     codecs (`org.podval.xml.XmlCodec`) over any `XmlAst`. `XmlParser` does not expand `xi:include`
     (publisher stores treat `xi:include/@href` as a page ref). Catalog files
-    (`org.podval.store` `Selector.xml`) use `parseCatalog` / `decodeCatalog` (wrapper root, child codec).
+    (`org.podval.store` `Selector.xml`) use `loadCatalog` / `decodeCatalog` (wrapper root, child codec).
     Same artifact also has `org.podval.metadata` (multilingual `Name`/`Names`/`Language` catalogs) and
     `org.podval.store` (in-memory named tree, path `resolve`; `Selector` catalog of `by/@selector` names).
     Publisher `StoreContent` is a filesystem page graph and does not use `Store` / `By` / `Path`;
