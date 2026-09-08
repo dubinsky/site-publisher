@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import java.io.File
 
 // TODO deal with
@@ -93,8 +93,8 @@ object AsciiDocMarkup extends Markup(
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
-      children = XmlUtil.convertElements(children, convertBibliographyWrapper)
-      children = XmlUtil.convertElements(children, HtmlMarkup.unwrapSpuriousParagraph)
+      children = children.convertElements(convertBibliographyWrapper)
+      children = children.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
       children = removeSpuriousDivs(children)
       if asciidoctorGlossaryClasses.forall(result.hasClass) then
         children = convertGlossaryLists(children)
@@ -148,7 +148,7 @@ object AsciiDocMarkup extends Markup(
       .flatMap(HtmlMarkup.headerLevel)
       .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
 
-  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = XmlUtil.convertElements(children, element =>
+  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = children.convertElements(element =>
     convertBibliographyWrapper(element).orElse(
       Option.when(element.getName == "div" && isSpuriousDiv(element))(
         removeSpuriousDivs(element.getChildren)

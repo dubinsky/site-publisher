@@ -2,8 +2,8 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
-import org.podval.xml.XmlUtil.*
+import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute}
+import org.podval.xml.Xml2Html.renameElement
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -60,9 +60,9 @@ object DocBookMarkup extends Markup(
     val withIr: Xml.Element = body.transform(
       element =>
         var result: Xml.Element = element.setChildren(
-          convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
+          element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
         )
-        result = result.setChildren(convertElements(result.getChildren, convertFootnoteRef(_, footnoteIds)))
+        result = result.setChildren(result.getChildren.convertElements(convertFootnoteRef(_, footnoteIds)))
         result = convertGlossary(result)
         result = convertVariableList(result)
         result = convertAdmonition(result)
@@ -71,13 +71,13 @@ object DocBookMarkup extends Markup(
         result = convertFigure(result)
         result = convertVideo(result)
         result = convertCalloutList(result)
-        result = result.setChildren(convertElements(result.getChildren, convertCo(_, coNumbers)))
+        result = result.setChildren(result.getChildren.convertElements(convertCo(_, coNumbers)))
         result = convertBibliography(result)
         result = convertCitation(result)
         result = convertCiteLink(result, biblIds)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if result.getName != "pre" then
-          result = result.setChildren(convertElements(result.getChildren, convertCode))
+          result = result.setChildren(result.getChildren.convertElements(convertCode))
         result,
       stopAtCode = false
     )
@@ -103,7 +103,7 @@ object DocBookMarkup extends Markup(
     if root.getChildren.exists(_ eq title) then
       root.setChildren(root.getChildren.filterNot(_ eq title))
     else
-      root.setChildren(flatMapNodes(root.getChildren, node =>
+      root.setChildren(root.getChildren.flatMapNodes(node =>
         node.asElement.filter(el => infoElements.contains(el.getName)) match
           case Some(info) if info.getChildren.exists(_ eq title) =>
             val stripped: Xml.Element = info.setChildren(info.getChildren.filterNot(_ eq title))
@@ -141,10 +141,10 @@ object DocBookMarkup extends Markup(
         fillEmptyLink(tagged)
 
       case "imagedata" =>
-        renameElement("img", copyAttribute("fileref", "src", el))
+        renameElement("img", el.copyAttribute("fileref", "src"))
 
       case "videodata" | "audiodata" =>
-        copyAttribute("fileref", "src", el)
+        el.copyAttribute("fileref", "src")
 
       case "row" =>
         renameElement("tr", el)
@@ -254,7 +254,7 @@ object DocBookMarkup extends Markup(
     val id: Option[String] =
       xmlId(entry).orElse(term.flatMap(xmlId)).orElse:
         val text: String = dt.getText.trim
-        Option.when(text.nonEmpty)(XmlUtil.toId(text))
+        Option.when(text.nonEmpty)(XmlAst.toId(text))
     Glossary.item(id, dt +: dd.toSeq)
 
   private def convertVariableList(element: Xml.Element): Xml.Element =

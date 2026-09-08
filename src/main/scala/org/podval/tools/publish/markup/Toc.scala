@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMarkupPage}
-import org.podval.xml.{Html, HtmlClass, Xml, XmlUtil}
+import org.podval.xml.{Html, HtmlClass, Xml}
 import zio.blocks.html.*
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 
@@ -69,7 +69,7 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         (xml, this)
 
       case Some(sectionId) =>
-        (XmlUtil.elementById(xml, sectionId), getById(sectionId))
+        (xml.elementById(sectionId), getById(sectionId))
 
     if isTerminal then element else sections.sections.headOption.map(_.id) match
       case None =>

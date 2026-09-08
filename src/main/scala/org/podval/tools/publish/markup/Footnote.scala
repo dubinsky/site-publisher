@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement, XmlUtil}
+import org.podval.xml.{HtmlClass, Xml, XmlAttribute, XmlElement}
 
 // Details of the footnote internal representation.
 object Footnote:
@@ -42,7 +42,7 @@ object Footnote:
   /** Replace leftover containers (caller says which) with the IR bodies inside them. */
   def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =
     xml.transform(element =>
-      element.setChildren(XmlUtil.convertElements(element.getChildren, leftover =>
+      element.setChildren(element.getChildren.convertElements(leftover =>
         Option.when(isContainer(leftover))(
           leftover.gather(el => Option.when(isBody(el))(el: Xml.Node))
         )

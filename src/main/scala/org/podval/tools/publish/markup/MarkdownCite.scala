@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlUtil}
+import org.podval.xml.Xml
 import scala.annotation.tailrec
 
 object MarkdownCite:
@@ -8,7 +8,7 @@ object MarkdownCite:
     val converted: Xml.Element =
       if isBibliographyFence(element)
       then Citation.listPlaceholder
-      else XmlUtil.convertText(element, convert(Seq.empty, _))
+      else element.convertText(convert(Seq.empty, _))
     converted.setChildren(converted.getChildren.map(child =>
       child.asElement.fold(child)(convertElement)
     ))

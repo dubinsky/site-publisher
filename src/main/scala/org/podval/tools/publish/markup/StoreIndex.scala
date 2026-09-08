@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlUtil}
+import org.podval.xml.Xml
 
 /** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
   * Harvested from the raw tree (includes are not expanded). Names, title, and abstract are
@@ -36,7 +36,7 @@ object StoreIndex:
           Option.when(el.localName == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
         ).flatten.headOption,
         hrefs = xml.gather(el =>
-          Option.when(XmlUtil.isInclude(el))(el.get("href").map(_.trim).filter(_.nonEmpty))
+          Option.when(el.isInclude)(el.get("href").map(_.trim).filter(_.nonEmpty))
         ).flatten,
         names = storeNames(xml),
         title = storeTitle(xml),

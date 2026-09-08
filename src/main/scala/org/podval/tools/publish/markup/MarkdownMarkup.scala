@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlUtil}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -60,7 +60,7 @@ object MarkdownMarkup extends Markup(
       var result: Xml.Element = element
       result = MarkdownWikiBlock.convert(result, errorReporter).getOrElse(result)
       if !result.isA then
-        result = XmlUtil.convertText(result, MarkdownWikiLink.convert(Seq.empty, _))
+        result = result.convertText(MarkdownWikiLink.convert(Seq.empty, _))
 //      result = convertMarkdownFootnotes(result).getOrElse(result)
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
@@ -75,7 +75,7 @@ object MarkdownMarkup extends Markup(
 
   private[markup] def convert(xml: Xml.Element): Xml.Element =
     xml.transform((element: Xml.Element) =>
-      val children: Xml.Nodes = XmlUtil.convertElements(element.getChildren, HtmlMarkup.unwrapSpuriousParagraph)
+      val children: Xml.Nodes = element.getChildren.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
       convertAdmonition(convertTaskList(element.setChildren(convertDescriptionLists(children))))
     )
 
@@ -186,7 +186,7 @@ object MarkdownMarkup extends Markup(
     val term: Xml.Element = if fromDt.isEmpty then dt else dt.setId("")
     val id: Option[String] = fromDt.orElse:
       val text: String = term.getText.trim
-      Option.when(text.nonEmpty)(XmlUtil.toId(text))
+      Option.when(text.nonEmpty)(XmlAst.toId(text))
     (id, term)
 
   // Note: without FootnotesExtension, FlexMark treats footnotes as links,
@@ -197,7 +197,7 @@ object MarkdownMarkup extends Markup(
 
 //  private def convertMarkdownFootnotes(element: Xml.Element): Option[Xml.Element] =
 //    Option.when(!element.isA)(
-//      XmlUtil.convertText(element, convertMarkdownFootnotes(Chunk.empty, _))
+//      element.convertText(convertMarkdownFootnotes(Chunk.empty, _))
 //    )
 //
 //  private val startsString: String = "[^"

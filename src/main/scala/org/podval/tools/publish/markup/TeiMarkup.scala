@@ -2,8 +2,8 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAttribute, XmlUtil}
-import org.podval.xml.XmlUtil.*
+import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute}
+import org.podval.xml.Xml2Html.renameElement
 import java.io.File
 
 object TeiMarkup extends Markup(
@@ -51,7 +51,7 @@ object TeiMarkup extends Markup(
     val withIr: Xml.Element = body.transform(
       element =>
         var result: Xml.Element = element.setChildren(
-          XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
+          element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
         )
         result = convertGlossary(result).getOrElse(result)
         result = convertListBibl(result, headerBiblIds)
@@ -63,7 +63,7 @@ object TeiMarkup extends Markup(
         result = convertPb(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if result.getName != "pre" then
-          result = result.setChildren(XmlUtil.convertElements(result.getChildren, convertCode))
+          result = result.setChildren(result.getChildren.convertElements(convertCode))
         result,
       stopAtCode = false
     )
@@ -94,7 +94,7 @@ object TeiMarkup extends Markup(
     nonempty.find(_.get("type").contains("main")).orElse(nonempty.headOption)
 
   private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
-    root.setChildren(flatMapNodes(root.getChildren, node =>
+    root.setChildren(root.getChildren.flatMapNodes(node =>
       if node eq title then Seq.empty
       else node.asElement.match
         case Some(el) => Seq(stripTitle(el, title))
@@ -115,10 +115,10 @@ object TeiMarkup extends Markup(
         renameElement("tr", stripped)
 
       case "cell" =>
-        renameElement("td", copyAttribute("cols", "colspan", stripped))
+        renameElement("td", stripped.copyAttribute("cols", "colspan"))
 
       case "graphic" =>
-        renameElement("img", copyAttribute("url", "src", stripped))
+        renameElement("img", stripped.copyAttribute("url", "src"))
 
       case "ref" | "ptr" =>
         teiHref(stripped).fold(renameElement("a", stripped))(value =>
@@ -130,7 +130,7 @@ object TeiMarkup extends Markup(
 
       case name if isEntityName(name) =>
         val ref: Option[String] = stripped.get("ref").map(_.trim).filter(_.nonEmpty)
-        ref.fold(stripped)(_ => renameElement("a", copyAttribute("ref", "href", stripped)))
+        ref.fold(stripped)(_ => renameElement("a", stripped.copyAttribute("ref", "href")))
 
       case name if isEntityList(name) =>
         convertEntityList(stripped)
@@ -152,7 +152,7 @@ object TeiMarkup extends Markup(
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val converted: Xml.Element = xml.transform(
       element => element.setChildren(
-        XmlUtil.convertElements(element.getChildren, convertFootnote(_, footnoteCorrelationIds))
+        element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
       ),
       stopAtCode = false
     )
@@ -163,7 +163,7 @@ object TeiMarkup extends Markup(
     case _ => element
 
   private def dropIncludes(element: Xml.Element): Xml.Element =
-    element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(isInclude)))
+    element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(_.isInclude)))
 
   // Xml2Html prefixes reserved HTML attributes (`target` → `tei-target`).
   private def teiHref(element: Xml.Element): Option[String] =
@@ -387,7 +387,7 @@ object TeiMarkup extends Markup(
       val id: Option[String] =
         xmlId(label).orElse(item.flatMap(xmlId)).orElse:
           val text: String = dt.getText.trim
-          Option.when(text.nonEmpty)(XmlUtil.toId(text))
+          Option.when(text.nonEmpty)(XmlAst.toId(text))
       result = result :+ Glossary.item(id, dt +: dd.toSeq)
 
     nodes.foreach: node =>
