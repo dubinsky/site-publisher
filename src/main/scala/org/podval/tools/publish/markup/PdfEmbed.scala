@@ -46,7 +46,7 @@ object PdfEmbed:
       )
 
   private def isPdfObject(element: Xml.Element): Boolean =
-    element.qName == "object" && (
+    element.isNamed("object") && (
       element.get(XmlAttribute.Type).exists(_.toLowerCase.contains("pdf")) ||
       element.get("data").exists(data =>
         val path: String = Strings.splitFirst(data, '#')._1

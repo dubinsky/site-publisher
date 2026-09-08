@@ -16,5 +16,5 @@ object CollectionPart:
   val codec: XmlCodec[CollectionPart] = XmlCodec.derived
 
   def harvest(xml: Xml.Element): Seq[CollectionPart] =
-    xml.getChildren.flatMap(_.asElement).filter(_.localName == "part").flatMap: element =>
+    xml.getChildren.flatMap(_.asElement).filter(_.isNamed("part")).flatMap: element =>
       codec.decode(element).toOption

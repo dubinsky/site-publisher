@@ -35,7 +35,7 @@ object Section:
 
   // Stamp `heading` on the first matching child and `section` on the div.
   def markHeaded(div: Xml.Element, isHeader: Xml.Element => Boolean): Xml.Element =
-    if div.qName != "div" then div
+    if !div.isNamed("div") then div
     else
       var found: Boolean = false
       val children: Xml.Nodes = div.getChildren.map: node =>

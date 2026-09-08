@@ -22,7 +22,7 @@ object HtmlMarkup extends Markup(
         Seq(element.setChildren(init ++ head.getChildren ++ tail.tail))
 
   def headerLevel(element: Xml.Element): Option[Int] =
-    val qName: String = element.qName
+    val qName: String = element.getName.qName
     if !qName.startsWith("h") then None else
       try Some(qName.substring(1).toInt)
       catch case _: NumberFormatException => None

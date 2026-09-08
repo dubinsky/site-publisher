@@ -51,7 +51,7 @@ object Content:
     if TeiMarkup.isStoreRoot(xml) then
       val store: StoreContent = StoreContent.parse(xml)
       (store.title, store)
-    else xml.localName match
+    else xml.getName.localName match
       case "entityLists" =>
         val lists: EntityListsContent = EntityListsContent.parse(xml)
         (lists.title, lists)
@@ -77,7 +77,7 @@ object Content:
 
   private def entityName(xml: Xml.Element, kind: EntityKind): Option[String] =
     xml.getChildren.flatMap(_.asElement)
-      .find(el => el.localName == kind.nameElement || el.qName == kind.nameElement)
+      .find(_.isNamed(kind.nameElement))
       .map(_.getText.trim)
       .filter(_.nonEmpty)
 
@@ -109,9 +109,9 @@ final class DocumentContent(
 
   override def selectedXml(selected: Xml.Element, page: Page): Xml.Element =
     if !page.parent.exists(_.store.exists(_.isCollection)) then selected
-    else if selected.localName != "TEI" then selected
+    else if !selected.isNamed("TEI") then selected
     else selected.setChildren(selected.getChildren.filterNot(node =>
-      node.asElement.exists(_.localName == "teiHeader")
+      node.asElement.exists(_.isNamed("teiHeader"))
     ))
 
 final class EntityContent(

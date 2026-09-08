@@ -142,7 +142,7 @@ final class MarkdownSpec extends AnyFunSuite:
       val xml: Xml.Element = process(source)
       val dumped: String = render(xml)
       val found: Seq[Xml.Element] = wikiBlocks(xml)
-      assert(found.exists(el => el.qName == name && el.getId.contains(id)), dumped)
+      assert(found.exists(el => el.isNamed(name) && el.getId.contains(id)), dumped)
       assert(!dumped.contains(s"^$id"), dumped)
     assertOn(
       """| A | B |

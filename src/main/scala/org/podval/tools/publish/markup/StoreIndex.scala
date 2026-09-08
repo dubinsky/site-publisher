@@ -33,7 +33,7 @@ object StoreIndex:
     Option.when(TeiMarkup.isStoreRoot(xml)):
       new StoreIndex(
         selector = xml.gather(el =>
-          Option.when(el.localName == "by")(el.get("selector").map(_.trim).filter(_.nonEmpty))
+          Option.when(el.isNamed("by"))(el.get("selector").map(_.trim).filter(_.nonEmpty))
         ).flatten.headOption,
         hrefs = xml.gather(el =>
           Option.when(el.isInclude)(el.get(XmlAttribute.Href).map(_.trim).filter(_.nonEmpty))
@@ -42,7 +42,7 @@ object StoreIndex:
         title = storeTitle(xml),
         description = storeDescription(xml),
         body = storeBody(xml),
-        isCollection = xml.localName == "collection",
+        isCollection = xml.isNamed("collection"),
         alias = xml.get("alias").map(_.trim).filter(_.nonEmpty),
         parts = CollectionPart.harvest(xml),
         pageTypeName = xml.get("pageType").map(_.trim).filter(_.nonEmpty)
@@ -50,22 +50,22 @@ object StoreIndex:
 
   private def storeTitle(root: Xml.Element): Option[Xml.Element] =
     val candidates: Seq[Xml.Element] =
-      root.getChildren.flatMap(_.asElement).filter(_.localName == XmlElement.Title.localName)
+      root.getChildren.flatMap(_.asElement).filter(_.isNamed(XmlElement.Title.localName))
     val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
     nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
   private def storeDescription(root: Xml.Element): Option[Xml.Element] =
     root.getChildren.flatMap(_.asElement).find: el =>
-      el.localName == "abstract" && el.getChildren.nonEmpty
+      el.isNamed("abstract") && el.getChildren.nonEmpty
 
   private def storeBody(root: Xml.Element): Option[Xml.Element] =
     root.getChildren.flatMap(_.asElement).find: el =>
-      el.localName == XmlElement.Body.localName && el.getChildren.nonEmpty
+      el.isNamed(XmlElement.Body.localName) && el.getChildren.nonEmpty
 
   private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
     val fromChildren: Seq[StoreIndex.Name] =
       root.getChildren.flatMap(_.asElement)
-        .filter(_.localName == "name")
+        .filter(_.isNamed("name"))
         .flatMap(storeName)
     val fromN: Option[StoreIndex.Name] =
       root.get("n").map(_.trim).filter(_.nonEmpty).map(n => StoreIndex.Name(n, None))

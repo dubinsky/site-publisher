@@ -15,7 +15,7 @@ object TaskList:
     element.isElement(XmlElement.Li) && element.has(ItemClass)
 
   def isCheckbox(element: Xml.Element): Boolean =
-    element.qName == "input" && (
+    element.isNamed("input") && (
       element.get(XmlAttribute.Type).contains("checkbox") || element.has(CheckboxClass)
     )
 

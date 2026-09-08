@@ -72,7 +72,7 @@ final class SectionSpec extends AnyFunSuite:
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
     val header: Xml.Element = Section.heading(marked).get
-    assert(header.qName == teiHead)
+    assert(header.isNamed(teiHead))
     assert(header.getText == "Methodology")
     assert(Section.is(marked))
   }

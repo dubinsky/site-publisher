@@ -17,7 +17,7 @@ final class DocumentHeader(
 
 object DocumentHeader:
   def harvest(xml: Xml.Element): Option[DocumentHeader] =
-    Option.when(xml.localName == "TEI"):
+    Option.when(xml.isNamed("TEI")):
       val header: Option[Xml.Element] = child(xml, "teiHeader")
       val titleStmt: Option[Xml.Element] = header.flatMap(child(_, "fileDesc")).flatMap(child(_, "titleStmt"))
       val profileDesc: Option[Xml.Element] = header.flatMap(child(_, "profileDesc"))
@@ -37,11 +37,11 @@ object DocumentHeader:
 
   private def addresseeOf(profileDesc: Xml.Element): Option[Xml.Element] =
     profileDesc.gather(el =>
-      Option.when(el.localName == "persName" && el.get(XmlAttribute.Role).contains("addressee"))(el)
+      Option.when(el.isNamed("persName") && el.get(XmlAttribute.Role).contains("addressee"))(el)
     ).headOption
 
   private def children(element: Xml.Element, name: String): Seq[Xml.Element] =
-    element.getChildren.flatMap(_.asElement).filter(_.localName == name).toSeq
+    element.getChildren.flatMap(_.asElement).filter(_.isNamed(name)).toSeq
 
   private def child(element: Xml.Element, name: String): Option[Xml.Element] =
     children(element, name).headOption

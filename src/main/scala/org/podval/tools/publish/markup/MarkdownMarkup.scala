@@ -81,7 +81,7 @@ object MarkdownMarkup extends Markup(
 
   // FlexMark: <li class="task-list-item"><input class="task-list-item-checkbox" …/>&nbsp;text
   private def convertTaskList(element: Xml.Element): Xml.Element =
-    if element.qName != "ul" && element.qName != "ol" then element
+    if !element.isNamed("ul") && !element.isNamed("ol") then element
     else
       val children: Xml.Nodes = element.getChildren.map: node =>
         node.asElement.filter(_.isElement(XmlElement.Li)).fold(node)(convertFlexMarkItem)
@@ -91,7 +91,7 @@ object MarkdownMarkup extends Markup(
   private val admonitionMarker = """\[!([A-Za-z0-9_-]+)\]([+-])?[ \t]*""".r
 
   private def convertAdmonition(element: Xml.Element): Xml.Element =
-    if element.qName != "blockquote" then element
+    if !element.isNamed("blockquote") then element
     else obsidianAdmonition(element).getOrElse(element)
 
   private def obsidianAdmonition(quote: Xml.Element): Option[Xml.Element] =
@@ -233,7 +233,7 @@ object MarkdownMarkup extends Markup(
   // To:
   //   <a class="footnote-link" footnote-correlation-id="N"/>
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
-    if element.qName != "sup" then None else
+    if !element.isNamed("sup") then None else
       for correlationId <- element
         .getChildren
         .flatMap(_.asElement)
@@ -250,7 +250,7 @@ object MarkdownMarkup extends Markup(
   // To:
   //   <span class="footnote" footnote-correlation-id="N">Footnote Body</span>
   private def convertFootnoteBody(element: Xml.Element): Option[Xml.Element] =
-    if element.qName != "li" then None else
+    if !element.isNamed("li") then None else
       for
         correlationId <- element
           .getId

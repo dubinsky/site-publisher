@@ -37,7 +37,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
         |</article>""".stripMargin
     )
     val dumped: String = render(xml)
-    assert(title.exists(_.qName == "db-title"), dumped)
+    assert(title.exists(_.isNamed("db-title")), dumped)
     assert(title.exists(_.getText.contains("Doc title")), dumped)
     assert(!dumped.contains("Doc title"), dumped)
     assert(dumped.contains("<p"), dumped)
@@ -46,7 +46,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("<para"), dumped)
     assert(!dumped.contains("<simpara"), dumped)
     assert(!dumped.contains("<title"), dumped)
-    assert(xml.qName == "article", dumped)
+    assert(xml.isNamed("article"), dumped)
   }
 
   test("lists become ul/ol/li; emphasis becomes em; quote becomes q") {
@@ -154,7 +154,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     assert(title.exists(_.getText.contains("From info")), dumped)
     assert(!dumped.contains("From info"), dumped)
-    assert(xml.gather(el => Option.when(el.qName == "info")(el)).isEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.isNamed("info"))(el)).isEmpty, dumped)
   }
 
   test("root chapter is not renamed to div; nested section is marked") {
@@ -165,7 +165,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
         |</chapter>""".stripMargin
     )
     val dumped: String = render(xml)
-    assert(xml.qName == "chapter", dumped)
+    assert(xml.isNamed("chapter"), dumped)
     assert(title.exists(_.getText.contains("Chapter")), dumped)
     val sections: Seq[Xml.Element] = xml.gather(el => Option.when(Section.is(el))(el)).toSeq
     assert(sections.size == 1, dumped)
@@ -235,7 +235,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("A note"), dumped)
     val ids: Seq[String] = Footnote.linkIds(xml).toSeq
     assert(ids == Seq("fn1", "fn1"), dumped)
-    val leftover: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "footnote")(el)).toSeq
+    val leftover: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("footnote"))(el)).toSeq
     assert(leftover.isEmpty, dumped)
   }
 
@@ -294,7 +294,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("""class="language-scala""""), dumped)
     assert(dumped.contains("""class="language-java""""), dumped)
     assert(dumped.contains("<pre"), dumped)
-    assert(xml.gather(el => Option.when(el.qName == "literal")(el)).isEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.isNamed("literal"))(el)).isEmpty, dumped)
   }
 
   test("blockquote with attribution becomes quote IR; inline quote stays q") {

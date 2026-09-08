@@ -9,7 +9,7 @@ object Aside:
   private object TitleClass extends CssClass("aside-title")
 
   def is(element: Xml.Element): Boolean =
-    element.qName == "aside" && element.has(Class)
+    element.isNamed("aside") && element.has(Class)
 
   def isTitle(element: Xml.Element): Boolean = element.has(TitleClass)
 
@@ -22,6 +22,6 @@ object Aside:
       .setChildren(titleElement.toSeq ++ body.filterNot(_.isWhitespace))
 
   def normalize(element: Xml.Element): Xml.Element =
-    if element.qName != "aside" || is(element)
+    if !element.isNamed("aside") || is(element)
     then element
     else element.add(Class)

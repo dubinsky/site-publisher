@@ -43,7 +43,7 @@ object MarkdownWikiBlock:
       if !changed then (element, false) else (element.setChildren(acc), true)
 
   private def standaloneBlockId(element: Xml.Element): Option[String] =
-    if element.qName != "p" || element.getChildren.exists(_.asElement.isDefined) then None
+    if !element.isNamed("p") || element.getChildren.exists(_.asElement.isDefined) then None
     else blockIdIn(element.getText.trim).collect:
       case (before, id) if before.isEmpty => id
 
@@ -53,6 +53,6 @@ object MarkdownWikiBlock:
       Option.unless(before.nonEmpty && !Character.isWhitespace(before.last))((before, id))
 
   private def isStructuredBlock(element: Xml.Element): Boolean =
-    element.qName match
+    element.getName.qName match
       case "ul" | "ol" | "dl" | "table" | "pre" | "blockquote" | "p" => true
       case _ => false

@@ -28,7 +28,7 @@ final class PdfEmbedSpec extends AnyFunSuite:
     assert(dumped.contains("""class="pdf-embed-link""""), dumped)
     assert(dumped.contains("Open PDF: Handout"), dumped)
     assert(dumped.contains("--pdf-embed-height: 480px"), dumped)
-    val objects: Seq[Xml.Element] = xml.gather(el => Option.when(el.qName == "object")(el)).toSeq
+    val objects: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("object"))(el)).toSeq
     assert(objects.size == 1, dumped)
     assert(objects.head.gather(el => Option.when(el.isA)(el)).nonEmpty, dumped)
   }

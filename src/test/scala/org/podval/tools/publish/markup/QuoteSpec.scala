@@ -277,7 +277,7 @@ final class QuoteSpec extends AnyFunSuite:
     assert(dumped.contains("<cite"), dumped)
     assert(dumped.contains("Jefferson"), dumped)
     assert(dumped.contains("Papers"), dumped)
-    assert(xml.gather(el => Option.when(el.qName == "cit")(el)).isEmpty, dumped)
+    assert(xml.gather(el => Option.when(el.isNamed("cit"))(el)).isEmpty, dumped)
     assert(!dumped.contains("<quote"), dumped)
     assert(!dumped.contains("<bibl"), dumped)
   }

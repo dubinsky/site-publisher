@@ -334,7 +334,7 @@ final class Pages(site: Site):
           message = "Reading to disambiguate XML dialect",
           firstReading = true,
         )
-        val markup: Option[Markup] = Markup.forElement(xml.qName)
+        val markup: Option[Markup] = Markup.forElement(xml.getName.qName)
         // TODO error if unknown XML dialect
         // TODO from Grok:
         //- Description: Unknown XML root element uses `markup.get`, throwing `NoSuchElementException` instead of a `PageError`. A stray or unsupported `.xml` file aborts the whole build with an opaque stack trace rather than a path-scoped diagnostic.

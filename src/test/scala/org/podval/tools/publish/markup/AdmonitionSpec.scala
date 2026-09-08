@@ -88,7 +88,7 @@ final class AdmonitionSpec extends AnyFunSuite:
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = admonitions(xml)
     assert(found.size == 1, dumped)
-    assert(found.head.qName == "details", dumped)
+    assert(found.head.getName.qName == "details", dumped)
     assert(found.head.get("open").isEmpty, dumped)
     assert(found.head.get(Admonition.TypeAttr).contains("faq"), dumped)
     assert(dumped.contains("<summary"), dumped)

@@ -9,10 +9,10 @@ object Video:
   object EmbedClass extends CssClass("video-embed")
 
   def is(element: Xml.Element): Boolean =
-    element.qName == "video" && element.has(Class)
+    element.isNamed("video") && element.has(Class)
 
   def isEmbed(element: Xml.Element): Boolean =
-    element.qName == "iframe" && element.has(EmbedClass)
+    element.isNamed("iframe") && element.has(EmbedClass)
 
   def make(src: String, label: String): Xml.Element =
     val href: String = src
@@ -26,7 +26,7 @@ object Video:
       .setChildren(Seq(openLink(href, text)))
 
   def normalize(element: Xml.Element): Xml.Element =
-    if element.qName == "video" then normalizeLocal(element)
+    if element.isNamed("video") then normalizeLocal(element)
     else if isRemotePlayer(element) then
       if isEmbed(element) then element else element.add(EmbedClass)
     else element
@@ -47,7 +47,7 @@ object Video:
       withControls.setChildren(Seq(openLink(src.get, label)))
 
   private def isRemotePlayer(element: Xml.Element): Boolean =
-    element.qName == "iframe" && element.get(XmlAttribute.Src).exists: src =>
+    element.isNamed("iframe") && element.get(XmlAttribute.Src).exists: src =>
       val lower: String = src.toLowerCase
       lower.contains("youtube.com/embed") ||
       lower.contains("youtube-nocookie.com/embed") ||

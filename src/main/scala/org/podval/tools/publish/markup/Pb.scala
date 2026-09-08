@@ -34,7 +34,7 @@ object Pb:
   def harvest(xml: Xml.Element): Seq[Pb] =
     xml.gather(
       el =>
-        if el.localName != "pb" then None
+        if !el.isNamed("pb") then None
         else el.get("n").map(_.trim).filter(_.nonEmpty).map: n =>
           Pb(
             n,

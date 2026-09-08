@@ -17,8 +17,7 @@ object TeiMarkup extends Markup(
     Set("TEI", "store", "collection", "entityLists") ++ EntityKind.values.map(_.element).toSet
 
   def isStoreRoot(element: Xml.Element): Boolean =
-    val name: String = element.localName
-    name == "store" || name == "collection"
+    element.isNamed("store") || element.isNamed("collection")
 
   override def xmlContent(content: String, sourceFile: File): String = content
 
@@ -60,7 +59,7 @@ object TeiMarkup extends Markup(
         result = convertFigure(result)
         result = convertPb(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
-        if result.qName != "pre" then
+        if !result.isNamed("pre") then
           result = result.setChildren(result.getChildren.convertElements(convertCode))
         result,
       stopAtCode = false
@@ -72,12 +71,12 @@ object TeiMarkup extends Markup(
     tei2Html.is(element, XmlElement.Title)
 
   private def documentTitle(root: Xml.Element): Option[Xml.Element] =
-    root.qName match
+    root.getName.qName match
       case "TEI" =>
         pickTitle(
-          root.getChildren.flatMap(_.asElement).filter(_.qName == "teiHeader")
-            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.qName == "fileDesc"))
-            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.qName == "titleStmt"))
+          root.getChildren.flatMap(_.asElement).filter(_.isNamed("teiHeader"))
+            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.isNamed("fileDesc")))
+            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.isNamed("titleStmt")))
             .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
         )
       case "store" | "collection" | "entityLists" =>
@@ -108,7 +107,7 @@ object TeiMarkup extends Markup(
 
   private def convertSpecial(element: Xml.Element): Xml.Element =
     val stripped: Xml.Element = dropIncludes(element)
-    stripped.qName match
+    stripped.getName.qName match
       case "row" =>
         stripped.renameKeepingClass("tr")
 
@@ -155,7 +154,7 @@ object TeiMarkup extends Markup(
     )
     Footnote.finish(converted)
 
-  private def convertStoreChrome(element: Xml.Element): Xml.Element = element.localName match
+  private def convertStoreChrome(element: Xml.Element): Xml.Element = element.getName.localName match
     case "store" | "collection" => element.setChildren(Seq.empty)
     case _ => element
 
@@ -172,7 +171,7 @@ object TeiMarkup extends Markup(
 
   // After Xml2Html so `a.pb` / icon `class` is not prefixed to `tei-class`.
   private def convertPb(element: Xml.Element): Xml.Element =
-    if element.localName != "pb" then element
+    if !element.isNamed("pb") then element
     else
       val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
       Pb.anchor(n)
@@ -180,7 +179,7 @@ object TeiMarkup extends Markup(
   // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
   // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.
   private def convertFigure(element: Xml.Element): Xml.Element =
-    if element.qName != "figure" || Figure.is(element) then element
+    if !element.isNamed("figure") || Figure.is(element) then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val heads: Xml.Nodes = children.filter(isTeiCaption)
@@ -197,13 +196,13 @@ object TeiMarkup extends Markup(
     node.asElement.exists(tei2Html.is(_, XmlElement.Head))
 
   private def isFigDesc(node: Xml.Node): Boolean =
-    node.asElement.exists(el => el.qName.equalsIgnoreCase("figDesc"))
+    node.asElement.exists(el => el.getName.qName.equalsIgnoreCase("figDesc"))
 
   // Quote in TEI: <quote>, or <cit> grouping quote/q with bibl/biblStruct/ref.
   // Convert after Xml2Html so Quote IR classes are not prefixed to tei-class.
   // Bare <q> stays HTML <q> (inline). Do not invent attribution from @who/@source.
   private def convertQuote(element: Xml.Element): Xml.Element =
-    element.qName match
+    element.getName.qName match
       case "cit" => convertCit(element)
       case "quote" => convertBareQuote(element)
       case _ => element
@@ -223,9 +222,9 @@ object TeiMarkup extends Markup(
   // listBibl in teiHeader / fileDesc is catalogue metadata, not the document bibliography.
   // Identity of the list element is not stable across transform copies; skip by entry xml:id.
   private def headerListBiblEntryIds(xml: Xml.Element): Set[String] =
-    xml.gather(el => Option.when(el.qName == "teiHeader")(el), stopAtCode = false)
+    xml.gather(el => Option.when(el.isNamed("teiHeader"))(el), stopAtCode = false)
       .flatMap(header =>
-        header.gather(el => Option.when(el.qName == "listBibl")(el), stopAtCode = false)
+        header.gather(el => Option.when(el.isNamed("listBibl"))(el), stopAtCode = false)
       )
       .flatMap(entryIds)
       .toSet
@@ -236,13 +235,13 @@ object TeiMarkup extends Markup(
       .flatMap(xmlId)
 
   private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] =
-    xml.gather(el => Option.when(el.qName == "listBibl")(el), stopAtCode = false)
+    xml.gather(el => Option.when(el.isNamed("listBibl"))(el), stopAtCode = false)
       .flatMap(entryIds)
       .filterNot(headerBiblIds.contains)
       .toSet
 
   private def convertListBibl(element: Xml.Element, headerBiblIds: Set[String]): Xml.Element =
-    if element.qName != "listBibl" || BibliographyItem.isList(element) then element
+    if !element.isNamed("listBibl") || BibliographyItem.isList(element) then element
     else if entryIds(element).exists(headerBiblIds.contains) then element
     else
       val children: Xml.Nodes = element.getChildren.map: node =>
@@ -255,7 +254,7 @@ object TeiMarkup extends Markup(
       element.add(Citation.ListClass).setChildren(children)
 
   private def isBibliographyEntry(element: Xml.Element): Boolean =
-    val name: String = element.qName
+    val name: String = element.getName.qName
     name == "bibl" || name == "biblStruct" || name == "biblFull"
 
   private def fillEmptyPointer(element: Xml.Element, biblIds: Set[String]): Xml.Element =
@@ -314,7 +313,7 @@ object TeiMarkup extends Markup(
 
   // Empty `div type="bibliography"` (or reserved `class="bibliography"`) is the citeproc placeholder.
   private def convertBibliographyPlaceholder(element: Xml.Element): Xml.Element =
-    if Citation.isList(element) || !element.qName.equalsIgnoreCase("div") then element
+    if Citation.isList(element) || !element.getName.qName.equalsIgnoreCase("div") then element
     else if !isTeiBibliographyPlaceholder(element) then element
     else Citation.listPlaceholder.setId(xmlId(element))
 
@@ -331,24 +330,24 @@ object TeiMarkup extends Markup(
     Quote.make(None, bibl.flatMap(asAttribution), body).setId(xmlId(element))
 
   private def isQuoted(node: Xml.Node): Boolean =
-    node.asElement.exists(el => el.qName == "quote" || el.qName == "q")
+    node.asElement.exists(el => el.isNamed("quote") || el.isNamed("q"))
 
   private def isBibl(node: Xml.Node): Boolean =
     node.asElement.exists(el =>
-      el.qName == "bibl" || el.qName == "biblStruct" || el.qName == "listBibl"
+      el.isNamed("bibl") || el.isNamed("biblStruct") || el.isNamed("listBibl")
     )
 
   private def isCitAttribution(node: Xml.Node): Boolean =
     isBibl(node) || node.asElement.exists(el =>
-      el.qName == "ref" || el.qName == "ptr" || el.isA
+      el.isNamed("ref") || el.isNamed("ptr") || el.isA
     )
 
   private def unwrapQuoted(node: Xml.Node): Xml.Nodes =
-    node.asElement.filter(el => el.qName == "quote" || el.qName == "q")
+    node.asElement.filter(el => el.isNamed("quote") || el.isNamed("q"))
       .fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace))
 
   private def asAttribution(node: Xml.Node): Xml.Nodes =
-    node.asElement.filter(el => el.qName == "bibl" || el.qName == "biblStruct") match
+    node.asElement.filter(el => el.isNamed("bibl") || el.isNamed("biblStruct")) match
       case Some(el) =>
         Seq(Xml.element("cite").setChildren(el.getChildren.filterNot(_.isWhitespace)))
       case None =>
@@ -358,7 +357,7 @@ object TeiMarkup extends Markup(
   // Convert after Xml2Html so Glossary IR classes are not prefixed to tei-class.
   private def convertGlossary(element: Xml.Element): Option[Xml.Element] =
     val isGlossList: Boolean =
-      element.qName == "list" &&
+      element.isNamed("list") &&
       element.get(XmlAttribute.Type).exists(t => t == "gloss" || t == "glossary")
     if !isGlossList then None
     else Some:
@@ -387,10 +386,10 @@ object TeiMarkup extends Markup(
 
     nodes.foreach: node =>
       node.asElement match
-        case Some(label) if label.qName == "label" =>
+        case Some(label) if label.isNamed("label") =>
           pendingLabel.foreach(emit(_, None))
           pendingLabel = Some(label)
-        case Some(item) if item.qName == "item" =>
+        case Some(item) if item.isNamed("item") =>
           pendingLabel match
             case Some(label) =>
               emit(label, Some(item))
@@ -414,7 +413,7 @@ object TeiMarkup extends Markup(
   // Inline stays <code class="language-…">; a newline means a block, wrapped in <pre>.
   // Do not convert <eg> / <egXML>.
   private def convertCode(element: Xml.Element): Option[Xml.Nodes] =
-    if element.qName != "code" then None
+    if !element.isNamed("code") then None
     else
       val lang: Option[String] =
         tei2Html.get(element, XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty)
@@ -431,7 +430,7 @@ object TeiMarkup extends Markup(
   // <note place="end" n="3">Footnote body</note>
   // TODO do not ignore n?
   private def convertFootnote(element: Xml.Element, correlationIds: IdGenerator): Option[Xml.Nodes] =
-    val isFootnote: Boolean = element.qName == "note" && element.get("place").contains("end")
+    val isFootnote: Boolean = element.isNamed("note") && element.get("place").contains("end")
     if !isFootnote then None else Some:
       val correlationId = correlationIds.generate()
       Seq(

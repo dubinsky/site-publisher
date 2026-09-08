@@ -34,5 +34,5 @@ object EntityLists:
       .derive
 
   def harvest(xml: Xml.Element): Option[Index] =
-    Option.when(xml.localName == "entityLists"):
+    Option.when(xml.isNamed("entityLists")):
       Index.codec.decode(xml).fold(err => throw err, identity)
