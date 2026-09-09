@@ -172,23 +172,16 @@ final class StoreContent(
 
   def bind(
     page: MarkupPage,
-    findBySource: Path => Option[Page],
-    isAuthoredDirectory: Seq[String] => Boolean
-  ): (List[Page], Set[Seq[String]]) =
+    findBySource: Path => Option[Page]
+  ): List[Page] =
     val sourcePath: Path = page.sourcePath.get
-    val indexed: Seq[String] = sourcePath.path
-    val children: List[Page] = hrefs.toList.flatMap: href =>
+    hrefs.toList.flatMap: href =>
       findBySource(sourcePath.resolveFrom(href)) match
         case None =>
           page.site.error(sourcePath, PageError.Unresolved, s"unresolved store include '$href'")
           None
         case Some(child) =>
           Some(child)
-    val hops: Set[Seq[String]] =
-      hrefs.flatMap(href =>
-        StoreContent.hopDirectories(indexed, sourcePath.resolveFrom(href).path, isAuthoredDirectory)
-      ).toSet
-    (children, hops)
 
   def reportUnlisted(page: MarkupPage, allPages: Seq[Page]): Unit =
     val sourcePath: Path = page.sourcePath.get
@@ -208,15 +201,16 @@ object StoreContent:
   def parse(xml: Xml.Element): StoreContent =
     new StoreContent(StoreIndex(xml).get)
 
-  private def hopDirectories(
+  def selectorHops(
     indexed: Seq[String],
-    target: Seq[String],
+    selector: Option[String],
+    childSources: Seq[Seq[String]],
     isAuthoredDirectory: Seq[String] => Boolean
   ): Set[Seq[String]] =
-    if !target.startsWith(indexed) then Set.empty
-    else
-      val between: Seq[String] = target.drop(indexed.length).dropRight(1)
-      between.indices.map(i => indexed ++ between.take(i + 1)).toSet.filterNot(isAuthoredDirectory)
+    selector.toSeq.flatMap: sel =>
+      val hop: Seq[String] = indexed :+ sel
+      Option.when(childSources.exists(_.startsWith(hop)) && !isAuthoredDirectory(hop))(hop)
+    .toSet
 
   private def isUnlisted(
     extraSource: Path,

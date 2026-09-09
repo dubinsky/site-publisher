@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name, Names}
-import org.podval.store.{By, Store, Stores}
+import org.podval.store.{Alias as StoreAlias, By, Store, Stores}
 import org.podval.tools.publish.markup.StoreIndex
 
 /** `org.podval.store` view of TEI `store`/`collection` pages after `StoreContent.bind`. */
@@ -12,6 +12,18 @@ object StoreTree:
   def namesOf(page: Page): Names =
     val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names.flatMap(toName))
     if fromIndex.nonEmpty then Names(fromIndex) else Names(page.titleFromPath)
+
+  def pageAt(tree: Stores[?], url: String): Option[Page] =
+    try pageOf(tree.resolve(url).last)
+    catch case _: IllegalArgumentException => None
+
+  def pageOf(store: Store): Option[Page] = store match
+    case node: PageStore => Some(node.page)
+    case leaf: PageLeaf => Some(leaf.page)
+    case _ => None
+
+  private def englishName(store: Store): String =
+    store.names.doFind(Language.English.toSpec).name
 
   private def toName(name: StoreIndex.Name): Option[Name] =
     Option.when(name.n.nonEmpty):
@@ -32,10 +44,15 @@ object StoreTree:
       val content: StoreContent = page.store.get
       val kids: Seq[Store] = content.boundChildren.map: child =>
         nodes.getOrElse(child, PageLeaf(child))
+      val aliases: Seq[Store] = content.boundChildren.flatMap: child =>
+        child.store.flatMap(_.alias).map: aliasName =>
+          val node: Store = nodes.getOrElse(child, PageLeaf(child))
+          val to: Seq[String] = content.selector.toSeq :+ englishName(node)
+          StoreAlias(Names(aliasName), to)
       content.selector match
-        case Some(selector) => Seq(By(selector, kids))
-        case None if content.isCollection => Seq(By("document", kids))
-        case None => kids
+        case Some(selector) => Seq(By(selector, kids)) ++ aliases
+        case None if content.isCollection => Seq(By("document", kids)) ++ aliases
+        case None => kids ++ aliases
 
   final class PageStore(
     val page: Page,

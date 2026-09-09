@@ -105,6 +105,11 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(derzhavin.structureNames == Seq("archive", "books", "book", "Державин"))
       val rgada = root.store.flatMap(_.boundChildren.find(_.store.flatMap(_.alias).contains("rgada")))
       assert(rgada.isDefined)
+      assert(tree.resolve("/rgada").last.names.hasName("РГАДА"))
+      val booksPage = StoreTree.pageOf(tree.resolve("/books").last).get
+      assert(site.pages.rewriteRequest(Path.fromHref("/books")).contains(booksPage.path))
+      val derzhavinPage = StoreTree.pageOf(derzhavin.last).get
+      assert(site.pages.rewriteRequest(Path.fromHref("/books/Державин")).contains(derzhavinPage.path))
   }
 
   test("writes archive-collections tree and archive-index flat list") {

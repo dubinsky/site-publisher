@@ -5,7 +5,8 @@ import org.podval.tools.publish.page.CollectionIndex
 import org.podval.tools.publish.util.Files
 import java.io.File
 
-/** Alias prefix table for Cloudflare Worker / inspection. Same map as `Pages.rewriteRequest`. */
+/** Alias prefix table for Cloudflare Worker / inspection.
+  * Prefix rewrites match `Pages.findViaAlias`; `Pages.rewriteRequest` also tries store-tree resolve. */
 object CollectionAliases:
   val fileName: String = "collection-aliases.json"
 

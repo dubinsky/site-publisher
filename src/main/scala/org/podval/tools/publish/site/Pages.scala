@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, Link, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage, EmbeddedAsset,
   EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource, PdfPage,
-  SimpleMarkupPage, StoreIndexPage, StoreIndexes, StoreTree}
+  SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -186,9 +186,11 @@ final class Pages(site: Site):
     hits.minByOption(hit => (hit.path.length, hit.toString)).getOrElse(path)
 
   /** Map an inbound URL onto the written file path (Worker / local `serve()`).
-    * Includes collection-alias prefix and collector `/alias/facsimile/P`. */
+    * Collection-alias prefix, collector `/alias/facsimile/P`, then store-tree `resolve`
+    * (optional By hops) from each root TEI store. */
   def rewriteRequest(request: Path): Option[Path] =
     findViaAlias(request).map(_.real.path)
+      .orElse(findViaStoreTree(request).map(_.real.path))
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
@@ -207,6 +209,15 @@ final class Pages(site: Site):
   private var selectorHopsVar: Set[Seq[String]] = Set.empty
 
   def isSelectorHop(directory: Seq[String]): Boolean = selectorHopsVar.contains(directory)
+
+  private def findViaStoreTree(request: Path): Option[Page] =
+    val url: String = "/" + request.withoutHtml.path.mkString("/")
+    if request.withoutHtml.path.isEmpty then None
+    else
+      pages
+        .filter(StoreIndexes.isRootStore)
+        .flatMap(page => page.store.flatMap(_.tree).flatMap(tree => StoreTree.pageAt(tree, url)))
+        .headOption
 
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
@@ -375,14 +386,19 @@ final class Pages(site: Site):
       case page: MarkupPage =>
         page.store.foreach: store =>
           if store.hrefs.nonEmpty then
-            val (children, pageHops) = store.bind(page, findBySource, isAuthoredDirectory)
+            val children: List[Page] = store.bind(page, findBySource)
             val listed: List[Page] = CollectionIndex.listingChildren(store, children)
             store.setBoundChildren(listed)
             page match
               case directory: DirectoryPage =>
                 directory.setStoreChildren(listed)
               case _ =>
-            hops = hops ++ pageHops
+            hops = hops ++ StoreContent.selectorHops(
+              page.sourcePath.get.path,
+              store.selector,
+              listed.flatMap(_.sourcePath.map(_.path)),
+              isAuthoredDirectory
+            )
           else if store.isCollection then
             page match
               case directory: DirectoryPage =>

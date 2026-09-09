@@ -132,7 +132,8 @@ object PageHeader:
   private[page] def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
-      parentIndex.flatMap(_.selector)
+      parentIndex.flatMap(_.by).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
+        .orElse(parentIndex.flatMap(_.selector))
         .orElse:
           Option.when(
             parentIndex.exists(_.isCollection) && page.store.isEmpty
