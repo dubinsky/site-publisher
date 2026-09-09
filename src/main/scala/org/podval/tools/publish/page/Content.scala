@@ -27,6 +27,7 @@ sealed abstract class Content:
 
   def asStore: Option[StoreContent] = None
   def asEntityLists: Option[EntityListsContent] = None
+  def tree: Option[Stores[?]] = None
 
   def markupBody(
     pageContent: PageContent,
@@ -140,6 +141,7 @@ final class StoreContent(
   def body: Option[Xml.Element] = index.body
   def isCollection: Boolean = index.isCollection
   def displayName: Option[String] = index.displayName
+  /** Harvested TEI `@alias`; wrap emits `org.podval.store.Alias`. */
   def alias: Option[String] = index.alias
   def parts: Seq[CollectionPart] = index.parts
   def pageType: PageType = index.pageType
@@ -150,7 +152,7 @@ final class StoreContent(
   def boundChildren: List[Page] = boundChildrenVar
 
   private var treeVar: Option[Stores[?]] = None
-  def tree: Option[Stores[?]] = treeVar
+  override def tree: Option[Stores[?]] = treeVar
   private[page] def setTree(store: Stores[?]): Unit = treeVar = Some(store)
   def by: Option[By[?]] = tree.flatMap(_.stores.collectFirst { case by: By[?] => by })
 
@@ -232,6 +234,10 @@ final class EntityListsContent(
   override def xml: Xml.Element = Xml.element("entityLists")
   override def suppressDirectoryListing: Boolean = true
   override def asEntityLists: Option[EntityListsContent] = Some(this)
+
+  private var treeVar: Option[Stores[?]] = None
+  override def tree: Option[Stores[?]] = treeVar
+  private[page] def setTree(store: Stores[?]): Unit = treeVar = Some(store)
 
   override def markupBody(
     pageContent: PageContent,

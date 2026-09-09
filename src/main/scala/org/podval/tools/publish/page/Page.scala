@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.store.Stores
 import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Http, Icon}
@@ -80,6 +81,7 @@ abstract class Page(
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
   final def doc: Option[Content] = content.map(_.doc)
   final def store: Option[StoreContent] = doc.flatMap(_.asStore)
+  final def storeTree: Option[Stores[?]] = doc.flatMap(_.tree)
   
   protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 

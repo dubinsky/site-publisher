@@ -4,14 +4,27 @@ import org.podval.metadata.{Language, Name, Names}
 import org.podval.store.{Alias as StoreAlias, By, Store, Stores}
 import org.podval.tools.publish.markup.StoreIndex
 
-/** `org.podval.store` view of TEI `store`/`collection` pages after `StoreContent.bind`. */
+/** `org.podval.store` view of TEI `store`/`collection` pages after `StoreContent.bind`,
+  * and of `entityLists` after `Pages.resolveEntityLists`. */
 object StoreTree:
   def attach(pages: Seq[Page]): Unit =
     StoreForest(pages).attach()
 
+  def attachEntityLists(pages: Seq[Page]): Unit =
+    val listPages: Seq[EntityListPage] = pages.collect { case page: EntityListPage => page }
+    pages.foreach:
+      case directory: DirectoryPage =>
+        directory.doc.flatMap(_.asEntityLists).foreach: lists =>
+          val dir: Seq[String] = directory.path.path.init
+          val byId: Map[String, EntityListPage] =
+            listPages.filter(_.path.path.init == dir).map(page => page.spec.id -> page).toMap
+          val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
+          lists.setTree(PageStore(directory, () => Seq(By("names", ordered.map(listStore)))))
+      case _ =>
+
   def namesOf(page: Page): Names =
     val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names.flatMap(toName))
-    if fromIndex.nonEmpty then Names(fromIndex) else Names(page.titleFromPath)
+    if fromIndex.nonEmpty then Names(fromIndex) else Names(nameList(page))
 
   def pageAt(tree: Stores[?], url: String): Option[Page] =
     try pageOf(tree.resolve(url).last)
@@ -22,8 +35,63 @@ object StoreTree:
     case leaf: PageLeaf => Some(leaf.page)
     case _ => None
 
+  def resolveRoots(pages: Seq[Page]): Seq[Stores[?]] =
+    pages.filter(StoreIndexes.isRootStore).flatMap(_.storeTree) ++
+      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree))
+
+  /** TEI `@alias` as wrapped `org.podval.store.Alias`, plus unparented collections
+    * that have `@alias` but no parent store to hang it on. */
+  def aliasPages(pages: Seq[Page]): Seq[(String, Page)] =
+    aliasRoots(pages).flatMap(aliasesFrom).distinct
+
+  private def aliasRoots(pages: Seq[Page]): Seq[Stores[?]] =
+    val listed: Set[Page] = pages.flatMap(_.store.toSeq.flatMap(_.boundChildren)).toSet
+    val unparented: Seq[Stores[?]] = pages
+      .filter(page => page.store.exists(_.alias.isDefined) && !listed.contains(page))
+      .flatMap(_.storeTree)
+    pages.filter(StoreIndexes.isRootStore).flatMap(_.storeTree) ++
+      Option.when(unparented.nonEmpty)(unparentedAliasRoot(unparented)).toSeq
+
+  private def unparentedAliasRoot(nodes: Seq[Stores[?]]): Stores[Store] =
+    val aliases: Seq[Store] = nodes.flatMap: node =>
+      pageOf(node).flatMap(_.store).flatMap(_.alias).map: name =>
+        StoreAlias(Names(name), Seq(englishName(node)))
+    new Stores[Store]:
+      override def names: Names = Names("site")
+      override def stores: Seq[Store] = nodes ++ aliases
+
+  private def aliasesFrom(tree: Stores[?]): Seq[(String, Page)] =
+    collectAliases(tree).flatMap: alias =>
+      pageAt(tree, "/" + alias.names.name).map(page => alias.names.name -> page)
+
+  private def collectAliases(store: Store): Seq[StoreAlias] = store match
+    case alias: StoreAlias => Seq(alias)
+    case stores: Stores[?] => stores.stores.flatMap(collectAliases)
+    case _ => Seq.empty
+
+  private def listStore(list: EntityListPage): PageStore =
+    PageStore(list, () => Seq(By("name", list.members.map(PageLeaf(_)))))
+
   private def englishName(store: Store): String =
     store.names.doFind(Language.English.toSpec).name
+
+  private def nameList(page: Page): Seq[Name] =
+    val pairs: Seq[(String, Language.Spec)] = page match
+      case list: EntityListPage =>
+        Seq(
+          list.spec.id -> Language.English.toSpec,
+          list.spec.title -> Language.Russian.toSpec
+        )
+      case _ =>
+        val fileName: String = page.sourcePath.map(_.fileName).getOrElse(page.titleFromPath)
+        Seq(
+          fileName -> Language.Spec.empty,
+          page.entityDisplayName.getOrElse("") -> Language.Spec.empty
+        )
+    val unique: Seq[(String, Language.Spec)] =
+      pairs.map((n, spec) => n.trim -> spec).filter(_._1.nonEmpty).distinctBy(_._1)
+    if unique.isEmpty then Seq(Name(page.titleFromPath, Language.Spec.empty))
+    else unique.map((n, spec) => Name(n, spec))
 
   private def toName(name: StoreIndex.Name): Option[Name] =
     Option.when(name.n.nonEmpty):

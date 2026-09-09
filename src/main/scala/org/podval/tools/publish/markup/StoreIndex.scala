@@ -2,13 +2,9 @@ package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
-/** Ordered children of a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
-  * Harvested from the raw tree (includes are not expanded). Names, title, and abstract are
-  * header chrome (`PageHeader.collectorPageHeader`), not body content. Collection `part`s and
-  * `pageType` feed `CollectionIndex`. */
-// TODO as storyfication progresses, maybe something along the lines of the old OpenTorah's collector's
-// Hierarchy/ByHierarchy/Hierarchical/Collection will replace StoreIndex with a boolean discriminating between
-// collection and a store on the way to collection...
+/** Harvest DTO for a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
+  * Bind, wrap (`StoreTree`), and header chrome read this; runtime structure and aliases
+  * are `org.podval.store`. Collection `part`s and `pageType` feed `CollectionIndex`. */
 final class StoreIndex(
   val selector: Option[String],
   val hrefs: Seq[String],

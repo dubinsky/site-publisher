@@ -110,6 +110,9 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(site.pages.rewriteRequest(Path.fromHref("/books")).contains(booksPage.path))
       val derzhavinPage = StoreTree.pageOf(derzhavin.last).get
       assert(site.pages.rewriteRequest(Path.fromHref("/books/Державин")).contains(derzhavinPage.path))
+      val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
+      assert(table.exists(_.from == Seq("rgada")), table.map(_.from).toString)
+      assert(table.exists(_.from == Seq("collections")), table.map(_.from).toString)
   }
 
   test("writes archive-collections tree and archive-index flat list") {

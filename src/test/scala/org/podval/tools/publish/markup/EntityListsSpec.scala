@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.EntityLists as EntityListHtml
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, EntityLists as EntityListHtml, StoreTree}
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -157,6 +157,33 @@ final class EntityListsSpec extends AnyFunSuite:
       val page: String = html(target, "doc.html")
       assert(page.contains("Not a directory list"), page)
       assert(!page.contains("Залман Борухович"), page)
+  }
+
+  test("wraps entity lists as By names/name") {
+    withSite(): (site, _) =>
+      val directory: DirectoryPage = site.pages.pages.collect:
+        case page: DirectoryPage if page.doc.exists(_.asEntityLists.isDefined) => page
+      .head
+      val tree = directory.storeTree.get
+      val jews = tree.resolve("/jews")
+      assert(jews.last.names.hasName("jews"))
+      assert(jews.last.names.hasName("Жиды"))
+      assert(jews.structureNames == Seq("names", "jews"), jews.structureNames)
+      assert(tree.resolve("/names/jews").structureNames == Seq("names", "jews"))
+      val jewsPage = StoreTree.pageOf(jews.last).get
+      assert(jewsPage.isInstanceOf[EntityListPage])
+      assert(site.pages.rewriteRequest(Path.fromHref("/jews")).contains(jewsPage.path))
+      assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).contains(jewsPage.path))
+      val zalman = tree.resolve("/jews/alter-rebbe")
+      assert(zalman.last.names.hasName("alter-rebbe"))
+      assert(zalman.last.names.hasName("Залман Борухович"))
+      assert(zalman.structureNames == Seq("names", "jews", "name", "alter-rebbe"), zalman.structureNames)
+      val zalmanPage = StoreTree.pageOf(zalman.last).get
+      assert(site.pages.rewriteRequest(Path.fromHref("/jews/alter-rebbe")).contains(zalmanPage.path))
+      val vilna = tree.resolve("/places/Вильна")
+      assert(vilna.last.names.hasName("Вильна"))
+      intercept[IllegalArgumentException] { tree.resolve("/officials") }
+      intercept[IllegalArgumentException] { tree.resolve("/organizations") }
   }
 
   test("entity page keeps document backlinks and does not list the names index") {

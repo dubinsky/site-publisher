@@ -126,38 +126,8 @@ final class Pages(site: Site):
       .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
   private def installCollectionAliases(): Unit =
-    pages.foreach: page =>
-      page.store.flatMap(_.alias).foreach: name =>
-        val short: Path = Path.fromHref(name)
-        val source: Path = page.sourcePath.getOrElse(page.path)
-        if short.path.isEmpty then
-          site.error(source, PageError.Unresolved, s"collection alias is empty")
-        else
-          val key: Seq[String] = short.path
-          aliasByPrefix.get(key) match
-            case Some(existing) if existing.real == page.real =>
-              ()
-            case Some(existing) =>
-              site.error(
-                source,
-                PageError.Duplicate,
-                s"collection alias '$name' collides with $existing"
-              )
-            case None =>
-              get(short.html) match
-                case Some(other) if other.real == page.real =>
-                  aliasByPrefix = aliasByPrefix.updated(key, other match
-                    case alias: Alias => alias
-                    case _ => new Alias(site, page.real, short.html)
-                  )
-                case Some(other) =>
-                  site.error(
-                    source,
-                    PageError.Duplicate,
-                    s"collection alias '$name' collides with $other"
-                  )
-                case None =>
-                  aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, page.real, short.html))
+    StoreTree.aliasPages(pages).foreach: (name, target) =>
+      installPrefixAlias(name, target, "collection alias")
 
   private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
 
@@ -187,7 +157,7 @@ final class Pages(site: Site):
 
   /** Map an inbound URL onto the written file path (Worker / local `serve()`).
     * Collection-alias prefix, collector `/alias/facsimile/P`, then store-tree `resolve`
-    * (optional By hops) from each root TEI store. */
+    * (optional By hops) from each root TEI store and `entityLists` tree. */
   def rewriteRequest(request: Path): Option[Path] =
     findViaAlias(request).map(_.real.path)
       .orElse(findViaStoreTree(request).map(_.real.path))
@@ -211,13 +181,13 @@ final class Pages(site: Site):
   def isSelectorHop(directory: Seq[String]): Boolean = selectorHopsVar.contains(directory)
 
   private def findViaStoreTree(request: Path): Option[Page] =
-    val url: String = "/" + request.withoutHtml.path.mkString("/")
-    if request.withoutHtml.path.isEmpty then None
+    val segs: Seq[String] = request.withoutHtml.path
+    if segs.isEmpty then None
     else
-      pages
-        .filter(StoreIndexes.isRootStore)
-        .flatMap(page => page.store.flatMap(_.tree).flatMap(tree => StoreTree.pageAt(tree, url)))
-        .headOption
+      val url: String = "/" + segs.mkString("/")
+      StoreTree.resolveRoots(pages).iterator
+        .map(tree => StoreTree.pageAt(tree, url))
+        .collectFirst { case Some(page) => page }
 
   // Note: only (implied) directories are added without sourcePath
   def getOrAddDirectory(path: Path): DirectoryPage =
@@ -437,19 +407,23 @@ final class Pages(site: Site):
       case _ =>
 
   private def installLeafAlias(name: String, target: Page): Unit =
+    installPrefixAlias(name, target, "store index alias")
+
+  private def installPrefixAlias(name: String, target: Page, what: String): Unit =
+    val source: Path = target.sourcePath.getOrElse(target.path)
     val short: Path = Path.fromHref(name)
     val key: Seq[String] = short.path
     if key.isEmpty then
-      site.error(target.path, PageError.Unresolved, s"store index alias '$name' is empty")
+      site.error(source, PageError.Unresolved, s"$what is empty")
     else
       aliasByPrefix.get(key) match
         case Some(existing) if existing.real == target.real =>
           ()
         case Some(existing) =>
           site.error(
-            target.path,
+            source,
             PageError.Duplicate,
-            s"store index alias '$name' collides with $existing"
+            s"$what '$name' collides with $existing"
           )
         case None =>
           get(short.html) match
@@ -460,9 +434,9 @@ final class Pages(site: Site):
               )
             case Some(other) =>
               site.error(
-                target.path,
+                source,
                 PageError.Duplicate,
-                s"store index alias '$name' collides with $other"
+                s"$what '$name' collides with $other"
               )
             case None =>
               aliasByPrefix = aliasByPrefix.updated(key, new Alias(site, target.real, short.html))
@@ -662,6 +636,7 @@ final class Pages(site: Site):
           listPages.foreach(add)
           listPages.foreach(_.setSiblings(listPages))
       case _ =>
+    StoreTree.attachEntityLists(pages)
 
   def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
     pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)

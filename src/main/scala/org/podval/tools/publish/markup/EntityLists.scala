@@ -4,18 +4,9 @@ import org.podval.xml.{Xml, XmlCodec}
 import zio.blocks.schema.{Modifier, Schema}
 import zio.blocks.typeid.TypeId
 
-//// TODO derive it from By (with a transparent Selector)!
-//final class EntityList(
-//  override val fromUrl: FromUrl,
-//  override val names: Names,
-//  val entityType: EntityType,
-//  val role: Option[String],
-//  val title: Title.Value,
-//) extends
-//  Stores[Entity]
-
 /** TEI `entityLists` directory index specs: kind + role buckets.
-  * Harvested from the raw tree; member lists are generated in `page.EntityLists`. */
+  * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
+  * Wrapped as `By("names")` / `By("name")` in `StoreTree.attachEntityLists`. */
 object EntityLists:
   final case class Index(
     @Modifier.config(XmlCodec.Element, "title")
