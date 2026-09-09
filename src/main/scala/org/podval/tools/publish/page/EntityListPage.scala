@@ -5,7 +5,6 @@ import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
 import Html.given
-import zio.blocks.html.*
 
 final class EntityListPage(
   site: Site,
@@ -21,12 +20,7 @@ final class EntityListPage(
 
   override protected def iconDefault: Icon = Icon.note
 
-  // TODO maybe go through PageHeader?
-  override def pageHeader: Option[Html.Element] = Some(
-    header(className := "post-header",
-      h1(className := "post-title p-name", itemProp := "name headline", title)
-    )
-  )
+  override def pageHeader: Option[Html.Element] = Some(PageHeader.of(this))
 
   override def prev: Option[Page] = siblingsVar.takeWhile(_ != this).lastOption
 

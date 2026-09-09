@@ -574,7 +574,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!File(targetDirectory, "stores/item/index.html").isFile)
     exists("stores/item/zebra.html")
     exists("stores/item/apple.html")
-    exists("stores/item/stray.html")
+    assert(!File(targetDirectory, "stores/item/stray.html").isFile)
     val zebra: String = html("stores/item/zebra.html")
     assert(zebra.contains("store-header"), zebra)
     assert(zebra.contains("""href="/stores/index.html""""), zebra)

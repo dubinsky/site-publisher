@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.store.Selector
+import org.podval.store.{By, Selector}
 import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
@@ -9,13 +9,13 @@ import Html.given
 import zio.blocks.html.*
 
 object PageHeader:
-  def of(page: FullMarkupPage): Html.Element =
+  def of(page: MarkupPage): Html.Element =
     if isCollector(page) then collectorPageHeader(page) else pageHeader(page)
 
-  private def isCollector(page: FullMarkupPage): Boolean =
-    page.store.isDefined || collectorAncestors(page).nonEmpty
+  private def isCollector(page: Page): Boolean =
+    page.store.isDefined || page.isInstanceOf[EntityListPage] || collectorAncestors(page).nonEmpty
 
-  def pageHeader(page: FullMarkupPage): Html.Element =
+  def pageHeader(page: MarkupPage): Html.Element =
     header(className := "post-header",
       postPath(page),
       h1(className := "post-title p-name", itemProp := "name headline", page.title),
@@ -31,7 +31,7 @@ object PageHeader:
     val path: Seq[Page] = if pathFull.isEmpty then pathFull else pathFull.tail
     span(className := "post-path", path.map(page => span("/", page.ref(withIcon = false))))
 
-  private def articleMeta(page: FullMarkupPage): Html.Element =
+  private def articleMeta(page: MarkupPage): Html.Element =
     div(className := "post-meta",
       join(
         join(
@@ -41,7 +41,7 @@ object PageHeader:
             timeHtml(Some("Updated:"), page.dateModified, "dt-modified", "dateModified")
           ),
           "•",
-          page.author.fold(Seq.empty): author =>
+          page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
             Seq(
               span(className := "post-authors",
                 span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
@@ -51,7 +51,7 @@ object PageHeader:
             )
         ),
         "|",
-        page.tags.map(page.site.tags.tagRef)
+        page.asFullMarkupPage.toSeq.flatMap(_.tags).map(page.site.tags.tagRef)
       )
     )
 
@@ -65,12 +65,12 @@ object PageHeader:
       label.fold(Seq.empty)(label => Seq(span(className := "meta-label", label))) ++
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
-  def collectorPageHeader(page: FullMarkupPage): Html.Element =
+  def collectorPageHeader(page: MarkupPage): Html.Element =
     collectorHeaderXml(page).to[Html.Element]
 
   /** Live collector: ancestor `<l>` lines, then this node's `<l>`, then abstract/body,
     * then this store's `by` selector label (the listing itself stays in the body). */
-  private def collectorHeaderXml(page: FullMarkupPage): Xml.Element =
+  private def collectorHeaderXml(page: MarkupPage): Xml.Element =
     val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
     val head: Xml.Element = currentHead(page)
     val index: Option[StoreContent] = page.store
@@ -106,7 +106,7 @@ object PageHeader:
       title = storeTitleInner(page)
     )
 
-  private def currentHead(page: FullMarkupPage): Xml.Element =
+  private def currentHead(page: MarkupPage): Xml.Element =
     val nameFromIndex: Option[Xml.Element] = page.store.flatMap: index =>
       index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
     val name: Xml.Nodes = nameFromIndex.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
@@ -135,6 +135,10 @@ object PageHeader:
       parentIndex.flatMap(_.by).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
         .orElse(parentIndex.flatMap(_.selector))
         .orElse:
+          parent.storeTree.flatMap(_.stores.collectFirst:
+            case by: By[?] => by.selector.names.doFind(Language.English.toSpec).name
+          )
+        .orElse:
           Option.when(
             parentIndex.exists(_.isCollection) && page.store.isEmpty
           )("document")
@@ -154,7 +158,10 @@ object PageHeader:
     selector.toLanguageString(using Language.Russian.toSpec)
 
   private[page] def pageDisplayName(page: Page): String =
-    page.store.flatMap(_.displayName).getOrElse(page.titleFromPath)
+    page.store.flatMap(_.displayName).getOrElse:
+      page match
+        case _: EntityListPage => page.title
+        case _ => page.titleFromPath
 
   private def storeTitleInner(page: Page): Xml.Nodes =
     page.store.flatMap(_.title).fold(Seq.empty[Xml.Node]): title =>
@@ -169,7 +176,7 @@ object PageHeader:
     name.lang.foreach(lang => result = result.set(XmlAttribute.Lang, lang))
     result
 
-  private def documentHeaderTable(page: FullMarkupPage): Option[Xml.Element] =
+  private def documentHeaderTable(page: MarkupPage): Option[Xml.Element] =
     val header: Option[DocumentHeader] = page.doc.flatMap(_.documentHeader)
     Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
       val meta: DocumentHeader = header.get

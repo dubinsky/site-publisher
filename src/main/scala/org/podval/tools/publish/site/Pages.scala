@@ -47,7 +47,7 @@ final class Pages(site: Site):
     automaticPages.foreach(add)
 
     // Scan the directories and add all source pages
-    scan(Seq.empty, site.sourceDirectory, None)
+    scan(Seq.empty, site.sourceDirectory, None, None)
 
     // Post listing batches after scan so `Posts.posts` is complete.
     site.posts.paged.foreach(add)
@@ -207,7 +207,8 @@ final class Pages(site: Site):
   private def scan(
     path: Seq[String],
     directory: File,
-    externalIndex: Option[ForMarkup]
+    externalIndex: Option[ForMarkup],
+    listedIn: Option[(Path, Set[Path])]
   ): Unit =
     val pathString: String = if path.isEmpty then "/" else path.mkString("/", "/", "/")
 
@@ -255,23 +256,44 @@ final class Pages(site: Site):
         case None => getOrAddDirectory(path)
         case Some(index) => addMarkup(index.markup, index.standAloneFrontMatter, path)
 
-    val directoryPageSource: Option[PageSource] = directoryPage.flatMap(_.source)
+    val listedHere: Option[(Path, Set[Path])] =
+      directoryPage.flatMap(_.sourcePath).flatMap: storeSource =>
+        directoryPage.flatMap(_.store).filter(_.hrefs.nonEmpty).map: store =>
+          (storeSource, store.hrefs.map(storeSource.resolveFrom).toSet)
+      .orElse(listedIn)
 
-    // TODO if directoryPage has structure, use that instead of file list!!!
+    def isListed(sourcePath: Path): Boolean =
+      listedHere.forall((_, listed) => listed.contains(sourcePath))
 
-    val directory2index: List[(File, Option[ForMarkup])] = directories
-      .map(directory => directory -> getForMarkup(directory.getName))
+    def coversDirectory(dirPath: Seq[String]): Boolean =
+      listedHere.forall((_, listed) => listed.exists(_.path.startsWith(dirPath)))
+
+    def notInStore(sourcePath: Path): Unit =
+      listedHere.foreach: (storeSource, _) =>
+        site.error(sourcePath, PageError.NotInStore, s"not listed in store $storeSource")
+
+    val directory2index: List[(File, Option[ForMarkup])] = directories.flatMap: child =>
+      val childPath: Seq[String] = path :+ child.getName
+      if coversDirectory(childPath) then Some(child -> getForMarkup(child.getName))
+      else
+        notInStore(Path(childPath, None))
+        None
 
     forNames.values.foreach: forName =>
-      forName.markup.foreach(forMarkup => addMarkup(forMarkup.markup, forMarkup.standAloneFrontMatter, toPath(forMarkup.markup)))
-      forName.assets.foreach(sourcePath => add(AssetWithSourcePath(site, sourcePath, toPath(sourcePath))))
+      forName.markup.foreach: forMarkup =>
+        if isListed(forMarkup.markup) then
+          addMarkup(forMarkup.markup, forMarkup.standAloneFrontMatter, toPath(forMarkup.markup))
+        else notInStore(forMarkup.markup)
+      forName.assets.foreach: sourcePath =>
+        if isListed(sourcePath) then add(AssetWithSourcePath(site, sourcePath, toPath(sourcePath)))
+        else notInStore(sourcePath)
 
-    // TODO for Store-described directories, do not scan directory listing
-    directory2index.foreach: (directory, externalIndex) =>
+    directory2index.foreach: (child, childIndex) =>
       scan(
-        path :+ directory.getName,
-        directory,
-        externalIndex
+        path :+ child.getName,
+        child,
+        childIndex,
+        listedHere
       )
 
   private def forName(paths: List[Path]): ForName =

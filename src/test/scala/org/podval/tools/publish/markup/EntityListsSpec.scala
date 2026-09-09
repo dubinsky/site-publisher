@@ -141,6 +141,8 @@ final class EntityListsSpec extends AnyFunSuite:
   test("list subpage has members of that list only") {
     withSite(): (_, target) =>
       val jews: String = html(target, "names/jews.html")
+      assert(jews.contains("store-header"), jews)
+      assert(jews.contains("имена"), jews)
       assert(jews.contains("Жиды"), jews)
       assert(jews.contains("Залман Борухович"), jews)
       assert(jews.contains("""href="/names/alter-rebbe.html""""), jews)
