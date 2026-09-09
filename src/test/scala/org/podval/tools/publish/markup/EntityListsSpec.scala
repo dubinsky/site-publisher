@@ -166,7 +166,7 @@ final class EntityListsSpec extends AnyFunSuite:
       val directory: DirectoryPage = site.pages.pages.collect:
         case page: DirectoryPage if page.doc.exists(_.asEntityLists.isDefined) => page
       .head
-      val tree = directory.storeTree.get
+      val tree = directory
       val jews = tree.resolve("/jews")
       assert(jews.last.names.hasName("jews"))
       assert(jews.last.names.hasName("Жиды"))

@@ -1,6 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.store.Stores
+import org.podval.metadata.Names
+import org.podval.store.{By, Store, Stores}
 import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Http, Icon}
@@ -13,7 +14,12 @@ import java.time.{Instant, LocalDate}
 abstract class Page(
   val site: Site,
   val path: Path
-) derives CanEqual:
+) extends Stores[Store] derives CanEqual:
+  override lazy val names: Names = StoreTree.namesOf(this)
+  private var frozenStores: Option[Seq[Store]] = None
+  override def stores: Seq[Store] = frozenStores.getOrElse(StoreTree.childrenOf(this))
+  final def freezeStores(): Unit = frozenStores = Some(StoreTree.childrenOf(this))
+  final def by: Option[By[?]] = stores.collectFirst { case by: By[?] => by }
 
   final override def equals(obj: Any): Boolean = obj.asInstanceOf[Matchable] match
     case that: Page => this.path == that.path
@@ -81,7 +87,6 @@ abstract class Page(
   final def content[A](f: PageContent => Option[A]): Option[A] = content.flatMap(f)
   final def doc: Option[Content] = content.map(_.doc)
   final def store: Option[StoreContent] = doc.flatMap(_.asStore)
-  final def storeTree: Option[Stores[?]] = doc.flatMap(_.tree)
   
   protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 

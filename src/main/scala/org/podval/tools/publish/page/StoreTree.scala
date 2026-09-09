@@ -4,54 +4,63 @@ import org.podval.metadata.{Language, Name, Names}
 import org.podval.store.{Alias as StoreAlias, By, Store, Stores}
 import org.podval.tools.publish.markup.StoreIndex
 
-/** `org.podval.store` view of TEI `store`/`collection` pages after `StoreContent.bind`,
-  * and of `entityLists` after `Pages.resolveEntityLists`. */
+/** `org.podval.store` view of pages: each `Page` is a `Stores` node. */
 object StoreTree:
-  def attach(pages: Seq[Page]): Unit =
-    StoreForest(pages).attach()
-
-  def attachEntityLists(pages: Seq[Page]): Unit =
-    val listPages: Seq[EntityListPage] = pages.collect { case page: EntityListPage => page }
-    pages.foreach:
-      case directory: DirectoryPage =>
-        directory.doc.flatMap(_.asEntityLists).foreach: lists =>
-          val dir: Seq[String] = directory.path.path.init
-          val byId: Map[String, EntityListPage] =
-            listPages.filter(_.path.path.init == dir).map(page => page.spec.id -> page).toMap
-          val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
-          lists.setTree(PageStore(directory, () => Seq(By("names", ordered.map(listStore)))))
-      case _ =>
-
   def namesOf(page: Page): Names =
     val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names.flatMap(toName))
     if fromIndex.nonEmpty then Names(fromIndex) else Names(nameList(page))
+
+  def childrenOf(page: Page): Seq[Store] =
+    page match
+      case list: EntityListPage =>
+        Seq(By("name", list.members))
+      case _ =>
+        page.store match
+          case Some(content) =>
+            val kids: Seq[Store] = content.boundChildren
+            val aliases: Seq[Store] = content.boundChildren.flatMap: child =>
+              child.store.flatMap(_.alias).map: aliasName =>
+                StoreAlias(Names(aliasName), content.selector.toSeq :+ englishName(child))
+            content.selector match
+              case Some(selector) => Seq(By(selector, kids)) ++ aliases
+              case None if content.isCollection => Seq(By("document", kids)) ++ aliases
+              case None => kids ++ aliases
+          case None =>
+            page.doc.flatMap(_.asEntityLists).map: lists =>
+              val dir: Seq[String] = page.path.path.init
+              val byId: Map[String, EntityListPage] =
+                page.site.pages.pages.collect:
+                  case p: EntityListPage if p.path.path.init == dir => p.spec.id -> p
+                .toMap
+              val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
+              Seq(By("names", ordered))
+            .getOrElse(Seq.empty)
 
   def pageAt(tree: Stores[?], url: String): Option[Page] =
     try pageOf(tree.resolve(url).last)
     catch case _: IllegalArgumentException => None
 
   def pageOf(store: Store): Option[Page] = store match
-    case node: PageStore => Some(node.page)
-    case leaf: PageLeaf => Some(leaf.page)
+    case page: Page => Some(page)
     case _ => None
 
   def resolveRoots(pages: Seq[Page], siteStore: Option[Stores[?]] = None): Seq[Stores[?]] =
-    pages.filter(StoreIndexes.isRootStore).flatMap(_.storeTree) ++
-      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree)) ++
+    pages.filter(StoreIndexes.isRootStore) ++
+      pages.filter(_.doc.exists(_.asEntityLists.isDefined)) ++
       siteStore.toSeq
 
   /** Site-level store: unparented TEI stores/collections, entity-list trees, and
     * standalone TEI `@alias`es. Nested aliases stay on their parent store. */
   def siteStore(pages: Seq[Page], siteNames: Names): Stores[Store] =
     val listed: Set[Page] = pages.flatMap(_.store.toSeq.flatMap(_.boundChildren)).toSet
-    val unparented: Seq[Stores[?]] =
-      pages.filter(page => page.store.isDefined && !listed.contains(page)).flatMap(_.storeTree)
-    val entityLists: Seq[Stores[?]] =
-      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree))
+    val unparented: Seq[Store] =
+      pages.filter(page => page.store.isDefined && !listed.contains(page))
+    val entityLists: Seq[Store] =
+      pages.filter(_.doc.exists(_.asEntityLists.isDefined))
     val aliases: Seq[Store] = unparented.flatMap: node =>
       pageOf(node).flatMap(_.store).flatMap(_.alias).map: name =>
         StoreAlias(Names(name), Seq(englishName(node)))
-    val kids: Seq[Store] = unparented.map(s => s: Store) ++ entityLists.map(s => s: Store) ++ aliases
+    val kids: Seq[Store] = unparented ++ entityLists ++ aliases
     new Stores[Store]:
       override def names: Names = siteNames
       override def stores: Seq[Store] = kids
@@ -66,9 +75,6 @@ object StoreTree:
         pageAt(stores, "/" + alias.names.name).map(page => alias.names.name -> page).toSeq
       case child: Stores[?] => aliasesIn(child)
       case _ => Seq.empty
-
-  private def listStore(list: EntityListPage): PageStore =
-    PageStore(list, () => Seq(By("name", list.members.map(PageLeaf(_)))))
 
   private def englishName(store: Store): String =
     store.names.doFind(Language.English.toSpec).name
@@ -97,35 +103,3 @@ object StoreTree:
         name.n,
         name.lang.flatMap(Language.forDefaultName).map(_.toSpec).getOrElse(Language.Spec.empty)
       )
-
-  private final class StoreForest(pages: Seq[Page]):
-    private lazy val nodes: Map[Page, PageStore] =
-      pages.flatMap(page => page.store.map(_ => page -> PageStore(page, () => childrenOf(page)))).toMap
-
-    def attach(): Unit =
-      nodes.foreach: (page, node) =>
-        page.store.foreach(_.setTree(node))
-
-    private def childrenOf(page: Page): Seq[Store] =
-      val content: StoreContent = page.store.get
-      val kids: Seq[Store] = content.boundChildren.map: child =>
-        nodes.getOrElse(child, PageLeaf(child))
-      val aliases: Seq[Store] = content.boundChildren.flatMap: child =>
-        child.store.flatMap(_.alias).map: aliasName =>
-          val node: Store = nodes.getOrElse(child, PageLeaf(child))
-          val to: Seq[String] = content.selector.toSeq :+ englishName(node)
-          StoreAlias(Names(aliasName), to)
-      content.selector match
-        case Some(selector) => Seq(By(selector, kids)) ++ aliases
-        case None if content.isCollection => Seq(By("document", kids)) ++ aliases
-        case None => kids ++ aliases
-
-  final class PageStore(
-    val page: Page,
-    kids: () => Seq[Store]
-  ) extends Stores[Store]:
-    override def names: Names = namesOf(page)
-    override lazy val stores: Seq[Store] = kids()
-
-  final class PageLeaf(val page: Page) extends Store:
-    override def names: Names = namesOf(page)

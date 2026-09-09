@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name}
-import org.podval.store.{By, Selector}
+import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
@@ -77,7 +77,7 @@ object PageHeader:
     val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
-    val byLabel: Xml.Nodes = index.flatMap(_.by).map(_.selector).toSeq.map: selector =>
+    val byLabel: Xml.Nodes = page.by.map(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector)}:")
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
@@ -107,8 +107,8 @@ object PageHeader:
     )
 
   private def currentHead(page: MarkupPage): Xml.Element =
-    val nameFromTree: Option[Xml.Element] = page.storeTree.flatMap: tree =>
-      val names = tree.names
+    val nameFromTree: Option[Xml.Element] = page.store.flatMap: _ =>
+      val names = page.names
       names.find(Language.Russian.toSpec).orElse(names.names.headOption).map(storeNameXml)
     val name: Xml.Nodes = nameFromTree.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
     headingLine(
@@ -133,11 +133,7 @@ object PageHeader:
   private[page] def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
-      parentIndex.flatMap(_.by).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
-        .orElse:
-          parent.storeTree.flatMap(_.stores.collectFirst:
-            case by: By[?] => by.selector.names.doFind(Language.English.toSpec).name
-          )
+      parent.by.map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
         .orElse:
           Option.when(
             parentIndex.exists(_.isCollection) && page.store.isEmpty
@@ -158,8 +154,7 @@ object PageHeader:
     selector.toLanguageString(using Language.Russian.toSpec)
 
   private[page] def pageDisplayName(page: Page): String =
-    page.store.flatMap(_ => page.storeTree).map(_.names.doFind(Language.Russian.toSpec).name)
-      .orElse(page.store.flatMap(_.displayName))
+    page.store.map(_ => page.names.doFind(Language.Russian.toSpec).name)
       .getOrElse:
         page match
           case _: EntityListPage => page.title

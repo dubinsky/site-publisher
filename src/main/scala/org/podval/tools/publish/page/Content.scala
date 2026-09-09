@@ -1,6 +1,5 @@
 package org.podval.tools.publish.page
 
-import org.podval.store.{By, Stores}
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
@@ -27,7 +26,6 @@ sealed abstract class Content:
 
   def asStore: Option[StoreContent] = None
   def asEntityLists: Option[EntityListsContent] = None
-  def tree: Option[Stores[?]] = None
 
   def markupBody(
     pageContent: PageContent,
@@ -151,11 +149,6 @@ final class StoreContent(
   def setBoundChildren(children: List[Page]): Unit = boundChildrenVar = children
   def boundChildren: List[Page] = boundChildrenVar
 
-  private var treeVar: Option[Stores[?]] = None
-  override def tree: Option[Stores[?]] = treeVar
-  private[page] def setTree(store: Stores[?]): Unit = treeVar = Some(store)
-  def by: Option[By[?]] = tree.flatMap(_.stores.collectFirst { case by: By[?] => by })
-
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")
 
@@ -234,10 +227,6 @@ final class EntityListsContent(
   override def xml: Xml.Element = Xml.element("entityLists")
   override def suppressDirectoryListing: Boolean = true
   override def asEntityLists: Option[EntityListsContent] = Some(this)
-
-  private var treeVar: Option[Stores[?]] = None
-  override def tree: Option[Stores[?]] = treeVar
-  private[page] def setTree(store: Stores[?]): Unit = treeVar = Some(store)
 
   override def markupBody(
     pageContent: PageContent,

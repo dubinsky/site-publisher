@@ -97,7 +97,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
   test("wraps StoreIndex as org.podval.store") {
     withSite: (site, _) =>
       val root: Page = site.pages.pages.find(StoreIndexes.isRootStore).get
-      val tree = root.store.flatMap(_.tree).get
+      val tree = root
       assert(tree.resolve("/books").last.names.hasName("книги"))
       assert(tree.resolve("/books").structureNames == Seq("archive", "books"))
       val derzhavin = tree.resolve("/books/Державин")

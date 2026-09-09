@@ -6,7 +6,7 @@ import zio.blocks.typeid.TypeId
 
 /** TEI `entityLists` directory index specs: kind + role buckets.
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
-  * Wrapped as `By("names")` / `By("name")` in `StoreTree.attachEntityLists`. */
+  * The names directory page is `By("names")`; each list page is `By("name")`. */
 object EntityLists:
   final case class Index(
     @Modifier.config(XmlCodec.Element, "title")

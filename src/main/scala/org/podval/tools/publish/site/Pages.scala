@@ -77,6 +77,7 @@ final class Pages(site: Site):
 
     indexEntities()
     resolveEntityLists()
+    pages.foreach(_.freezeStores())
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
 
@@ -415,7 +416,6 @@ final class Pages(site: Site):
         page.store.filter(_.hrefs.nonEmpty).foreach: store =>
           store.reportUnlisted(page, pages)
       case _ =>
-    StoreTree.attach(pages)
 
   private def isHopPage(page: Page): Boolean =
     page.isDirectory && page.source.isEmpty && selectorHopsVar.contains(page.path.path.init)
@@ -667,7 +667,6 @@ final class Pages(site: Site):
           listPages.foreach(add)
           listPages.foreach(_.setSiblings(listPages))
       case _ =>
-    StoreTree.attachEntityLists(pages)
 
   def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
     pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)

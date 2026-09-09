@@ -22,9 +22,9 @@ object StoreIndexes:
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.store.flatMap(_.by).flatMap(_.selector.title)
+        root.by.flatMap(_.selector.plural).map(_.toLanguageString(using Language.Russian.toSpec))
       case StoreIndexPage.Kind.Flat =>
-        Selector.forName("case").flatMap(_.title)
+        Selector.forName("case").flatMap(_.plural).map(_.toLanguageString(using Language.Russian.toSpec))
     fromSelector
       .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
       .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
@@ -38,7 +38,7 @@ object StoreIndexes:
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
-      storePage.store.flatMap(_.by).map(_.selector).map(PageHeader.selectorDisplayName)
+      storePage.by.map(_.selector).map(PageHeader.selectorDisplayName)
         .getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
     Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
@@ -65,10 +65,7 @@ object StoreIndexes:
   private def treeLabel(page: Page): String =
     page.store match
       case Some(store) =>
-        val name: String =
-          page.storeTree.map(_.names.doFind(Language.Russian.toSpec).name)
-            .orElse(store.displayName)
-            .getOrElse(page.titleFromPath)
+        val name: String = page.names.doFind(Language.Russian.toSpec).name
         val title: String = store.title.map(_.getText.trim).filter(_.nonEmpty).getOrElse("")
         if title.isEmpty then s"$name:" else s"$name: $title"
       case None =>
@@ -109,7 +106,6 @@ object StoreIndexes:
     walk(root)
 
   private def childrenOf(page: Page): List[Page] =
-    page.store.flatMap(_.by).map: by =>
+    page.by.map: by =>
       by.stores.asInstanceOf[Seq[Store]].flatMap(StoreTree.pageOf).toList
-    .orElse(page.store.map(_.boundChildren))
-    .getOrElse(Nil)
+    .getOrElse(page.stores.flatMap(StoreTree.pageOf).toList)
