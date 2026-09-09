@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.tools.publish.page.StoreTree
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -93,6 +94,10 @@ final class CollectionAliasesSpec extends AnyFunSuite:
       assert(table.exists(_.from == Seq("lvia1799-2-2")))
       val col: CollectionAliases.Entry = table.find(_.from == Seq("col")).get
       assert(col.to == Seq("col"))
+      val siteStore = site.pages.siteStore
+      assert(siteStore.names.hasName("Alias Fixture"))
+      assert(StoreTree.pageAt(siteStore, "/col").isDefined)
+      assert(StoreTree.pageAt(siteStore, "/lvia1799-2").isDefined)
   }
 
   test("table rewrite matches Pages.rewriteRequest") {

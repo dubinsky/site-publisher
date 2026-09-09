@@ -116,6 +116,10 @@ final class StoreIndexesSpec extends AnyFunSuite:
       val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
       assert(table.exists(_.from == Seq("rgada")), table.map(_.from).toString)
       assert(table.exists(_.from == Seq("collections")), table.map(_.from).toString)
+      val siteStore = site.pages.siteStore
+      assert(siteStore.names.hasName("Archive Fixture"))
+      assert(siteStore.stores.exists(store => StoreTree.pageOf(store).exists(StoreIndexes.isRootStore)))
+      assert(StoreTree.pageAt(siteStore, "/rgada").isEmpty)
   }
 
   test("writes archive-collections tree and archive-index flat list") {

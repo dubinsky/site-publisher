@@ -1,5 +1,7 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Names
+import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, Link, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage, EmbeddedAsset,
   EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource, PdfPage,
@@ -60,7 +62,6 @@ final class Pages(site: Site):
     resolveStores()
     addStoreIndexes()
     installHome()
-    installCollectionAliases()
     headerPagesVar = resolveHeaderPages()
 
     // Report conflicting pages
@@ -76,7 +77,9 @@ final class Pages(site: Site):
 
     indexEntities()
     resolveEntityLists()
-    
+    siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
+    installCollectionAliases()
+
     site.errors.throwIfErrors()
 
   private def installHome(): Unit =
@@ -126,8 +129,13 @@ final class Pages(site: Site):
       .orElse(Option.when(requested.extension.isEmpty)(find(requested.html, isAbsolute = true, kind = None)).flatten)
 
   private def installCollectionAliases(): Unit =
-    StoreTree.aliasPages(pages).foreach: (name, target) =>
+    StoreTree.aliasPages(siteStore).foreach: (name, target) =>
       installPrefixAlias(name, target, "collection alias")
+
+  private var siteStoreVar: Option[Stores[Store]] = None
+
+  def siteStore: Stores[Store] = siteStoreVar.getOrElse:
+    throw IllegalStateException("site store is not attached")
 
   private var aliasByPrefix: Map[Seq[String], Alias] = Map.empty
 
@@ -185,7 +193,7 @@ final class Pages(site: Site):
     if segs.isEmpty then None
     else
       val url: String = "/" + segs.mkString("/")
-      StoreTree.resolveRoots(pages).iterator
+      StoreTree.resolveRoots(pages, siteStoreVar).iterator
         .map(tree => StoreTree.pageAt(tree, url))
         .collectFirst { case Some(page) => page }
 

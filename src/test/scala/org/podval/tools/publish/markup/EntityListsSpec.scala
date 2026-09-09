@@ -189,6 +189,9 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(vilna.last.names.hasName("Вильна"))
       intercept[IllegalArgumentException] { tree.resolve("/officials") }
       intercept[IllegalArgumentException] { tree.resolve("/organizations") }
+      val siteStore = site.pages.siteStore
+      assert(siteStore.names.hasName("Names Fixture"))
+      assert(siteStore.stores.exists(store => StoreTree.pageOf(store).contains(directory)))
   }
 
   test("entity page keeps document backlinks and does not list the names index") {

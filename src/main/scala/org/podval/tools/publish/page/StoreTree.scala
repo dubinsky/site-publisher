@@ -35,39 +35,37 @@ object StoreTree:
     case leaf: PageLeaf => Some(leaf.page)
     case _ => None
 
-  def resolveRoots(pages: Seq[Page]): Seq[Stores[?]] =
+  def resolveRoots(pages: Seq[Page], siteStore: Option[Stores[?]] = None): Seq[Stores[?]] =
     pages.filter(StoreIndexes.isRootStore).flatMap(_.storeTree) ++
-      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree))
+      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree)) ++
+      siteStore.toSeq
 
-  /** TEI `@alias` as wrapped `org.podval.store.Alias`, plus unparented collections
-    * that have `@alias` but no parent store to hang it on. */
-  def aliasPages(pages: Seq[Page]): Seq[(String, Page)] =
-    aliasRoots(pages).flatMap(aliasesFrom).distinct
-
-  private def aliasRoots(pages: Seq[Page]): Seq[Stores[?]] =
+  /** Site-level store: unparented TEI stores/collections, entity-list trees, and
+    * standalone TEI `@alias`es. Nested aliases stay on their parent store. */
+  def siteStore(pages: Seq[Page], siteNames: Names): Stores[Store] =
     val listed: Set[Page] = pages.flatMap(_.store.toSeq.flatMap(_.boundChildren)).toSet
-    val unparented: Seq[Stores[?]] = pages
-      .filter(page => page.store.exists(_.alias.isDefined) && !listed.contains(page))
-      .flatMap(_.storeTree)
-    pages.filter(StoreIndexes.isRootStore).flatMap(_.storeTree) ++
-      Option.when(unparented.nonEmpty)(unparentedAliasRoot(unparented)).toSeq
-
-  private def unparentedAliasRoot(nodes: Seq[Stores[?]]): Stores[Store] =
-    val aliases: Seq[Store] = nodes.flatMap: node =>
+    val unparented: Seq[Stores[?]] =
+      pages.filter(page => page.store.isDefined && !listed.contains(page)).flatMap(_.storeTree)
+    val entityLists: Seq[Stores[?]] =
+      pages.flatMap(_.doc.flatMap(_.asEntityLists).flatMap(_.tree))
+    val aliases: Seq[Store] = unparented.flatMap: node =>
       pageOf(node).flatMap(_.store).flatMap(_.alias).map: name =>
         StoreAlias(Names(name), Seq(englishName(node)))
+    val kids: Seq[Store] = unparented.map(s => s: Store) ++ entityLists.map(s => s: Store) ++ aliases
     new Stores[Store]:
-      override def names: Names = Names("site")
-      override def stores: Seq[Store] = nodes ++ aliases
+      override def names: Names = siteNames
+      override def stores: Seq[Store] = kids
 
-  private def aliasesFrom(tree: Stores[?]): Seq[(String, Page)] =
-    collectAliases(tree).flatMap: alias =>
-      pageAt(tree, "/" + alias.names.name).map(page => alias.names.name -> page)
+  /** Direct `Alias` children of each `Stores` node, resolved from that node. */
+  def aliasPages(root: Stores[?]): Seq[(String, Page)] =
+    aliasesIn(root).distinct
 
-  private def collectAliases(store: Store): Seq[StoreAlias] = store match
-    case alias: StoreAlias => Seq(alias)
-    case stores: Stores[?] => stores.stores.flatMap(collectAliases)
-    case _ => Seq.empty
+  private def aliasesIn(stores: Stores[?]): Seq[(String, Page)] =
+    stores.stores.flatMap:
+      case alias: StoreAlias =>
+        pageAt(stores, "/" + alias.names.name).map(page => alias.names.name -> page).toSeq
+      case child: Stores[?] => aliasesIn(child)
+      case _ => Seq.empty
 
   private def listStore(list: EntityListPage): PageStore =
     PageStore(list, () => Seq(By("name", list.members.map(PageLeaf(_)))))
