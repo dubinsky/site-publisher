@@ -94,6 +94,19 @@ final class StoreIndexesSpec extends AnyFunSuite:
         |""".stripMargin
   )
 
+  test("wraps StoreIndex as org.podval.store") {
+    withSite: (site, _) =>
+      val root: Page = site.pages.pages.find(StoreIndexes.isRootStore).get
+      val tree = root.store.flatMap(_.tree).get
+      assert(tree.resolve("/books").last.names.hasName("книги"))
+      assert(tree.resolve("/books").structureNames == Seq("archive", "books"))
+      val derzhavin = tree.resolve("/books/Державин")
+      assert(derzhavin.last.names.hasName("Державин"))
+      assert(derzhavin.structureNames == Seq("archive", "books", "book", "Державин"))
+      val rgada = root.store.flatMap(_.boundChildren.find(_.store.flatMap(_.alias).contains("rgada")))
+      assert(rgada.isDefined)
+  }
+
   test("writes archive-collections tree and archive-index flat list") {
     withSite: (_, target) =>
       assert(File(target, "archive-collections.html").isFile)

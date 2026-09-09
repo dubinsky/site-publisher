@@ -20,7 +20,8 @@ object StoreIndexes:
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.store.flatMap(_.selector).flatMap(n => Selector.forName(n).flatMap(_.title))
+        root.store.flatMap(_.by).flatMap(_.selector.title)
+          .orElse(root.store.flatMap(_.selector).flatMap(n => Selector.forName(n).flatMap(_.title)))
       case StoreIndexPage.Kind.Flat =>
         Selector.forName("case").flatMap(_.title)
     fromSelector
@@ -36,7 +37,9 @@ object StoreIndexes:
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
-      storePage.store.flatMap(_.selector).map(PageHeader.selectorDisplayName).getOrElse("")
+      storePage.store.flatMap(_.by).map(_.selector).map(PageHeader.selectorDisplayName)
+        .orElse(storePage.store.flatMap(_.selector).map(PageHeader.selectorDisplayName))
+        .getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
     Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
       Xml.element(XmlElement.Ul).setChildren(Seq(

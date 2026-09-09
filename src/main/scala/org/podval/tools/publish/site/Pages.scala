@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, Link, LinkKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage, EmbeddedAsset,
   EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource, PdfPage,
-  SimpleMarkupPage, StoreIndexPage, StoreIndexes}
+  SimpleMarkupPage, StoreIndexPage, StoreIndexes, StoreTree}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -399,6 +399,7 @@ final class Pages(site: Site):
         page.store.filter(_.hrefs.nonEmpty).foreach: store =>
           store.reportUnlisted(page, pages)
       case _ =>
+    StoreTree.attach(pages)
 
   private def isHopPage(page: Page): Boolean =
     page.isDirectory && page.source.isEmpty && selectorHopsVar.contains(page.path.path.init)

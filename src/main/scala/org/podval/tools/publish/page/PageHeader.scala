@@ -147,7 +147,10 @@ object PageHeader:
     Option.when(Selector.forName(segment).isDefined)(segment)
 
   private[page] def selectorDisplayName(n: String): String =
-    Selector.forName(n).map(_.toLanguageString(using Language.Russian.toSpec)).getOrElse(n)
+    Selector.forName(n).map(selectorDisplayName).getOrElse(n)
+
+  def selectorDisplayName(selector: Selector): String =
+    selector.toLanguageString(using Language.Russian.toSpec)
 
   private[page] def pageDisplayName(page: Page): String =
     page.store.flatMap(_.displayName).getOrElse(page.titleFromPath)

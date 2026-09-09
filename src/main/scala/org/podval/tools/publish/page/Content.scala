@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.store.{By, Stores}
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
@@ -147,6 +148,11 @@ final class StoreContent(
   private var boundChildrenVar: List[Page] = Nil
   def setBoundChildren(children: List[Page]): Unit = boundChildrenVar = children
   def boundChildren: List[Page] = boundChildrenVar
+
+  private var treeVar: Option[Stores[?]] = None
+  def tree: Option[Stores[?]] = treeVar
+  private[page] def setTree(store: Stores[?]): Unit = treeVar = Some(store)
+  def by: Option[By[?]] = tree.flatMap(_.stores.collectFirst { case by: By[?] => by })
 
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")
