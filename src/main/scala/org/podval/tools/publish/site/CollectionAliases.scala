@@ -7,7 +7,8 @@ import java.io.File
 
 /** Alias prefix table for Cloudflare Worker / inspection.
   * Collection prefixes come from wrapped store `Alias`es (`StoreTree.aliasPages`);
-  * prefix rewrites match `Pages.findViaAlias`. `Pages.rewriteRequest` also tries store-tree resolve. */
+  * prefix rewrites match `Pages.findViaAlias`. `Pages.find` and `rewriteRequest`
+  * also try store-tree resolve. */
 object CollectionAliases:
   val fileName: String = "collection-aliases.json"
 

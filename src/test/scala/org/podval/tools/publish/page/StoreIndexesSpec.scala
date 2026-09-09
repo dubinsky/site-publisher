@@ -108,8 +108,11 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(tree.resolve("/rgada").last.names.hasName("РГАДА"))
       val booksPage = StoreTree.pageOf(tree.resolve("/books").last).get
       assert(site.pages.rewriteRequest(Path.fromHref("/books")).contains(booksPage.path))
+      val from: Page = site.pages.pages.head
+      assert(site.pages.resolve("/books", None, from).map(_.page.real).contains(booksPage))
       val derzhavinPage = StoreTree.pageOf(derzhavin.last).get
       assert(site.pages.rewriteRequest(Path.fromHref("/books/Державин")).contains(derzhavinPage.path))
+      assert(site.pages.resolve("/books/Державин", None, from).map(_.page.real).contains(derzhavinPage))
       val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
       assert(table.exists(_.from == Seq("rgada")), table.map(_.from).toString)
       assert(table.exists(_.from == Seq("collections")), table.map(_.from).toString)

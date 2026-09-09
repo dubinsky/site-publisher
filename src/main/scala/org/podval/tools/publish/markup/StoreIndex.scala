@@ -3,8 +3,8 @@ package org.podval.tools.publish.markup
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
 /** Harvest DTO for a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
-  * Bind, wrap (`StoreTree`), and header chrome read this; runtime structure and aliases
-  * are `org.podval.store`. Collection `part`s and `pageType` feed `CollectionIndex`. */
+  * Bind (before wrap) and wrap (`StoreTree`) read this; header chrome and collection
+  * listings use the wrapped tree. Collection `part`s and `pageType` feed `CollectionIndex`. */
 final class StoreIndex(
   val selector: Option[String],
   val hrefs: Seq[String],

@@ -1,8 +1,8 @@
 package org.podval.tools.publish.page
 
-import org.podval.metadata.Language
+import org.podval.metadata.{Language, Name}
 import org.podval.store.{By, Selector}
-import org.podval.tools.publish.markup.{DocumentHeader, StoreIndex, TeiMarkup}
+import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
 import Html.given
@@ -77,7 +77,7 @@ object PageHeader:
     val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
-    val byLabel: Xml.Nodes = index.flatMap(_.selector).toSeq.map: selector =>
+    val byLabel: Xml.Nodes = index.flatMap(_.by).map(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector)}:")
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
@@ -107,9 +107,10 @@ object PageHeader:
     )
 
   private def currentHead(page: MarkupPage): Xml.Element =
-    val nameFromIndex: Option[Xml.Element] = page.store.flatMap: index =>
-      index.names.find(_.lang.contains("ru")).orElse(index.names.headOption).map(storeNameXml)
-    val name: Xml.Nodes = nameFromIndex.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
+    val nameFromTree: Option[Xml.Element] = page.storeTree.flatMap: tree =>
+      val names = tree.names
+      names.find(Language.Russian.toSpec).orElse(names.names.headOption).map(storeNameXml)
+    val name: Xml.Nodes = nameFromTree.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
     headingLine(
       selector = selectorName(page),
       name = name,
@@ -133,7 +134,6 @@ object PageHeader:
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
       parentIndex.flatMap(_.by).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
-        .orElse(parentIndex.flatMap(_.selector))
         .orElse:
           parent.storeTree.flatMap(_.stores.collectFirst:
             case by: By[?] => by.selector.names.doFind(Language.English.toSpec).name
@@ -158,10 +158,12 @@ object PageHeader:
     selector.toLanguageString(using Language.Russian.toSpec)
 
   private[page] def pageDisplayName(page: Page): String =
-    page.store.flatMap(_.displayName).getOrElse:
-      page match
-        case _: EntityListPage => page.title
-        case _ => page.titleFromPath
+    page.store.flatMap(_ => page.storeTree).map(_.names.doFind(Language.Russian.toSpec).name)
+      .orElse(page.store.flatMap(_.displayName))
+      .getOrElse:
+        page match
+          case _: EntityListPage => page.title
+          case _ => page.titleFromPath
 
   private def storeTitleInner(page: Page): Xml.Nodes =
     page.store.flatMap(_.title).fold(Seq.empty[Xml.Node]): title =>
@@ -171,9 +173,9 @@ object PageHeader:
     val converted: Xml.Element = TeiMarkup.convertFragment(xml)
     page.content.fold(converted)(_.resolveConverted(converted))
 
-  private def storeNameXml(name: StoreIndex.Name): Xml.Element =
-    var result: Xml.Element = Xml.element(XmlElement.Span).addClass("store-name").setText(name.n)
-    name.lang.foreach(lang => result = result.set(XmlAttribute.Lang, lang))
+  private def storeNameXml(name: Name): Xml.Element =
+    var result: Xml.Element = Xml.element(XmlElement.Span).addClass("store-name").setText(name.name)
+    name.languageSpec.language.foreach(lang => result = result.set(XmlAttribute.Lang, lang.name))
     result
 
   private def documentHeaderTable(page: MarkupPage): Option[Xml.Element] =

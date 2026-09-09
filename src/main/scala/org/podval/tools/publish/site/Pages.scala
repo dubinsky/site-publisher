@@ -477,6 +477,7 @@ final class Pages(site: Site):
         // Exact path first so `/P/index.html` is the chunked TOC, not title-walked to `/P.html`.
         findExact(path)
           .orElse(findViaAlias(path))
+          .orElse(findViaStoreTree(path))
           .orElse(findWalk(path, isAbsolute))
 
   private def findExact(path: Path): Option[Page] =

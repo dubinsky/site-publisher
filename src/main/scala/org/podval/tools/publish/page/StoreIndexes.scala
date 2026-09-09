@@ -1,8 +1,10 @@
 package org.podval.tools.publish.page
 
-import org.podval.store.Selector
+import org.podval.metadata.Language
+import org.podval.store.{Selector, Store}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{Xml, XmlElement}
+
 /** Collector `Index.Tree` / `Index.Flat` for a root TEI `store`: nested archive tree and
   * a flat list of descendant collections. Generated at render so listing hrefs are not backlinks. */
 object StoreIndexes:
@@ -21,7 +23,6 @@ object StoreIndexes:
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
         root.store.flatMap(_.by).flatMap(_.selector.title)
-          .orElse(root.store.flatMap(_.selector).flatMap(n => Selector.forName(n).flatMap(_.title)))
       case StoreIndexPage.Kind.Flat =>
         Selector.forName("case").flatMap(_.title)
     fromSelector
@@ -38,7 +39,6 @@ object StoreIndexes:
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
       storePage.store.flatMap(_.by).map(_.selector).map(PageHeader.selectorDisplayName)
-        .orElse(storePage.store.flatMap(_.selector).map(PageHeader.selectorDisplayName))
         .getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
     Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
@@ -65,7 +65,10 @@ object StoreIndexes:
   private def treeLabel(page: Page): String =
     page.store match
       case Some(store) =>
-        val name: String = store.displayName.getOrElse(page.titleFromPath)
+        val name: String =
+          page.storeTree.map(_.names.doFind(Language.Russian.toSpec).name)
+            .orElse(store.displayName)
+            .getOrElse(page.titleFromPath)
         val title: String = store.title.map(_.getText.trim).filter(_.nonEmpty).getOrElse("")
         if title.isEmpty then s"$name:" else s"$name: $title"
       case None =>
@@ -106,4 +109,7 @@ object StoreIndexes:
     walk(root)
 
   private def childrenOf(page: Page): List[Page] =
-    page.store.map(_.boundChildren).getOrElse(Nil)
+    page.store.flatMap(_.by).map: by =>
+      by.stores.asInstanceOf[Seq[Store]].flatMap(StoreTree.pageOf).toList
+    .orElse(page.store.map(_.boundChildren))
+    .getOrElse(Nil)

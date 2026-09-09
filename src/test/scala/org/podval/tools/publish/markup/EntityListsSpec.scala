@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, EntityLists as EntityListHtml, StoreTree}
+import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, EntityLists as EntityListHtml, Page, StoreTree}
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
@@ -176,6 +176,9 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(jewsPage.isInstanceOf[EntityListPage])
       assert(site.pages.rewriteRequest(Path.fromHref("/jews")).contains(jewsPage.path))
       assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).contains(jewsPage.path))
+      val from: Page = site.pages.pages.head
+      assert(site.pages.resolve("/jews", None, from).map(_.page.real).contains(jewsPage))
+      assert(site.pages.resolve("/names/jews", None, from).map(_.page.real).contains(jewsPage))
       val zalman = tree.resolve("/jews/alter-rebbe")
       assert(zalman.last.names.hasName("alter-rebbe"))
       assert(zalman.last.names.hasName("Залман Борухович"))
