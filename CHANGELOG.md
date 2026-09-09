@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- xml: `Named` is `HasNames`
 - Stop pre-escaping text into the XML tree (`Feed`, malformed markup). Atom `content`/`summary` HTML is CDATA so undeclared `&nbsp;` stays well-formed.
 - use `org.podval.store.Selector` for collector `by/@selector` labels; drop the publisher copy of the type and `Selector.xml`
 - xml: TagSoup is `compileOnly` in the library; declare it here for HTML parse

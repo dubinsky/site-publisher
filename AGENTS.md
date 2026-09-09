@@ -14,7 +14,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
     codecs (`org.podval.xml.XmlCodec`) over any `XmlAst`. `XmlParser` does not expand `xi:include`
     (publisher stores treat `xi:include/@href` as a page ref). Catalog files
     (`org.podval.store` `Selector.xml`) use `loadCatalog` / `decodeCatalog` (wrapper root, child codec).
-    Same artifact also has `org.podval.metadata` (multilingual `Name`/`Names`/`Language` catalogs) and
+    Same artifact also has `org.podval.metadata` (multilingual `Name`/`Names`/`HasNames`/`Language` catalogs) and
     `org.podval.store` (in-memory named tree, path `resolve`; `Selector` catalog of `by/@selector` names).
     Publisher `StoreContent` is a filesystem page graph and does not use `Store` / `By` / `Path`;
     collector chrome uses `org.podval.store.Selector`. Local unreleased xml: optional `includeBuild` of sibling
