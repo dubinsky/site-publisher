@@ -109,7 +109,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     val index = StoreIndex(parsed).get
     assert(index.hrefs == Seq("this-file-does-not-exist.xml", "books/book/derzhavin.xml"), index.hrefs)
     assert(index.selector.contains("book"), index.selector)
-    assert(index.names.exists(_.n == "books"), index.names.map(_.n))
+    assert(index.names.exists(_.name == "books"), index.names.map(_.name))
     val dumped: String = render(process(input))
     assert(!dumped.contains("xi:include"), dumped)
     assert(!dumped.contains("this-file-does-not-exist"), dumped)

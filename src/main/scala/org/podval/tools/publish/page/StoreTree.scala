@@ -2,12 +2,11 @@ package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name, Names}
 import org.podval.store.{Alias as StoreAlias, By, Path, Store, Stores}
-import org.podval.tools.publish.markup.StoreIndex
 
 /** `org.podval.store` view of pages: each `Page` is a `Stores` node. */
 object StoreTree:
   def namesOf(page: Page): Names =
-    val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names.flatMap(toName))
+    val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names)
     if fromIndex.nonEmpty then Names(fromIndex) else Names(nameList(page))
 
   def childrenOf(page: Page): Seq[Store] =
@@ -98,10 +97,3 @@ object StoreTree:
       pairs.map((n, spec) => n.trim -> spec).filter(_._1.nonEmpty).distinctBy(_._1)
     if unique.isEmpty then Seq(Name(page.titleFromPath, Language.Spec.empty))
     else unique.map((n, spec) => Name(n, spec))
-
-  private def toName(name: StoreIndex.Name): Option[Name] =
-    Option.when(name.n.nonEmpty):
-      Name(
-        name.n,
-        name.lang.flatMap(Language.forDefaultName).map(_.toSpec).getOrElse(Language.Spec.empty)
-      )

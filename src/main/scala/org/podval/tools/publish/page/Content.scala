@@ -1,10 +1,11 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Name
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
-import Html.given
+import Html.toHtml
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
 sealed abstract class Content:
@@ -133,7 +134,7 @@ final class StoreContent(
 ) extends Content:
   def selector: Option[String] = index.selector
   def hrefs: Seq[String] = index.hrefs
-  def names: Seq[StoreIndex.Name] = index.names
+  def names: Seq[Name] = index.names
   def title: Option[Xml.Element] = index.title
   def description: Option[Xml.Element] = index.description
   def body: Option[Xml.Element] = index.body
@@ -161,7 +162,7 @@ final class StoreContent(
     isTerminal: Boolean
   ): Option[Html.Element] =
     if !isCollection then None
-    else Some(CollectionIndex.generate(pageContent.source.page, this).to[Html.Element])
+    else Some(CollectionIndex.generate(pageContent.source.page, this).toHtml)
 
   def bind(
     page: MarkupPage,
@@ -233,7 +234,7 @@ final class EntityListsContent(
   ): Option[Html.Element] =
     // Hrefs are already published paths / intrapage `#id`; do not mark-and-resolve
     // (`#jews` would lose the fragment because index `xml` has no ids).
-    Some(EntityLists.generate(pageContent.source.page, index).to[Html.Element])
+    Some(EntityLists.generate(pageContent.source.page, index).toHtml)
 
   def listPages(
     directory: DirectoryPage,

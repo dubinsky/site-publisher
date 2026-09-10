@@ -4,7 +4,7 @@ import org.podval.tools.publish.markup.EntityList
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
-import Html.given
+import Html.toHtml
 
 final class EntityListPage(
   site: Site,
@@ -27,4 +27,4 @@ final class EntityListPage(
   override def next: Option[Page] = siblingsVar.dropWhile(_ != this).drop(1).headOption
 
   override protected def syntheticContent: Html.Element =
-    EntityLists.listXml(spec, members, withHead = false, jump = None).to[Html.Element]
+    EntityLists.listXml(spec, members, withHead = false, jump = None).toHtml

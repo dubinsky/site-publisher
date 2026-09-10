@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Html, Xml}
-import Html.given
+import Html.toHtml
 import zio.blocks.html.*
 
 /** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections). */
@@ -34,7 +34,7 @@ final class StoreIndexPage(
     (kind match
       case StoreIndexPage.Kind.Tree => StoreIndexes.tree(root)
       case StoreIndexPage.Kind.Flat => StoreIndexes.flat(root)
-    ).to[Html.Element]
+    ).toHtml
 
 object StoreIndexPage:
   enum Kind derives CanEqual:

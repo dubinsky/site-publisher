@@ -1,77 +1,58 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlAttribute, XmlElement}
+import org.podval.metadata.{Language, Name}
+import org.podval.xml.{Xml, XmlAttribute, XmlCodec, given}
+import zio.blocks.schema.{Modifier, Schema}
 
-/** Harvest DTO for a TEI `store` / `collection`. `hrefs` are page references, not XInclude.
+/** TEI `store` / `collection`. `hrefs` are page references, not XInclude.
   * Bind (before wrap) and wrap (`StoreTree`) read this; header chrome and collection
   * listings use the wrapped tree. Collection `part`s and `pageType` feed `CollectionIndex`. */
-final class StoreIndex(
-  val selector: Option[String],
-  val hrefs: Seq[String],
-  val names: Seq[StoreIndex.Name],
-  val title: Option[Xml.Element],
-  val description: Option[Xml.Element],
-  val body: Option[Xml.Element],
-  val isCollection: Boolean,
-  val alias: Option[String],
-  val parts: Seq[CollectionPart],
-  val pageTypeName: Option[String]
-):
+@Modifier.config(XmlCodec.IgnoreUnknown, "")
+final case class StoreIndex(
+  @Modifier.config(XmlCodec.Attribute, "") n: Option[String] = None,
+  @Modifier.config(XmlCodec.Attribute, "") alias: Option[String] = None,
+  @Modifier.config(XmlCodec.Attribute, "pageType") pageTypeName: Option[String] = None,
+  @Modifier.config(XmlCodec.Element, "name") names: Seq[Name] = Seq.empty,
+  @Modifier.config(XmlCodec.Element, "title") titles: Seq[Xml.Element] = Seq.empty,
+  @Modifier.config(XmlCodec.Element, "abstract") description: Option[Xml.Element] = None,
+  body: Option[Xml.Element] = None,
+  @Modifier.config(XmlCodec.Element, "part") parts: Seq[CollectionPart] = Seq.empty,
+  @Modifier.config(XmlCodec.Element, "by") axis: Option[StoreIndex.Axis] = None,
+  @Modifier.config(XmlCodec.Include, "") hrefs: Seq[String] = Seq.empty,
+  isCollection: Boolean = false
+) derives CanEqual:
+  def selector: Option[String] = axis.flatMap(_.selector)
+
   def pageType: PageType = PageType.parse(pageTypeName)
 
+  def title: Option[Xml.Element] =
+    val nonempty: Seq[Xml.Element] = titles.filter(_.getText.trim.nonEmpty)
+    nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
+
   def displayName(lang: String): Option[String] =
-    names.find(_.lang.contains(lang)).orElse(names.headOption).map(_.n)
+    names.find(_.languageSpec.language.exists(_.name == lang)).orElse(names.headOption).map(_.name)
 
 object StoreIndex:
-  final class Name(
-    val n: String,
-    val lang: Option[String]
-  )
+  @Modifier.config(XmlCodec.IgnoreUnknown, "")
+  final case class Axis(
+    @Modifier.config(XmlCodec.Attribute, "") selector: Option[String] = None
+  ) derives CanEqual
+
+  object Axis:
+    given schema: Schema[Axis] = Schema.derived
+
+  given schema: Schema[StoreIndex] = Schema.derived
+  val codec: XmlCodec[StoreIndex] = XmlCodec.derived
 
   def apply(xml: Xml.Element): Option[StoreIndex] =
     Option.when(TeiMarkup.isStoreRoot(xml)):
-      new StoreIndex(
-        selector = xml.gather(el =>
-          Option.when(el.isNamed("by"))(el.get("selector").map(_.trim).filter(_.nonEmpty))
-        ).flatten.headOption,
-        hrefs = xml.gather(el =>
-          Option.when(el.isInclude)(el.get(XmlAttribute.Href).map(_.trim).filter(_.nonEmpty))
-        ).flatten,
-        names = storeNames(xml),
-        title = storeTitle(xml),
-        description = storeDescription(xml),
-        body = storeBody(xml),
+      val decoded: StoreIndex = codec.unsafeDecode(xml)
+      val mergedNames: Seq[Name] =
+        if decoded.names.nonEmpty then decoded.names
+        else decoded.n.map(_.trim).filter(_.nonEmpty).map(Name(_, Language.Spec.empty)).toSeq
+      decoded.copy(
+        names = mergedNames,
         isCollection = xml.isNamed("collection"),
-        alias = xml.get("alias").map(_.trim).filter(_.nonEmpty),
-        parts = CollectionPart.harvest(xml),
-        pageTypeName = xml.get("pageType").map(_.trim).filter(_.nonEmpty)
+        description = decoded.description.filter(_.getChildren.nonEmpty),
+        body = decoded.body.filter(_.getChildren.nonEmpty)
       )
-
-  private def storeTitle(root: Xml.Element): Option[Xml.Element] =
-    val candidates: Seq[Xml.Element] =
-      root.getChildren.flatMap(_.asElement).filter(_.isNamed(XmlElement.Title.localName))
-    val nonempty: Seq[Xml.Element] = candidates.filter(_.getText.trim.nonEmpty)
-    nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
-
-  private def storeDescription(root: Xml.Element): Option[Xml.Element] =
-    root.getChildren.flatMap(_.asElement).find: el =>
-      el.isNamed("abstract") && el.getChildren.nonEmpty
-
-  private def storeBody(root: Xml.Element): Option[Xml.Element] =
-    root.getChildren.flatMap(_.asElement).find: el =>
-      el.isNamed(XmlElement.Body.localName) && el.getChildren.nonEmpty
-
-  private def storeNames(root: Xml.Element): Seq[StoreIndex.Name] =
-    val fromChildren: Seq[StoreIndex.Name] =
-      root.getChildren.flatMap(_.asElement)
-        .filter(_.isNamed("name"))
-        .flatMap(storeName)
-    val fromN: Option[StoreIndex.Name] =
-      root.get("n").map(_.trim).filter(_.nonEmpty).map(n => StoreIndex.Name(n, None))
-    if fromChildren.nonEmpty then fromChildren else fromN.toSeq
-
-  private def storeName(element: Xml.Element): Option[StoreIndex.Name] =
-    val n: String = element.get("n").map(_.trim).filter(_.nonEmpty).getOrElse(element.getText.trim)
-    Option.when(n.nonEmpty)(
-      StoreIndex.Name(n, element.get(XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty))
-    )

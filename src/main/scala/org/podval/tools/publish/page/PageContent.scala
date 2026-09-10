@@ -6,6 +6,7 @@ import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
 import Html.given
+import Html.toHtml
 import java.io.File
 
 /** Prepared once per document (`PageContent.apply`); resolved per chunk in `markupContent`. */
@@ -132,7 +133,7 @@ final class PageContent private(
     val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
 
     // Convert to HTML
-    insertToc(withLinks.to[Html.Element], sectionId, isChunked)
+    insertToc(withLinks.toHtml, sectionId, isChunked)
 
   /** Resolve `a@href` in already-converted XML (collector header titles). */
   def resolveConverted(xml: Xml.Element): Xml.Element =

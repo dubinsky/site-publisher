@@ -1,9 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.store.{Selector, Selectors as SelectorCatalog}
-import org.podval.xml.XmlParser
+import org.podval.store.Selectors as SelectorCatalog
 
-object Selectors extends SelectorCatalog:
-  override lazy val valuesSeq: Seq[Selector] = XmlParser.loadCatalog(this, "Selector", Selector.codec)
+object Selectors extends SelectorCatalog
 
 given SelectorCatalog = Selectors
