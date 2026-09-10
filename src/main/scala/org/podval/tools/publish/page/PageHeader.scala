@@ -3,6 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.metadata.{Language, Name}
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
+import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
 import Html.toHtml
@@ -168,7 +169,10 @@ object PageHeader:
       resolvedFragment(page, title).getChildren
 
   def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
-    val converted: Xml.Element = TeiMarkup.convertFragment(xml)
+    val converted: Xml.Element = TeiMarkup.convertFragment(
+      xml,
+      page.source.getOrElse(PageErrorReporter.Silent)
+    )
     page.content.fold(converted)(_.resolveConverted(converted))
 
   private def storeNameXml(name: Name): Xml.Element =
@@ -200,7 +204,9 @@ object PageHeader:
 
   private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
     date.fold(Seq.empty[Xml.Node]): el =>
-      el.get("when").map(_.trim).filter(_.nonEmpty).fold(el.getChildren)(when => Seq(Xml.text(when)))
+      el.get("when").map(_.trim).filter(_.nonEmpty) match
+        case Some(when) => Seq(el.setChildren(Seq(Xml.text(when))))
+        case None => el.getChildren
 
   private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
     val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)

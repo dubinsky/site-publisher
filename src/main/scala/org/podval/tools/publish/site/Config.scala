@@ -20,6 +20,7 @@ final class Config(
   val headerPages: List[String] = List.empty,
   val home: Option[String] = None,
   val facsimilesUrl: Option[String] = None,
+  val teiDefaultCalendar: Option[String] = None,
   val social: Config.Social = Config.Social()
 )
 

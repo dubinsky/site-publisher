@@ -185,6 +185,24 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(!first.next.contains(translated), first.next)
   }
 
+  test("date tooltip on index and document header uses Julian default and Russian names") {
+    withSite(Map(
+      "_site_config.yml" -> (siteConfig + "tei-default-calendar: julian\n")
+    )): (_, target) =>
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("""class="date-ref""""), index)
+      assert(index.contains("""class="date-tip""""), index)
+      assert(index.contains("1798-08-11"), index)
+      assert(index.contains("Julian"), index)
+      assert(index.contains("1798 август 11"), index)
+      assert(index.contains("1798 август 22"), index)
+      assert(index.contains("5558 Элул 10"), index)
+      val doc: String = html(target, "col/000.html")
+      assert(doc.contains("document-header"), doc)
+      assert(doc.contains("1798-08-11"), doc)
+      assert(doc.contains("5558 Элул 10"), doc)
+  }
+
   test("book pageType uses numeric page names") {
     withSite(Map(
       "book.xml" ->

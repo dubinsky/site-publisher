@@ -180,6 +180,19 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(title.getText.contains("Первый арест"), title.getText)
   }
 
+  test("body date with @when gets a calendar tooltip") {
+    val dumped: String = render(process(
+      """<TEI>
+        |  <text><body><p>On <date when="1798-08-11">11 августа</date>.</p></body></text>
+        |</TEI>""".stripMargin
+    ))
+    assert(dumped.contains("""class="date-ref""""), dumped)
+    assert(dumped.contains("""class="date-tip""""), dumped)
+    assert(dumped.contains("11 августа"), dumped)
+    assert(dumped.contains("1798 August 11"), dumped)
+    assert(!dumped.contains("Julian"), dumped)
+  }
+
   test("pb becomes a facsimile anchor with p{n} id") {
     val dumped: String = render(process(
       """<TEI>

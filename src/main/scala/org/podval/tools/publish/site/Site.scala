@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{AsciiDocMarkup, Link}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
@@ -51,6 +51,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     case Right(result) => result
 
   val languageSpec: Language.Spec = Site.languageSpec(config.lang)
+
+  val teiDefaultCalendarIsJulian: Boolean = TeiDate.defaultIsJulian(config.teiDefaultCalendar)
 
   val uri: URI = URI(config.url)
 

@@ -34,7 +34,7 @@ object TeiMarkup extends Markup(
 
     // Convert footnotes, glossary, quotes, pb, and code in a second pass so IR `class` values are kept.
     val converted: Xml.Element = xml.transform(
-      element => convertSpecial(tei2Html.convert(element)),
+      element => convertSpecial(tei2Html.convert(element), errorReporter),
       stopAtCode = false
     )
     // Title while the root is still `store` / `collection`. Header chrome is
@@ -105,7 +105,7 @@ object TeiMarkup extends Markup(
       stopAtCode = false
     )
 
-  private def convertSpecial(element: Xml.Element): Xml.Element =
+  private def convertSpecial(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     val stripped: Xml.Element = dropIncludes(element)
     stripped.getName.qName match
       case "row" =>
@@ -125,6 +125,9 @@ object TeiMarkup extends Markup(
       case "term" =>
         teiHref(stripped).fold(stripped)(value => stripped.setHref(value).renameKeepingClass("a"))
 
+      case "date" =>
+        TeiDate.convert(stripped, errorReporter)
+
       case name if isEntityName(name) =>
         val ref: Option[String] = stripped.get("ref").map(_.trim).filter(_.nonEmpty)
         ref.fold(stripped)(_ => stripped.copyAttribute("ref", "href").renameKeepingClass("a"))
@@ -136,9 +139,9 @@ object TeiMarkup extends Markup(
         stripped
 
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`). */
-  private[publish] def convertFragment(xml: Xml.Element): Xml.Element =
+  private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     xml.transform(
-      element => convertSpecial(tei2Html.convert(element)),
+      element => convertSpecial(tei2Html.convert(element), errorReporter),
       stopAtCode = false
     )
 

@@ -326,11 +326,11 @@ dd > p:last-child {
     margin-bottom: 0;
 }
 
-.glossary-ref, .footnote-ref, .citation-ref {
+.glossary-ref, .footnote-ref, .citation-ref, .date-ref {
     position: relative;
 }
 
-.glossary-tip, .footnote-tip, .citation-tip {
+.glossary-tip, .footnote-tip, .citation-tip, .date-tip {
     display: none;
     position: absolute;
     left: 0;
@@ -350,17 +350,36 @@ dd > p:last-child {
     text-align: start;
 }
 
+.date-tip {
+    max-width: none;
+    padding: 0.3em;
+}
+
+.date-tip table {
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.date-tip th, .date-tip td {
+    padding: 0.15em 0.45em;
+    border: 1px solid var(--border-color-01);
+    white-space: nowrap;
+}
+
 @media (hover: hover) and (pointer: fine) {
     .glossary-ref:hover > .glossary-tip,
     .footnote-ref:hover > .footnote-tip,
-    .citation-ref:hover > .citation-tip {
+    .citation-ref:hover > .citation-tip,
+    .date-ref:hover > .date-tip {
         display: block;
     }
 }
 
 .glossary-ref:focus-within > .glossary-tip,
 .footnote-ref:focus-within > .footnote-tip,
-.citation-ref:focus-within > .citation-tip {
+.citation-ref:focus-within > .citation-tip,
+.date-ref:focus-within > .date-tip {
     display: block;
 }
 
@@ -395,7 +414,8 @@ html.glossary-expand .citation-tip::after {
 }
 
 @media print {
-    .footnote-tip {
+    .footnote-tip,
+    .date-tip {
         display: none !important;
     }
     /* Always inline in PDF/print; the header toggle is screen-only. */

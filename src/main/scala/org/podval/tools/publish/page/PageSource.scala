@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.markup.Markup
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path}
 import org.podval.xml.Xml
@@ -22,6 +23,10 @@ final class PageSource(
     message,
     cause
   )
+
+  override def languageSpec: Language.Spec = page.site.languageSpec
+
+  override def teiDefaultCalendarIsJulian: Boolean = page.site.teiDefaultCalendarIsJulian
 
   private var contentVar: Option[SoftReference[PageContent]] = None
 

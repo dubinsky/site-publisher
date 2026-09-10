@@ -27,6 +27,7 @@ object PageError:
   case object NotInStore extends Kind("not in store")
   case object MissingAsset extends Kind("missing asset")
   case object UnknownCitation extends Kind("unknown citation")
+  case object InvalidDate extends Kind("invalid date")
 
   val all: List[Kind] = List(
     MalformedFrontMatter,
@@ -42,5 +43,6 @@ object PageError:
     Unresolved,
     NotInStore,
     MissingAsset,
-    UnknownCitation
+    UnknownCitation,
+    InvalidDate
   )

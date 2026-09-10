@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- TEI `date/@when` (and `..` ranges) get Julian/Gregorian/Jewish hover tables via `org.opentorah:opentorah-core`; site config `tei-default-calendar` (`julian`/`gregorian`, default gregorian)
 - xml: 0.1.0
 - Store index titles use `Selector.pluralOrNames` (singular when there is no plural).
 - `Selector.xml` lives here (`page.Selectors`); xml `By(name)` needs that catalog in scope.

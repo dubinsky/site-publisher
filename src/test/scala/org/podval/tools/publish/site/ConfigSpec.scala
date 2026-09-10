@@ -26,3 +26,12 @@ final class ConfigSpec extends AnyFunSuite:
     )
     assert(config.facsimilesUrl.contains("https://storage.googleapis.com/facsimiles.alter-rebbe.org/"))
   }
+
+  test("tei-default-calendar is optional") {
+    assert(decode(required).teiDefaultCalendar.isEmpty)
+  }
+
+  test("tei-default-calendar maps from kebab-case") {
+    val config: Config = decode(required + "tei-default-calendar: julian\n")
+    assert(config.teiDefaultCalendar.contains("julian"))
+  }

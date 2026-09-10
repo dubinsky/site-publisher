@@ -38,6 +38,12 @@ Optional `facsimiles-url` is the base URL of a facsimile JPEG site (trailing sla
 facsimiles-url: https://storage.googleapis.com/facsimiles.alter-rebbe.org/
 ----
 
+Optional `tei-default-calendar` is `julian` or `gregorian` (default `gregorian`). TEI `date/@when` numbers are in that calendar unless the element has `calendar="#julian"`. See <<tei-dates>>.
+
+----
+tei-default-calendar: julian
+----
+
 
 [#summary]
 == Summary
@@ -74,6 +80,7 @@ Supported markup constructs:
 - <<figures>>;
 - <<pdf-embed>>;
 - <<video>>;
+- <<tei-dates>>;
 
 [#opinionated]
 == Opinionated
@@ -214,12 +221,28 @@ A directory permalink (an `index` or TEI store/collection) is also a prefix: `/s
 
 A TEI `store` file in the source root (`archive.xml` next to `archive/`) also gets two synthetic indexes, named from the file: `{name}-collections.html` (nested tree of child stores and collections, collector `/collections`) and `{name}-index.html` (flat list of descendant collections, collector `/`). Titles come from this project’s `Selector.xml` catalog in the site `lang` (omitted `lang` is `en`): the store’s `by/@selector` title for the tree (`archive` → Архивы when `lang` is `ru`) and the `case` selector title for the flat list (Дела). When there is exactly one such root store, `/collections` rewrites to the tree page (no Refresh file; Worker table includes it). Point `header-pages` at `{name}-collections` and `home` at `/{name}-index.html` when those should be chrome / the landing page.
 
-A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Store children are listed in include order (`name: title`). A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not a page list. Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book` (numeric). A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip translations. `text/@xml:lang` must match the suffix. The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error (translations are not). Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them. Missing `pb@missing` photos are listed under the table. Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the <<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
+A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Store children are listed in include order (`name: title`). A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not a page list. Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book` (numeric). A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip translations. `text/@xml:lang` must match the suffix. The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>. Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error (translations are not). Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them. Missing `pb@missing` photos are listed under the table. Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the <<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
 
 - directory structure
 - navigation
 - header pages
 - icons
+
+[#tei-dates]
+== TEI dates
+
+A TEI `<date when="…">` (and the same on a date range written in `@when` with `..`) gets a hover table of the day in Julian (when used), Gregorian, and Jewish calendars. Month names follow the site `lang`.
+
+`@when` is ISO-ish: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`. A year or month is an interval (first day .. last day). An explicit range uses `..`; the right-hand side may be shorter (`1800-11-15..16`, `1800-11..12`).
+
+The numbers in `@when` are Gregorian unless:
+
+- the element has `calendar="#julian"`, or
+- `_site_config.yml` has `tei-default-calendar: julian` and there is no `@calendar`.
+
+Any other `@calendar` value is Gregorian. Dates without `@when` are unchanged. Invalid `@when` is a page error; the element is left as authored.
+
+The collection index and document-header Дата cell show `@when` as the visible text (not the authored wording). In-text dates keep their authored content.
 
 [#facsimiles]
 == Facsimiles
