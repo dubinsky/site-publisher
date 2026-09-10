@@ -37,6 +37,15 @@ Until that plugin exists, GitHub Actions call
 `dubinsky/site-publisher/.github/actions/generate@v0.1.0`, which resolves the same coordinate from
 Maven Central (pin the action tag; optional `version` input overrides `gradle.properties`).
 
+Sites using this publisher:
+
+- https://dub.podval.org
+- https://www.podval.org
+- https://www.chumashquestions.org
+- https://www.alter-rebbe.org
+- https://www.opentorah.org
+- https://www.mathworlds.org
+
 [#dogfooding]
 === Dogfooding an unreleased publisher
 

@@ -39,6 +39,15 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 
 The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). A Gradle plugin is planned in `gradle-plugin-plan.md` and is not implemented. GitHub `generate` action resolves that artifact from Maven Central.
 
+Known sites (local checkouts; `@main def generate()` comments the same paths):
+
+- `/home/dub/Podval/dub.podval.org` — https://dub.podval.org
+- `/home/dub/Podval/www.podval.org` — https://www.podval.org
+- `/home/dub/OpenTorah/chumashquestions.org` — https://www.chumashquestions.org
+- `/home/dub/OpenTorah/alter-rebbe.org` — https://www.alter-rebbe.org
+- `/home/dub/OpenTorah/opentorah.org/docs` — https://www.opentorah.org
+- `/home/dub/CognoMath/mathworlds-site` — https://www.mathworlds.org (`cognomath/mathworlds-site`)
+
 ### Development entry point (`generate`)
 
 `@main def generate()` in `Site.scala` hardcodes a local site path and serves it:
