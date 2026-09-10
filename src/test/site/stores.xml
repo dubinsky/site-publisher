@@ -2,9 +2,9 @@
 <store xmlns:xi="http://www.w3.org/2001/XInclude">
   <name lang="en" n="stores"/>
   <title>Stores Fixture</title>
-  <by selector="item">
-    <xi:include href="stores/item/zebra.md"/>
-    <xi:include href="stores/item/apple.md"/>
-    <xi:include href="stores/item/ghost.md"/>
+  <by selector="note">
+    <xi:include href="stores/note/zebra.md"/>
+    <xi:include href="stores/note/apple.md"/>
+    <xi:include href="stores/note/ghost.md"/>
   </by>
 </store>

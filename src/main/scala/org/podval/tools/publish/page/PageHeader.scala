@@ -148,10 +148,10 @@ object PageHeader:
       if parent.isDirectory && parent.path.path.length > 1
       then parent.path.path.init.last
       else parent.path.fileName
-    Option.when(Selector.forName(segment).isDefined)(segment)
+    Option.when(Selectors.forName(segment).isDefined)(segment)
 
   private[page] def selectorDisplayName(n: String, spec: Language.Spec): String =
-    Selector.forName(n).map(selectorDisplayName(_, spec)).getOrElse(n)
+    Selectors.forName(n).map(selectorDisplayName(_, spec)).getOrElse(n)
 
   def selectorDisplayName(selector: Selector, spec: Language.Spec): String =
     selector.toLanguageString(using spec)

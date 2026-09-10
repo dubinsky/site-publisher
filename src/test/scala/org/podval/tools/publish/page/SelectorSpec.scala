@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.store.Selector
 import org.scalatest.funsuite.AnyFunSuite
 
 final class SelectorSpec extends AnyFunSuite:
@@ -21,9 +20,9 @@ final class SelectorSpec extends AnyFunSuite:
   }
 
   test("forName matches any language name") {
-    assert(Selector.forName("разряд").isDefined)
-    assert(Selector.forName("category").isDefined)
-    assert(Selector.forName("book").isDefined)
-    assert(Selector.forName("книга").isDefined)
-    assert(Selector.forName("item").isEmpty)
+    assert(Selectors.forName("разряд").isDefined)
+    assert(Selectors.forName("category").isDefined)
+    assert(Selectors.forName("book").isDefined)
+    assert(Selectors.forName("книга").isDefined)
+    assert(Selectors.forName("item").isEmpty)
   }

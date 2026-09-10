@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.store.Selector
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{Xml, XmlElement}
 
@@ -25,7 +24,7 @@ object StoreIndexes:
       case StoreIndexPage.Kind.Tree =>
         root.by.flatMap(_.selector.plural).map(_.toLanguageString(using spec))
       case StoreIndexPage.Kind.Flat =>
-        Selector.forName("case").flatMap(_.plural).map(_.toLanguageString(using spec))
+        Selectors.forName("case").flatMap(_.plural).map(_.toLanguageString(using spec))
     fromSelector
       .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
       .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
