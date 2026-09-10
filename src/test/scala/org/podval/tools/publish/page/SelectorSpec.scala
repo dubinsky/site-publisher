@@ -17,6 +17,10 @@ final class SelectorSpec extends AnyFunSuite:
     assert(PageHeader.selectorDisplayName("case", en) == "case")
     assert(PageHeader.selectorDisplayName("item", ru) == "item")
     assert(PageHeader.selectorDisplayName("item", en) == "item")
+    assert(Selectors.getForName("archive").plural.exists(_.hasName("Archives")))
+    assert(Selectors.getForName("archive").plural.exists(_.hasName("Архивы")))
+    assert(Selectors.getForName("case").plural.exists(_.hasName("Cases")))
+    assert(Selectors.getForName("names").plural.exists(_.hasName("Names")))
   }
 
   test("forName matches any language name") {

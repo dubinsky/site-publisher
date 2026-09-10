@@ -4,10 +4,12 @@
     <name n="language" lang="en"/>
     <name n="язык" lang="ru"/>
   </selector>
+<!--  TODO remove! -->
   <selector>
     <name n="names" lang="en"/>
     <name n="имена" lang="ru"/>
     <plural>
+      <name n="Names" lang="en"/>
       <name n="Имена" lang="ru"/>
     </plural>
   </selector>
@@ -15,6 +17,7 @@
     <name n="name" lang="en"/>
     <name n="имя" lang="ru"/>
     <plural>
+      <name n="Names" lang="en"/>
       <name n="Имена" lang="ru"/>
     </plural>
   </selector>
@@ -26,6 +29,7 @@
     <name n="архив" lang="ru"/>
     <name n="archive" lang="en"/>
     <plural>
+      <name n="Archives" lang="en"/>
       <name n="Архивы" lang="ru"/>
     </plural>
   </selector>
@@ -61,6 +65,7 @@
     <name n="дело" lang="ru"/>
     <name n="case" lang="en"/>
     <plural>
+      <name n="Cases" lang="en"/>
       <name n="Дела" lang="ru"/>
     </plural>
   </selector>
@@ -97,6 +102,7 @@
     <name n="report" lang="en"/>
     <name n="отчет" lang="ru"/>
     <plural>
+      <name n="Reports" lang="en"/>
       <name n="Отчеты" lang="ru"/>
     </plural>
   </selector>

@@ -542,10 +542,10 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     exists("stores-index.html")
     val tree: String = html("stores-collections.html")
     assert(tree.contains("""class="tree-index""""), tree)
-    assert(tree.contains("Stores Fixture"), tree)
+    assert(tree.contains("<title>note |"), tree)
     assert(tree.contains("zebra"), tree)
     val flat: String = html("stores-index.html")
-    assert(flat.contains("Дела"), flat)
+    assert(flat.contains("Cases"), flat)
   }
 
   test("store index lists includes in document order; extras error; hops are not pages") {

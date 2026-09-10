@@ -22,9 +22,9 @@ object StoreIndexes:
     val spec: Language.Spec = root.site.languageSpec
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.by.flatMap(_.selector.plural).map(_.toLanguageString(using spec))
+        root.by.map(_.selector.pluralOrNames.toLanguageString(using spec))
       case StoreIndexPage.Kind.Flat =>
-        Selectors.forName("case").flatMap(_.plural).map(_.toLanguageString(using spec))
+        Selectors.forName("case").map(_.pluralOrNames.toLanguageString(using spec))
     fromSelector
       .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
       .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))

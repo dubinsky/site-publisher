@@ -176,11 +176,13 @@ final class StoreIndexesSpec extends AnyFunSuite:
     val english: String = siteConfig.replace("lang: ru", "lang: en")
     withSite(Map("_site_config.yml" -> english)): (_, target) =>
       val tree: String = html(target, "archive-collections.html")
+      assert(tree.contains("<title>Archives | Archive Fixture</title>"), tree)
       assert(tree.contains("<em>archive</em>"), tree)
       assert(tree.contains("books:"), tree)
       assert(tree.contains("<em>book</em>"), tree)
       assert(!tree.contains("<em>архив</em>"), tree)
       val flat: String = html(target, "archive-index.html")
+      assert(flat.contains("<title>Cases | Archive Fixture</title>"), flat)
       assert(flat.contains("archive books, book Державин"), flat)
   }
 
