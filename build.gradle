@@ -1,20 +1,54 @@
 plugins {
-  id 'io.github.ben-manes.versions' version '0.61.0'
-  id 'scala'
   id 'application'
+  id 'scala'
   id 'maven-publish'
   id 'signing'
+  id 'io.github.ben-manes.versions' version '0.61.0'
   id 'org.podval.tools.scalajs' version '1.0.4'
-//  id 'com.gradleup.nmcp.aggregation' version '1.4.0'
 }
 
 description = 'Generate, serve and publish websites'
 group = 'org.podval.tools'
-version = '0.0.1'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-scala.scalaVersion = '3.9.0'
-project.gradle.startParameter.excludedTaskNames.add('compileJava')
+final String gitHubRepository = 'dubinsky/site-publisher'
+final String gitHubRepositoryUrl = "https://github.com/$gitHubRepository"
+final String orgName = 'Podval Group'
+final String orgUrl = 'https://www.podval.org'
+
+scala.scalaVersion = providers.gradleProperty('scalaVersion').get()
+
+// Register before `withJavadocJar()` so that call reuses this task (it will not
+// overwrite `from`). Maven Central requires a -javadoc jar; this project is
+// Scala-only, so the classifier carries ScalaDoc.
+tasks.register('javadocJar', Jar) {
+  group = 'build'
+  description = 'Assembles a jar archive containing the ScalaDoc (Maven Central -javadoc classifier).'
+  from scaladoc
+  archiveClassifier = 'javadoc'
+}
+
+java {
+  toolchain.languageVersion = JavaLanguageVersion.of(25)
+  withSourcesJar()
+  withJavadocJar()
+}
+
+tasks.named('jar', Jar) {
+  // `jar` packs both compileScala output (`build/classes/scala/main`) and
+  // processResources output (`build/resources/main`). Catalog XML belongs only
+  // in resources; compileScala does not emit it. IntelliJ's compiler copies
+  // those same files into the classes dir, and Gradle does not delete unknown
+  // files there, so both copies survive until `clean`. Gradle 7+ then fails
+  // the jar (`duplicatesStrategy` FAIL). Exclude the second copy; they are identical.
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  manifest {
+    attributes(
+      'Implementation-Title'  : project.name,
+      'Implementation-Version': archiveVersion,
+      'Implementation-Vendor' : orgName
+    )
+  }
+}
 
 String zioBlocksVersion = '0.0.51'
 String flexMarkVersion = '0.64.8'
@@ -70,15 +104,23 @@ def isNonStable = { String version ->
   return !stableKeyword && !(version ==~ regex)
 }
 
+// Maven has zio-blocks-schema_3:0.017 (a padded 0.0.17), which both Maven and Gradle
+// rank above 0.0.x because the second component is 17.
+def hasPaddedNumericComponent = { String version ->
+  version.tokenize('.-').any { it.length() > 1 && it ==~ /0\d+/ }
+}
+
 tasks.named("dependencyUpdates").configure {
   rejectVersionIf {
-    isNonStable(it.candidate.version)
+    isNonStable(it.candidate.version) || hasPaddedNumericComponent(it.candidate.version)
   }
 }
 
 tasks.withType(ScalaCompile).configureEach {
   scalaCompileOptions.with {
     additionalParameters = [
+      // Scala 3.9 requires JDK 17+; emit 25 to match the Java toolchain.
+      '-release:25',
       '-new-syntax',
       '-feature',
       '-language:strictEquality',
@@ -87,61 +129,33 @@ tasks.withType(ScalaCompile).configureEach {
   }
 }
 
-jar {
-  manifest {
-    attributes(
-      'Implementation-Title'  : project.description,
-      'Implementation-Version': project.version
-    )
-  }
-}
-
-tasks.register('sourcesJar', Jar) {
-  from sourceSets.main.allSource
-  archiveClassifier.set('sources')
-}
-
-tasks.register('scaladocJar', Jar) {
-  from scaladoc.destinationDir
-  archiveClassifier.set('scaladoc')
-}
-scaladocJar.dependsOn scaladoc
-
-// There is no Java in the project, but Maven Central requires javadoc JAR...
-tasks.register('javadocJar', Jar) {
-  from javadoc.destinationDir
-  archiveClassifier.set('javadoc')
-}
-javadocJar.dependsOn(javadoc)
-
-final String gitHubRepository = "dubinsky/publisher"
-final String gitHubRepositoryUrl = "https://github.com/$gitHubRepository"
-final String orgName = 'Podval Group'
-final String orgUrl = 'https://www.podval.org'
-
 publishing {
   publications {
     library(MavenPublication) {
       from components.java
-      artifact sourcesJar
-      artifact scaladocJar
-      artifact javadocJar
 
       pom {
-        name = project.name
+        name = 'Podval Site Publisher'
         description = project.description
         url = gitHubRepositoryUrl
+        inceptionYear = '2026'
         scm {
           url = gitHubRepositoryUrl
-          connection = "scm:git:git://github.com/${gitHubRepository}.git"
-          developerConnection = "scm:git:ssh://github.com/${gitHubRepository}.git"
+          connection = "scm:git:https://github.com/${gitHubRepository}.git"
+          developerConnection = "scm:git:ssh://git@github.com/${gitHubRepository}.git"
+        }
+        issueManagement {
+          system = 'GitHub'
+          url = "$gitHubRepositoryUrl/issues"
+        }
+        ciManagement {
+          system = 'GitHub Actions'
+          url = "$gitHubRepositoryUrl/actions"
         }
         licenses {
           license {
-            name = 'The Apache Software License, Version 2.0'
+            name = 'Apache-2.0'
             url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-            distribution = 'repo'
-            comments = 'A business-friendly OSS license'
           }
         }
         organization {
@@ -165,31 +179,9 @@ publishing {
 }
 
 signing {
+  def key = providers.gradleProperty('signingKey')
+  def password = providers.gradleProperty('signingPassword')
+  required = key.isPresent()
+  useInMemoryPgpKeys(key.getOrNull(), password.getOrNull())
   sign publishing.publications.library
-  useInMemoryPgpKeys(
-    findProperty('signingKey') as String,
-    findProperty('signingPassword') as String
-  )
 }
-
-// ./gradlew nmcpZipAggregation - to see what will be published
-// ./gradlew publishAggregationToCentralPortal - to publish
-// https://central.sonatype.com/publishing/deployments - to release
-//nmcpAggregation {
-//  centralPortal {
-//    publishingType = "USER_MANAGED"
-//    username = findProperty('mavenCentralUsername') as String
-//    password = findProperty('mavenCentralPassword') as String
-//  }
-//}
-//
-//tasks.register('uploadLibrary')
-//uploadLibrary.description = 'Upload artifacts'
-//uploadLibrary.group = 'publishing'
-//uploadLibrary.dependsOn(publishAggregationToCentralPortal)
-//
-//tasks.register('upload')
-//upload.description = 'Upload artifacts and plugins'
-//upload.group = 'publishing'
-//upload.dependsOn(uploadLibrary)
-//upload.dependsOn(publishPlugins)
