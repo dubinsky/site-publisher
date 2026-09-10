@@ -6,7 +6,7 @@
 #    steps:
 #      - uses: actions/checkout@v6
 #
-#      - uses: dubinsky/site-publisher/.github/actions/generate@master  # pin a tag when you can
+#      - uses: dubinsky/site-publisher/.github/actions/generate@v0.1.0  # pin a tag
 #        id: site
 #        with:
 #          source: docs                    # or '.' for repo root
@@ -18,8 +18,9 @@
 name: Generate site
 description: >
   Generate a static site with Podval site-publisher into <source>/<target-directory-name>
-  (default <source>/_site). Uses the site-publisher revision pinned by the action ref
-  (github.action_path); does not nest-checkout the tool again.
+  (default <source>/_site). Resolves org.podval.tools:org.podval.tools.publisher from
+  Maven Central (version input, or gradle.properties of this action ref). Does not
+  compile the publisher from the action checkout.
 
 inputs:
   source:
@@ -45,7 +46,13 @@ inputs:
     required: false
     default: 'false'
   log-level:
-    description: Optional log level (e.g. INFO, DEBUG). Empty means site-publisher default.
+    description: Optional log level (e.g. INFO, DEBUG). Empty uses site-publisher default (INFO).
+    required: false
+    default: ''
+  version:
+    description: >
+      Maven Central version of org.podval.tools:org.podval.tools.publisher.
+      Empty reads version= from gradle.properties next to this action's repository root.
     required: false
     default: ''
   java-version:
@@ -74,11 +81,14 @@ runs:
         distribution: ${{ inputs.java-distribution }}
         java-version: ${{ inputs.java-version }}
 
-    # Configures Gradle User Home caching / wrapper validation for later steps.
-    # No build-root-directory input (that is not a setup-gradle parameter); we cd to
-    # the publisher root in the generate step via github.action_path.
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v6
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.gradle/ms-playwright
+        key: playwright-${{ runner.os }}-ms-playwright
 
     - name: Generate site
       id: generate
@@ -86,14 +96,12 @@ runs:
       run: |
         set -euo pipefail
 
-        # site-publisher root for this action ref (full repo is available next to the action).
         publisher_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
         if [[ ! -x "$publisher_root/gradlew" ]]; then
           echo "::error::gradlew not found under publisher root: $publisher_root"
           exit 1
         fi
 
-        # Resolve source once: absolute path to the content site.
         source_input="${{ inputs.source }}"
         if [[ -z "$source_input" ]]; then
           source_input='.'
@@ -114,10 +122,17 @@ runs:
         fi
         site_path="$source_path/$target_name"
 
-        # Build CLI args: single positional source, then flags (source appears once).
+        version="${{ inputs.version }}"
+        if [[ -z "$version" ]]; then
+          version="$(awk -F= '/^version=/{print $2; exit}' "$publisher_root/gradle.properties")"
+        fi
+        if [[ -z "$version" ]]; then
+          echo "::error::Publisher version is empty (set inputs.version or gradle.properties version=)"
+          exit 1
+        fi
+
         args=("$source_path")
         args+=("--target-directory-name=$target_name")
-
         if [[ "${{ inputs.treat-errors-as-warnings }}" == "true" ]]; then
           args+=(--treat-errors-as-warnings=true)
         fi
@@ -132,18 +147,49 @@ runs:
           args+=("--log-level=$log_level")
         fi
 
-        # Gradle --args expects one string; quote each token for the app.
-        args_str="$(printf '%q ' "${args[@]}")"
-        args_str="${args_str% }"
+        run_dir="${RUNNER_TEMP:-/tmp}/site-publisher-run"
+        rm -rf "$run_dir"
+        mkdir -p "$run_dir"
+        printf '%s\n' "${args[@]}" > "$run_dir/args.txt"
+        printf 'publisherVersion=%s\n' "$version" > "$run_dir/gradle.properties"
 
-        echo "Publisher root: $publisher_root"
-        echo "Source path:    $source_path"
-        echo "Site path:      $site_path"
-        echo "CLI args:       $args_str"
+        cat > "$run_dir/settings.gradle" <<'EOF'
+        rootProject.name = 'site-publisher-run'
+        EOF
+
+        cat > "$run_dir/build.gradle" <<'EOF'
+        plugins {
+          id 'java'
+        }
+        repositories {
+          mavenCentral()
+        }
+        configurations {
+          sitePublisher
+        }
+        dependencies {
+          sitePublisher "org.podval.tools:org.podval.tools.publisher:${providers.gradleProperty('publisherVersion').get()}"
+        }
+        tasks.register('generateSite', JavaExec) {
+          classpath = configurations.sitePublisher
+          mainClass.set('org.podval.tools.publish.site.Site')
+          args = file('args.txt').readLines()
+          jvmArgs = [
+            '--enable-native-access=ALL-UNNAMED',
+            '--sun-misc-unsafe-memory-access=allow',
+          ]
+          environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', '1'
+          environment 'PLAYWRIGHT_BROWSERS_PATH', "${gradle.gradleUserHomeDir}/ms-playwright"
+        }
+        EOF
+
+        echo "Publisher version: $version"
+        echo "Source path:       $source_path"
+        echo "Site path:         $site_path"
 
         (
           cd "$publisher_root"
-          ./gradlew run --args="$args_str"
+          ./gradlew --no-daemon -p "$run_dir" generateSite
         )
 
         if [[ ! -d "$site_path" ]]; then

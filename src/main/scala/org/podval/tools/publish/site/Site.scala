@@ -320,7 +320,10 @@ object Site:
   // Do not put `//` comments in the JS: HTML pretty-printing wraps lines and would comment out the rest.
   private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
 
-  def main(args: Array[String]): Unit = Site(SiteOptions.forArgs(args)).generate()
+  def main(args: Array[String]): Unit =
+    val options: SiteOptions = SiteOptions.forArgs(args)
+    val site: Site = Site(options)
+    if options.serve then site.serve() else site.generate()
 
   @main def generate(): Unit = Site(SiteOptions(
     sourceDirectoryPath =

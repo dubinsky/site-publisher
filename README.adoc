@@ -19,7 +19,58 @@ The source directory must contain `_site_config.yml`. Pass that directory as the
 ./gradlew run --args="/path/to/source-directory"
 ----
 
+`--serve` generates and leaves the HTTP server running (same as IntelliJ `@main def generate()`).
+`--log-level` defaults to `INFO`. `--treat-errors-as-warnings`, `--include-drafts`, `--production`,
+and `--target-directory-name` are the other flags. `SITE_PUBLISHER_*` environment variables are the
+same names with hyphens turned into underscores.
+
 `./gradlew build` compiles and tests; `./gradlew test` runs tests only.
+
+Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.1.0`
+
+A site with Gradle should run that artifact on a detached `sitePublisher` configuration
+(`JavaExec`, main class `org.podval.tools.publish.site.Site`). Do not put it on `implementation`
+(Scala version and Playwright stay off the project compile classpath). A Gradle plugin that owns
+this block is planned; see `gradle-plugin-plan.md`.
+
+Until that plugin exists, GitHub Actions call
+`dubinsky/site-publisher/.github/actions/generate@v0.1.0`, which resolves the same coordinate from
+Maven Central (pin the action tag; optional `version` input overrides `gradle.properties`).
+
+[#dogfooding]
+=== Dogfooding an unreleased publisher
+
+This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those
+checkouts exist (`-PxmlDir=` / `-PopentorahDir=`).
+
+A site that depends on `org.podval.tools:org.podval.tools.publisher` can substitute a local
+checkout the same way:
+
+----
+final File publisherDir = file(
+  providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
+)
+if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
+  includeBuild(publisherDir)
+}
+----
+
+Override with `-PsitePublisherDir=`. OpenTorah sites typically want
+`../../Podval/site-publisher`. When the Gradle plugin exists, add
+`pluginManagement { includeBuild(...) }` as well (see `gradle-plugin-plan.md`).
+
+Without a site-side dependency, generate from this repo:
+`./gradlew run --args="/path/to/source-directory"`.
+
+[#publish]
+=== Publish
+
+----
+./gradlew nmcpZipAggregation
+./gradlew publishAggregationToCentralPortal
+----
+
+Then release the deployment at https://central.sonatype.com/publishing/deployments .
 
 Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as `home`):
 

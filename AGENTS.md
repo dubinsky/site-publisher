@@ -34,9 +34,10 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ./gradlew test                  # run tests only
 ./gradlew clean
 ./gradlew run --args="/path/to/source-directory"
+./gradlew run --args="/path/to/source-directory --serve"
 ```
 
-The application expects a source directory containing `_site_config.yml` as its first (and only) positional argument. `Site.main` is `Site(SiteOptions.forArgs(args)).generate()`.
+The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). A Gradle plugin is planned in `gradle-plugin-plan.md` and is not implemented. GitHub `generate` action resolves that artifact from Maven Central.
 
 ### Development entry point (`generate`)
 

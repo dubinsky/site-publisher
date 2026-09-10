@@ -15,10 +15,10 @@
 #     id-token: write
 #   jobs:
 #     publish:
-#       uses: dubinsky/site-publisher/.github/workflows/publish-pages.yml@master  # pin a tag when you can
+#       uses: dubinsky/site-publisher/.github/workflows/publish-pages.yml@v0.1.0
 #       with:
 #         source: docs   # or '.' for repo root
-#         site-publisher-ref: master   # same ref as @ above when possible
+#         site-publisher-ref: v0.1.0   # same ref as @ above when possible
 #
 name: Publish site to GitHub Pages
 
@@ -60,10 +60,19 @@ on:
       site-publisher-ref:
         description: >
           Git ref of dubinsky/site-publisher to check out for the generate action
-          and the tool itself (tag, branch, or SHA). Prefer matching the workflow_call @ref.
+          (tag, branch, or SHA). Prefer matching the workflow_call @ref. The action
+          resolves the publisher JAR from Maven Central (see `version`).
         type: string
         required: false
         default: 'master'
+      version:
+        description: >
+          Maven Central version of org.podval.tools:org.podval.tools.publisher.
+          Empty lets the generate action read version= from gradle.properties of
+          site-publisher-ref.
+        type: string
+        required: false
+        default: ''
       java-version:
         description: JDK version for site-publisher.
         type: string
@@ -111,6 +120,7 @@ jobs:
           include-drafts: ${{ inputs.include-drafts }}
           production: ${{ inputs.production }}
           log-level: ${{ inputs.log-level }}
+          version: ${{ inputs.version }}
           java-version: ${{ inputs.java-version }}
           java-distribution: ${{ inputs.java-distribution }}
 

@@ -6,11 +6,12 @@ final class SiteOptions(
   includeDrafts: Boolean = false,
   val treatErrorsAsWarnings: Boolean = false,
   val production: Boolean = false,
+  val serve: Boolean = false,
   logLevelOpt: Option[String] = None
 ):
   def targetDirectoryName: String = targetDirectoryNameOpt.getOrElse("_site")
   def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
-  def logLevel: String = logLevelOpt.getOrElse("DEBUG")
+  def logLevel: String = logLevelOpt.getOrElse("INFO")
 
 object SiteOptions:
   def forArgs(args: Array[String]): SiteOptions = forOptions(
@@ -23,6 +24,7 @@ object SiteOptions:
     includeDrafts = options.booleanOption("include-drafts"),
     treatErrorsAsWarnings = options.booleanOption("treat-errors-as-warnings"),
     production = options.booleanOption("production"),
+    serve = options.booleanOption("serve"),
     logLevelOpt = options.option("log-level")
   )
   

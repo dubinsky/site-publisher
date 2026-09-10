@@ -10,29 +10,37 @@ final class SiteOptionsSpec extends AnyFunSuite:
     assert(options.draftsDirectoryName.isEmpty)
     assert(!options.treatErrorsAsWarnings)
     assert(!options.production)
-    assert(options.logLevel == "DEBUG")
+    assert(!options.serve)
+    assert(options.logLevel == "INFO")
   }
 
   test("--name=value and boolean flags without a value") {
     val options: SiteOptions = SiteOptions.forArgs(Array(
       "/src",
       "--target-directory-name=/abs/out",
-      "--log-level=INFO",
+      "--log-level=DEBUG",
       "--include-drafts",
       "--treat-errors-as-warnings",
-      "--production"
+      "--production",
+      "--serve"
     ))
     assert(options.sourceDirectoryPath == "/src")
     assert(options.targetDirectoryName == "/abs/out")
-    assert(options.logLevel == "INFO")
+    assert(options.logLevel == "DEBUG")
     assert(options.draftsDirectoryName.contains("_drafts"))
     assert(options.treatErrorsAsWarnings)
     assert(options.production)
+    assert(options.serve)
   }
 
   test("--include-drafts=false is off") {
     val options: SiteOptions = SiteOptions.forArgs(Array("/src", "--include-drafts=false"))
     assert(options.draftsDirectoryName.isEmpty)
+  }
+
+  test("--serve=false is off") {
+    val options: SiteOptions = SiteOptions.forArgs(Array("/src", "--serve=false"))
+    assert(!options.serve)
   }
 
   test("Options.option is None for an unknown name") {

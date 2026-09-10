@@ -59,9 +59,18 @@ final class PdfPage(
 object PdfPage:
   val extension: String = "pdf"
 
+  // Chromium for `pdf: true`. Prefer PLAYWRIGHT_BROWSERS_PATH (Gradle JavaExec
+  // sets $GRADLE_USER_HOME/ms-playwright); else ~/.gradle/ms-playwright.
+  def browsersPath: String =
+    sys.env.getOrElse(
+      "PLAYWRIGHT_BROWSERS_PATH",
+      File(File(System.getProperty("user.home")), ".gradle/ms-playwright").getAbsolutePath
+    )
+
   def playwright: Playwright = Playwright.create(
     Playwright.CreateOptions().setEnv(java.util.Map.of(
-      "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1"
+      "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS", "1",
+      "PLAYWRIGHT_BROWSERS_PATH", browsersPath
     ))
   )
 

@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-10
+- First Maven Central publication (`org.podval.tools:org.podval.tools.publisher`).
+- CLI: `--serve`; default `--log-level` is `INFO` (was `DEBUG`).
+- Playwright Chromium cache: `PLAYWRIGHT_BROWSERS_PATH` or `~/.gradle/ms-playwright` (`$GRADLE_USER_HOME/ms-playwright` from Gradle).
+- GitHub `generate` action resolves the published JAR from Maven Central (does not compile the action checkout); caches Playwright browsers.
+- README: Maven coordinates, dogfooding `includeBuild`; Gradle plugin plan in `gradle-plugin-plan.md` (not implemented).
 - fix: empty-href store/collection scan lists the directory (nested TEI documents were dropped as `NotInStore`)
 - TEI `date/@when` (and `..` ranges) get Julian/Gregorian/Jewish hover tables via `org.opentorah:opentorah-core`; site config `tei-default-calendar` (`julian`/`gregorian`, default gregorian)
 - xml: 0.1.0
