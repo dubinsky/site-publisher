@@ -265,11 +265,18 @@ final class Pages(site: Site):
         case None => getOrAddDirectory(path)
         case Some(index) => addMarkup(index.markup, index.standAloneFrontMatter, path)
 
+    // A store with `xi:include`s lists only those hrefs. Empty hrefs keep the
+    // filesystem listing and must not inherit the parent's include set: a parent
+    // lists `col.xml`, not `col/000.xml`.
     val listedHere: Option[(Path, Set[Path])] =
-      directoryPage.flatMap(_.sourcePath).flatMap: storeSource =>
-        directoryPage.flatMap(_.store).filter(_.hrefs.nonEmpty).map: store =>
-          (storeSource, store.hrefs.map(storeSource.resolveFrom).toSet)
-      .orElse(listedIn)
+      directoryPage.flatMap(_.store) match
+        case Some(store) if store.hrefs.nonEmpty =>
+          directoryPage.flatMap(_.sourcePath).map: storeSource =>
+            (storeSource, store.hrefs.map(storeSource.resolveFrom).toSet)
+        case Some(_) =>
+          None
+        case None =>
+          listedIn
 
     def isListed(sourcePath: Path): Boolean =
       listedHere.forall((_, listed) => listed.contains(sourcePath))

@@ -203,6 +203,35 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(doc.contains("5558 Элул 10"), doc)
   }
 
+  test("collection under a store with includes still publishes TEI documents") {
+    withSite(Map(
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/col.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/col.xml" ->
+        """<collection n="1">
+          |  <title>Nested case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/col/000.xml" -> tei("Cover of a nested collection document"),
+      "archive/stray.md" -> "not in the store\n"
+    )): (_, target) =>
+      assert(File(target, "archive/col/000.html").isFile, "TEI document under included collection")
+      val doc: String = html(target, "archive/col/000.html")
+      assert(doc.contains("hello"), doc)
+      val index: String = html(target, "archive/col/index.html")
+      assert(index.contains("""href="/archive/col/000.html""""), index)
+      assert(index.contains("Cover of a nested collection document"), index)
+      assert(!File(target, "archive/stray.html").isFile, "unlisted sibling of an include store")
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("not in store"), errors)
+      assert(errors.contains("stray"), errors)
+  }
+
   test("book pageType uses numeric page names") {
     withSite(Map(
       "book.xml" ->
