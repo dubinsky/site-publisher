@@ -37,8 +37,7 @@ object StoreTree:
             .getOrElse(Seq.empty)
 
   def pageAt(tree: Stores[?], url: String): Option[Page] =
-    try pageOf(tree.resolve(url).last)
-    catch case _: IllegalArgumentException => None
+    tree.resolveOption(url).flatMap(path => pageOf(path.last))
 
   def pageOf(store: Store): Option[Page] = store match
     case page: Page => Some(page)
