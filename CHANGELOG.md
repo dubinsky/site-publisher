@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Store index titles use `Selector.pluralOrNames` (singular when there is no plural).
 - `Selector.xml` lives here (`page.Selectors`); xml `By(name)` needs that catalog in scope.
 - xml: `Named` is `HasNames`
 - Stop pre-escaping text into the XML tree (`Feed`, malformed markup). Atom `content`/`summary` HTML is CDATA so undeclared `&nbsp;` stays well-formed.
