@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.store.{Selector, Store}
+import org.podval.store.Selector
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{Xml, XmlElement}
 
@@ -106,6 +106,5 @@ object StoreIndexes:
     walk(root)
 
   private def childrenOf(page: Page): List[Page] =
-    page.by.map: by =>
-      by.stores.asInstanceOf[Seq[Store]].flatMap(StoreTree.pageOf).toList
-    .getOrElse(page.stores.flatMap(StoreTree.pageOf).toList)
+    page.by.map(_.stores.flatMap(StoreTree.pageOf).toList)
+      .getOrElse(page.asStores.flatMap(StoreTree.pageOf).toList)

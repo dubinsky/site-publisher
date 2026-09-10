@@ -19,7 +19,7 @@ abstract class Page(
   private var frozenStores: Option[Seq[Store]] = None
   override def stores: Seq[Store] = frozenStores.getOrElse(StoreTree.childrenOf(this))
   final def freezeStores(): Unit = frozenStores = Some(StoreTree.childrenOf(this))
-  final def by: Option[By[?]] = stores.collectFirst { case by: By[?] => by }
+  final def by: Option[By[Store]] = axes.headOption
 
   final override def equals(obj: Any): Boolean = obj.asInstanceOf[Matchable] match
     case that: Page => this.path == that.path

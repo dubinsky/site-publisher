@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name, Names}
-import org.podval.store.{Alias as StoreAlias, By, Store, Stores}
+import org.podval.store.{Alias as StoreAlias, By, Path, Store, Stores}
 import org.podval.tools.publish.markup.StoreIndex
 
 /** `org.podval.store` view of pages: each `Page` is a `Stores` node. */
@@ -17,14 +17,20 @@ object StoreTree:
       case _ =>
         page.store match
           case Some(content) =>
-            val kids: Seq[Store] = content.boundChildren
-            val aliases: Seq[Store] = content.boundChildren.flatMap: child =>
-              child.store.flatMap(_.alias).map: aliasName =>
-                StoreAlias(Names(aliasName), content.selector.toSeq :+ englishName(child))
+            val kids: Seq[Page] = content.boundChildren
+            def aliases(hop: Option[Store]): Seq[StoreAlias] =
+              kids.flatMap: child =>
+                child.store.flatMap(_.alias).map: aliasName =>
+                  StoreAlias(Names(aliasName), hop.fold(Path(Seq(child)))(h => Path(Seq(h, child))))
             content.selector match
-              case Some(selector) => Seq(By(selector, kids)) ++ aliases
-              case None if content.isCollection => Seq(By("document", kids)) ++ aliases
-              case None => kids ++ aliases
+              case Some(selector) =>
+                val by: By[Store] = By(selector, kids)
+                Seq(by) ++ aliases(Some(by))
+              case None if content.isCollection =>
+                val by: By[Store] = By("document", kids)
+                Seq(by) ++ aliases(Some(by))
+              case None =>
+                kids ++ aliases(None)
           case None =>
             page.doc.flatMap(_.asEntityLists).map: lists =>
               val dir: Seq[String] = page.path.path.init
@@ -58,7 +64,7 @@ object StoreTree:
       pages.filter(_.doc.exists(_.asEntityLists.isDefined))
     val aliases: Seq[Store] = unparented.flatMap: node =>
       pageOf(node).flatMap(_.store).flatMap(_.alias).map: name =>
-        StoreAlias(Names(name), Seq(englishName(node)))
+        StoreAlias(Names(name), Path(Seq(node)))
     val kids: Seq[Store] = unparented ++ entityLists ++ aliases
     new Stores[Store]:
       override def names: Names = siteNames
@@ -68,15 +74,12 @@ object StoreTree:
   def aliasPages(root: Stores[?]): Seq[(String, Page)] =
     aliasesIn(root).distinct
 
-  private def aliasesIn(stores: Stores[?]): Seq[(String, Page)] =
-    stores.stores.flatMap:
-      case alias: StoreAlias =>
-        pageAt(stores, "/" + alias.names.name).map(page => alias.names.name -> page).toSeq
+  private def aliasesIn(node: Stores[?]): Seq[(String, Page)] =
+    node.storeAliases.flatMap: alias =>
+      pageAt(node, "/" + alias.names.name).map(page => alias.names.name -> page)
+    ++ node.asStores.flatMap:
       case child: Stores[?] => aliasesIn(child)
       case _ => Seq.empty
-
-  private def englishName(store: Store): String =
-    store.names.doFind(Language.English.toSpec).name
 
   private def nameList(page: Page): Seq[Name] =
     val pairs: Seq[(String, Language.Spec)] = page match
