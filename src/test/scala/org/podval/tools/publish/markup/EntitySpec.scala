@@ -17,6 +17,7 @@ final class EntitySpec extends AnyFunSuite:
       |url: http://entity.test
       |author: Test
       |email: test@entity.test
+      |lang: ru
       |""".stripMargin
 
   private val defaultFiles: Map[String, String] = Map(

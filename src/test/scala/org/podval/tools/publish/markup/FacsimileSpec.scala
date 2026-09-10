@@ -14,6 +14,7 @@ final class FacsimileSpec extends AnyFunSuite:
       |url: http://facsimile.test
       |author: Test
       |email: test@facsimile.test
+      |lang: ru
       |facsimiles-url: https://facsimiles.test/
       |""".stripMargin
 
@@ -197,6 +198,7 @@ final class FacsimileSpec extends AnyFunSuite:
           |url: http://facsimile.test
           |author: Test
           |email: test@facsimile.test
+          |lang: ru
           |""".stripMargin
     )): (site, target) =>
       assert(!File(target, "col/000/facsimile.html").isFile)

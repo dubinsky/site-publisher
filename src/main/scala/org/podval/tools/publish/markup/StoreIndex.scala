@@ -19,8 +19,8 @@ final class StoreIndex(
 ):
   def pageType: PageType = PageType.parse(pageTypeName)
 
-  def displayName: Option[String] =
-    names.find(_.lang.contains("ru")).orElse(names.headOption).map(_.n)
+  def displayName(lang: String): Option[String] =
+    names.find(_.lang.contains(lang)).orElse(names.headOption).map(_.n)
 
 object StoreIndex:
   final class Name(

@@ -13,6 +13,7 @@ final class CollectionIndexSpec extends AnyFunSuite:
       |url: http://collection.test
       |author: Test
       |email: test@collection.test
+      |lang: ru
       |""".stripMargin
 
   private def tei(

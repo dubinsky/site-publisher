@@ -107,7 +107,10 @@ abstract class Page(
   /** Directory listing label: store `name: title` when the child is a store; first TEI name for an entity. */
   final def listTitle: String =
     entityDisplayName.getOrElse:
-      doc.flatMap(_.listTitle) match
+      val named: Option[String] =
+        Option.when(store.isDefined)(names.doFind(site.languageSpec).name)
+          .orElse(doc.flatMap(_.listTitle))
+      named match
         case Some(name) =>
           val t: String = title.trim
           if t.isEmpty || t == name || t == titleFromPath then name

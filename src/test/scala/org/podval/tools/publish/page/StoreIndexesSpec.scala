@@ -13,6 +13,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       |url: http://archive.test
       |author: Test
       |email: test@archive.test
+      |lang: ru
       |header-pages:
       |  - names.md
       |  - archive-collections
@@ -20,11 +21,11 @@ final class StoreIndexesSpec extends AnyFunSuite:
       |home: /archive-index.html
       |""".stripMargin
 
-  private def withSite(body: (Site, File) => Unit): Unit =
+  private def withSite(extra: Map[String, String] = Map.empty)(body: (Site, File) => Unit): Unit =
     val path: NioPath = NioFiles.createTempDirectory("site-publisher-store-indexes")
     try
       val dir: File = path.toFile
-      files.foreach: (relative, content) =>
+      (files ++ extra).foreach: (relative, content) =>
         Files.write(File(dir, relative), content)
       val target: File = File(dir, "_site")
       val site: Site = Site(SiteOptions(
@@ -95,7 +96,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
   )
 
   test("wraps StoreIndex as org.podval.store") {
-    withSite: (site, _) =>
+    withSite(): (site, _) =>
       val root: Page = site.pages.pages.find(StoreIndexes.isRootStore).get
       val tree = root
       assert(tree.resolve("/books").last.names.hasName("книги"))
@@ -123,7 +124,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
   }
 
   test("writes archive-collections tree and archive-index flat list") {
-    withSite: (_, target) =>
+    withSite(): (_, target) =>
       assert(File(target, "archive-collections.html").isFile)
       assert(File(target, "archive-index.html").isFile)
       val tree: String = html(target, "archive-collections.html")
@@ -157,7 +158,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
   }
 
   test("home refreshes to archive-index; header lists Архивы after Имена") {
-    withSite: (_, target) =>
+    withSite(): (_, target) =>
       val index: String = html(target, "index.html")
       assert(index.toLowerCase.contains("refresh"), index)
       assert(index.contains("/archive-index.html"), index)
@@ -171,8 +172,20 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(tree.contains("Архивы"), tree)
   }
 
+  test("store and selector names follow site lang") {
+    val english: String = siteConfig.replace("lang: ru", "lang: en")
+    withSite(Map("_site_config.yml" -> english)): (_, target) =>
+      val tree: String = html(target, "archive-collections.html")
+      assert(tree.contains("<em>archive</em>"), tree)
+      assert(tree.contains("books:"), tree)
+      assert(tree.contains("<em>book</em>"), tree)
+      assert(!tree.contains("<em>архив</em>"), tree)
+      val flat: String = html(target, "archive-index.html")
+      assert(flat.contains("archive books, book Державин"), flat)
+  }
+
   test("rewrites /collections to the tree page; no Refresh file") {
-    withSite: (site, target) =>
+    withSite(): (site, target) =>
       assert(!File(target, "collections.html").isFile)
       val rewritten: Option[String] =
         site.pages.rewriteRequest(Path.fromHref("/collections")).map(_.toString)

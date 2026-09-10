@@ -130,7 +130,8 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</store>""".stripMargin
     val parsed: Xml.Element = parse(input)
     val index = StoreIndex(parsed).get
-    assert(index.displayName.contains("РГАДА"), index.displayName)
+    assert(index.displayName("ru").contains("РГАДА"), index.displayName("ru"))
+    assert(index.displayName("en").contains("rgada"), index.displayName("en"))
     assert(index.title.exists(_.getText.contains("Российский государственный архив")), index.title.map(_.getText))
     assert(index.description.exists(_.getText.contains("Вебсайт")), index.description.map(_.getText))
     val dumped: String = render(process(input))

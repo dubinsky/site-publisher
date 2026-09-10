@@ -138,7 +138,6 @@ final class StoreContent(
   def description: Option[Xml.Element] = index.description
   def body: Option[Xml.Element] = index.body
   def isCollection: Boolean = index.isCollection
-  def displayName: Option[String] = index.displayName
   /** Harvested TEI `@alias`; wrap emits `org.podval.store.Alias`. */
   def alias: Option[String] = index.alias
   def parts: Seq[CollectionPart] = index.parts
@@ -153,7 +152,6 @@ final class StoreContent(
     Xml.element(if isCollection then "collection" else "store")
 
   override def wide: Boolean = isCollection
-  override def listTitle: Option[String] = displayName
   override def asStore: Option[StoreContent] = Some(this)
   override def suppressDirectoryListing: Boolean = isCollection
 

@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
@@ -48,6 +49,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val config: Config = Config.codec.decode(Files.read(configFile)) match
     case Left(error) => throw IllegalArgumentException("Malformed Config", error)
     case Right(result) => result
+
+  val languageSpec: Language.Spec = Site.languageSpec(config.lang)
 
   val uri: URI = URI(config.url)
 
@@ -304,6 +307,14 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
 object Site:
+  /** `lang` from `_site_config.yml` (`en`, `ru`, `en-US`, `Russian`, …). Omitted or unknown is English. */
+  def languageSpec(lang: Option[String]): Language.Spec =
+    lang.map(_.trim).filter(_.nonEmpty).flatMap(parseLanguage).getOrElse(Language.English).toSpec
+
+  private def parseLanguage(lang: String): Option[Language] =
+    val primary: String = lang.takeWhile(c => c != '-' && c != '_')
+    Language.forName(lang).orElse(Language.forName(primary))
+
   // Do not put `//` comments in the JS: HTML pretty-printing wraps lines and would comment out the rest.
   private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
 

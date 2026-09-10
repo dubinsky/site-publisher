@@ -20,11 +20,12 @@ object StoreIndexes:
     Path(Seq(s"${root.sourcePath.get.fileName}-$suffix")).html
 
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
+    val spec: Language.Spec = root.site.languageSpec
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.by.flatMap(_.selector.plural).map(_.toLanguageString(using Language.Russian.toSpec))
+        root.by.flatMap(_.selector.plural).map(_.toLanguageString(using spec))
       case StoreIndexPage.Kind.Flat =>
-        Selector.forName("case").flatMap(_.plural).map(_.toLanguageString(using Language.Russian.toSpec))
+        Selector.forName("case").flatMap(_.plural).map(_.toLanguageString(using spec))
     fromSelector
       .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
       .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
@@ -38,7 +39,7 @@ object StoreIndexes:
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
-      storePage.by.map(_.selector).map(PageHeader.selectorDisplayName)
+      storePage.by.map(_.selector).map(PageHeader.selectorDisplayName(_, storePage.site.languageSpec))
         .getOrElse("")
     val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
     Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
@@ -65,7 +66,7 @@ object StoreIndexes:
   private def treeLabel(page: Page): String =
     page.store match
       case Some(store) =>
-        val name: String = page.names.doFind(Language.Russian.toSpec).name
+        val name: String = page.names.doFind(page.site.languageSpec).name
         val title: String = store.title.map(_.getText.trim).filter(_.nonEmpty).getOrElse("")
         if title.isEmpty then s"$name:" else s"$name: $title"
       case None =>
@@ -91,7 +92,7 @@ object StoreIndexes:
         .filter(_.store.isDefined)
         .dropWhile(_.path == root.path)
     chain.map: node =>
-      val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName).getOrElse("")
+      val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName(_, page.site.languageSpec)).getOrElse("")
       val name: String = PageHeader.pageDisplayName(node)
       s"$sel $name".trim
     .filter(_.nonEmpty)

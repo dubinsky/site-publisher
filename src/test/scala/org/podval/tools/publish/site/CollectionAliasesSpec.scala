@@ -25,6 +25,7 @@ final class CollectionAliasesSpec extends AnyFunSuite:
           |url: http://alias.test
           |author: Test
           |email: test@alias.test
+          |lang: ru
           |facsimiles-url: https://facsimiles.test/
           |""".stripMargin
       )

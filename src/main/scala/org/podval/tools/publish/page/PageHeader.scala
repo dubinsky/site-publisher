@@ -78,7 +78,7 @@ object PageHeader:
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
     val byLabel: Xml.Nodes = page.by.map(_.selector).toSeq.map: selector =>
-      Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector)}:")
+      Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector, page.site.languageSpec)}:")
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
       ancestors.map(el => el: Xml.Node) ++
@@ -103,33 +103,36 @@ object PageHeader:
     headingLine(
       selector = selectorName(page),
       name = Seq(name),
-      title = storeTitleInner(page)
+      title = storeTitleInner(page),
+      spec = page.site.languageSpec
     )
 
   private def currentHead(page: MarkupPage): Xml.Element =
     val nameFromTree: Option[Xml.Element] = page.store.flatMap: _ =>
       val names = page.names
-      names.find(Language.Russian.toSpec).orElse(names.names.headOption).map(storeNameXml)
+      names.find(page.site.languageSpec).orElse(names.names.headOption).map(storeNameXml)
     val name: Xml.Nodes = nameFromTree.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
     headingLine(
       selector = selectorName(page),
       name = name,
-      title = storeTitleInner(page)
+      title = storeTitleInner(page),
+      spec = page.site.languageSpec
     )
 
   private def headingLine(
     selector: Option[String],
     name: Xml.Nodes,
-    title: Xml.Nodes
+    title: Xml.Nodes,
+    spec: Language.Spec
   ): Xml.Element =
     val sel: Xml.Nodes = selector.fold(Seq.empty[Xml.Node]): s =>
-      Seq(Xml.text(selectorDisplayName(s)), Xml.text(" "))
+      Seq(Xml.text(selectorDisplayName(s, spec)), Xml.text(" "))
     val colon: Xml.Nodes =
       if name.nonEmpty && title.nonEmpty then Seq(Xml.text(": ")) else Seq.empty
     Xml.element("l").setChildren(sel ++ name ++ colon ++ title)
 
   /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
-    * directory segment that is a known selector (`archive/` → архив). */
+    * directory segment that is a known selector (`archive/` → archive/архив in the site language). */
   private[page] def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
@@ -147,14 +150,14 @@ object PageHeader:
       else parent.path.fileName
     Option.when(Selector.forName(segment).isDefined)(segment)
 
-  private[page] def selectorDisplayName(n: String): String =
-    Selector.forName(n).map(selectorDisplayName).getOrElse(n)
+  private[page] def selectorDisplayName(n: String, spec: Language.Spec): String =
+    Selector.forName(n).map(selectorDisplayName(_, spec)).getOrElse(n)
 
-  def selectorDisplayName(selector: Selector): String =
-    selector.toLanguageString(using Language.Russian.toSpec)
+  def selectorDisplayName(selector: Selector, spec: Language.Spec): String =
+    selector.toLanguageString(using spec)
 
   private[page] def pageDisplayName(page: Page): String =
-    page.store.map(_ => page.names.doFind(Language.Russian.toSpec).name)
+    page.store.map(_ => page.names.doFind(page.site.languageSpec).name)
       .getOrElse:
         page match
           case _: EntityListPage => page.title

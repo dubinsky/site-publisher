@@ -14,6 +14,7 @@ final class EntityListsSpec extends AnyFunSuite:
       |url: http://names.test
       |author: Test
       |email: test@names.test
+      |lang: ru
       |""".stripMargin
 
   private val defaultFiles: Map[String, String] = Map(
