@@ -34,10 +34,9 @@ object Footnote:
     .set(CorrelationId, correlationId)
     .setChildren(content)
 
-  def linkIds(xml: Xml.Element): Seq[String] =
-    xml.gather(element =>
-      Option.when(isLink(element))(getCorrelationId(element))
-    )
+  def linkIds(xml: Xml.Element): Seq[String] = xml.gather(element =>
+    Option.when(isLink(element))(getCorrelationId(element))
+  )
 
   /** Replace leftover containers (caller says which) with the IR bodies inside them. */
   def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =

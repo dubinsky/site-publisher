@@ -1,7 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.metadata.{Language, Name}
-import org.podval.xml.{Xml, XmlAttribute, XmlCodec, given}
+import org.podval.xml.{Xml, XmlAttribute, XmlCodec}
+import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 
 /** TEI `store` / `collection`. `hrefs` are page references, not XInclude.

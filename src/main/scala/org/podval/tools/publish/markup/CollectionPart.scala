@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{Xml, XmlCodec, given}
+import org.podval.xml.{Xml, XmlCodec}
+import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 
 /** A collection `<part from="000">` title row. `from` is the first original document's file name. */

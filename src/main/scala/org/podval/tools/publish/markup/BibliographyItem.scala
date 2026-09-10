@@ -14,10 +14,11 @@ object BibliographyItem:
 
   def isItem(element: Xml.Element): Boolean = element.has(ItemClass)
 
-  def definitions(xml: Xml.Element): Map[String, Xml.Nodes] =
-    xml.gather(element =>
+  def definitions(xml: Xml.Element): Map[String, Xml.Nodes] = xml
+    .gather(element =>
       for
         id <- element.getId.filter(_.nonEmpty)
         if isItem(element)
       yield id -> element.getChildren.filterNot(_.isWhitespace)
-    ).toMap
+    )
+    .toMap

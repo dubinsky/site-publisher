@@ -102,7 +102,7 @@ object AsciiDocMarkup extends Markup(
           .setClasses(result.getClasses.filterNot(asciidoctorGlossaryClasses.contains))
           .add(Glossary.ListClass)
       children = convertCalloutMarks(children)
-      
+
       result = result.setChildren(children)
       result = convertTaskList(result)
       result = convertFootnoteLink(result).getOrElse(result)
