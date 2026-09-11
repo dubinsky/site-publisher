@@ -97,7 +97,8 @@ abstract class Page(
   final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
 
   final def title: String =
-    content(_.title.map(_.getText))
+    entityDisplayName
+    .orElse(content(_.title.map(_.getText)))
     .orElse(content(_.frontMatter.title))
     .getOrElse(titleDefault)
 

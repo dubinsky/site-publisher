@@ -228,6 +228,17 @@ final class EntitySpec extends AnyFunSuite:
       assert(page.contains("""href="/orgs/кагал.html""""), page)
   }
 
+  test("entity page title and h1 are the first name, not the file name") {
+    withSite(): (site, target) =>
+      val page: Page = site.pages.pages.find(_.path.path == Seq("people", "alter-rebbe")).get
+      assert(page.title == "Залман Борухович")
+      assert(page.titleFromPath == "alter-rebbe")
+      val htmlPage: String = html(target, "people/alter-rebbe.html")
+      assert(htmlPage.contains("Залман Борухович | Entity Fixture"), htmlPage)
+      assert(htmlPage.contains("""class="post-title p-name""""), htmlPage)
+      assert(!htmlPage.contains(">alter-rebbe<"), htmlPage)
+  }
+
   test("name without ref is not a link") {
     withSite(): (_, target) =>
       val page: String = html(target, "doc.html")

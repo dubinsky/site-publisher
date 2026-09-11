@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Entity page `<h1>` / `<title>` use the first TEI name, not the file name.
 - TEI `gap@reason` gets a hover tip (`span.gap-ref` / `span.gap-tip`), same family as date tips.
 
 ## [0.1.0] - 2026-09-10

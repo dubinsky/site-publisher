@@ -72,9 +72,8 @@ Not in the header nav on www either; still generated.
   (`jews`, `officials`, …).
 - Entity URL `/name/alter-rebbe` vs ng `/names/alter-rebbe.html`. Old `/name/…` 404s on ng
   (Worker routes are collection aliases only).
-- Collector `<title>` / body title is the main TEI name (Залман Борухович). ng uses the file
-  name (alter-rebbe) as `<h1>` / `<title>`. `Page.listTitle` already has the display name;
-  `Page.title` / `PageHeader` do not use it on entity pages.
+- Collector `<title>` / body title is the main TEI name (Залман Борухович). Done: `Page.title`
+  uses `entityDisplayName` (`<h1>` / `<title>`). File name remains `titleFromPath` / URL.
 - Collector **mentions** (per-collection doc ids + **Имена:**) vs ng **backlinks**
   (flat accordion, title `003`). Closing via grouped backlinks, not mentions
   (<<grouped-backlinks>>).
@@ -102,8 +101,7 @@ Done (`TeiGap`, IR pass + `convertFragment`, `TeiMarkupSpec`).
 
 ### 2. Entity title
 
-For `EntityContent` pages, `<h1>` and `<title>` use `entityDisplayName` (first name element),
-not the file name. Lists already use `listTitle`. `<title>` can stay `Залман Борухович | Документы`.
+Done (`Page.title` prefers `entityDisplayName`; `EntitySpec`).
 
 ### 3. Facsimile resize box
 
