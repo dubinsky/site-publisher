@@ -149,6 +149,7 @@ Supported markup constructs:
 - <<pdf-embed>>;
 - <<video>>;
 - <<tei-dates>>;
+- <<tei-gap>>;
 
 [#opinionated]
 == Opinionated
@@ -249,7 +250,9 @@ A TEI `entityLists` file beside a directory (`names.xml` next to `names/`) is th
 - `@role` present: entities of that kind whose root `@role` matches; omitted: entities of that kind with no role;
 - `<title>` on the list is the heading; a direct child `<title>` of `entityLists` is the page title.
 
-Empty lists are omitted. Members are sibling entity files in that directory, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. Document backlinks on an entity page still come from `@ref` in other documents; the index itself is not a backlink source.
+Empty lists are omitted. Members are sibling entity files in that directory, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. The entity page `<h1>` / `<title>` is that first name, not the file name. Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the source sits under one); the index itself is not a backlink source.
+
+A synthetic `/name.html` lists every entity (display name, sorted). Inbound `/name` and `/name/{id}` rewrite to that list and to the entity file (`/names/{id}.html` when the file lives there). Emitted hrefs stay the file path.
 
 [source,xml]
 ----
@@ -311,14 +314,19 @@ Any other `@calendar` value is Gregorian. Dates without `@when` are unchanged. I
 
 The collection index and document-header Дата cell show `@when` as the visible text (not the authored wording). In-text dates keep their authored content.
 
+[#tei-gap]
+== TEI `gap`
+
+A TEI `<gap reason="…">` with a non-empty `@reason` gets a hover tip with that text (same family as dates). Missing or blank `@reason` leaves the element as-is. Existing `tei.css` rules for `gap` (`lost` / `illegible` brackets) still apply.
+
 [#facsimiles]
 == Facsimiles
 
-When `_site_config.yml` has `facsimiles-url`, each TEI document with at least one non-missing `pb` gets a viewer at `P/facsimile.html` (published `/alias/P/facsimile.html` when the collection has `alias`). Old collector bookmarks `/alias/facsimile/P` (and `/alias/facsimile/P.html`) still resolve to that viewer, including translation `/alias/facsimile/P-xx` (shared original). `#p{n}` fragments are unchanged. New pages emit only the new URL.
+When `_site_config.yml` has `facsimiles-url`, each TEI document with at least one non-missing `pb` gets a viewer at `P/facsimile.html` (published `/alias/P/facsimile.html` when the collection has `alias`). Photos scroll in a pane under the header (the window is the size; there is no inner `resize` box). Old collector bookmarks `/alias/facsimile/P` (and `/alias/facsimile/P.html`) still resolve to that viewer, including translation `/alias/facsimile/P-xx` (shared original). `#p{n}` fragments are unchanged. New pages emit only the new URL.
 
 The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`. A trailing slash on the config value is optional. `pb@facs` overrides that URL. Missing `pb@missing` pages are omitted from the scroller.
 
-In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"`. The site-header format icon does the same without a fragment. Collection **Страницы** is page numbers on the transcription `#p{n}` only. Each photo in the viewer links back to that `pb` in the transcription (`target="text"`). `{base}-{xx}` translations share the original's viewer.
+In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"` (`facsimileViewer` when `named-windows` is on). The site-header format icon does the same without a fragment. Collection **Страницы** is page numbers on the transcription `#p{n}` only. Each photo in the viewer links back to that `pb` in the transcription (`target="text"` / `textViewer`). `{base}-{xx}` translations share the original's viewer.
 
 Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
 

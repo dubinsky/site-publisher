@@ -1,15 +1,11 @@
 # Collector gaps on ng.alter-rebbe.org
 
-Inventory of live [www.alter-rebbe.org](https://www.alter-rebbe.org) (old Collector, Cloud Run)
-functionality that [ng.alter-rebbe.org](https://ng.alter-rebbe.org) (this publisher, GitHub Pages)
-does not have. Compared 2026-09-10.
+Decision record for the collector → publisher pass
+([www.alter-rebbe.org](https://www.alter-rebbe.org) → [ng.alter-rebbe.org](https://ng.alter-rebbe.org)).
+Compared 2026-09-10. User docs: `README.adoc`. Design:
+`dub.podval.org/notes/Publishing/Site Publisher.md`. All listed gaps shipped.
 
-This file is the working list and closing plan. It is not user documentation (that stays in
-`README.adoc`) and not the Design essay (that stays in
-`dub.podval.org/notes/Publishing/Site Publisher.md`). Remove a gap from this file when it
-ships; update the Design note if a former non-goal changed.
-
-Shipped (not listed): TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
+Shipped: TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
 facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in);
 `/name` all-entities and `/name/{id}` inbound; `/report` harvest (no-refs, unclears, misnamed);
 grouped backlinks.
@@ -33,10 +29,6 @@ Former Design non-goals are **in scope** except facsimile `resize: both` — see
 Analytics is not on this list. UA ids and `--production` are a follow-up for every site
 (Design note **Analytics**).
 
-## Inventory
-
-Live www has it; live ng does not.
-
 ## Not gaps
 
 Search, in-place editing, the help-page “Блог” link, and stamped document `.xml` are not
@@ -45,30 +37,6 @@ translations, entity-list buckets with ⇗, notes, date calendar tips, inbound
 `/alias/facsimile/P`, inbound `/name` / `/name/{id}`, `/report` harvest are on ng.
 
 ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-expand, Open Graph.
-
-## Closing plan
-
-Publisher-generic unless noted. alter-rebbe.org CI / `window.js` / help text are that repo.
-
-### 1. Docs once behaviour matches
-
-- This file: remove shipped gaps.
-- Design note: keep “not collector-style per-collection mentions”; keep “not
-  `/collection/facsimile/P` as the *emitted* URL”; facsimile chrome is
-  <<facsimile-viewer>>, not the resize box.
-- `README.adoc`: reports, `/name` inbound, named `target`s, `gap` tip — author-visible
-  behaviour only.
-- alter-rebbe `note/help.md`: already describes four windows; no change if named windows
-  ship.
-
-### Suggested PR order
-
-Independent unless noted.
-
-1. Design note / README / help leftovers.
-
-Tests: fixture site already has a tiny store + entities (`EntitySpec`, `FacsimileSpec`,
-`CollectionAliasesSpec`). Extend those rather than hitting live alter-rebbe.
 
 ## Named windows [[named-windows]]
 
