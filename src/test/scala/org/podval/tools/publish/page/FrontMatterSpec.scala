@@ -99,4 +99,16 @@ final class FrontMatterSpec extends AnyFunSuite:
     assert(frontMatter.date.map(_.localDate).contains(LocalDate.of(2026, 3, 22)))
     assert(frontMatter.bibliography.isEmpty)
     assert(frontMatter.csl.isEmpty)
+    assert(!frontMatter.asset)
+  }
+
+  test("asset flag") {
+    val (frontMatter, _) = parse(
+      """---
+        |asset: true
+        |---
+        |body
+        |""".stripMargin
+    )
+    assert(frontMatter.asset)
   }

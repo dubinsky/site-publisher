@@ -30,6 +30,8 @@ final case class FrontMatter(
   chunk: Boolean = false,
   chunkDepth: Option[Int] = None,
   pdf: Boolean = false,
+  // Stand-alone sidecar only: copy the markup file as an asset (`Pages.forName`).
+  asset: Boolean = false,
   bibliography: Option[String] = None,
   csl: Option[String] = None,
 ):

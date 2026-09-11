@@ -61,6 +61,12 @@ abstract class Markup(
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
       case Right(frontMatter) =>
         // TODO mark as stand-alone for round-trip
+        if firstReading && frontMatter.asset && frontMatterInternalContent.isDefined then
+          site.error(
+            sourcePath = sourcePath,
+            kind = PageError.InvalidAsset,
+            message = "asset: true is only valid in standalone front matter"
+          )
         frontMatter
       case Left(error) =>
         if firstReading then

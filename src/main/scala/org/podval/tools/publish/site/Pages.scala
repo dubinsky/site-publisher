@@ -10,7 +10,6 @@ import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
 
-// TODO mark markup as asset with `asset: true` in the stand-alone front matter.
 final class Pages(site: Site):
   import Pages.{ForMarkup, ForName}
 
@@ -324,13 +323,40 @@ final class Pages(site: Site):
     else
       val (frontMatter, nonFrontMatter) = nonMarkup.partition(path => FrontMatter.isStandAloneExtension(path.extension))
       // TODO error if frontMatter.length > 1
-      ForName(
-        markup = Some(ForMarkup(
-          markup = markup.head,
-          standAloneFrontMatter = frontMatter.headOption
-        )),
-        assets = nonFrontMatter
-      )
+      val markupPath: Path = markup.head
+      val sidecar: Option[Path] = frontMatter.headOption
+      if isPassThroughAsset(markupPath, sidecar) then
+        ForName(
+          markup = None,
+          assets = markup ++ nonFrontMatter
+        )
+      else
+        ForName(
+          markup = Some(ForMarkup(
+            markup = markupPath,
+            standAloneFrontMatter = sidecar
+          )),
+          assets = nonFrontMatter
+        )
+
+  // Sidecar `asset: true` copies the markup file; the sidecar is not published.
+  // A directory `index` so marked stays markup. Internal `---` plus a sidecar is
+  // left as markup so `AmbiguousFrontMatter` is reported when the file is read.
+  private def isPassThroughAsset(markupPath: Path, sidecar: Option[Path]): Boolean =
+    sidecar
+      .flatMap(path => FrontMatter.parse(Some(Files.read(site.sourceFile(path)))).toOption)
+      .exists: frontMatter =>
+        if !frontMatter.asset then false
+        else if markupPath.fileName == DirectoryPage.fileName then
+          site.error(
+            markupPath,
+            PageError.InvalidAsset,
+            "directory index cannot be declared an asset"
+          )
+          false
+        else if FrontMatter.split(Files.read(site.sourceFile(markupPath)))._1.isDefined then
+          false
+        else true
 
   private def addMarkup(
     sourcePath: Path,
