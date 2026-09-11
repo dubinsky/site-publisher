@@ -33,12 +33,12 @@ if (xmlDir.isDirectory() && new File(xmlDir, 'settings.gradle').isFile()) {
   includeBuild(xmlDir)
 }
 
-// Composite: substitute org.opentorah:opentorah-core from a local OpenTorah checkout.
-// Override with -PopentorahDir=/path/to/opentorah.org. If the directory is missing,
-// Gradle resolves the artifact from Maven Central.
-final File opentorahDir = file(
-  providers.gradleProperty('opentorahDir').getOrElse('../../OpenTorah/opentorah.org')
-)
-if (opentorahDir.isDirectory() && new File(opentorahDir, 'settings.gradle').isFile()) {
-  includeBuild(opentorahDir)
-}
+//// Composite: substitute org.opentorah:opentorah-core from a local OpenTorah checkout.
+//// Override with -PopentorahDir=/path/to/opentorah.org. If the directory is missing,
+//// Gradle resolves the artifact from Maven Central.
+//final File opentorahDir = file(
+//  providers.gradleProperty('opentorahDir').getOrElse('../../OpenTorah/opentorah.org')
+//)
+//if (opentorahDir.isDirectory() && new File(opentorahDir, 'settings.gradle').isFile()) {
+//  includeBuild(opentorahDir)
+//}
