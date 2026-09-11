@@ -11,7 +11,8 @@ ships; update the Design note if a former non-goal changed.
 
 Shipped (not listed): TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
 facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in);
-`/name` all-entities and `/name/{id}` inbound; `/report` harvest (no-refs, unclears, misnamed).
+`/name` all-entities and `/name/{id}` inbound; `/report` harvest (no-refs, unclears, misnamed);
+grouped backlinks.
 
 Former Design non-goals are **in scope** except facsimile `resize: both` — see <<facsimile-viewer>>.
 
@@ -36,12 +37,6 @@ Analytics is not on this list. UA ids and `--production` are a follow-up for eve
 
 Live www has it; live ng does not.
 
-### Names / entities
-
-- Collector **mentions** (per-collection doc ids + **Имена:**) vs ng **backlinks**
-  (flat accordion, title `003`). Closing via grouped backlinks, not mentions
-  (<<grouped-backlinks>>).
-
 ## Not gaps
 
 Search, in-place editing, the help-page “Блог” link, and stamped document `.xml` are not
@@ -55,15 +50,11 @@ ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-ex
 
 Publisher-generic unless noted. alter-rebbe.org CI / `window.js` / help text are that repo.
 
-### 1. Grouped backlinks
-
-See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
-
-### 2. Docs once behaviour matches
+### 1. Docs once behaviour matches
 
 - This file: remove shipped gaps.
-- Design note: drop “not collector-style per-collection mentions” if grouped backlinks
-  ship; keep “not `/collection/facsimile/P` as the *emitted* URL”; facsimile chrome is
+- Design note: keep “not collector-style per-collection mentions”; keep “not
+  `/collection/facsimile/P` as the *emitted* URL”; facsimile chrome is
   <<facsimile-viewer>>, not the resize box.
 - `README.adoc`: reports, `/name` inbound, named `target`s, `gap` tip — author-visible
   behaviour only.
@@ -74,8 +65,7 @@ See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
 Independent unless noted.
 
-1. Grouped backlinks (<<grouped-backlinks>>).
-2. Design note / README / help as above.
+1. Design note / README / help leftovers.
 
 Tests: fixture site already has a tiny store + entities (`EntitySpec`, `FacsimileSpec`,
 `CollectionAliasesSpec`). Extend those rather than hitting live alter-rebbe.
@@ -150,7 +140,7 @@ Not in this item: named windows (next), a text+image split on one page.
 
 ## Grouped backlinks [[grouped-backlinks]]
 
-Chosen. Still `BackLinks` (snippets, per-page `<details>`). Outer group is the TEI
+Shipped. Still `BackLinks` (snippets, per-page `<details>`). Outer group is the TEI
 `collection` that `from` sits under, so two `003`s are not adjacent twins: the collection
 path header is the disambiguator. Inner label stays the short document id (`from.ref()` →
 title `003`). Not collector `p.mentions`.

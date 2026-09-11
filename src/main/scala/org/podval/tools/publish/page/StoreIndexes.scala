@@ -92,16 +92,25 @@ object StoreIndexes:
     Xml.element(XmlElement.Li).setChildren(Seq(link, description))
 
   def pathHeaderHorizontal(page: Page, root: Page): String =
-    val chain: Seq[Page] =
-      (PageHeader.collectorAncestors(page) ++ Seq(page))
-        .filter(_.store.isDefined)
-        .dropWhile(_.path == root.path)
-    chain.map: node =>
-      val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName(_, page.site.languageSpec)).getOrElse("")
-      val name: String = PageHeader.pageDisplayName(node)
-      s"$sel $name".trim
-    .filter(_.nonEmpty)
-    .mkString(", ")
+    storeChain(page).dropWhile(_.path == root.path).map(formatHeaderNode(_, page)).filter(_.nonEmpty).mkString(", ")
+
+  /** Collection path header for backlink groups. Drops a root-store prefix when one is an ancestor. */
+  def collectionHeader(collection: Page): String =
+    val chain: Seq[Page] = storeChain(collection)
+    val dropped: Seq[Page] =
+      chain.find(isRootStore).fold(chain)(root => chain.dropWhile(_.path == root.path))
+    dropped.map(formatHeaderNode(_, collection)).filter(_.nonEmpty).mkString(", ")
+
+  def collectionOf(page: Page): Option[Page] =
+    (PageHeader.collectorAncestors(page) :+ page).findLast(_.store.exists(_.isCollection))
+
+  private def storeChain(page: Page): Seq[Page] =
+    (PageHeader.collectorAncestors(page) ++ Seq(page)).filter(_.store.isDefined)
+
+  private def formatHeaderNode(node: Page, langPage: Page): String =
+    val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName(_, langPage.site.languageSpec)).getOrElse("")
+    val name: String = PageHeader.pageDisplayName(node)
+    s"$sel $name".trim
 
   def collectionsUnder(root: Page): Seq[Page] =
     def walk(page: Page): Seq[Page] =

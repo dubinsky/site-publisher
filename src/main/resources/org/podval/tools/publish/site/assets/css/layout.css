@@ -943,6 +943,11 @@ ul.toc {
             float: right;
         }
 
+        > li.backlinks-collection > ul {
+            list-style-type: none;
+            margin-left: 1em;
+        }
+
         .backlinks-list {
             li {
                 list-style-type: disc;

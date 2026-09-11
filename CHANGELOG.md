@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Backlinks from TEI collections group under the collection path header; snippet text skips `*-tip` subtrees.
 - Report harvest: names without `@ref`, TEI `unclear`, entity file id vs underscored main name.
 - Inbound `/name` (all entities) and `/name/{id}`; `/report` routes. Worker table includes those prefixes.
 - Opt-in named windows (`named-windows`): four collector `window.name`s; default off.

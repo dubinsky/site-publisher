@@ -23,10 +23,27 @@ object LinkContext:
     after: Xml.Nodes
   ): LinkContext = new LinkContext(
     url = toFrom.url,
-    before = shortenContext(isBefore = true, Xml.toString(before)),
+    before = shortenContext(isBefore = true, contextText(before)),
     element = element.getText,
-    after = shortenContext(isBefore = false, Xml.toString(after))
+    after = shortenContext(isBefore = false, contextText(after))
   )
+
+  /** Visible text only: skip `*-tip` subtrees (dates, footnotes, glossary, citations). */
+  private def contextText(nodes: Xml.Nodes): String =
+    nodes.map(nodeText).mkString
+
+  private def nodeText(node: Xml.Node): String =
+    node.asElement match
+      case None => node.getText
+      case Some(element) if isTip(element) => ""
+      case Some(element) => contextText(element.getChildren)
+
+  private def isTip(element: Xml.Element): Boolean =
+    classTokens(element).exists(_.endsWith("-tip"))
+
+  private def classTokens(element: Xml.Element): Seq[String] =
+    element.getClasses ++
+      element.get("tei-class").toSeq.flatMap(_.split(' ')).map(_.trim).filter(_.nonEmpty)
   
   private val contextLengthHalf: Int = 60
 
