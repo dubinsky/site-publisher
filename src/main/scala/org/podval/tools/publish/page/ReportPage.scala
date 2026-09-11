@@ -5,7 +5,7 @@ import org.podval.tools.publish.util.Icon
 import org.podval.xml.Html
 import zio.blocks.html.*
 
-/** Collector `/report` apparatus. Bodies other than the index are filled when harvest exists. */
+/** Collector `/report` apparatus. */
 final class ReportPage(
   site: Site,
   val kind: ReportPage.Kind
@@ -26,14 +26,28 @@ final class ReportPage(
   override def next: Option[Page] = None
 
   override protected def syntheticContent: Html.Element =
+    val harvest: Reports.Harvest = site.reportHarvest
     kind match
       case ReportPage.Kind.Index =>
         Page.pageList(
           site.pages.pages.collect:
             case page: ReportPage if page.kind != ReportPage.Kind.Index => page
         )
-      case _ =>
-        div(className := "report")
+      case ReportPage.Kind.NoRefs =>
+        hitsList(harvest.noRefs)
+      case ReportPage.Kind.Unclears =>
+        hitsList(harvest.unclears)
+      case ReportPage.Kind.Misnamed =>
+        ul(className := "report",
+          harvest.misnamed.map((page, expected) =>
+            li(page.ref(), s" should be named '$expected'")
+          )
+        )
+
+  private def hitsList(hits: Seq[Reports.Hit]): Html.Element =
+    ul(className := "report",
+      hits.map(hit => li(hit.text, " in ", hit.from.ref()))
+    )
 
 object ReportPage:
   val segment: String = "report"

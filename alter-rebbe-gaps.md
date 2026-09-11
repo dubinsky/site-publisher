@@ -11,7 +11,7 @@ ships; update the Design note if a former non-goal changed.
 
 Shipped (not listed): TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
 facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in);
-`/name` all-entities and `/name/{id}` inbound; `/report` routes (empty bodies until harvest).
+`/name` all-entities and `/name/{id}` inbound; `/report` harvest (no-refs, unclears, misnamed).
 
 Former Design non-goals are **in scope** except facsimile `resize: both` — see <<facsimile-viewer>>.
 
@@ -36,17 +36,6 @@ Analytics is not on this list. UA ids and `--production` are a follow-up for eve
 
 Live www has it; live ng does not.
 
-### Reports (`/report`)
-
-Not in the header nav on www either; still generated.
-
-| Path | Title |
-|---|---|
-| `/report` | Отчеты |
-| `/report/no-refs` | `persName` / `placeName` / `orgName` with no `@ref` |
-| `/report/unclears` | TEI `unclear`, with source |
-| `/report/misnamed-entities` | Entity file id ≠ underscored main name |
-
 ### Names / entities
 
 - Collector **mentions** (per-collection doc ids + **Имена:**) vs ng **backlinks**
@@ -58,7 +47,7 @@ Not in the header nav on www either; still generated.
 Search, in-place editing, the help-page “Блог” link, and stamped document `.xml` are not
 on this list. Collection indexes, store headers, aliases (`/rgada/003`), facsimile JPEGs,
 translations, entity-list buckets with ⇗, notes, date calendar tips, inbound
-`/alias/facsimile/P`, inbound `/name` / `/name/{id}` are on ng.
+`/alias/facsimile/P`, inbound `/name` / `/name/{id}`, `/report` harvest are on ng.
 
 ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-expand, Open Graph.
 
@@ -66,28 +55,11 @@ ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-ex
 
 Publisher-generic unless noted. alter-rebbe.org CI / `window.js` / help text are that repo.
 
-### 1. Named windows
-
-Done. `named-windows` (default false). Four collector names; `siteSettings.js` + `data-window-name`;
-`target` on internal links when on. alter-rebbe `_site_config.yml` sets it.
-
-### 1. Report harvest
-
-Routes exist (`/report.html`, `/report/no-refs.html`, …); bodies are empty. Harvest
-(collector `Collector.writeReferences` / `writeUnclears`):
-
-- **no-refs:** entity-name elements with empty `@ref`, with source path.
-- **unclears:** `unclear`, with source.
-- **misnamed-entities:** `id != spacesToUnderscores(mainName)`.
-
-Walk documents, entity files, and store title/abstract/body (collector `allWithSource`). Do
-not use generated collection-index or entity-list member links.
-
-### 2. Grouped backlinks
+### 1. Grouped backlinks
 
 See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
-### 3. Docs once behaviour matches
+### 2. Docs once behaviour matches
 
 - This file: remove shipped gaps.
 - Design note: drop “not collector-style per-collection mentions” if grouped backlinks
@@ -102,9 +74,8 @@ See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
 Independent unless noted.
 
-1. Report harvest (no-refs, unclears, misnamed-entities).
-2. Grouped backlinks (<<grouped-backlinks>>). Independent of 1.
-3. Design note / README / help as above.
+1. Grouped backlinks (<<grouped-backlinks>>).
+2. Design note / README / help as above.
 
 Tests: fixture site already has a tiny store + entities (`EntitySpec`, `FacsimileSpec`,
 `CollectionAliasesSpec`). Extend those rather than hitting live alter-rebbe.

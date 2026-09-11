@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Report harvest: names without `@ref`, TEI `unclear`, entity file id vs underscored main name.
 - Inbound `/name` (all entities) and `/name/{id}`; `/report` routes. Worker table includes those prefixes.
 - Opt-in named windows (`named-windows`): four collector `window.name`s; default off.
 - Facsimile viewer: photos scroll in a viewport-filling pane under the header (not a 1060×1586 `resize: both` box).

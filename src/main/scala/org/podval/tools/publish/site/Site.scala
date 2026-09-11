@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.metadata.Language
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage, Reports}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -84,6 +84,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val ignore: Ignore = Ignore(this)
   val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
+  lazy val reportHarvest: Reports.Harvest = Reports.harvest(this)
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
 

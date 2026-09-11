@@ -322,6 +322,8 @@ In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`
 
 Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
 
+When the site has TEI entities or documents, `/report.html` lists apparatus reports (not in `header-pages`): names without `@ref` (`/report/no-refs.html`), TEI `unclear` (`/report/unclears.html`), and entity files whose id is not the underscored first name (`/report/misnamed-entities.html`). Harvest walks entity files, documents, and store title/abstract/body — not generated collection or name-list tables. Inbound `/report` and `/report/{id}` rewrite like collection aliases.
+
 [#blog-posts]
 == Blog Posts
 
