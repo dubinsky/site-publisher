@@ -576,3 +576,30 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(items.map(_.getId) == Seq(Some("knuth79")), dumped)
     assert(!items.exists(_.getId.contains("header-only")), dumped)
   }
+
+  test("gap with reason gets a hover tip; empty reason does not") {
+    val xml: Xml.Element = process(
+      """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc></teiHeader>
+        |<text><body><p>a <gap reason="lost"/> b <gap reason=""/> c <gap/> d</p></body></text></TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val refs: Seq[Xml.Element] = xml.gather(el => Option.when(TeiGap.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+    val tips: Seq[Xml.Element] = xml.gather(el => Option.when(el.has(TeiGap.tip.TipClass))(el)).toSeq
+    assert(tips.size == 1, dumped)
+    assert(tips.head.getText == "lost", dumped)
+    assert(dumped.contains("""class="gap-ref""""), dumped)
+    assert(dumped.contains("""class="gap-tip""""), dumped)
+    assert(!dumped.contains("""tei-class="gap-tip""""), dumped)
+    assert(dumped.contains("""reason="lost""""), dumped)
+    assert(dumped.contains("<gap></gap>"), dumped)
+  }
+
+  test("gap tip wrap is not repeated on a second convert") {
+    val once: Xml.Element = TeiGap.convert(parse("""<gap reason="illegible"/>"""))
+    val twice: Xml.Element = TeiGap.convert(once)
+    val dumped: String = render(twice)
+    assert(render(once) == dumped, dumped)
+    val refs: Seq[Xml.Element] = twice.gather(el => Option.when(TeiGap.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+  }

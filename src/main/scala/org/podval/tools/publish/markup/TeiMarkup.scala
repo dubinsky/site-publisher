@@ -58,6 +58,7 @@ object TeiMarkup extends Markup(
         result = convertQuote(result)
         result = convertFigure(result)
         result = convertPb(result)
+        result = TeiGap.convert(result)
         // Do not re-wrap `<code>` already inside `<pre>`.
         if !result.isNamed("pre") then
           result = result.setChildren(result.getChildren.convertElements(convertCode))
@@ -138,12 +139,13 @@ object TeiMarkup extends Markup(
       case _ =>
         stripped
 
-  /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`). */
+  /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`).
+    * `TeiGap` after Xml2Html so `gap-tip` `class` is not rewritten to `tei-class`. */
   private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     xml.transform(
       element => convertSpecial(tei2Html.convert(element), errorReporter),
       stopAtCode = false
-    )
+    ).transform(TeiGap.convert, stopAtCode = false)
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */
@@ -173,6 +175,7 @@ object TeiMarkup extends Markup(
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
 
   // After Xml2Html so `a.pb` / icon `class` is not prefixed to `tei-class`.
+  // `TeiGap.convert` is in this pass for the same reason (`span.gap-tip`).
   private def convertPb(element: Xml.Element): Xml.Element =
     if !element.isNamed("pb") then element
     else

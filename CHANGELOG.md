@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- TEI `gap@reason` gets a hover tip (`span.gap-ref` / `span.gap-tip`), same family as date tips.
+
 ## [0.1.0] - 2026-09-10
 - First Maven Central publication (`org.podval.tools:org.podval.tools.publisher`).
 - CLI: `--serve`; default `--log-level` is `INFO` (was `DEBUG`).
