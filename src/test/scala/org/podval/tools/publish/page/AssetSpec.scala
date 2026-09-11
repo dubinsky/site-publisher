@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -96,18 +96,46 @@ final class AssetSpec extends AnyFunSuite:
       assert(errors.contains("standalone front matter"), errors)
   }
 
-  test("directory index cannot be declared an asset") {
+  test("directory index sidecar asset: true copies the file and keeps children") {
+    val source: String =
+      """<!DOCTYPE html>
+        |<html><head><title>Home</title></head>
+        |<body><p>landing</p></body></html>
+        |""".stripMargin
+    withSite(Map(
+      "index.html" -> source,
+      "index.yml" -> "asset: true\n",
+      "child.md" -> "Child page.\n"
+    )): (site, target) =>
+      assert(Files.read(File(target, "index.html")) == source)
+      assert(!html(target, "index.html").contains("post h-entry"))
+      assert(!html(target, "index.html").contains("directory"))
+      assert(!File(target, "index.yml").exists)
+      val child: String = html(target, "child.html")
+      assert(child.contains("Child page."), child)
+      assert(child.contains("post h-entry"), child)
+      val home: Page = site.pages.pages.find(_.path == Path("index").html).get
+      assert(home.isDirectory)
+      val errors: String = html(target, "errors.html")
+      assert(!errors.contains("invalid asset"), errors)
+  }
+
+  test("nested directory index sidecar asset: true copies that index") {
+    val source: String = "<!DOCTYPE html><html><body>nested</body></html>\n"
     withSite(Map(
       "index.md" -> "Home.\n",
-      "index.yml" -> "asset: true\n"
-    )): (_, target) =>
-      val page: String = html(target, "index.html")
-      assert(page.contains("post h-entry"), page)
-      assert(page.contains("Home."), page)
-      val errors: String = html(target, "errors.html")
-      assert(errors.contains("invalid asset"), errors)
-      assert(errors.contains("directory index cannot be declared an asset"), errors)
-      assert(!File(target, "index.yml").exists)
+      "dir/index.html" -> source,
+      "dir/index.yml" -> "asset: true\n",
+      "dir/leaf.md" -> "Leaf.\n"
+    )): (site, target) =>
+      assert(Files.read(File(target, "dir/index.html")) == source)
+      assert(!html(target, "dir/index.html").contains("post h-entry"))
+      val leaf: String = html(target, "dir/leaf.html")
+      assert(leaf.contains("Leaf."), leaf)
+      val directory: Page = site.pages.pages.find(_.path == Path("dir", "index").html).get
+      assert(directory.isDirectory)
+      val kid: Page = site.pages.pages.find(_.path.fileName == "leaf").get
+      assert(kid.parent.contains(directory))
   }
 
   test("sidecar asset: true with internal front matter stays markup") {

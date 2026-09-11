@@ -185,7 +185,7 @@ Useful fields:
 - `tags`, `categories`, `aliases`
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
-- `asset` — copy the markup file as an asset (no dialect processing, no site chrome). Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …) with `asset: true`. The sidecar is not published. Internal `---` `asset: true` is an error (the file stays markup). A directory `index` cannot be an asset.
+- `asset` — copy the markup file as an asset (no dialect processing, no site chrome). Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …) with `asset: true`. The sidecar is not published. Internal `---` `asset: true` is an error (the file stays markup). A directory `index` so marked stays a directory page (parent/children) but `write` copies the file (no listing, no chrome).
 
 `permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL. When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf bookmark. A remainder under a non-directory alias does not resolve. A last-dot suffix in a href that is all digits is part of the name (`255.2`), not a file extension.
 

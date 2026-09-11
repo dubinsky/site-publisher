@@ -111,6 +111,27 @@ final class HomeSpec extends AnyFunSuite:
       assert(!index.toLowerCase.contains("refresh"), index)
   }
 
+  test("home cannot coexist with a pass-through index") {
+    withSite(
+      home = "/about.html",
+      files = Map(
+        "index.html" -> "<!DOCTYPE html><html><body>landing</body></html>\n",
+        "index.yml" -> "asset: true\n",
+        "about.md" ->
+          """---
+            |title: About
+            |---
+            |Hello.
+            |""".stripMargin
+      )
+    ): (_, target) =>
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("cannot coexist with an authored index"), errors)
+      val index: String = Files.read(File(target, "index.html"))
+      assert(index.contains("landing"), index)
+      assert(!index.toLowerCase.contains("refresh"), index)
+  }
+
   test("missing home target is recorded") {
     withSite(
       home = "/nope.html",

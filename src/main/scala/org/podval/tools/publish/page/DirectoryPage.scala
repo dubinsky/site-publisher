@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{Path, Site}
-import org.podval.tools.publish.util.Icon
+import org.podval.tools.publish.util.{Files, Icon}
 import org.podval.xml.Html
 import zio.blocks.html.*
 
@@ -11,10 +11,20 @@ object DirectoryPage:
 final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, path.html):
   override def isDirectory: Boolean = true
 
-  override def hasSyntheticContent: Boolean = true
+  private var passThroughSourceVar: Option[Path] = None
+
+  def setPassThrough(source: Path): Unit = passThroughSourceVar = Some(source)
+
+  override def sourcePath: Option[Path] = passThroughSourceVar.orElse(super.sourcePath)
+
+  override def write(): Unit = passThroughSourceVar match
+    case Some(source) => Files.copy(fromFile = site.sourceFile(source), toFile = targetFile)
+    case None => super.write()
+
+  override def hasSyntheticContent: Boolean = passThroughSourceVar.isEmpty
 
   override protected def syntheticContentOpt: Option[Html.Element] =
-    if doc.exists(_.suppressDirectoryListing) then None
+    if passThroughSourceVar.isDefined || doc.exists(_.suppressDirectoryListing) then None
     else Some(syntheticContent)
 
   private def syntheticContent: Html.Element =

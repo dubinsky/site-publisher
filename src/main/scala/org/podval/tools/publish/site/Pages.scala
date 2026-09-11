@@ -92,7 +92,7 @@ final class Pages(site: Site):
         case Some(target) =>
           val index: Path = Path(DirectoryPage.fileName).html
           get(index) match
-            case Some(page) if page.source.isDefined =>
+            case Some(page) if page.sourcePath.isDefined =>
               site.error(
                 index,
                 PageError.Duplicate,
@@ -262,6 +262,7 @@ final class Pages(site: Site):
       val path: Path = toPath(sourcePath)
       index match
         case None => getOrAddDirectory(path)
+        case Some(index) if index.passThrough => addPassThroughIndex(index.markup, path)
         case Some(index) => addMarkup(index.markup, index.standAloneFrontMatter, path)
 
     // A store with `xi:include`s lists only those hrefs. Empty hrefs keep the
@@ -297,7 +298,8 @@ final class Pages(site: Site):
     forNames.values.foreach: forName =>
       forName.markup.foreach: forMarkup =>
         if isListed(forMarkup.markup) then
-          addMarkup(forMarkup.markup, forMarkup.standAloneFrontMatter, toPath(forMarkup.markup))
+          if forMarkup.passThrough then addPassThroughIndex(forMarkup.markup, toPath(forMarkup.markup))
+          else addMarkup(forMarkup.markup, forMarkup.standAloneFrontMatter, toPath(forMarkup.markup))
         else notInStore(forMarkup.markup)
       forName.assets.foreach: sourcePath =>
         if isListed(sourcePath) then add(AssetWithSourcePath(site, sourcePath, toPath(sourcePath)))
@@ -325,7 +327,9 @@ final class Pages(site: Site):
       // TODO error if frontMatter.length > 1
       val markupPath: Path = markup.head
       val sidecar: Option[Path] = frontMatter.headOption
-      if isPassThroughAsset(markupPath, sidecar) then
+      val asset: Boolean = sidecarAsset(sidecar)
+      val internal: Boolean = asset && hasInternalFrontMatter(markupPath)
+      if asset && !internal && markupPath.fileName != DirectoryPage.fileName then
         ForName(
           markup = None,
           assets = markup ++ nonFrontMatter
@@ -334,29 +338,35 @@ final class Pages(site: Site):
         ForName(
           markup = Some(ForMarkup(
             markup = markupPath,
-            standAloneFrontMatter = sidecar
+            standAloneFrontMatter = sidecar,
+            passThrough = asset && !internal
           )),
           assets = nonFrontMatter
         )
 
   // Sidecar `asset: true` copies the markup file; the sidecar is not published.
-  // A directory `index` so marked stays markup. Internal `---` plus a sidecar is
-  // left as markup so `AmbiguousFrontMatter` is reported when the file is read.
-  private def isPassThroughAsset(markupPath: Path, sidecar: Option[Path]): Boolean =
+  // Internal `---` plus a sidecar is left as markup so `AmbiguousFrontMatter` is
+  // reported when the file is read. A directory `index` so marked stays a
+  // `DirectoryPage` (`passThrough`); write copies the file.
+  private def sidecarAsset(sidecar: Option[Path]): Boolean =
     sidecar
       .flatMap(path => FrontMatter.parse(Some(Files.read(site.sourceFile(path)))).toOption)
-      .exists: frontMatter =>
-        if !frontMatter.asset then false
-        else if markupPath.fileName == DirectoryPage.fileName then
-          site.error(
-            markupPath,
-            PageError.InvalidAsset,
-            "directory index cannot be declared an asset"
-          )
-          false
-        else if FrontMatter.split(Files.read(site.sourceFile(markupPath)))._1.isDefined then
-          false
-        else true
+      .exists(_.asset)
+
+  private def hasInternalFrontMatter(sourcePath: Path): Boolean =
+    FrontMatter.split(Files.read(site.sourceFile(sourcePath)))._1.isDefined
+
+  private def addPassThroughIndex(sourcePath: Path, path: Path): Page =
+    val (page: DirectoryPage, addIt: Boolean) = get(path.html) match
+      case Some(page: DirectoryPage) =>
+        (page, false)
+      case Some(_) =>
+        throw IllegalArgumentException(s"Not a Directory: $path")
+      case None =>
+        (DirectoryPage(site, path.html), true)
+    page.setPassThrough(sourcePath)
+    if addIt then add(page)
+    page
 
   private def addMarkup(
     sourcePath: Path,
@@ -741,7 +751,8 @@ final class Pages(site: Site):
 object Pages:
   private final class ForMarkup(
     val markup: Path,
-    val standAloneFrontMatter: Option[Path]
+    val standAloneFrontMatter: Option[Path],
+    val passThrough: Boolean = false
   )
 
   private final case class ForName(
