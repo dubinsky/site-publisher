@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, EntityLists as EntityListHtml, Page, StoreTree}
-import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -193,6 +193,32 @@ final class EntityListsSpec extends AnyFunSuite:
       val siteStore = site.pages.siteStore
       assert(siteStore.names.hasName("Names Fixture"))
       assert(siteStore.stores.exists(store => StoreTree.pageOf(store).contains(directory)))
+  }
+
+  test("all-entities page lists every entity; /name and /name/id rewrite") {
+    withSite(): (site, target) =>
+      val page: String = html(target, "name.html")
+      assert(page.contains("Залман Борухович"), page)
+      assert(page.contains("""href="/names/alter-rebbe.html""""), page)
+      assert(page.contains("Вильна"), page)
+      assert(site.pages.rewriteRequest(Path.fromHref("/name")).contains(Path("name").html))
+      assert(
+        site.pages.rewriteRequest(Path.fromHref("/name/alter-rebbe")).contains(Path("names", "alter-rebbe").html)
+      )
+      val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
+      val name: CollectionAliases.Entry = table.find(_.from == Seq("name")).get
+      assert(name.to == Seq("names"), name.to)
+      assert(name.index == Path("name").html, name.index.toString)
+      assert(
+        CollectionAliases.rewrite(Path.fromHref("/name/alter-rebbe"), table)
+          .contains(Path("names", "alter-rebbe").html)
+      )
+      val report: String = html(target, "report.html")
+      assert(report.contains("Names without @ref"), report)
+      assert(site.pages.rewriteRequest(Path.fromHref("/report")).contains(Path("report").html))
+      assert(
+        site.pages.rewriteRequest(Path.fromHref("/report/no-refs")).contains(Path("report", "no-refs").html)
+      )
   }
 
   test("entity page keeps document backlinks and does not list the names index") {

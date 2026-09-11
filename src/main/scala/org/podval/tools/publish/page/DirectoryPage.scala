@@ -89,5 +89,7 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     .filterNot(_.isInstanceOf[PdfPage]) // PDF is an alternate of the HTML page, not a sibling
     .filterNot(_.isInstanceOf[FacsimilePage])
     .filterNot(_.isInstanceOf[StoreIndexPage])
+    .filterNot(_.isInstanceOf[AllEntitiesPage])
+    .filterNot(_.isInstanceOf[ReportPage])
     .filter(_.path.path.init == path.path.init)  // TODO unify with the Page.parent path calculations
     .sortBy(_.title.toLowerCase)

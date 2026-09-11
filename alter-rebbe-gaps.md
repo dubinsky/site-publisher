@@ -10,7 +10,8 @@ This file is the working list and closing plan. It is not user documentation (th
 ships; update the Design note if a former non-goal changed.
 
 Shipped (not listed): TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
-facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in).
+facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in);
+`/name` all-entities and `/name/{id}` inbound; `/report` routes (empty bodies until harvest).
 
 Former Design non-goals are **in scope** except facsimile `resize: both` — see <<facsimile-viewer>>.
 
@@ -48,10 +49,6 @@ Not in the header nav on www either; still generated.
 
 ### Names / entities
 
-- `/name` — flat alphabetical list of every entity (~193). ng `/names` is only the buckets
-  (`jews`, `officials`, …).
-- Entity URL `/name/alter-rebbe` vs ng `/names/alter-rebbe.html`. Old `/name/…` 404s on ng
-  (Worker routes are collection aliases only).
 - Collector **mentions** (per-collection doc ids + **Имена:**) vs ng **backlinks**
   (flat accordion, title `003`). Closing via grouped backlinks, not mentions
   (<<grouped-backlinks>>).
@@ -61,7 +58,7 @@ Not in the header nav on www either; still generated.
 Search, in-place editing, the help-page “Блог” link, and stamped document `.xml` are not
 on this list. Collection indexes, store headers, aliases (`/rgada/003`), facsimile JPEGs,
 translations, entity-list buckets with ⇗, notes, date calendar tips, inbound
-`/alias/facsimile/P` are on ng.
+`/alias/facsimile/P`, inbound `/name` / `/name/{id}` are on ng.
 
 ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-expand, Open Graph.
 
@@ -74,21 +71,10 @@ Publisher-generic unless noted. alter-rebbe.org CI / `window.js` / help text are
 Done. `named-windows` (default false). Four collector names; `siteSettings.js` + `data-window-name`;
 `target` on internal links when on. alter-rebbe `_site_config.yml` sets it.
 
-### 2. Inbound `/name/…`, all-entities list, `/report`
+### 1. Report harvest
 
-Canonical entity stays `/names/{id}.html`. Add:
-
-- Synthetic all-entities page (collector `/name`). Written path can be `/name/index.html`
-  (ng never had this page; no collision with `/names`).
-- Worker + `Pages.find` / `rewriteRequest`: `/name` → that index; `/name/{id}` →
-  `/names/{id}.html`. Same slash-delimited prefix table as collection aliases — extend
-  `collection-aliases.json` (or rename it to a general rewrite table) with `/name` and
-  `/report`.
-- Reports as synthetic pages at `/report/index.html`, `/report/no-refs.html`, … (collector
-  paths; ng never had them). Harvest at render, same timing as `EntityLists` / `CollectionIndex`
-  so the report XML is empty and hrefs are not backlinks.
-
-Harvest (collector `Collector.writeReferences` / `writeUnclears`):
+Routes exist (`/report.html`, `/report/no-refs.html`, …); bodies are empty. Harvest
+(collector `Collector.writeReferences` / `writeUnclears`):
 
 - **no-refs:** entity-name elements with empty `@ref`, with source path.
 - **unclears:** `unclear`, with source.
@@ -97,14 +83,11 @@ Harvest (collector `Collector.writeReferences` / `writeUnclears`):
 Walk documents, entity files, and store title/abstract/body (collector `allWithSource`). Do
 not use generated collection-index or entity-list member links.
 
-Worker routes today are collection aliases only; `/name*` and `/report*` never hit the
-Worker. Prefix routes must include the new prefixes (same “CSS/JS skip the Worker” rule).
-
-### 3. Grouped backlinks
+### 2. Grouped backlinks
 
 See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
-### 4. Docs once behaviour matches
+### 3. Docs once behaviour matches
 
 - This file: remove shipped gaps.
 - Design note: drop “not collector-style per-collection mentions” if grouped backlinks
@@ -119,10 +102,9 @@ See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
 Independent unless noted.
 
-1. Rewrite table: `/name`, `/report`; all-entities page; `/name/{id}` inbound.
-2. Reports (needs the same harvest walk as mentions-from-documents).
-3. Grouped backlinks (<<grouped-backlinks>>). Independent of 1–2.
-4. Design note / README / help as above.
+1. Report harvest (no-refs, unclears, misnamed-entities).
+2. Grouped backlinks (<<grouped-backlinks>>). Independent of 1.
+3. Design note / README / help as above.
 
 Tests: fixture site already has a tiny store + entities (`EntitySpec`, `FacsimileSpec`,
 `CollectionAliasesSpec`). Extend those rather than hitting live alter-rebbe.

@@ -282,7 +282,7 @@ Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are 
 
 `alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>). Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
-Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. Prefix routes (`hostname/rgada*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`.
+Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. The same table includes inbound `/name` (all-entities page) and `/name/{id}` (entity under the `entityLists` directory) and `/report` / `/report/…`. Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay `/names/{id}.html`.
 
 A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
 

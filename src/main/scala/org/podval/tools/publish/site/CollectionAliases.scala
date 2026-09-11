@@ -7,7 +7,8 @@ import java.io.File
 
 /** Alias prefix table for Cloudflare Worker / inspection.
   * Collection prefixes come from wrapped store `Alias`es (`StoreTree.aliasPages`);
-  * prefix rewrites match `Pages.findViaAlias`. `Pages.find` and `rewriteRequest`
+  * inbound `/name` and `/report` from `Pages.inboundAliasEntries`. Prefix rewrites
+  * match `Pages.findViaAlias` / `findViaInbound`. `Pages.find` and `rewriteRequest`
   * also try store-tree resolve. */
 object CollectionAliases:
   val fileName: String = "collection-aliases.json"
@@ -19,7 +20,8 @@ object CollectionAliases:
   )
 
   def entries(pages: Pages): Seq[Entry] =
-    pages.collectionAliasEntries.sortBy(e => (-e.from.length, e.from.mkString("/")))
+    (pages.collectionAliasEntries ++ pages.inboundAliasEntries)
+      .sortBy(e => (-e.from.length, e.from.mkString("/")))
 
   def rewrite(request: Path, table: Seq[Entry]): Option[Path] =
     val segments: Seq[String] = request.path
