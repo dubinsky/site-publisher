@@ -26,6 +26,7 @@ object TeiDate:
           s"Unknown tei-default-calendar '$name' (expected $julianName or $gregorianName)"
         )
 
+  // TODO look into TEI `dateRange` @from/@to
   def convert(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     if !element.isNamed("date") || element.get(Converted).isDefined then element
     else

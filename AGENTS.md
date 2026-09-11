@@ -46,7 +46,7 @@ Known sites (local checkouts; `@main def generate()` comments the same paths):
 - `/home/dub/OpenTorah/chumashquestions.org` — https://www.chumashquestions.org
 - `/home/dub/OpenTorah/alter-rebbe.org` — https://www.alter-rebbe.org
 - `/home/dub/OpenTorah/opentorah.org/docs` — https://www.opentorah.org
-- `/home/dub/CognoMath/mathworlds-site` — https://www.mathworlds.org (`cognomath/mathworlds-site`)
+- `/home/dub/CognoMath/mathworlds-site` — https://www.mathworlds.org (`cognomath/mathworlds-site`). Follow-up: after a publisher with `asset: true` is on Maven Central, bump `sitePublisherVersion` there if needed and push (`index.yml` copies `index.html`). Do not push MathWorlds before that; CI uses Central, not the local checkout.
 
 ### Development entry point (`generate`)
 

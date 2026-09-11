@@ -81,6 +81,8 @@ Without a site-side dependency, generate from this repo:
 
 Then release the deployment at https://central.sonatype.com/publishing/deployments .
 
+TODO after a release that includes `asset: true` is on Maven Central: bump `sitePublisherVersion` in `~/CognoMath/mathworlds-site` if needed and push that repo (`index.yml` copies `index.html`). Do not push MathWorlds before then; CI resolves the publisher from Central.
+
 Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as `home`):
 
 ----
