@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage}
+import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows}
 import org.podval.xml.Html
 import zio.blocks.html.*
 
@@ -32,6 +32,7 @@ final class BackLinks:
                 li(
                   a(
                     href := context.url,
+                    NamedWindows.targetAttr(from).map(name => target := name),
                     context.before,
                     " ",
                     span(className := "backlink", context.element),

@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.metadata.Language
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, PdfPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
 import zio.blocks.html.*
@@ -233,7 +233,13 @@ final class Site(options: SiteOptions) extends JSLibrary:
   def siteHeader(page: MarkupPage): Html.Element =
     header(className := "site-header",
       div(className := "wrapper",
-        a(className := "site-title", href := "/", rel := "author", config.title),
+        a(
+          className := "site-title",
+          href := "/",
+          rel := "author",
+          NamedWindows.hierarchyTarget(config).map(name => target := name),
+          config.title
+        ),
         // First right-float is the rightmost: gear at the edge, nav to its left.
         details(className := "site-settings",
           summary(

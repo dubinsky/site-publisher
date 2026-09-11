@@ -35,3 +35,11 @@ final class ConfigSpec extends AnyFunSuite:
     val config: Config = decode(required + "tei-default-calendar: julian\n")
     assert(config.teiDefaultCalendar.contains("julian"))
   }
+
+  test("named-windows defaults to false") {
+    assert(!decode(required).namedWindows)
+  }
+
+  test("named-windows maps from kebab-case") {
+    assert(decode(required + "named-windows: true\n").namedWindows)
+  }

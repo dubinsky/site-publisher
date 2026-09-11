@@ -159,6 +159,7 @@ abstract class Page(
 //      className := "page-ref",
 //      cls.map(cls => className += cls),
       href := pageLink.url,
+      NamedWindows.targetAttr(this).map(name => target := name),
       Option.when(withIcon)(icon.getOrElse(this.icon).html),
       Option.when(withTitle)(pageLink.titleReal)
     )

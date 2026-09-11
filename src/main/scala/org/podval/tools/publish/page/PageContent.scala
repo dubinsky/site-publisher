@@ -243,6 +243,8 @@ final class PageContent private(
               s"${toc.chunkName(sectionId, page.chunkDepth)}#$id"
 
         var result: Xml.Element = element.setHref(href)
+        if !linkTo.isIntrapage then
+          result = NamedWindows.setXmlTarget(result, linkTo.page)
         if result.getText == WikiLink.linkText(element, ref) then
           result = result.setText(WikiLink.linkText(element, linkTo.title))
         if attachTips then

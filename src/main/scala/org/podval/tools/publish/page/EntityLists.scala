@@ -15,7 +15,7 @@ object EntityLists:
       val mem: Seq[Page] = members(page, spec)
       Option.when(mem.nonEmpty)(spec -> mem)
     val lists: Xml.Nodes = kept.map((spec, mem) =>
-      listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec))): Xml.Node
+      listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec)), dest = page): Xml.Node
     )
     val children: Xml.Nodes =
       if kept.isEmpty then lists
@@ -26,11 +26,12 @@ object EntityLists:
     spec: EntityList,
     members: Seq[Page],
     withHead: Boolean,
-    jump: Option[Path]
+    jump: Option[Path],
+    dest: Page
   ): Xml.Element =
     val head: Xml.Nodes =
       if !withHead then Seq.empty
-      else Seq(Xml.element(TeiMarkup.tei2Html.elementName(XmlElement.Head)).setChildren(headChildren(spec, jump)))
+      else Seq(Xml.element(TeiMarkup.tei2Html.elementName(XmlElement.Head)).setChildren(headChildren(spec, jump, dest)))
     val lines: Xml.Nodes = members.map(member =>
       Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
     )
@@ -59,20 +60,32 @@ object EntityLists:
       Xml.element(XmlElement.Li).setChildren(Seq(
         Xml.element(XmlElement.A).setHref(s"#${spec.id}").setText(spec.title),
         Xml.text(" "),
-        Xml.element(XmlElement.A).setHref(listPath(page, spec).toString).setText(expand)
+        NamedWindows.setXmlTarget(
+          Xml.element(XmlElement.A).setHref(listPath(page, spec).toString).setText(expand),
+          page
+        )
       ))
     Xml.element(XmlElement.Ul).addClass("entity-lists-toc").setChildren(items)
 
-  private def headChildren(spec: EntityList, jump: Option[Path]): Xml.Nodes =
+  private def headChildren(spec: EntityList, jump: Option[Path], dest: Page): Xml.Nodes =
     val title: Xml.Nodes = Seq(Xml.text(spec.title))
     jump.fold(title)(path =>
-      title ++ Seq(Xml.text(" "), Xml.element(XmlElement.A).setHref(path.toString).setText(expand))
+      title ++ Seq(
+        Xml.text(" "),
+        NamedWindows.setXmlTarget(
+          Xml.element(XmlElement.A).setHref(path.toString).setText(expand),
+          dest
+        )
+      )
     )
 
   private def memberLink(page: Page, kind: EntityKind): Xml.Element =
-    Xml
-      .element(XmlElement.A)
-      .addClass("page-ref")
-      .addClass(kind.nameElement)
-      .setHref(page.real.publishedPath.toString)
-      .setText(displayName(page))
+    NamedWindows.setXmlTarget(
+      Xml
+        .element(XmlElement.A)
+        .addClass("page-ref")
+        .addClass(kind.nameElement)
+        .setHref(page.real.publishedPath.toString)
+        .setText(displayName(page)),
+      page
+    )

@@ -137,6 +137,8 @@ final class FacsimileSpec extends AnyFunSuite:
       val viewer: String = html(target, "col/000/facsimile.html")
       assert(viewer.contains("""class="facsimile""""), viewer)
       assert(viewer.contains("""class="facsimile-scroller""""), viewer)
+      assert(!viewer.contains("facsimileWrapper"), viewer)
+      assert(!viewer.contains("facsimileViewer"), viewer)
       assert(viewer.contains("""src="https://facsimiles.test/col/000-1.jpg""""), viewer)
       assert(viewer.contains("""src="https://facsimiles.test/col/000-2.jpg""""), viewer)
       assert(viewer.contains("""id="p000-1""""), viewer)
@@ -235,4 +237,36 @@ final class FacsimileSpec extends AnyFunSuite:
       val lastViewer: FacsimilePage = site.pages.facsimilePage(last).get
       assert(firstViewer.next.contains(site.pages.facsimilePage(pageNamed(site, "001")).get), firstViewer.next)
       assert(lastViewer.prev.contains(site.pages.facsimilePage(pageNamed(site, "002")).get), lastViewer.prev)
+  }
+
+  test("named-windows off keeps facsimile/text targets and does not set window name") {
+    withSite(): (_, target) =>
+      val home: String = html(target, "index.html")
+      assert(!home.contains("""data-window-name="""), home)
+      assert(!home.contains("hierarchyViewer"), home)
+      val transcription: String = html(target, "col/000.html")
+      assert(transcription.contains("""target="facsimile""""), transcription)
+      assert(!transcription.contains("facsimileViewer"), transcription)
+      val viewer: String = html(target, "col/000/facsimile.html")
+      assert(viewer.contains("""target="text""""), viewer)
+      assert(!viewer.contains("textViewer"), viewer)
+  }
+
+  test("named-windows on uses four collector viewer names") {
+    withSite(Map("_site_config.yml" -> (siteConfig + "named-windows: true\n"))): (_, target) =>
+      val home: String = html(target, "index.html")
+      assert(home.contains("""data-window-name="hierarchyViewer""""), home)
+      assert(home.contains("""target="hierarchyViewer""""), home)
+      val transcription: String = html(target, "col/000.html")
+      assert(transcription.contains("""data-window-name="textViewer""""), transcription)
+      assert(transcription.contains("""target="facsimileViewer""""), transcription)
+      assert(transcription.contains("""target="apparatusViewer""""), transcription)
+      val viewer: String = html(target, "col/000/facsimile.html")
+      assert(viewer.contains("""data-window-name="facsimileViewer""""), viewer)
+      assert(viewer.contains("""target="textViewer""""), viewer)
+      val person: String = html(target, "people/ab.html")
+      assert(person.contains("""data-window-name="apparatusViewer""""), person)
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("""data-window-name="hierarchyViewer""""), index)
+      assert(index.contains("""target="textViewer""""), index)
   }

@@ -6,10 +6,13 @@ does not have. Compared 2026-09-10.
 
 This file is the working list and closing plan. It is not user documentation (that stays in
 `README.adoc`) and not the Design essay (that stays in
-`dub.podval.org/notes/Publishing/Site Publisher.md`). When a gap closes, strike it here and
-update the Design note if a former non-goal changed.
+`dub.podval.org/notes/Publishing/Site Publisher.md`). Remove a gap from this file when it
+ships; update the Design note if a former non-goal changed.
 
-Former Design non-goals are **in scope** (mentions, facsimile chrome / facets as UX).
+Shipped (not listed): TEI `gap@reason` tip; entity `<h1>` / `<title>` = first TEI name;
+facsimile viewport scroller (not collector `resize: both`); four named windows (opt-in).
+
+Former Design non-goals are **in scope** except facsimile `resize: both` — see <<facsimile-viewer>>.
 
 ## Decisions
 
@@ -20,6 +23,10 @@ Former Design non-goals are **in scope** (mentions, facsimile chrome / facets as
   `from` pages that sit under a TEI `collection` by that collection
   (`pathHeaderHorizontal` disambiguates `003`). Not collector mentions (no **Имена:**
   line, no compact doc-id list). See <<grouped-backlinks>>.
+- **Document TEI as XML:** do not serve `/rgada/003.xml` (stamped `publicationStmt` etc.)
+  until someone asks (Design note, TEI facsimiles).
+- **Named windows:** four names, opt-in, default off (`named-windows: true` on alter-rebbe).
+  See <<named-windows>>.
 
 Analytics is not on this list. UA ids and `--production` are a follow-up for every site
 (Design note **Analytics**).
@@ -27,33 +34,6 @@ Analytics is not on this list. UA ids and `--production` are a follow-up for eve
 ## Inventory
 
 Live www has it; live ng does not.
-
-### Named windows
-
-Help (`note/help.md`) still describes four window types: collection TOC, names, transcription,
-facsimile. Collector sets `window.name` and `target` so each type reuses one window
-(`hierarchyViewer`, `apparatusViewer`, `textViewer`, `facsimileViewer`). `js/window.js` also
-restores scroll.
-
-ng: only transcription ↔ facsimile use `target="facsimile"` / `target="text"`. Everything else
-is same-tab. `js/window.js` is in the alter-rebbe tree and is copied to `_site`, but pages do
-not load it.
-
-### Facsimile viewer chrome
-
-www: `div.facsimileWrapper` / `div.facsimileViewer` — 1060×1586, `resize: both`, inner
-`.facsimileScroller`. ng: `html.facsimile` + a vertical stack of images (~1100px), page scroll,
-no resize handle.
-
-Same JPEGs and `#p{n}`. Emitted URL stays `/alias/P/facsimile.html`. Inbound
-`/alias/facsimile/P` already rewrites.
-
-### Document TEI as XML
-
-`GET /rgada/003.xml` on www is the TEI with `publicationStmt` (site URL, CC BY 4.0),
-`sourceDesc`, `langUsage`, `calendarDesc`. ng 404s. Worker rewrite of `/rgada/003.xml` would
-already target a sibling `.xml` if that file were written
-(`extension` is kept; default `.html` only when the request has none).
 
 ### Reports (`/report`)
 
@@ -72,22 +52,16 @@ Not in the header nav on www either; still generated.
   (`jews`, `officials`, …).
 - Entity URL `/name/alter-rebbe` vs ng `/names/alter-rebbe.html`. Old `/name/…` 404s on ng
   (Worker routes are collection aliases only).
-- Collector `<title>` / body title is the main TEI name (Залман Борухович). Done: `Page.title`
-  uses `entityDisplayName` (`<h1>` / `<title>`). File name remains `titleFromPath` / URL.
 - Collector **mentions** (per-collection doc ids + **Имена:**) vs ng **backlinks**
   (flat accordion, title `003`). Closing via grouped backlinks, not mentions
   (<<grouped-backlinks>>).
 
-### TEI `gap@reason`
-
-Done. `TeiGap`: `span.gap-ref` / `span.gap-tip` after the Xml2Html pass (so `class` is not
-`tei-class`). Hover/focus CSS with the other tips; hidden in print. No `@reason` → no wrap.
-
 ## Not gaps
 
-Search, in-place editing, and the help-page “Блог” link are not on live www. Collection
-indexes, store headers, aliases (`/rgada/003`), facsimile JPEGs, translations, entity-list
-buckets with ⇗, notes, date calendar tips, inbound `/alias/facsimile/P` are on ng.
+Search, in-place editing, the help-page “Блог” link, and stamped document `.xml` are not
+on this list. Collection indexes, store headers, aliases (`/rgada/003`), facsimile JPEGs,
+translations, entity-list buckets with ⇗, notes, date calendar tips, inbound
+`/alias/facsimile/P` are on ng.
 
 ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-expand, Open Graph.
 
@@ -95,40 +69,12 @@ ng extras (not collector): sitemap, Atom feed, `/errors`, settings / glossary-ex
 
 Publisher-generic unless noted. alter-rebbe.org CI / `window.js` / help text are that repo.
 
-### 1. `gap@reason`
+### 1. Named windows
 
-Done (`TeiGap`, IR pass + `convertFragment`, `TeiMarkupSpec`).
+Done. `named-windows` (default false). Four collector names; `siteSettings.js` + `data-window-name`;
+`target` on internal links when on. alter-rebbe `_site_config.yml` sets it.
 
-### 2. Entity title
-
-Done (`Page.title` prefers `entityDisplayName`; `EntitySpec`).
-
-### 3. Facsimile resize box
-
-Keep emitted `/P/facsimile.html`. Restore collector wrapper markup on `FacsimilePage` and the
-1060×1586 `resize: both` rules (today’s `.facsimile-scroller` stays the inner scroller).
-Do not emit `/alias/facsimile/P` (inbound only).
-
-### 4. Named windows
-
-Load a publisher-owned window helper (extract name + scroll restore from alter-rebbe
-`js/window.js`; leave GA to gtag). Set `window.name` from the page’s viewer:
-
-| Viewer | Pages |
-|---|---|
-| `hierarchyViewer` | stores, collections, notes, home, default |
-| `apparatusViewer` | entities, entity lists, reports |
-| `textViewer` | transcription (`DocumentContent`) |
-| `facsimileViewer` | `FacsimilePage` |
-
-Every internal link `target`s the **destination** viewer (today only pb / facsimile chrome
-do, and they use `"facsimile"` / `"text"`). Switch those two names to the collector ones so
-help.md and a leftover www tab still match. Site title stays `hierarchyViewer` (collector:
-the tab that opened `/` is the collection window).
-
-`siteSettings.js` can stay; it does not set `window.name`.
-
-### 5. Inbound `/name/…`, all-entities list, `/report`
+### 2. Inbound `/name/…`, all-entities list, `/report`
 
 Canonical entity stays `/names/{id}.html`. Add:
 
@@ -154,45 +100,100 @@ not use generated collection-index or entity-list member links.
 Worker routes today are collection aliases only; `/name*` and `/report*` never hit the
 Worker. Prefix routes must include the new prefixes (same “CSS/JS skip the Worker” rule).
 
-### 6. Document XML
-
-Write `{published-dir}/{base}.xml` next to `{base}.html` for `DocumentContent`. Content is
-collector `renderTei`: authored TEI plus `publicationStmt` / `availability` / `sourceDesc` /
-`langUsage` / `calendarDesc` from site config (url, license, `tei-default-calendar`).
-`GET /rgada/003.xml` then rewrites to that file. Translations: `{base}-{xx}.xml` if we serve
-the translation page; originals only is enough for www parity (`/rgada/003.xml`).
-
-`SyntheticXmlAsset` is the existing hook.
-
-### 7. Grouped backlinks
+### 3. Grouped backlinks
 
 See <<grouped-backlinks>>. One renderer (`BackLinks.html`); no mentions harvest.
 
-### 8. Docs once behaviour matches
+### 4. Docs once behaviour matches
 
-- This file: mark gaps done.
-- Design note: drop “not collector-style per-collection mentions” and “not a 1060×1586
-  resize box” if those ship; keep “not `/collection/facsimile/P` as the *emitted* URL”.
-- `README.adoc`: reports, `/name` inbound, document `.xml`, named `target`s, `gap` tip —
-  author-visible behaviour only.
-- alter-rebbe `note/help.md`: already describes four windows; no change if §5 ships.
+- This file: remove shipped gaps.
+- Design note: drop “not collector-style per-collection mentions” if grouped backlinks
+  ship; keep “not `/collection/facsimile/P` as the *emitted* URL”; facsimile chrome is
+  <<facsimile-viewer>>, not the resize box.
+- `README.adoc`: reports, `/name` inbound, named `target`s, `gap` tip — author-visible
+  behaviour only.
+- alter-rebbe `note/help.md`: already describes four windows; no change if named windows
+  ship.
 
 ### Suggested PR order
 
 Independent unless noted.
 
-1. `gap@reason` tip.
-2. Entity `<h1>` / `<title>` = display name.
-3. Facsimile resize wrapper (CSS + `FacsimilePage` markup).
-4. Named windows + window helper (depends on nothing; switches existing `target`s).
-5. Rewrite table: `/name`, `/report`; all-entities page; `/name/{id}` inbound.
-6. Document `.xml` next to `.html`.
-7. Reports (needs the same harvest walk as mentions-from-documents).
-8. Grouped backlinks (<<grouped-backlinks>>). Independent of 1–7.
-9. Design note / README / help as above.
+1. Rewrite table: `/name`, `/report`; all-entities page; `/name/{id}` inbound.
+2. Reports (needs the same harvest walk as mentions-from-documents).
+3. Grouped backlinks (<<grouped-backlinks>>). Independent of 1–2.
+4. Design note / README / help as above.
 
 Tests: fixture site already has a tiny store + entities (`EntitySpec`, `FacsimileSpec`,
 `CollectionAliasesSpec`). Extend those rather than hitting live alter-rebbe.
+
+## Named windows [[named-windows]]
+
+Chosen and shipped: **four names, opt-in, default off.** HTML `target="name"` reuses a browsing context with that `window.name`. Collector set
+the name on every page (`loadWindow`) and put `target` on every internal link so at most one
+window existed per *kind*. Help.md still describes four kinds: collection TOC, names,
+transcription, facsimile.
+
+ng already uses two names (`facsimile` / `text`) on pb, the facsimile icon, and photo→text
+links, but does not set `window.name`, so reuse is flaky. Other sites have no such links.
+
+A helper (name + scroll restore only; no UA) is cheap. The cost is **how many names** and
+**which sites get `target=` on internal `<a>`s**.
+
+### Approaches
+
+| | Names | Who gets `target` | Non-TEI sites (dub.podval.org, chumashquestions, mathworlds, opentorah docs) |
+|---|---|---|---|
+| **0** | none | strip even facsimile/`text` | no change |
+| **2** | text, facsimile | only transcription ↔ photos (plus `loadWindow` on those pages) | no such pages → no `target`, no helper |
+| **3** | hierarchy, text, facsimile | collection/notes/default stay in one window; document opens text; photos open facsimile. Names share hierarchy | if **on**: every wiki/nav link is `hierarchyViewer` (same-tab once `window.name` is set; first click can spawn a second tab if JS did not run). if **off**: like **2** or nothing |
+| **4** | + apparatus for entities/lists/reports | collector/help.md: looking up a name from text does not steal the collection window | same as **3** unless gated **off** |
+
+**Always-on 4** (old plan): every publisher site stamps `target` on every internal link. A blog
+does not need it. Middle-click + two tabs with the same `window.name` is messy.
+
+**Gated 4:** alter-rebbe (and any future archive) gets collector tiling; other sites emit
+nothing. Gate: explicit `_site_config.yml` (default off), or infer from a root TEI store /
+`facsimiles-url`. Explicit is predictable.
+
+**2 + loadWindow:** smallest change; dual-pane photos work; opening a document still
+*replaces* the collection index; a name click still *replaces* the transcription.
+
+### Recommendation
+
+**Four names, opt-in, default off.** `named-windows: true` on alter-rebbe only. Helper on
+every page of that site; `target` is the *destination* page’s viewer (`hierarchyViewer` /
+`apparatusViewer` / `textViewer` / `facsimileViewer`). Keep today’s `facsimile`/`text` as
+aliases or rename to the collector strings so leftover www tabs still match.
+
+Non-TEI sites: flag off → no helper, no `target` on wiki/header/backlinks (except existing
+`rel=me` `_blank` on social). Fixture tests stay off unless a TEI fixture sets the flag.
+
+PDF / chunked HTML icons stay in the text window. Site title → `hierarchyViewer` (the tab
+that opened `/` is the collection window), matching help.md.
+
+## Facsimile viewer [[facsimile-viewer]]
+
+Shipped. Do **not** restore collector `div.facsimileWrapper` / `div.facsimileViewer` (1060×1586,
+`resize: both`, inner scroll).
+
+www’s box existed to (1) keep site chrome still while paging photos and (2) size the photo
+next to a transcription **window**. The handle is a `textarea`-style CSS `resize` — hard to
+find, unused on touch, and a 1586px-tall box is taller than a typical laptop content area.
+On a tiling WM the browser window is already the pane; an inner resize box fights that.
+
+ng already has the better document: `html.facsimile`, stacked `figure`s, `max-width: 100%`,
+`#p{n}` with `scroll-margin-top: 4rem`. That works as a long page (pinch-zoom, print, space
+/ page-down). What it lacks vs www is a **contained** scroll so the header does not ride
+away, which matters once named windows park facsimile beside text.
+
+**Do:** keep the image stack. On `html.facsimile` only, make `.facsimile-scroller` fill
+`calc(100vh - header)` (or `100dvh`) with `overflow-y: auto`. Keep `scroll-margin-top` on
+`figure` / `img` so `pb` jumps land below the header. Images stay `max-width: 100%`. Optional:
+compact or hide the site footer on facsimile pages. No fixed pixel size, no `resize: both`.
+Emitted URL stays `/P/facsimile.html`.
+
+Not in this item: named windows (next), a text+image split on one page.
 
 ## Grouped backlinks [[grouped-backlinks]]
 

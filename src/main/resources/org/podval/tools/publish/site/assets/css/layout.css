@@ -304,8 +304,58 @@ html.wide .page-content > .wrapper {
     --content-width: 1800px;
 }
 
+/* Facsimile viewer: fill the window under the header; photos scroll in the pane.
+ * Not collector 1060×1586 `resize: both` — the browser window is the pane. */
+html.facsimile {
+    height: 100dvh;
+}
+
+html.facsimile body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+html.facsimile .page-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0.5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 html.facsimile .page-content > .wrapper {
     --content-width: 1100px;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+html.facsimile .page-content > .wrapper::after {
+    display: none;
+}
+
+html.facsimile article.post {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+html.facsimile .post-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html.facsimile .site-footer {
+    display: none;
 }
 
 .facsimile-scroller {
@@ -315,18 +365,44 @@ html.facsimile .page-content > .wrapper {
     align-items: center;
 }
 
+html.facsimile .facsimile-scroller {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .facsimile-scroller img {
     display: block;
     max-width: 100%;
     height: auto;
     border: 1px solid #ccc;
-    scroll-margin-top: 4rem;
+    scroll-margin-top: 0.75rem;
 }
 
 .facsimile-scroller figure {
     margin: 0;
     max-width: 100%;
-    scroll-margin-top: 4rem;
+    scroll-margin-top: 0.75rem;
+}
+
+@media print {
+    html.facsimile,
+    html.facsimile body {
+        height: auto;
+        overflow: visible;
+    }
+
+    html.facsimile .page-content,
+    html.facsimile .page-content > .wrapper,
+    html.facsimile article.post,
+    html.facsimile .post-content,
+    html.facsimile .facsimile-scroller {
+        display: block;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        flex: none;
+    }
 }
 
 .tree-index ul {

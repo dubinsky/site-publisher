@@ -106,6 +106,12 @@ Optional `tei-default-calendar` is `julian` or `gregorian` (default `gregorian`)
 tei-default-calendar: julian
 ----
 
+Optional `named-windows` (default off) reuses four collector window names so collection, names, transcription, and facsimile can sit in separate tabs. Internal links `target` the destination viewer; each page sets `window.name`. Other sites should leave it off.
+
+----
+named-windows: true
+----
+
 
 [#summary]
 == Summary

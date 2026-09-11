@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, Page}
+import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, NamedWindows, Page}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
@@ -56,9 +56,11 @@ object Facsimile:
       case None => element
       case Some(viewer) =>
         element.getId.filter(_.nonEmpty).fold(element): id =>
-          element
-            .setHref(s"${viewer.publishedPath}#$id")
-            .set(XmlAttribute.Target, facsimileTarget)
+          val linked: Xml.Element =
+            element.setHref(s"${viewer.publishedPath}#$id")
+          NamedWindows.targetAttr(viewer).fold(
+            linked.set(XmlAttribute.Target, facsimileTarget)
+          )(name => linked.set(XmlAttribute.Target, name))
 
   def scroller(viewer: FacsimilePage): Xml.Element =
     val document: FullMarkupPage = viewer.document
@@ -86,8 +88,11 @@ object Facsimile:
       .setId(id)
       .set(XmlAttribute.Alt, s"facsimile for page $display")
       .set(XmlAttribute.Src, imageUrl(base, sourceDir, pb.n, pb.facs))
-    val link: Xml.Element = Xml.element(XmlElement.A)
-      .setHref(s"${document.publishedPath}#$id")
-      .set(XmlAttribute.Target, textTarget)
-      .setChildren(Seq(img: Xml.Node))
+    val link: Xml.Element =
+      val a: Xml.Element = Xml.element(XmlElement.A)
+        .setHref(s"${document.publishedPath}#$id")
+        .setChildren(Seq(img: Xml.Node))
+      NamedWindows.targetAttr(document).fold(a.set(XmlAttribute.Target, textTarget))(name =>
+        a.set(XmlAttribute.Target, name)
+      )
     Figure.make(Seq(Xml.text(display)), Seq(link: Xml.Node))

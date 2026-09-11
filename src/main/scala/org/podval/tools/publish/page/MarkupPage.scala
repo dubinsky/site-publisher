@@ -68,7 +68,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           page.publishedPath.toString,
           Icon.fileLines,
           "Transcription",
-          Some(Facsimile.textTarget)
+          NamedWindows.targetAttr(page).orElse(Some(Facsimile.textTarget))
         ))
       else Option.when(formatIsChunked)(
         formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
@@ -86,7 +86,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           viewer.publishedPath.toString,
           Icon.images,
           "Facsimile",
-          Some(Facsimile.facsimileTarget)
+          NamedWindows.targetAttr(viewer).orElse(Some(Facsimile.facsimileTarget))
         )
     ).flatten
     Seq(onePage, chunked, pdf, facsimile).flatten
@@ -97,6 +97,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         a(
           className := "nav-item translation",
           href := translation.publishedPath.toString,
+          NamedWindows.targetAttr(translation).map(name => target := name),
           s"[$lang]"
         )
 
@@ -174,6 +175,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       )
     ).when(isCollectionIndex)(className := "wide")
      .when(isFacsimileViewer)(className := "facsimile")
+     .when(site.config.namedWindows)(attr("data-window-name") := NamedWindows.of(this))
 
   private def isCollectionIndex: Boolean =
     doc.exists(_.wide)

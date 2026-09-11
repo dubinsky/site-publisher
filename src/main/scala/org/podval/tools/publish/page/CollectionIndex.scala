@@ -121,9 +121,12 @@ object CollectionIndex:
   private def pagesCell(document: Page, header: Option[DocumentHeader], pageType: PageType): Xml.Nodes =
     val groups: Seq[Xml.Nodes] = header.toSeq.flatMap(_.pbs).map: pb =>
       Seq(
-        Xml.element(XmlElement.A)
-          .setHref(s"${document.publishedPath}#${Pb.pageId(pb.n)}")
-          .setText(pageType.displayName(pb.n)): Xml.Node
+        NamedWindows.setXmlTarget(
+          Xml.element(XmlElement.A)
+            .setHref(s"${document.publishedPath}#${Pb.pageId(pb.n)}")
+            .setText(pageType.displayName(pb.n)),
+          document
+        ): Xml.Node
       )
     groups match
       case Seq() => Seq.empty
@@ -159,7 +162,10 @@ object CollectionIndex:
     Xml.element(XmlElement.Td).addClass(cssClass).setChildren(nodes)
 
   private def documentLink(document: Page, text: String): Xml.Element =
-    Xml.element(XmlElement.A).setHref(document.publishedPath.toString).setText(text)
+    NamedWindows.setXmlTarget(
+      Xml.element(XmlElement.A).setHref(document.publishedPath.toString).setText(text),
+      document
+    )
 
   private def langLink(translation: Page): Xml.Element =
     documentLink(translation, langOf(translation).getOrElse(fileName(translation)))

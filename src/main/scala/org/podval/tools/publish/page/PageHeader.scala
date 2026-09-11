@@ -100,7 +100,10 @@ object PageHeader:
 
   private def ancestorLine(page: Page): Xml.Element =
     val name: Xml.Element =
-      Xml.element(XmlElement.A).setHref(page.publishedPath.toString).setText(pageDisplayName(page))
+      NamedWindows.setXmlTarget(
+        Xml.element(XmlElement.A).setHref(page.publishedPath.toString).setText(pageDisplayName(page)),
+        page
+      )
     headingLine(
       selector = selectorName(page),
       name = Seq(name),
@@ -192,7 +195,7 @@ object PageHeader:
         headerRow(page, "Расшифровка", joinedInner(meta.transcribers))
       ))
 
-  private def isCollectionDocument(page: Page): Boolean =
+  private[page] def isCollectionDocument(page: Page): Boolean =
     page.store.isEmpty &&
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 

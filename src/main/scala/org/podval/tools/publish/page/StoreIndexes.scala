@@ -58,9 +58,12 @@ object StoreIndexes:
     Xml.element(XmlElement.Li).setChildren(Seq(treeLink(page)) ++ nested)
 
   private def treeLink(page: Page): Xml.Element =
-    Xml.element(XmlElement.A)
-      .setHref(page.publishedPath.toString)
-      .setText(treeLabel(page))
+    NamedWindows.setXmlTarget(
+      Xml.element(XmlElement.A)
+        .setHref(page.publishedPath.toString)
+        .setText(treeLabel(page)),
+      page
+    )
 
   private def treeLabel(page: Page): String =
     page.store match
@@ -78,7 +81,10 @@ object StoreIndexes:
         .getOrElse(collection.listTitle)
     val label: String = if header.isEmpty then title else s"$header: $title"
     val link: Xml.Element =
-      Xml.element(XmlElement.A).setHref(collection.publishedPath.toString).setText(label)
+      NamedWindows.setXmlTarget(
+        Xml.element(XmlElement.A).setHref(collection.publishedPath.toString).setText(label),
+        collection
+      )
     // Collector always emits `<abstract>`, even empty; tei.css `margin-top/bottom: 1em` is the
     // blank line between items on `/`.
     val description: Xml.Element = collection.store.flatMap(_.description).fold(Xml.element("abstract")): xml =>
