@@ -65,8 +65,9 @@ if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFi
 ----
 
 Override with `-PsitePublisherDir=`. OpenTorah sites typically want
-`../../Podval/site-publisher`. When the Gradle plugin exists, add
-`pluginManagement { includeBuild(...) }` as well (see `gradle-plugin-plan.md`).
+`../../Podval/site-publisher`. When the Gradle plugin exists, that include moves into
+`pluginManagement { includeBuild(...) }` (one include, plugin + library; see
+`gradle-plugin-plan.md`). Do not use `mavenLocal()` to dogfood the plugin.
 
 Without a site-side dependency, generate from this repo:
 `./gradlew run --args="/path/to/source-directory"`.

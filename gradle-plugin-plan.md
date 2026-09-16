@@ -82,21 +82,106 @@ keeps the Pages deploy half; generation belongs to the site. Pin the plugin vers
 
 Cache `~/.gradle/ms-playwright` in CI (the generate action already does this).
 
-## Local unreleased plugin
+## Layout
+
+The library stays at the root of this repo (`org.podval.tools.publisher`). The plugin is a
+**subproject** (`java-gradle-plugin` or equivalent, Java or Kotlin only). It must not
+`implementation`-depend on the root project: that would load Scala 3 / Playwright /
+AsciidoctorJ into the Gradle daemon. The plugin only adds a `sitePublisher` configuration on
+the consumer and puts the library coordinate there.
+
+One composite `includeBuild` of this repo then provides both the plugin id and the library
+substitution. Do not split the plugin into its own Git repository.
+
+## Local iteration: composite build, not mavenLocal
+
+Use a composite build. Do **not** iterate via `publishToMavenLocal` / `mavenLocal()`.
+
+`mavenLocal()` is how some older Gradle plugins were dogfooded (including
+`org.podval.tools.scalajs` in a few checkouts). It is the wrong loop here:
+
+- Every change needs a republish; plugin markers and version caches go stale.
+- Consumers would add `mavenLocal()` to `pluginManagement.repositories`. That is easy to
+  commit and then CI resolves a developer’s leftover `~/.m2` artifact (or fails without it).
+- Publishing both the plugin marker and the library to `~/.m2` just to keep them in sync is
+  the job composite substitution already does.
+- Sites already `includeBuild` this repo for the library. Moving that include into
+  `pluginManagement` is the whole local-plugin story.
+
+### Consumer `settings.gradle`
+
+**One** include, and only under `pluginManagement` (Gradle treats that as a composite member
+for dependency substitution too). Do not also `includeBuild` the same directory in the
+settings body — “included build is already included”.
 
 ```gradle
 pluginManagement {
-  includeBuild('../site-publisher') // or -PsitePublisherDir=
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+  }
+  final File publisherDir = file(
+    providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
+  )
+  if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
+    includeBuild(publisherDir)
+  }
 }
 ```
 
-Library substitution for a site that already depends on the coordinate:
+Override with `-PsitePublisherDir=`. OpenTorah / MathWorlds defaults stay
+`../../Podval/site-publisher`. When the directory is missing (GitHub Actions), Gradle
+resolves the plugin id and the library from Maven Central.
+
+### Consumer `build.gradle`
+
+Always pin a version (CI has no composite):
 
 ```gradle
-final File publisherDir = file(providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher'))
-if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
-  includeBuild(publisherDir)
+plugins {
+  id 'org.podval.tools.site-publisher' version '0.1.0'
 }
 ```
 
-See README **Dogfooding**.
+With the include above, a local checkout **substitutes** that version. No version bump, no
+`mavenLocal`, no republish to try a one-line plugin change. Then `./gradlew generateSite`
+and `./gradlew serveSite`.
+
+Until the plugin exists, keep the current settings-body `includeBuild` for the library
+(README **Dogfooding**). The move into `pluginManagement` is part of the first consumer
+cleanup.
+
+## Rollout: clean up sites
+
+Do not push a site that *applies* the plugin until the plugin artifact is on Maven Central.
+CI does not check out this repo; it cannot includeBuild.
+
+1. Add the plugin subproject here. Gradle TestKit: apply the plugin to a temp project,
+   assert `generateSite` / `serveSite` exist, the `sitePublisher` configuration is not the
+   compile classpath, and `generateSite` declares the target-directory output.
+2. Dogfood locally on one site (typically `dub.podval.org`): move `includeBuild` into
+   `pluginManagement`, apply the plugin, delete the copied `configurations.sitePublisher` /
+   `JavaExec` / `siteArgs` / Playwright env / JDK flags, run `generateSite` and `serveSite`.
+   Do not push that site yet.
+3. Publish this repo to Central (library + plugin, same version), including the plugin
+   marker POM (`org.podval.tools.site-publisher.gradle.plugin`).
+4. Push each consumer: `plugins { id 'org.podval.tools.site-publisher' version '…' }`,
+   `pluginManagement { includeBuild(...) }` as above, delete the copied block.
+   OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables }`.
+5. Site workflows: `./gradlew generateSite` (or `:docs:generateSite`). Drop or shrink
+   `.github/actions/generate`.
+
+Consumers of the copied block today:
+
+- `dub.podval.org`
+- `www.podval.org`
+- `chumashquestions.org`
+- `alter-rebbe.org`
+- `opentorah.org` (`:docs`)
+- `mathworlds-site`
+
+## Not this plugin
+
+Repeated Podval Gradle setup (foojay, Java 25 / Scala 3 flags, `dependencyUpdates` filters,
+Central POM / signing) is **not** this plugin. That lives in `../podval-gradle` (see
+`gradle-conventions-plan.md` there).
