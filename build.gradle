@@ -3,51 +3,18 @@ plugins {
   id 'scala'
   id 'maven-publish'
   id 'signing'
-  id 'io.github.ben-manes.versions' version '0.61.0'
+  id 'org.podval.conventions'
+  id 'org.podval.conventions.publish'
   id 'org.podval.tools.scalajs' version '1.0.4'
 }
 
 description = 'Generate, serve and publish websites'
 group = 'org.podval.tools'
 
-final String gitHubRepository = 'dubinsky/site-publisher'
-final String gitHubRepositoryUrl = "https://github.com/$gitHubRepository"
-final String orgName = 'Podval Group'
-final String orgUrl = 'https://www.podval.org'
-
-scala.scalaVersion = providers.gradleProperty('scalaVersion').get()
-
-// Register before `withJavadocJar()` so that call reuses this task (it will not
-// overwrite `from`). Maven Central requires a -javadoc jar; this project is
-// Scala-only, so the classifier carries ScalaDoc.
-tasks.register('javadocJar', Jar) {
-  group = 'build'
-  description = 'Assembles a jar archive containing the ScalaDoc (Maven Central -javadoc classifier).'
-  from scaladoc
-  archiveClassifier = 'javadoc'
-}
-
-java {
-  toolchain.languageVersion = JavaLanguageVersion.of(25)
-  withSourcesJar()
-  withJavadocJar()
-}
-
-tasks.named('jar', Jar) {
-  // `jar` packs both compileScala output (`build/classes/scala/main`) and
-  // processResources output (`build/resources/main`). Catalog XML belongs only
-  // in resources; compileScala does not emit it. IntelliJ's compiler copies
-  // those same files into the classes dir, and Gradle does not delete unknown
-  // files there, so both copies survive until `clean`. Gradle 7+ then fails
-  // the jar (`duplicatesStrategy` FAIL). Exclude the second copy; they are identical.
-  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-  manifest {
-    attributes(
-      'Implementation-Title'  : project.name,
-      'Implementation-Version': archiveVersion,
-      'Implementation-Vendor' : orgName
-    )
-  }
+podvalPublish {
+  gitHubRepository = 'dubinsky/site-publisher'
+  name = 'Podval Site Publisher'
+  inceptionYear = '2026'
 }
 
 String zioBlocksVersion = '0.0.51'
@@ -67,7 +34,7 @@ dependencies {
   implementation "com.vladsch.flexmark:flexmark-ext-gfm-tasklist:$flexMarkVersion"
   implementation "com.vladsch.flexmark:flexmark-ext-tables:$flexMarkVersion"
   implementation 'org.asciidoctor:asciidoctorj:3.0.1'
-  implementation 'com.microsoft.playwright:playwright:1.62.0'
+  implementation 'com.microsoft.playwright:playwright:1.63.0'
   implementation 'org.apache.pdfbox:pdfbox:3.0.8'
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
   implementation 'org.slf4j:slf4j-api:2.0.19'
@@ -103,37 +70,6 @@ tasks.withType(Test).configureEach {
   environment 'PLAYWRIGHT_BROWSERS_PATH', "${gradle.gradleUserHomeDir}/ms-playwright"
 }
 
-def isNonStable = { String version ->
-  boolean stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
-  String regex = /^[0-9,.v-]+(-r)?$/
-  return !stableKeyword && !(version ==~ regex)
-}
-
-// Maven has zio-blocks-schema_3:0.017 (a padded 0.0.17), which both Maven and Gradle
-// rank above 0.0.x because the second component is 17.
-def hasPaddedNumericComponent = { String version ->
-  version.tokenize('.-').any { it.length() > 1 && it ==~ /0\d+/ }
-}
-
-tasks.named("dependencyUpdates").configure {
-  rejectVersionIf {
-    isNonStable(it.candidate.version) || hasPaddedNumericComponent(it.candidate.version)
-  }
-}
-
-tasks.withType(ScalaCompile).configureEach {
-  scalaCompileOptions.with {
-    additionalParameters = [
-      // Scala 3.9 requires JDK 17+; emit 25 to match the Java toolchain.
-      '-release:25',
-      '-new-syntax',
-      '-feature',
-      '-language:strictEquality',
-      '-source:future'
-    ]
-  }
-}
-
 // GitHub renders README.adoc as committed; Gradle cannot substitute at view time.
 def expectedReadmeCoordinate = "org.podval.tools:org.podval.tools.publisher:${version}"
 def expectedPluginVersion = "id 'org.podval.tools.site-publisher' version '${version}'"
@@ -156,60 +92,3 @@ def checkReadmeVersion = tasks.register('checkReadmeVersion') {
   }
 }
 tasks.named('check') { dependsOn(checkReadmeVersion) }
-
-publishing {
-  publications {
-    library(MavenPublication) {
-      from components.java
-
-      pom {
-        name = 'Podval Site Publisher'
-        description = project.description
-        url = gitHubRepositoryUrl
-        inceptionYear = '2026'
-        scm {
-          url = gitHubRepositoryUrl
-          connection = "scm:git:https://github.com/${gitHubRepository}.git"
-          developerConnection = "scm:git:ssh://git@github.com/${gitHubRepository}.git"
-        }
-        issueManagement {
-          system = 'GitHub'
-          url = "$gitHubRepositoryUrl/issues"
-        }
-        ciManagement {
-          system = 'GitHub Actions'
-          url = "$gitHubRepositoryUrl/actions"
-        }
-        licenses {
-          license {
-            name = 'Apache-2.0'
-            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-          }
-        }
-        organization {
-          name = orgName
-          url = orgUrl
-        }
-        developers {
-          developer {
-            id = 'dub'
-            name = 'Leonid Dubinsky'
-            email = 'dub@podval.org'
-            url = 'https://dub.podval.org'
-            organization = orgName
-            organizationUrl = orgUrl
-            timezone = '-5'
-          }
-        }
-      }
-    }
-  }
-}
-
-signing {
-  def key = providers.gradleProperty('signingKey')
-  def password = providers.gradleProperty('signingPassword')
-  required = key.isPresent()
-  useInMemoryPgpKeys(key.getOrNull(), password.getOrNull())
-  sign publishing.publications.library
-}

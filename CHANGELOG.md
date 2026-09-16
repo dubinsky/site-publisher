@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Podval Gradle convention plugins.
 - Gradle plugin `org.podval.tools.site-publisher`: `generateSite` / `serveSite` as `JavaExec` on a detached `sitePublisher` configuration (Java subproject; publisher stays off the Gradle daemon). Dogfood with `pluginManagement { includeBuild }`, not `mavenLocal()`. README **Gradle plugin**; design note subsection.
 - Backlinks from TEI collections group under the collection path header; snippet text skips `*-tip` subtrees.
 - Report harvest: names without `@ref`, TEI `unclear`, entity file id vs underscored main name.
