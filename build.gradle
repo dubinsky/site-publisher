@@ -136,16 +136,22 @@ tasks.withType(ScalaCompile).configureEach {
 
 // GitHub renders README.adoc as committed; Gradle cannot substitute at view time.
 def expectedReadmeCoordinate = "org.podval.tools:org.podval.tools.publisher:${version}"
+def expectedPluginVersion = "id 'org.podval.tools.site-publisher' version '${version}'"
 def checkReadmeVersion = tasks.register('checkReadmeVersion') {
   group = 'verification'
   description = 'Fails if README.adoc Maven coordinates do not match project.version.'
   def readmeFile = file('README.adoc')
   inputs.file(readmeFile)
   inputs.property('expected', expectedReadmeCoordinate)
+  inputs.property('expectedPlugin', expectedPluginVersion)
   doLast {
     def found = (readmeFile.getText('UTF-8') =~ /org\.podval\.tools:org\.podval\.tools\.publisher:[0-9][0-9A-Za-z._-]*/).findAll().toSet()
     if (found != [expectedReadmeCoordinate] as Set) {
       throw new GradleException("README.adoc Maven coordinates ${found} must all be ${expectedReadmeCoordinate}")
+    }
+    def pluginFound = (readmeFile.getText('UTF-8') =~ /id 'org\.podval\.tools\.site-publisher' version '[0-9][0-9A-Za-z._-]*'/).findAll().toSet()
+    if (pluginFound != [expectedPluginVersion] as Set) {
+      throw new GradleException("README.adoc plugin id versions ${pluginFound} must all be ${expectedPluginVersion}")
     }
   }
 }

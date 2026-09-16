@@ -7,6 +7,10 @@ plugins {
 }
 
 rootProject.name = 'org.podval.tools.publisher'
+include 'plugin'
+project(':plugin').name = 'site-publisher-plugin'
+// TODO: re-evaluate empty root + library and plugin as sibling subprojects
+// (Maven artifact id can stay `org.podval.tools.publisher` on the library child).
 
 dependencyResolutionManagement {
   repositories {

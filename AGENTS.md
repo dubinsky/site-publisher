@@ -24,7 +24,8 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `org.opentorah:opentorah-core` — Jewish/Julian/Gregorian calendar (TEI date tooltips). Optional
     `includeBuild` of `../../OpenTorah/opentorah.org` (or `-PopentorahDir=`).
 - Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
-- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`. xml tests live in `dubinsky/xml`.
+- Gradle plugin: `plugin/` (Java). Plugin id `org.podval.tools.site-publisher`; `generateSite` / `serveSite` as `JavaExec` on a detached `sitePublisher` configuration. Must not `implementation`-depend on the root project. The library is the root project for now (Maven artifact id `org.podval.tools.publisher` is that project’s `name`). TODO: re-evaluate empty root + sibling library/plugin subprojects (see Design note **Gradle plugin**).
+- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`. xml tests live in `dubinsky/xml`. Plugin TestKit: `plugin/src/test/java/`.
 - Fixture site: `src/test/site` (committed). `SiteSpec` generates into `build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
 
 ## Build & Run Commands
@@ -37,7 +38,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ./gradlew run --args="/path/to/source-directory --serve"
 ```
 
-The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). A Gradle plugin is planned in `gradle-plugin-plan.md` and is not implemented. GitHub `generate` action resolves that artifact from Maven Central.
+The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). Gradle plugin id `org.podval.tools.site-publisher` (subproject `plugin/`) registers `generateSite` / `serveSite`. GitHub `generate` action still resolves the library from Maven Central until sites apply the plugin and it is on Central.
 
 Known sites (local checkouts; `@main def generate()` comments the same paths):
 

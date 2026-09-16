@@ -26,16 +26,73 @@ same names with hyphens turned into underscores.
 
 `./gradlew build` compiles and tests; `./gradlew test` runs tests only.
 
-Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.1.0`
+Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.2.0`
 
-A site with Gradle should run that artifact on a detached `sitePublisher` configuration
-(`JavaExec`, main class `org.podval.tools.publish.site.Site`). Do not put it on `implementation`
-(Scala version and Playwright stay off the project compile classpath). A Gradle plugin that owns
-this block is planned; see `gradle-plugin-plan.md`.
+[#gradle-plugin]
+=== Gradle plugin
 
-Until that plugin exists, GitHub Actions call
-`dubinsky/site-publisher/.github/actions/generate@v0.1.0`, which resolves the same coordinate from
-Maven Central (pin the action tag; optional `version` input overrides `gradle.properties`).
+A site with Gradle applies plugin id `org.podval.tools.site-publisher` (same version as the
+library). The plugin adds a detached `sitePublisher` configuration and two `JavaExec` tasks that
+run `org.podval.tools.publish.site.Site`. Do not put the library on `implementation`: Scala version
+and Playwright stay off the project compile classpath, and off the Gradle daemon.
+
+----
+plugins {
+  id 'org.podval.tools.site-publisher' version '0.2.0'
+}
+site {
+  treatErrorsAsWarnings = true
+  logLevel = 'INFO'
+}
+----
+
+`pluginManagement.repositories` must include `mavenCentral()` (the plugin marker is published
+there) as well as `gradlePluginPortal()` for other plugins such as Foojay.
+
+`./gradlew generateSite` writes the target directory. `./gradlew serveSite` is the same with
+`--serve`. Do not make `generateSite` a dependency of `build`; Pages CI calls it explicitly.
+OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables }`.
+
+`site { }` maps to CLI flags (defaults match `SiteOptions`):
+
+| Property | Default | CLI |
+|---|---|---|
+| `sourceDirectory` | project directory | positional source path |
+| `targetDirectoryName` | `_site` | `--target-directory-name` (absolute path used as-is) |
+| `treatErrorsAsWarnings` | `false` | `--treat-errors-as-warnings` |
+| `logLevel` | `INFO` | `--log-level` |
+| `includeDrafts` | `false` | `--include-drafts` |
+| `production` | `false` | `--production` |
+
+Both tasks set `--enable-native-access=ALL-UNNAMED`,
+`--sun-misc-unsafe-memory-access=allow`, `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`, and
+`PLAYWRIGHT_BROWSERS_PATH=$GRADLE_USER_HOME/ms-playwright`. `generateSite` launches Java 25.
+Its inputs are the source tree minus the target directory and Gradle `build/`; its output is the
+target directory, so Gradle up-to-date can skip a run when sources are unchanged. The generator
+still deletes and rewrites the target when the task runs.
+
+The plugin adds the library as a **default** dependency of the `sitePublisher` configuration, at
+the same version as the plugin (`org.podval.tools:org.podval.tools.publisher:0.2.0`). Gradle
+`defaultDependencies` run only when that configuration is still empty, so a consumer can pick
+another published library version by declaring `sitePublisher` themselves (there is no
+`site.publisherVersion`). Do not add a second coordinate alongside the default — a non-empty
+configuration replaces the default entirely:
+
+----
+dependencies {
+  sitePublisher "org.podval.tools:org.podval.tools.publisher:${providers.gradleProperty('sitePublisherVersion').get()}"
+}
+----
+
+The supported pair is the same version as the plugin. An older library may not accept flags the
+plugin always passes; a newer one is usually fine. A local `includeBuild` of this repo substitutes
+the library **module** for whatever version string was requested.
+
+Site workflows: checkout, setup-java 25, setup-gradle, cache `~/.gradle/ms-playwright`,
+`./gradlew generateSite` (or `:docs:generateSite`), upload `_site` / `docs/_site`, deploy Pages.
+Pin the plugin version in `build.gradle`. Until a site applies the plugin, GitHub Actions can still
+call `dubinsky/site-publisher/.github/actions/generate@v0.1.0` (pin the action tag; optional
+`version` input overrides that action checkout’s `gradle.properties`).
 
 Sites using this publisher:
 
@@ -52,24 +109,30 @@ Sites using this publisher:
 This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those
 checkouts exist (`-PxmlDir=` / `-PopentorahDir=`).
 
-A site that depends on `org.podval.tools:org.podval.tools.publisher` can substitute a local
-checkout the same way:
+A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **one**
+include under `pluginManagement` (plugin id + library). Do not also `includeBuild` the same
+directory in the settings body. Do not use `mavenLocal()`.
 
 ----
-final File publisherDir = file(
-  providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
-)
-if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
-  includeBuild(publisherDir)
+pluginManagement {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+  }
+  final File publisherDir = file(
+    providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
+  )
+  if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
+    includeBuild(publisherDir)
+  }
 }
 ----
 
-Override with `-PsitePublisherDir=`. OpenTorah sites typically want
-`../../Podval/site-publisher`. When the Gradle plugin exists, that include moves into
-`pluginManagement { includeBuild(...) }` (one include, plugin + library; see
-`gradle-plugin-plan.md`). Do not use `mavenLocal()` to dogfood the plugin.
+Override with `-PsitePublisherDir=`. OpenTorah / MathWorlds defaults stay
+`../../Podval/site-publisher`. When the directory is missing (CI), Gradle resolves the plugin and
+the library from Maven Central.
 
-Without a site-side dependency, generate from this repo:
+Without a site-side plugin, generate from this repo:
 `./gradlew run --args="/path/to/source-directory"`.
 
 [#publish]
@@ -80,7 +143,12 @@ Without a site-side dependency, generate from this repo:
 ./gradlew publishAggregationToCentralPortal
 ----
 
-Then release the deployment at https://central.sonatype.com/publishing/deployments .
+The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), the plugin
+implementation (`org.podval.tools:site-publisher-plugin`), and the plugin marker
+(`org.podval.tools.site-publisher:org.podval.tools.site-publisher.gradle.plugin`). Same version.
+Plugin Portal: `./gradlew :site-publisher-plugin:publishPlugins`.
+
+Then release the Central deployment at https://central.sonatype.com/publishing/deployments .
 
 TODO after a release that includes `asset: true` is on Maven Central: bump `sitePublisherVersion` in `~/CognoMath/mathworlds-site` if needed and push that repo (`index.yml` copies `index.html`). Do not push MathWorlds before then; CI resolves the publisher from Central.
 

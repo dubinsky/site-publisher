@@ -1,0 +1,111 @@
+plugins {
+  id 'java-gradle-plugin'
+  id 'maven-publish'
+  id 'signing'
+  id 'com.gradle.plugin-publish' version '2.2.1'
+}
+
+description = 'Gradle plugin that runs org.podval.tools.publisher via JavaExec'
+group = 'org.podval.tools'
+
+final String gitHubRepository = 'dubinsky/site-publisher'
+final String gitHubRepositoryUrl = "https://github.com/$gitHubRepository"
+final String orgName = 'Podval Group'
+final String orgUrl = 'https://www.podval.org'
+
+// Do not `implementation project(':')`: that would load Scala 3, Playwright, and AsciidoctorJ
+// into the Gradle daemon. The plugin only adds a `sitePublisher` configuration on the consumer.
+
+java {
+  toolchain.languageVersion = JavaLanguageVersion.of(25)
+  withSourcesJar()
+  withJavadocJar()
+}
+
+final String pluginVersion = version.toString()
+tasks.named('processResources') {
+  inputs.property('pluginVersion', pluginVersion)
+  filesMatching('org/podval/tools/publish/gradle/version.properties') {
+    expand version: pluginVersion
+  }
+}
+
+dependencies {
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+gradlePlugin {
+  website = gitHubRepositoryUrl
+  vcsUrl = "${gitHubRepositoryUrl}.git"
+  plugins {
+    sitePublisher {
+      id = 'org.podval.tools.site-publisher'
+      implementationClass = 'org.podval.tools.publish.gradle.SitePublisherPlugin'
+      displayName = 'Podval Site Publisher'
+      description = project.description
+      tags = ['site', 'static-site', 'documentation', 'markdown', 'asciidoc', 'tei']
+    }
+  }
+}
+
+tasks.named('test', Test) {
+  useJUnitPlatform()
+}
+
+tasks.named('javadoc', Javadoc) {
+  options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+publishing {
+  publications.withType(MavenPublication).configureEach { MavenPublication publication ->
+    pom {
+      name = publication.name == 'pluginMaven' ? 'Podval Site Publisher Gradle Plugin' : publication.name
+      description = project.description
+      url = gitHubRepositoryUrl
+      inceptionYear = '2026'
+      scm {
+        url = gitHubRepositoryUrl
+        connection = "scm:git:https://github.com/${gitHubRepository}.git"
+        developerConnection = "scm:git:ssh://git@github.com/${gitHubRepository}.git"
+      }
+      issueManagement {
+        system = 'GitHub'
+        url = "$gitHubRepositoryUrl/issues"
+      }
+      ciManagement {
+        system = 'GitHub Actions'
+        url = "$gitHubRepositoryUrl/actions"
+      }
+      licenses {
+        license {
+          name = 'Apache-2.0'
+          url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+        }
+      }
+      organization {
+        name = orgName
+        url = orgUrl
+      }
+      developers {
+        developer {
+          id = 'dub'
+          name = 'Leonid Dubinsky'
+          email = 'dub@podval.org'
+          url = 'https://dub.podval.org'
+          organization = orgName
+          organizationUrl = orgUrl
+          timezone = '-5'
+        }
+      }
+    }
+  }
+}
+
+signing {
+  def key = providers.gradleProperty('signingKey')
+  def password = providers.gradleProperty('signingPassword')
+  required = key.isPresent()
+  useInMemoryPgpKeys(key.getOrNull(), password.getOrNull())
+  sign publishing.publications
+}
