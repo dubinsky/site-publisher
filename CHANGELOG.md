@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-16
+
 - Empty Gradle root with sibling `publisher/` (library) and `plugin/` subprojects. Maven coordinates unchanged. Dogfood: `pluginManagement { includeBuild }` for the plugin id plus settings-body `includeBuild` of the same directory for the library child.
 - Podval Gradle convention plugins.
 - Gradle plugin `org.podval.tools.site-publisher`: `generateSite` / `serveSite` as `JavaExec` on a detached `sitePublisher` configuration (Java subproject; publisher stays off the Gradle daemon). Dogfood with `pluginManagement { includeBuild }`, not `mavenLocal()`. README **Gradle plugin**; design note subsection.
