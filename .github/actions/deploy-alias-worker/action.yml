@@ -35,7 +35,8 @@ runs:
       run: |
         set -euo pipefail
         publisher_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
-        cf_src="$publisher_root/src/main/resources/org/podval/tools/publish/site/cloudflare"
+        # Empty Gradle root: library sources are the publisher/ child.
+        cf_src="$publisher_root/publisher/src/main/resources/org/podval/tools/publish/site/cloudflare"
         site_path="${{ inputs.site-path }}"
         json="$site_path/collection-aliases.json"
         if [[ ! -f "$json" ]]; then
