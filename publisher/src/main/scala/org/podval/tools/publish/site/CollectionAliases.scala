@@ -7,7 +7,7 @@ import java.io.File
 
 /** Alias prefix table for Cloudflare Worker / inspection.
   * Collection prefixes come from wrapped store `Alias`es (`StoreTree.aliasPages`);
-  * inbound `/name` and `/report` from `Pages.inboundAliasEntries`. Prefix rewrites
+  * inbound `/name` from `Pages.inboundAliasEntries`. Prefix rewrites
   * match `Pages.findViaAlias` / `findViaInbound`. `Pages.find` and `rewriteRequest`
   * also try store-tree resolve. */
 object CollectionAliases:

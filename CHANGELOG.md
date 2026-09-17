@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- TEI names without `@ref`, `unclear`, and misnamed entity files are page errors on first parse (Errors page). No `/report` harvest, pages, or inbound Worker prefixes. Entity-file name elements are not `name without @ref`.
 - fix: `deploy-alias-worker` copies Worker JS from `publisher/` (empty Gradle root).
 
 ## [0.2.0] - 2026-09-16

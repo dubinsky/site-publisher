@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.site.PageErrorReporter
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
 import java.io.File
@@ -18,6 +18,30 @@ object TeiMarkup extends Markup(
 
   def isStoreRoot(element: Xml.Element): Boolean =
     element.isNamed("store") || element.isNamed("collection")
+
+  /** First-parse TEI source checks. `namesWithoutRef` is for documents and store
+    * title/abstract/body, not entity-file name elements (those are the definition). */
+  private[publish] def reportSourceErrors(
+    xml: Xml.Element,
+    errorReporter: PageErrorReporter,
+    namesWithoutRef: Boolean
+  ): Unit =
+    if namesWithoutRef then
+      xml.gather(
+        el =>
+          Option.when(
+            EntityKind.forNameElement(el.getName.localName).isDefined &&
+            el.get("ref").map(_.trim).forall(_.isEmpty)
+          )(el.getText),
+        stopAtCode = false
+      ).foreach(text => errorReporter.error(PageError.NoRef, text))
+    xml.gather(
+      el => Option.when(el.isNamed("unclear"))(el.getText),
+      stopAtCode = false
+    ).foreach(text => errorReporter.error(PageError.Unclear, text))
+
+  private[publish] def expectedEntityFileName(displayName: String): String =
+    displayName.replace(' ', '_')
 
   override def xmlContent(content: String, sourceFile: File): String = content
 

@@ -6,7 +6,7 @@ import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMar
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AllEntitiesPage, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
-  PdfPage, ReportPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
+  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -77,7 +77,7 @@ final class Pages(site: Site):
 
     indexEntities()
     resolveEntityLists()
-    addNameAndReportPages()
+    addNamePages()
     pages.foreach(_.freezeStores())
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
@@ -147,7 +147,7 @@ final class Pages(site: Site):
       aliasTargetDirectory(alias.real).map: to =>
         CollectionAliases.Entry(from, to, alias.real.path)
 
-  /** Inbound-only prefixes (`/name`, `/report`). Not `aliasByPrefix` (must not shorten emitted hrefs). */
+  /** Inbound-only prefix `/name`. Not `aliasByPrefix` (must not shorten emitted hrefs). */
   def inboundAliasEntries: Seq[CollectionAliases.Entry] =
     val namesDir: Option[Seq[String]] = pages.collectFirst:
       case page if page.doc.exists(_.asEntityLists.isDefined) => page.path.path.init
@@ -158,14 +158,7 @@ final class Pages(site: Site):
           to = namesDir.getOrElse(Seq(AllEntitiesPage.segment)),
           index = page.path
         )
-    val report: Option[CollectionAliases.Entry] = pages.collectFirst:
-      case page: ReportPage if page.kind == ReportPage.Kind.Index =>
-        CollectionAliases.Entry(
-          from = Seq(ReportPage.segment),
-          to = Seq(ReportPage.segment),
-          index = page.path
-        )
-    name.toSeq ++ report.toSeq
+    name.toSeq
 
   private def aliasTargetDirectory(page: Page): Option[Seq[String]] =
     aliasDirectory(page).orElse:
@@ -657,18 +650,10 @@ final class Pages(site: Site):
         pages.collectFirst { case page: AllEntitiesPage => page }
       case Seq(AllEntitiesPage.segment, id) =>
         findEntityByFileName(id)
-      case Seq(ReportPage.segment) =>
-        pages.collectFirst { case page: ReportPage if page.kind == ReportPage.Kind.Index => page }
-      case Seq(ReportPage.segment, id) =>
-        findExact(Path(Seq(ReportPage.segment, id)).html)
       case _ => None
 
-  private def addNameAndReportPages(): Unit =
-    val hasEntities: Boolean = pages.exists(_.entityKind.isDefined)
-    val hasTeiDocuments: Boolean = pages.exists(_.doc.flatMap(_.documentHeader).isDefined)
-    if hasEntities then addUnlessDuplicate(AllEntitiesPage(site))
-    if hasEntities || hasTeiDocuments then
-      ReportPage.pages(site).foreach(addUnlessDuplicate)
+  private def addNamePages(): Unit =
+    if pages.exists(_.entityKind.isDefined) then addUnlessDuplicate(AllEntitiesPage(site))
 
   private def addUnlessDuplicate(page: Page): Unit =
     get(page.path) match

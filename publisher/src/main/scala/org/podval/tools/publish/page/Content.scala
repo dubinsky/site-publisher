@@ -47,10 +47,14 @@ object Content:
 
   def parse(
     source: PageSource,
-    xml: Xml.Element
+    xml: Xml.Element,
+    firstReading: Boolean
   ): (Option[Xml.Element], Content) =
     if TeiMarkup.isStoreRoot(xml) then
       val store: StoreContent = StoreContent.parse(xml)
+      if firstReading then
+        (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
+          TeiMarkup.reportSourceErrors(fragment, source, namesWithoutRef = true)
       (store.title, store)
     else xml.getName.localName match
       case "entityLists" =>
@@ -63,6 +67,8 @@ object Content:
           header.lang,
           (kind, message) => source.error(kind, message)
         )
+        if firstReading then
+          TeiMarkup.reportSourceErrors(xml, source, namesWithoutRef = true)
         val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
         (title, DocumentContent(header, PageContent.prepareAuthored(source, processed)))
       case name =>
@@ -70,6 +76,13 @@ object Content:
           case Some(kind) =>
             val role: Option[String] = xml.get(XmlAttribute.Role).map(_.trim).filter(_.nonEmpty)
             val displayName: Option[String] = entityName(xml, kind)
+            if firstReading then
+              TeiMarkup.reportSourceErrors(xml, source, namesWithoutRef = false)
+              displayName.foreach: display =>
+                val expected: String = TeiMarkup.expectedEntityFileName(display)
+                val id: String = source.sourcePath.fileName
+                if expected != id then
+                  source.error(PageError.MisnamedEntity, s"should be named '$expected'")
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, EntityContent(kind, role, displayName, PageContent.prepareAuthored(source, processed)))
           case None =>

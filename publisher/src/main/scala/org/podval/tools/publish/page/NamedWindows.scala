@@ -14,11 +14,9 @@ object NamedWindows:
     page match
       case _: FacsimilePage => facsimile
       case _: AllEntitiesPage => apparatus
-      case _: ReportPage => apparatus
       case _: EntityListPage => apparatus
       case _ if page.entityKind.isDefined => apparatus
       case _ if page.doc.flatMap(_.asEntityLists).isDefined => apparatus
-      case _ if page.path.path.headOption.contains("report") => apparatus
       case _ if PageHeader.isCollectionDocument(page) && page.doc.flatMap(_.documentHeader).isDefined =>
         text
       case _ => hierarchy

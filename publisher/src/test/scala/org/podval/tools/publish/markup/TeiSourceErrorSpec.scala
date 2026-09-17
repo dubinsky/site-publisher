@@ -1,19 +1,19 @@
-package org.podval.tools.publish.page
+package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 import java.nio.file.{Files as NioFiles, Path as NioPath}
 
-final class ReportsSpec extends AnyFunSuite:
+final class TeiSourceErrorSpec extends AnyFunSuite:
   private val files: Map[String, String] = Map(
     "_site_config.yml" ->
-      """title: Reports Fixture
-        |description: report harvest
-        |url: http://reports.test
+      """title: TEI Source Errors
+        |description: first-parse TEI page errors
+        |url: http://tei-errors.test
         |author: Test
-        |email: test@reports.test
+        |email: test@tei-errors.test
         |lang: en
         |""".stripMargin,
     "index.md" -> "Home.\n",
@@ -39,7 +39,7 @@ final class ReportsSpec extends AnyFunSuite:
   )
 
   private def withSite(body: (Site, File) => Unit): Unit =
-    val path: NioPath = NioFiles.createTempDirectory("site-publisher-reports")
+    val path: NioPath = NioFiles.createTempDirectory("site-publisher-tei-errors")
     try
       val dir: File = path.toFile
       files.foreach: (relative, content) =>
@@ -61,37 +61,39 @@ final class ReportsSpec extends AnyFunSuite:
     assert(file.isFile, s"missing $relative under $target")
     Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
 
-  test("no-refs lists empty @ref from documents, stores, and entity files") {
+  test("names without @ref in documents and store chrome are page errors") {
     withSite: (_, target) =>
-      val page: String = html(target, "report/no-refs.html")
-      assert(page.contains("Nobody"), page)
-      assert(page.contains("Unlinked hero"), page)
-      assert(page.contains("A B"), page)
-      assert(page.contains("""href="/col/000.html""""), page)
-      assert(page.contains("""href="/col/index.html""""), page)
-      assert(!page.contains(">A<"), page)
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("name without @ref"), errors)
+      assert(errors.contains("Nobody"), errors)
+      assert(errors.contains("Unlinked hero"), errors)
+      assert(errors.contains("/col/000.xml"), errors)
+      assert(errors.contains("/col.xml"), errors)
+      assert(!errors.contains("name without @ref: A B"), errors)
   }
 
-  test("unclears lists TEI unclear with source") {
+  test("unclear in a TEI document is a page error") {
     withSite: (_, target) =>
-      val page: String = html(target, "report/unclears.html")
-      assert(page.contains("smudge"), page)
-      assert(page.contains("""href="/col/000.html""""), page)
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("unclear"), errors)
+      assert(errors.contains("smudge"), errors)
+      assert(errors.contains("/col/000.xml"), errors)
   }
 
-  test("misnamed-entities compares file name to underscored main name") {
+  test("entity file name vs underscored first name is a page error") {
     withSite: (_, target) =>
-      val page: String = html(target, "report/misnamed-entities.html")
-      assert(page.contains("should be named 'A_B'"), page)
-      assert(page.contains("""href="/people/ab.html""""), page)
-      assert(Reports.spacesToUnderscores("A B") == "A_B")
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("misnamed entity"), errors)
+      assert(errors.contains("should be named 'A_B'"), errors)
+      assert(errors.contains("/people/ab.xml"), errors)
+      assert(TeiMarkup.expectedEntityFileName("A B") == "A_B")
   }
 
-  test("index lists the three reports") {
-    withSite: (_, target) =>
-      val page: String = html(target, "report.html")
-      assert(page.contains("Names without @ref"), page)
-      assert(page.contains("""href="/report/no-refs.html""""), page)
-      assert(page.contains("""href="/report/unclears.html""""), page)
-      assert(page.contains("""href="/report/misnamed-entities.html""""), page)
+  test("does not write /report pages or inbound /report rewrites") {
+    withSite: (site, target) =>
+      assert(!File(target, "report.html").isFile)
+      assert(!File(target, "report/no-refs.html").isFile)
+      assert(site.pages.rewriteRequest(Path.fromHref("/report")).isEmpty)
+      assert(site.pages.rewriteRequest(Path.fromHref("/report/no-refs")).isEmpty)
+      assert(!CollectionAliases.entries(site.pages).exists(_.from == Seq("report")))
   }

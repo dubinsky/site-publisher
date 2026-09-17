@@ -30,8 +30,12 @@ final class PageSource(
 
   private var contentVar: Option[SoftReference[PageContent]] = None
 
-  def cache(frontMatter: FrontMatter, xml: Xml.Element): PageContent =
-    val result: PageContent = PageContent(this, frontMatter, xml)
+  def cache(
+    frontMatter: FrontMatter,
+    xml: Xml.Element,
+    firstReading: Boolean = true
+  ): PageContent =
+    val result: PageContent = PageContent(this, frontMatter, xml, firstReading)
     contentVar = Some(SoftReference(result))
     result
 
@@ -45,7 +49,7 @@ final class PageSource(
         firstReading = firstReading
       )
 
-      cache(frontMatter, xml)
+      cache(frontMatter, xml, firstReading)
     
     contentVar match
       case None => readParseAndCache("Reading", firstReading = true)

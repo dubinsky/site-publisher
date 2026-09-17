@@ -311,7 +311,7 @@ Wiki links in Obsidian:
 
 A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`names/alter-rebbe.xml` → `alter-rebbe`).
 
-`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link).
+`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is recorded as `unclear`. An entity file whose name is not the first name with spaces turned into underscores is `misnamed entity`.
 
 [source,xml]
 ----
@@ -364,7 +364,7 @@ Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are 
 
 `alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>). Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
-Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. The same table includes inbound `/name` (all-entities page) and `/name/{id}` (entity under the `entityLists` directory) and `/report` / `/report/…`. Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay `/names/{id}.html`.
+Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. The same table includes inbound `/name` (all-entities page) and `/name/{id}` (entity under the `entityLists` directory). Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay `/names/{id}.html`.
 
 A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
 
@@ -408,8 +408,6 @@ The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`. A 
 In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"` (`facsimileViewer` when `named-windows` is on). The site-header format icon does the same without a fragment. Collection **Страницы** is page numbers on the transcription `#p{n}` only. Each photo in the viewer links back to that `pb` in the transcription (`target="text"` / `textViewer`). `{base}-{xx}` translations share the original's viewer.
 
 Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
-
-When the site has TEI entities or documents, `/report.html` lists apparatus reports (not in `header-pages`): names without `@ref` (`/report/no-refs.html`), TEI `unclear` (`/report/unclears.html`), and entity files whose id is not the underscored first name (`/report/misnamed-entities.html`). Harvest walks entity files, documents, and store title/abstract/body — not generated collection or name-list tables. Inbound `/report` and `/report/{id}` rewrite like collection aliases.
 
 [#blog-posts]
 == Blog Posts

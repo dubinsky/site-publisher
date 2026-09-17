@@ -247,6 +247,10 @@ final class EntitySpec extends AnyFunSuite:
       val person: String = html(target, "people/alter-rebbe.html")
       assert(person.contains("<persName"), person)
       assert(person.contains("Залман Борухович"), person)
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("name without @ref"), errors)
+      assert(errors.contains("not a link"), errors)
+      assert(!errors.contains("name without @ref: Залман Борухович"), errors)
   }
 
   test("duplicate entity id is recorded and unresolved") {

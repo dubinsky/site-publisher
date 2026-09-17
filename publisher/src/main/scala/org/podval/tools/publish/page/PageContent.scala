@@ -14,9 +14,10 @@ object PageContent:
   def apply(
     source: PageSource,
     frontMatter: FrontMatter,
-    xml: Xml.Element
+    xml: Xml.Element,
+    firstReading: Boolean
   ): PageContent =
-    val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml)
+    val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml, firstReading)
 
     (frontMatter.title, title) match
       case (Some(frontMatterTitle), Some(contentTitle))

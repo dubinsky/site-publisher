@@ -213,12 +213,6 @@ final class EntityListsSpec extends AnyFunSuite:
         CollectionAliases.rewrite(Path.fromHref("/name/alter-rebbe"), table)
           .contains(Path("names", "alter-rebbe").html)
       )
-      val report: String = html(target, "report.html")
-      assert(report.contains("Names without @ref"), report)
-      assert(site.pages.rewriteRequest(Path.fromHref("/report")).contains(Path("report").html))
-      assert(
-        site.pages.rewriteRequest(Path.fromHref("/report/no-refs")).contains(Path("report", "no-refs").html)
-      )
   }
 
   test("entity page keeps document backlinks and does not list the names index") {
