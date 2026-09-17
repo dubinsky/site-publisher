@@ -18,11 +18,11 @@ plugins {
   id 'com.gradleup.nmcp.settings' version '1.6.2'
 }
 
-rootProject.name = 'org.podval.tools.publisher'
+rootProject.name = 'site-publisher'
+include 'publisher'
+project(':publisher').name = 'org.podval.tools.publisher'
 include 'plugin'
 project(':plugin').name = 'site-publisher-plugin'
-// TODO: re-evaluate empty root + library and plugin as sibling subprojects
-// (Maven artifact id can stay `org.podval.tools.publisher` on the library child).
 
 // ./gradlew nmcpZipAggregation — inspect the zip
 // ./gradlew publishAggregationToCentralPortal — upload (USER_MANAGED)

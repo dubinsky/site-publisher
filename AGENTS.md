@@ -4,7 +4,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 
 ## Project Layout
 
-- Main logic: `src/main/scala/org/podval/tools/publish/`
+- Main logic: `publisher/src/main/scala/org/podval/tools/publish/`
   - `markup/` — `Markup` dialects, shared IR (`Citation`, `BibliographyItem`, `Footnote`, `Glossary`, `Callout`, `Admonition`, `Aside`, `Quote`, `Strike`, `Figure`, `PdfEmbed`, `Video`, `Section`, `Toc`, wiki links), `Bibliography` (citeproc), TEI harvest (`StoreIndex`, `EntityLists.harvest`, `DocumentHeader`)
   - `page/` — `PageContent` + `Content` (store / entity lists / TEI document / entity / markup), `PageHeader`, `PagedList`, generated collection/entity-list indexes (`CollectionIndex`, `EntityLists.generate`), front matter, chunking, PDF pages
   - `site/` — `Site`, `Pages` (page graph, `resolve` / `resolveAsset`), `BackLinks` / `BackLink`, config, sitemap, errors
@@ -23,10 +23,10 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
   - `org.podval.tei` — TEI XML dialect + entity handling
   - `org.opentorah:opentorah-core` — Jewish/Julian/Gregorian calendar (TEI date tooltips). Optional
     `includeBuild` of `../../OpenTorah/opentorah.org` (or `-PopentorahDir=`).
-- Resources (CSS): `src/main/resources/org/podval/tools/publish/site/assets/css/`
-- Gradle plugin: `plugin/` (Java). Plugin id `org.podval.tools.site-publisher`; `generateSite` / `serveSite` as `JavaExec` on a detached `sitePublisher` configuration. Must not `implementation`-depend on the root project. The library is the root project for now (Maven artifact id `org.podval.tools.publisher` is that project’s `name`). TODO: re-evaluate empty root + sibling library/plugin subprojects (see Design note **Gradle plugin**).
-- Tests: `src/test/scala/...` — ScalaTest `AnyFunSuite`. xml tests live in `dubinsky/xml`. Plugin TestKit: `plugin/src/test/java/`.
-- Fixture site: `src/test/site` (committed). `SiteSpec` generates into `build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
+- Resources (CSS): `publisher/src/main/resources/org/podval/tools/publish/site/assets/css/`
+- Gradle plugin: `plugin/` (Java). Plugin id `org.podval.tools.site-publisher`; `generateSite` / `serveSite` as `JavaExec` on a detached `sitePublisher` configuration. Must not `implementation`-depend on the library project. Empty Gradle root (`rootProject.name` `site-publisher`); library child `publisher/` (`project.name` `org.podval.tools.publisher`, task path `:org.podval.tools.publisher`); plugin child `plugin/` (`site-publisher-plugin`). Design note **Gradle plugin**.
+- Tests: `publisher/src/test/scala/...` — ScalaTest `AnyFunSuite`. xml tests live in `dubinsky/xml`. Plugin TestKit: `plugin/src/test/java/`.
+- Fixture site: `publisher/src/test/site` (committed). `SiteSpec` generates into `publisher/build/test-site` via an absolute `--target-directory-name` (gitignored under `build/`). Do not generate into `publisher/src/test/site/_site` and do not point tests at real sites. ScalaTest classes must be named `*Spec` or Gradle will not run them. One fixture page (`glossary.md`) has `pdf: true`; `SiteSpec` opens that Chromium PDF with PDFBox (page count, a named dest, a string of text). Not visual diffs, not every page.
 
 ## Build & Run Commands
 
@@ -91,10 +91,10 @@ Run from IntelliJ (that `@main`) or via `./gradlew run` (CLI `Site.main`, needs 
 - Run `grok` directly inside the IntelliJ terminal (it is detected as a JetBrains terminal).
 - Run `/terminal-setup` inside Grok for diagnostics (clipboard, colors, key handling, etc.).
 - JetBrains full ACP integration is "Coming soon". Until then the terminal plus MCP is the supported way.
-- Attach files with `@path` (e.g. `@src/main/scala/org/podval/tools/publish/site/Site.scala`).
+- Attach files with `@path` (e.g. `@publisher/src/main/scala/org/podval/tools/publish/site/Site.scala`).
 - Use the project root as the working directory when starting Grok so it picks up `AGENTS.md` and `.gitignore`.
 
-## Style / Conventions (from build.gradle)
+## Style / Conventions (from `publisher/build.gradle`)
 
 Scala 3.8.4, Java 25 toolchain.
 

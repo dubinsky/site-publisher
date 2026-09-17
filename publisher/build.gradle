@@ -76,7 +76,7 @@ def expectedPluginVersion = "id 'org.podval.tools.site-publisher' version '${ver
 def checkReadmeVersion = tasks.register('checkReadmeVersion') {
   group = 'verification'
   description = 'Fails if README.adoc Maven coordinates do not match project.version.'
-  def readmeFile = file('README.adoc')
+  def readmeFile = rootProject.file('README.adoc')
   inputs.file(readmeFile)
   inputs.property('expected', expectedReadmeCoordinate)
   inputs.property('expectedPlugin', expectedPluginVersion)

@@ -16,7 +16,7 @@ podvalPublish {
   inceptionYear = '2026'
 }
 
-// Do not `implementation project(':')`: that would load Scala 3, Playwright, and AsciidoctorJ
+// Do not `implementation project(':org.podval.tools.publisher')`: that would load Scala 3, Playwright, and AsciidoctorJ
 // into the Gradle daemon. The plugin only adds a `sitePublisher` configuration on the consumer.
 
 final String pluginVersion = version.toString()

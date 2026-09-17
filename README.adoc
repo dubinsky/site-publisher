@@ -85,7 +85,7 @@ dependencies {
 ----
 
 The supported pair is the same version as the plugin. An older library may not accept flags the
-plugin always passes; a newer one is usually fine. A local `includeBuild` of this repo substitutes
+plugin always passes; a newer one is usually fine. A local settings-body `includeBuild` of this repo substitutes
 the library **module** for whatever version string was requested.
 
 Site workflows: checkout, setup-java 25, setup-gradle, cache `~/.gradle/ms-playwright`,
@@ -109,9 +109,11 @@ Sites using this publisher:
 This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those
 checkouts exist (`-PxmlDir=` / `-PopentorahDir=`).
 
-A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **one**
-include under `pluginManagement` (plugin id + library). Do not also `includeBuild` the same
-directory in the settings body. Do not use `mavenLocal()`.
+A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **two**
+`includeBuild`s of the same directory: `pluginManagement` (plugin id; pass a **String**, not a
+`File`) and the settings body (library child `org.podval.tools:org.podval.tools.publisher`).
+`pluginManagement` alone does not substitute the library now that it is not the included-build
+root. Do not use `mavenLocal()`.
 
 ----
 pluginManagement {
@@ -119,12 +121,19 @@ pluginManagement {
     mavenCentral()
     gradlePluginPortal()
   }
-  final File publisherDir = file(
+  final String publisherDir =
     providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
-  )
-  if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
-    includeBuild(publisherDir)
+  if (file(publisherDir).isDirectory() && file("${publisherDir}/settings.gradle").isFile()) {
+    includeBuild publisherDir
   }
+}
+
+// after plugins { }:
+final File publisherDir = file(
+  providers.gradleProperty('sitePublisherDir').getOrElse('../site-publisher')
+)
+if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFile()) {
+  includeBuild(publisherDir)
 }
 ----
 
