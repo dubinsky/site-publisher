@@ -11,7 +11,12 @@ final class PageError(
 )
 
 object PageError:
-  sealed abstract class Kind(override val toString: String)
+  sealed abstract class Kind(override val toString: String):
+    /** Fragment id on `/errors.html` (`NoRef` → `no-ref`). */
+    final def id: String =
+      getClass.getSimpleName.stripSuffix("$")
+        .replaceAll("([a-z])([A-Z])", "$1-$2")
+        .toLowerCase
 
   case object MalformedFrontMatter extends Kind("malformed frontmatter")
   case object AmbiguousFrontMatter extends Kind("ambiguous frontmatter")

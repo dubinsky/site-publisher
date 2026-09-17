@@ -311,7 +311,7 @@ Wiki links in Obsidian:
 
 A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`names/alter-rebbe.xml` → `alter-rebbe`).
 
-`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is recorded as `unclear`. An entity file whose name is not the first name with spaces turned into underscores is `misnamed entity`.
+`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`, `/errors.html#no-ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is `/errors.html#unclear`. An entity file whose name is not the first name with spaces turned into underscores is `/errors.html#misnamed-entity`. Each kind on the Errors page is a fragment (`AmbiguousTitle` → `#ambiguous-title`).
 
 [source,xml]
 ----

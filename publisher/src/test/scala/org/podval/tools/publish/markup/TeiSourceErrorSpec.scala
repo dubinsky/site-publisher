@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
+import org.podval.tools.publish.site.{CollectionAliases, PageError, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -70,6 +70,8 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
       assert(errors.contains("/col/000.xml"), errors)
       assert(errors.contains("/col.xml"), errors)
       assert(!errors.contains("name without @ref: A B"), errors)
+      assert(errors.contains("""id="no-ref""""), errors)
+      assert(PageError.NoRef.id == "no-ref")
   }
 
   test("unclear in a TEI document is a page error") {
@@ -78,6 +80,8 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
       assert(errors.contains("unclear"), errors)
       assert(errors.contains("smudge"), errors)
       assert(errors.contains("/col/000.xml"), errors)
+      assert(errors.contains("""id="unclear""""), errors)
+      assert(PageError.Unclear.id == "unclear")
   }
 
   test("entity file name vs underscored first name is a page error") {
@@ -87,6 +91,8 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
       assert(errors.contains("should be named 'A_B'"), errors)
       assert(errors.contains("/people/ab.xml"), errors)
       assert(TeiMarkup.expectedEntityFileName("A B") == "A_B")
+      assert(errors.contains("""id="misnamed-entity""""), errors)
+      assert(PageError.MisnamedEntity.id == "misnamed-entity")
   }
 
   test("does not write /report pages or inbound /report rewrites") {

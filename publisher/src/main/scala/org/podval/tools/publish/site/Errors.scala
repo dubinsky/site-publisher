@@ -35,6 +35,7 @@ final class Errors(
       kinds.map(kind =>
         div(
           className := "kind",
+          id := kind.id,
           h2(kind.toString),
           ul(byKind(kind).map(error => li(error.getMessage)))
         )
