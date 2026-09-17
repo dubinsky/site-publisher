@@ -90,9 +90,10 @@ the library **module** for whatever version string was requested.
 
 Site workflows: checkout, setup-java 25, setup-gradle, cache `~/.gradle/ms-playwright`,
 `./gradlew generateSite` (or `:docs:generateSite`), upload `_site` / `docs/_site`, deploy Pages.
-Pin the plugin version in `build.gradle`. Until a site applies the plugin, GitHub Actions can still
-call `dubinsky/site-publisher/.github/actions/generate@v0.1.0` (pin the action tag; optional
-`version` input overrides that action checkout’s `gradle.properties`).
+Pin the plugin version in `build.gradle`. Known sites apply the plugin and call `./gradlew generateSite`
+(or `:docs:generateSite`). GitHub Actions can still call
+`dubinsky/site-publisher/.github/actions/generate@v0.1.0` for repos that do not apply the plugin
+(pin the action tag; optional `version` input overrides that action checkout’s `gradle.properties`).
 
 Sites using this publisher:
 

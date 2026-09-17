@@ -38,7 +38,7 @@ Static site generator written in Scala 3 + Gradle. Produces sites from Markdown,
 ./gradlew run --args="/path/to/source-directory --serve"
 ```
 
-The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). Gradle plugin id `org.podval.tools.site-publisher` (subproject `plugin/`) registers `generateSite` / `serveSite`. GitHub `generate` action still resolves the library from Maven Central until sites apply the plugin and it is on Central.
+The application expects a source directory containing `_site_config.yml` as its first positional argument. `Site.main` generates, or generates-and-serves with `--serve`. Default `--log-level` is `INFO`. Maven coordinates: `org.podval.tools:org.podval.tools.publisher` (see README). Gradle plugin id `org.podval.tools.site-publisher` (subproject `plugin/`) registers `generateSite` / `serveSite`. Known sites apply the plugin; CI resolves it from Maven Central. GitHub `generate` action still exists for repos that do not apply the plugin.
 
 Known sites (local checkouts; `@main def generate()` comments the same paths):
 
@@ -47,7 +47,7 @@ Known sites (local checkouts; `@main def generate()` comments the same paths):
 - `/home/dub/OpenTorah/chumashquestions.org` — https://www.chumashquestions.org
 - `/home/dub/OpenTorah/alter-rebbe.org` — https://www.alter-rebbe.org
 - `/home/dub/OpenTorah/opentorah.org/docs` — https://www.opentorah.org
-- `/home/dub/CognoMath/mathworlds-site` — https://www.mathworlds.org (`cognomath/mathworlds-site`). Follow-up: after a publisher with `asset: true` is on Maven Central, bump `sitePublisherVersion` there if needed and push (`index.yml` copies `index.html`). Do not push MathWorlds before that; CI uses Central, not the local checkout.
+- `/home/dub/CognoMath/mathworlds-site` — https://www.mathworlds.org (`cognomath/mathworlds-site`). Follow-up: after a publisher with `asset: true` is on Maven Central, pin the plugin version there if needed and push (`index.yml` copies `index.html`). Do not push MathWorlds before that; CI uses Central, not the local checkout.
 
 ### Development entry point (`generate`)
 
