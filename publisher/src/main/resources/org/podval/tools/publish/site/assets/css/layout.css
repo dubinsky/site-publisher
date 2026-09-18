@@ -934,6 +934,18 @@ ul.toc {
     background: red;
 }
 
+.embedded-in {
+    border-top: 1px solid var(--border-color-01);
+    > ul {
+        list-style-type: none;
+
+        > li.backlinks-collection > ul {
+            list-style-type: none;
+            margin-left: 1em;
+        }
+    }
+}
+
 .backlinks {
     border-top: 1px solid var(--border-color-01);
     > ul {

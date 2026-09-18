@@ -167,7 +167,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
               div(className := "post-content e-content", itemProp := "articleBody", articleBody),
               a(className := "u-url", href := path.toString, hidden := true)
             ),
-            site.backLinks.html(this)
+            site.backLinks.html(this),
+            site.transclusions.html(this)
           ),
         ),
         site.siteFooter,

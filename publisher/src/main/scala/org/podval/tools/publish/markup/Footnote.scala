@@ -21,6 +21,12 @@ object Footnote:
 
   def getCorrelationId(element: Xml.Element): String = element.get(CorrelationId).get
 
+  def prefixCorrelation(element: Xml.Element, prefix: String): Xml.Element =
+    element.get(CorrelationId).fold(element)(id => element.set(CorrelationId, prefix + id))
+
+  def remapped(footnote: Footnote, correlationId: String, number: Int): Footnote =
+    Footnote(correlationId, number, footnote.nodes)
+
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
   def link(correlationId: String): Xml.Element = Xml

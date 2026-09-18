@@ -4,6 +4,7 @@ import org.podval.xml.Xml
 
 final class Ids private(anchors: Seq[Ids.Id]):
   private def getById(id: String): Option[Ids.Id] = anchors.find(_.id == id)
+  def sectionOf(id: String): Option[String] = getById(id).flatMap(_.sectionId)
   def sectionById(id: String): Option[String] = getById(id).get.sectionId
   def resolve(id: String): Option[Link.ToId] = getById(id).map(anchor => Link.ToId(anchor.id))
 

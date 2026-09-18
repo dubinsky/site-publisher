@@ -1,6 +1,6 @@
 (function () {
   var html = document.documentElement;
-  var keys = ["glossary-expand"];
+  var keys = ["glossary-expand", "transclusion-clean"];
   try {
     keys.forEach(function (k) {
       if (localStorage.getItem(k) === "1") html.classList.add(k);

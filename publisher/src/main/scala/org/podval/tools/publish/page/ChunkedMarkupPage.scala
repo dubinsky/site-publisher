@@ -6,7 +6,7 @@ import org.podval.xml.Html
 
 // Note: TOC - no sectionId, isTerminal = false
 final class ChunkedMarkupPage(
-  markupPage: FullMarkupPage,
+  val markupPage: FullMarkupPage,
   val sectionId: Option[String],
   isTerminal: Boolean,
   name: String

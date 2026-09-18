@@ -296,6 +296,40 @@ details.admonition > summary.admonition-title {
 }
 
 /**
+ * Page transclusion (`![[note]]` / section / block). Default boxed; Settings
+ * “Seamless transclusions” sets `html.transclusion-clean`.
+ */
+aside.transclusion {
+    margin: 1em 0;
+    padding: 0 0 0 1em;
+    border-left: 3px solid var(--border-color-03);
+}
+
+.transclusion-header {
+    margin: 0 0 0.5em;
+    font-size: 0.9em;
+}
+
+a.transclusion-source {
+    color: var(--brand-color-dimmed);
+    text-decoration: none;
+}
+
+a.transclusion-source:hover {
+    text-decoration: underline;
+}
+
+html.transclusion-clean aside.transclusion {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+html.transclusion-clean .transclusion-header {
+    display: none;
+}
+
+/**
  * Definition lists (including glossary).
  * Styled like Asciidoctor default stylesheet so dt/dd read as glossary entries
  * rather than unstyled browser HTML.

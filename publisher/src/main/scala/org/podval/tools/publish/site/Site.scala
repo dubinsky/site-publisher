@@ -84,6 +84,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val ignore: Ignore = Ignore(this)
   val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
+  val transclusions: TransclusionEdges = TransclusionEdges()
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
 
@@ -190,7 +191,10 @@ final class Site(options: SiteOptions) extends JSLibrary:
         )
       )
 
-    // TODO sort pages topologically based on transclusions
+    for
+      page <- pages.pages.flatMap(_.asFullMarkupPage)
+    do
+      transclusions.add(transclusions.harvest(page))
 
   private var playwrightVar: Option[Playwright] = None
   def playwright: Playwright = synchronized:
@@ -256,6 +260,14 @@ final class Site(options: SiteOptions) extends JSLibrary:
                 attr("data-setting") := "glossary-expand"
               ),
               "Show glossary definitions in the text"
+            ),
+            label(className := "site-settings-item",
+              input(
+                `type` := "checkbox",
+                id := "setting-transclusion-clean",
+                attr("data-setting") := "transclusion-clean"
+              ),
+              "Seamless transclusions"
             )
           )
         ),

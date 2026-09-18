@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Facsimile, Footnote, Glossary, Ids,
-  Link, LinkKind, Section, Tip, Toc, WikiBlocks, WikiLink}
+  Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
@@ -121,8 +121,20 @@ final class PageContent private(
       source.page
     )
 
+    val (expanded: Xml.Element, extraFootnotes: Map[String, Footnote]) = Transclusion.expand(
+      selected,
+      this,
+      sectionId,
+      isTerminal
+    )
+
+    val combined: Map[String, Footnote] = footnotes ++ extraFootnotes
+    val numbered: Map[String, Footnote] = Footnote.linkIds(expanded).zipWithIndex.flatMap:
+      (id, index) => combined.get(id).map(footnote => id -> Footnote.remapped(footnote, id, index + 1))
+    .toMap
+
     // Add bodies of the footnotes referenced in the selected XML
-    val withFootnotes: Xml.Element = Footnote.appendReferenced(selected, footnotes)
+    val withFootnotes: Xml.Element = Footnote.appendReferenced(expanded, numbered)
 
     // Resolve citations
     val (withCitations: Xml.Element, unknownCitations: Seq[String]) = bibliography.resolve(withFootnotes)
@@ -131,7 +143,13 @@ final class PageContent private(
     if !isChunked then unknownCitations.foreach: label =>
       source.error(PageError.UnknownCitation, s"unknown citation '$label'")
 
-    val withLinks: Xml.Element = resolveLinks(withCitations, isChunked, attachTips = true)
+    val withLinks: Xml.Element = resolveLinks(
+      withCitations,
+      isChunked,
+      attachTips = true,
+      inCopy = false,
+      notes = numbered
+    )
 
     // Convert to HTML
     insertToc(withLinks.toHtml, sectionId, isChunked)
@@ -141,7 +159,9 @@ final class PageContent private(
     resolveLinks(
       xml.transform(markInternalLink, stopAtCode = false),
       isChunked = false,
-      attachTips = false
+      attachTips = false,
+      inCopy = false,
+      notes = footnotes
     )
 
   private def markInternalLink(element: Xml.Element): Xml.Element =
@@ -188,34 +208,45 @@ final class PageContent private(
   private def resolveLinks(
     element: Xml.Element,
     isChunked: Boolean,
-    attachTips: Boolean
+    attachTips: Boolean,
+    inCopy: Boolean,
+    notes: Map[String, Footnote]
   ): Xml.Element =
     var result: Xml.Element = element
 
+    val inThisCopy: Boolean = inCopy || Transclusion.isChrome(result)
+    val skipCopy: Boolean = inThisCopy || WikiLink.isTranscluded(result)
+
     // Resolve internal links, including the ones in footnote bodies
-    if Link.isInternal(result) then result.getHref.foreach: ref =>
+    if !skipCopy && Link.isInternal(result) then result.getHref.foreach: ref =>
       result = resolveInternalLink(result, ref, isChunked, attachTips)
 
-    result = source.page.site.pages.resolveAsset(
-      result,
-      source.page,
-      source,
-      reportMissing = !isChunked
-    )
+    if !skipCopy then
+      result = source.page.site.pages.resolveAsset(
+        result,
+        source.page,
+        source,
+        reportMissing = !isChunked
+      )
 
     // Turn footnote links into footnote references
-    result = Footnote.resolveLink(result, footnotes, attachTips)
+    result = Footnote.resolveLink(result, notes, attachTips)
 
-    result = Facsimile.resolveLink(result, source.page)
+    if !skipCopy then
+      result = Facsimile.resolveLink(result, source.page)
 
     val isRef: Boolean = tips.exists(_.isRef(result))
     result.setChildren(result.getChildren.map(child =>
       child.asElement.fold(child): child =>
-        // Do not re-resolve the inner <a> of a ref wrapper; do walk the tip
-        // with attachTips = false (links in definitions, no nested tips).
-        if isRef && !tips.exists(_.isTip(child))
+        if isRef && !tips.exists(_.isTip(child)) && !inThisCopy
         then child
-        else resolveLinks(child, isChunked, attachTips && !tips.exists(_.isTip(child)))
+        else resolveLinks(
+          child,
+          isChunked,
+          attachTips && !tips.exists(_.isTip(child)) && !inThisCopy,
+          inCopy = inThisCopy,
+          notes = notes
+        )
     ))
 
   private def resolveInternalLink(
@@ -232,31 +263,31 @@ final class PageContent private(
           source.error(PageError.Unresolved, s"unresolved internal link '$ref' of kind $kind: $element")
         element.add(Link.UnresolvedLinkClass)
       case Some(linkTo) =>
-        // TODO transclude
+        if WikiLink.isTranscluded(element) then element
+        else
+          // TODO do the same with section links in Toc - and move this there?
+          val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
+            source.page.asFullMarkupPage match
+              case None => linkTo.url
+              case Some(page) =>
+                val id: String = linkTo.fragment.get.id
+                val sectionId: Option[String] = ids.sectionById(id)
+                s"${toc.chunkName(sectionId, page.chunkDepth)}#$id"
 
-        // TODO do the same with section links in Toc - and move this there?
-        val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
-          source.page.asFullMarkupPage match
-            case None => linkTo.url
-            case Some(page) =>
-              val id: String = linkTo.fragment.get.id
-              val sectionId: Option[String] = ids.sectionById(id)
-              s"${toc.chunkName(sectionId, page.chunkDepth)}#$id"
-
-        var result: Xml.Element = element.setHref(href)
-        if !linkTo.isIntrapage then
-          result = NamedWindows.setXmlTarget(result, linkTo.page)
-        if result.getText == WikiLink.linkText(element, ref) then
-          result = result.setText(WikiLink.linkText(element, linkTo.title))
-        if attachTips then
-          glossaryTip(linkTo) match
-            case Some(definition) =>
-              result = Glossary.tip.attachTip(result, definition)
-            case None =>
-              bibliographyTip(linkTo).foreach: definition =>
-                result = result.add(Citation.CiteClass)
-                result = BibliographyItem.tip.attachTip(result, definition)
-        result
+          var result: Xml.Element = element.setHref(href)
+          if !linkTo.isIntrapage then
+            result = NamedWindows.setXmlTarget(result, linkTo.page)
+          if result.getText == WikiLink.linkText(element, ref) then
+            result = result.setText(WikiLink.linkText(element, linkTo.title))
+          if attachTips then
+            glossaryTip(linkTo) match
+              case Some(definition) =>
+                result = Glossary.tip.attachTip(result, definition)
+              case None =>
+                bibliographyTip(linkTo).foreach: definition =>
+                  result = result.add(Citation.CiteClass)
+                  result = BibliographyItem.tip.attachTip(result, definition)
+          result
 
   private def glossaryTip(linkTo: Link): Option[Xml.Nodes] =
     definitionFrom(linkTo, _.glossaryDefinitions)

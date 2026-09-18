@@ -37,6 +37,8 @@ object PageError:
   case object NoRef extends Kind("name without @ref")
   case object Unclear extends Kind("unclear")
   case object MisnamedEntity extends Kind("misnamed entity")
+  case object UnresolvedTransclusion extends Kind("unresolved transclusion")
+  case object TransclusionLoop extends Kind("transclusion loop")
 
   val all: List[Kind] = List(
     MalformedFrontMatter,
@@ -57,5 +59,7 @@ object PageError:
     InvalidDate,
     NoRef,
     Unclear,
-    MisnamedEntity
+    MisnamedEntity,
+    UnresolvedTransclusion,
+    TransclusionLoop
   )

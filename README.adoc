@@ -298,6 +298,8 @@ TODO Obsidian plugin needs to be installed.
 
 Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian. Block ids: `^id` at the end of a paragraph, or on its own line after a list, table, quote, or code block (blank line before the id). Link with `+++[[note#^id]]+++`.
 
+Obsidian embeds of **pages** (`+++![[note]]+++`, `+++![[note#heading]]+++`, `+++![[note#^block]]+++`) copy that authored region into the host (any markup on the target). The copy is a boxed `aside.transclusion` whose header is a link to the source (`Notes Title` or `Notes Title § heading`). The gear **Settings** checkbox **Seamless transclusions** hides the box and header (`html.transclusion-clean`). A missing heading or block is an error (not a silent whole-page embed). Footnotes inside a transcluded region are merged and numbered with the host. Media embeds (`+++![[file.pdf]]+++`, images, audio, video) are unchanged. AsciiDoc `include::` and TEI/DocBook `xi:include` are not this feature.
+
 Wiki links in Obsidian:
 
 - are they case-sensitive?
