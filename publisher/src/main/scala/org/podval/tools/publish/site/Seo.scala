@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{DirectoryPage, MarkupPage, Page}
-import org.podval.tools.publish.util.Date
+import org.podval.tools.publish.util.{Date, Json}
 import org.podval.xml.Html
 import zio.blocks.html.{Js, content as contentAttribute, title as titleElement, *}
 import java.time.{Instant, LocalTime, ZoneId}
@@ -93,43 +93,27 @@ object Seo:
   ): String =
     val kind: String = schemaType(page)
     val fields: List[(String, String)] = List(
-      Some("@context" -> jsonStr("https://schema.org")),
-      Some("@type" -> jsonStr(kind)),
-      Some("url" -> jsonStr(url)),
-      Some("name" -> jsonStr(page.title)),
-      Some("headline" -> jsonStr(page.title)),
-      Some("description" -> jsonStr(desc)),
-      Some("author" -> obj("@type" -> jsonStr("Person"), "name" -> jsonStr(authorName))),
+      Some("@context" -> Json.string("https://schema.org")),
+      Some("@type" -> Json.string(kind)),
+      Some("url" -> Json.string(url)),
+      Some("name" -> Json.string(page.title)),
+      Some("headline" -> Json.string(page.title)),
+      Some("description" -> Json.string(desc)),
+      Some("author" -> obj("@type" -> Json.string("Person"), "name" -> Json.string(authorName))),
       Some("publisher" -> obj(
-        "@type" -> jsonStr("Organization"),
-        "name" -> jsonStr(page.site.config.title)
+        "@type" -> Json.string("Organization"),
+        "name" -> Json.string(page.site.config.title)
       )),
-      published.map("datePublished" -> jsonStr(_)),
-      modified.map("dateModified" -> jsonStr(_)),
+      published.map("datePublished" -> Json.string(_)),
+      modified.map("dateModified" -> Json.string(_)),
       Option.when(kind == "BlogPosting")(
-        "mainEntityOfPage" -> obj("@type" -> jsonStr("WebPage"), "@id" -> jsonStr(url))
+        "mainEntityOfPage" -> obj("@type" -> Json.string("WebPage"), "@id" -> Json.string(url))
       )
     ).flatten
     obj(fields *)
 
   private def obj(fields: (String, String)*): String =
-    fields.map((key, value) => s"${jsonStr(key)}:$value").mkString("{", ",", "}")
-
-  private def jsonStr(s: String): String =
-    val escaped: String = s.flatMap:
-      case '"' => "\\\""
-      case '\\' => "\\\\"
-      case '\b' => "\\b"
-      case '\f' => "\\f"
-      case '\n' => "\\n"
-      case '\r' => "\\r"
-      case '\t' => "\\t"
-      case '<' => "\\u003c"
-      case '>' => "\\u003e"
-      case '&' => "\\u0026"
-      case c if c < 32 => f"\\u${c.toInt}%04x"
-      case c => c.toString
-    s"\"$escaped\""
+    fields.map((key, value) => s"${Json.string(key)}:$value").mkString("{", ",", "}")
 
   private def zone(site: Site): ZoneId =
     site.config.timezone.flatMap(tz => Try(ZoneId.of(tz)).toOption).getOrElse(ZoneId.systemDefault)

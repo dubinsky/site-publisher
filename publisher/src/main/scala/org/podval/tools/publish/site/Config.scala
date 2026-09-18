@@ -22,7 +22,8 @@ final class Config(
   val facsimilesUrl: Option[String] = None,
   val namedWindows: Boolean = false,
   val teiDefaultCalendar: Option[String] = None,
-  val social: Config.Social = Config.Social()
+  val social: Config.Social = Config.Social(),
+  val graph: Config.Graph = Config.Graph()
 )
 
 object Config:
@@ -30,6 +31,12 @@ object Config:
     val github: Option[String] = None,
     val twitter: Option[String] = None,
     val linkedin: Option[String] = None
+  )
+
+  final class Graph(
+    val enabled: Boolean = false,
+    val includeTransclusions: Boolean = true,
+    val excludePathPrefixes: List[String] = List.empty
   )
 
   private val schema: Schema[Config] = Schema.derived

@@ -47,6 +47,9 @@ final class Pages(site: Site):
       site.posts
     )
     automaticPages.foreach(add)
+    if site.config.graph.enabled then
+      add(GraphPage(site))
+      add(GraphJson(site))
 
     // Scan the directories and add all source pages
     scan(Seq.empty, site.sourceDirectory, None, None)

@@ -19,6 +19,7 @@ object EmbeddedAsset:
     "layout",
     "skin",
     "style",
-    "tei"
+    "tei",
+    "graph"
   )
     .map(Path("assets", "css", _).withExtension("css"))

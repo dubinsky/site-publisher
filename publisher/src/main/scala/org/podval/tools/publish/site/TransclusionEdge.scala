@@ -22,6 +22,8 @@ final class TransclusionEdges:
 
   def add(more: Seq[TransclusionEdge]): Unit = edges = edges.appendedAll(more)
 
+  def all: Seq[TransclusionEdge] = edges
+
   def cached(key: (Page, Region))(compute: => Option[Xml.Element]): Option[Xml.Element] =
     cache.getOrElseUpdate(key, compute)
 

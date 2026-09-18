@@ -9,6 +9,8 @@ final class BackLinks:
 
   def addBackLinks(backLink: Seq[BackLink]): Unit = backLinks = backLinks.appendedAll(backLink)
 
+  def all: Seq[BackLink] = backLinks
+
   def html(page: MarkupPage): Option[Html.Element] =
     val pageBackLinks: Seq[(FullMarkupPage, List[BackLink])] = backLinks
       .filter(_.to.page == page)

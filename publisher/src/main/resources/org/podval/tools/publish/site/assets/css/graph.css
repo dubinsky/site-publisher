@@ -1,0 +1,42 @@
+.site-graph-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.site-graph-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.site-graph-toolbar input[type="search"] {
+    min-width: 12rem;
+    flex: 1 1 12rem;
+}
+
+.site-graph-orphans {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.site-graph-status {
+    color: var(--text-color);
+    opacity: 0.75;
+}
+
+#site-graph {
+    width: 100%;
+    height: min(70vh, 800px);
+    border: 1px solid var(--border-color-01);
+    background: var(--background-color);
+}
+
+@media print {
+    #site-graph,
+    .site-graph-toolbar {
+        display: none;
+    }
+}

@@ -27,6 +27,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   def hasSyntheticContent: Boolean = false
 
+  protected def extraLibraries: List[js.JSLibrary] = Nil
+
   protected def syntheticContentOpt: Option[Html.Element] = None
 
   // TODO use markup.xmlDialect?
@@ -130,14 +132,14 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
     val articleBody: Seq[Html.Element] = Seq(markupContent, syntheticContent).flatten
 
-    val libraries: List[js.JSLibrary] = List(
-      Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languagesToHighlight)),
-      Some(js.MathJax),
-      Some(js.FontAwesome),
-      Option.when(languages.contains("mermaid"))(js.Mermaid),
-      site.googleAnalytics.map(js.GoogleAnalytics(_)),
-      Some(site)
-    ).flatten
+    val libraries: List[js.JSLibrary] =
+      List(
+        Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languagesToHighlight)),
+        Some(js.MathJax),
+        Some(js.FontAwesome),
+        Option.when(languages.contains("mermaid"))(js.Mermaid),
+        site.googleAnalytics.map(js.GoogleAnalytics(_))
+      ).flatten ++ extraLibraries :+ site
 
     html(langAttribute := lang,
       head(

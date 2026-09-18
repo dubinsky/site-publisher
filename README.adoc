@@ -169,6 +169,7 @@ header-pages:
   - notes/index.md
   - posts
   - tags
+  - graph
 ----
 
 Omitted or empty means no header links (up/prev/next and format icons still appear). Unknown entries are recorded on the Errors page.
@@ -209,6 +210,7 @@ This here is a static site generator. It:
 - supports <<pdf>> generation;
 - supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
+- can emit an interactive <<graph>> of pages;
 
 Supported markup constructs:
 
@@ -439,6 +441,37 @@ Omitted or less than 1 is off. Page 1 stays `/posts.html`; further batches are `
 No extra config. Each HTML page `<head>` gets a document title (`Page | Site title`; home is just the site title), `meta name="generator"` pointing at this publisher, description, author, canonical URL, Open Graph, a Twitter summary card, and JSON-LD (`WebSite` / `BlogPosting` / `WebPage`).
 
 Taken from existing fields: site `title`, `description`, `url`, `author`, `lang`, `social.twitter`; page `title`, `description`, `author`, `lang`, `date` (and git/`modified_time` for modified). No image, Facebook, or webmaster keys.
+
+[#graph]
+== Graph
+
+Off by default.
+When `_site_config.yml` has `graph.enabled: true`, generate writes `/graph.json` and `/graph.html`.
+`/graph.html` is a pan/zoom map of canonical authored pages and the resolved internal links between them (Cytoscape.js, loaded only on that page).
+Click a vertex to open the page (`named-windows` targets apply when that option is on).
+
+Vertices are authored pages with a source file: notes, posts, TEI documents, entities, stores, and entity-list catalogs.
+Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …) are not vertices; links to those views count as links to the owning page.
+Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions (`kind: transclude`).
+Unresolved links stay on the Errors page, not as graph nodes.
+
+Do not name a collection `@alias="graph"`: that path is reserved for the graph page.
+
+----
+graph:
+  enabled: true
+  include-transclusions: true
+  exclude-path-prefixes:
+    - days
+----
+
+`exclude-path-prefixes` match the **source** path (`days/2020-10-23.md`, `archive/lvia/…`), not the published URL.
+Daily notes publish as `/YYYY/MM/DD/index.html`; TEI collection aliases publish as `/lvia1799-2/…`.
+A notes vault typically enables the graph and excludes the Obsidian daily-notes folder (`days` when that is the configured folder).
+A large TEI archive should leave the graph off, or exclude `archive` to keep only names and notes.
+
+Add `graph` to `header-pages` if you want a header link (there is no automatic icon).
+Pipeline notes belong in the Site Publisher design note, not here.
 
 [#chunking]
 == Chunking

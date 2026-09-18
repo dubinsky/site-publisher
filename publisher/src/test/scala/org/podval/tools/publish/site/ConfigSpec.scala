@@ -43,3 +43,25 @@ final class ConfigSpec extends AnyFunSuite:
   test("named-windows maps from kebab-case") {
     assert(decode(required + "named-windows: true\n").namedWindows)
   }
+
+  test("graph defaults to off") {
+    val graph: Config.Graph = decode(required).graph
+    assert(!graph.enabled)
+    assert(graph.includeTransclusions)
+    assert(graph.excludePathPrefixes.isEmpty)
+  }
+
+  test("graph maps from kebab-case") {
+    val graph: Config.Graph = decode(
+      required +
+        """graph:
+          |  enabled: true
+          |  include-transclusions: false
+          |  exclude-path-prefixes:
+          |    - days
+          |""".stripMargin
+    ).graph
+    assert(graph.enabled)
+    assert(!graph.includeTransclusions)
+    assert(graph.excludePathPrefixes == List("days"))
+  }

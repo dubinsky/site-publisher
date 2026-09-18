@@ -7,7 +7,7 @@ import scala.jdk.CollectionConverters.MapHasAsJava
 import java.io.File
 
 final class PdfPage(
-  markupPage: FullMarkupPage
+  val markupPage: FullMarkupPage
 ) extends Page(
   markupPage.site,
   markupPage.path.withExtension(PdfPage.extension)

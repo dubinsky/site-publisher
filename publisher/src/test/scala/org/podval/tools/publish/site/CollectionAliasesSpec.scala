@@ -131,4 +131,5 @@ final class CollectionAliasesSpec extends AnyFunSuite:
       assert(tableRewrite(table, "/lvia1799-2-2").contains("/archive/lvia/1799/2-2.html"))
       assert(tableRewrite(table, "/lvia1799-2").contains("/archive/lvia/1799/2.html"))
       assert(tableRewrite(table, "/css/style.css").isEmpty)
+      assert(tableRewrite(table, "/graph.json").isEmpty)
   }
