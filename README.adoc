@@ -453,6 +453,7 @@ Click a vertex to open the page (`named-windows` targets apply when that option 
 Vertices are authored pages with a source file: notes, posts, TEI documents, entities, stores, and entity-list catalogs.
 Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …) are not vertices; links to those views count as links to the owning page.
 Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions (`kind: transclude`).
+`include-transclusions` defaults to `true`; omit it or set it explicitly.
 Unresolved links stay on the Errors page, not as graph nodes.
 
 Do not name a collection `@alias="graph"`: that path is reserved for the graph page.
