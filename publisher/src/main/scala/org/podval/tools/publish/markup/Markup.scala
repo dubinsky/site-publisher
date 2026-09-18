@@ -6,10 +6,6 @@ import org.podval.tools.publish.util.Files
 import org.podval.xml.{Html, Xml, XmlWriterConfig, XmlParser}
 import java.io.File
 
-// TODO because of the cross-markup transclusion,
-// all markup-specific stylesheets need to be always included;
-// in fact, MathJax and friends too...
-// unless we actually calculate the set of markup languages used in a page ;)
 abstract class Markup(
   final val name: String,
   // Write policy (`render`, `plus`).

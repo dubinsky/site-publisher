@@ -11,8 +11,6 @@ import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
-  final def math: Boolean = site.config.math || frontMatter.math
-
   final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
   // TODO set to "en" and clean up overrides
   protected def langDefault: Option[String] = None
@@ -134,7 +132,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
     val libraries: List[js.JSLibrary] = List(
       Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languagesToHighlight)),
-      Option.when(math)(js.MathJax),
+      Some(js.MathJax),
       Some(js.FontAwesome),
       Option.when(languages.contains("mermaid"))(js.Mermaid),
       site.googleAnalytics.map(js.GoogleAnalytics(_)),

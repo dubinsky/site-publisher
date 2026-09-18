@@ -86,6 +86,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val head: String = home.substring(0, home.indexOf("</head>"))
     assert(head.contains("[data-setting]"), head)
     assert(head.contains("localStorage"), head)
+    assert(head.contains("mathjax") || home.contains("mathjax"), home)
   }
 
   test("media queries use literal breakpoints, not custom properties") {
