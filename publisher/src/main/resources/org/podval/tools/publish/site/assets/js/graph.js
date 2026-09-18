@@ -1,5 +1,7 @@
-var container = document.getElementById("site-graph");
-if (container) {
+export function run(cytoscape) {
+  var container = document.getElementById("site-graph");
+  if (!container) return;
+
   var search = document.getElementById("site-graph-search");
   var orphans = document.getElementById("site-graph-orphans");
   var status = document.getElementById("site-graph-status");
@@ -22,7 +24,7 @@ if (container) {
     (edges || []).forEach(function (edge) {
       var a = edge.source;
       var b = edge.target;
-      var pair = a < b ? a + "~" + b : b + "~" + a;
+      var pair = [a, b].sort().join("~");
       var id = pair + ":" + edge.kind;
       if (seen[id]) return;
       seen[id] = true;

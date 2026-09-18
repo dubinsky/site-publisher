@@ -80,8 +80,12 @@ final class GraphSpec extends AnyFunSuite:
       assert(page.contains("""id="site-graph""""), page)
       assert(page.contains("cdnjs.cloudflare.com/ajax/libs/cytoscape/3.34.2/cytoscape.esm.min.mjs"), page)
       assert(page.contains("""href="/assets/css/graph.css""""), page)
+      assert(page.contains("/assets/js/graph.js"), page)
+      assert(!page.contains("&lt;"), page)
+      assert(!page.contains("&amp;&amp;"), page)
       assert(!page.contains("cdnjs.cloudflare.com/ajax/libs/cytoscape/3.34.2/assets/css/graph.css"), page)
       assert(File(target, "assets/css/graph.css").isFile)
+      assert(File(target, "assets/js/graph.js").isFile)
   }
 
   test("include-transclusions false omits transclude edges") {

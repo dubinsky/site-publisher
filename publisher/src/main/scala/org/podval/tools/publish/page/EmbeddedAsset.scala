@@ -11,15 +11,9 @@ object EmbeddedAsset:
   
   val mainStyleSheet: String = "/assets/css/style.css"
   
-  // Note: it is not worth it writing JAR walker to "discover" six resources ;)
+  // Note: it is not worth it writing JAR walker to "discover" a handful of resources ;)
   private val resourcesBase: String = "/org/podval/tools/publish/site"
-  private val resourcesList: List[Path] = List(
-    "base",
-    "initialize",
-    "layout",
-    "skin",
-    "style",
-    "tei",
-    "graph"
-  )
-    .map(Path("assets", "css", _).withExtension("css"))
+  private val resourcesList: List[Path] =
+    List("base", "initialize", "layout", "skin", "style", "tei", "graph")
+      .map(Path("assets", "css", _).withExtension("css")) ++
+    List(Path("assets", "js", "graph").withExtension("js"))

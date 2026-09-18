@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Opt-in site graph: `graph.enabled` writes `/graph.json` and `/graph.html` (Cytoscape on that page only; pan/zoom/click-to-open).
+- fix: graph init is `/assets/js/graph.js`, not inline, so HTML escaping of `<` / `&&` cannot empty the canvas.
 - Markdown `![[note]]` / `![[note#heading]]` / `![[note#^block]]` transclude authored pages (boxed embed; Settings **Seamless transclusions**).
   Missing fragments error; transclusion loops are reported.
   Media `![[file]]` is unchanged.
