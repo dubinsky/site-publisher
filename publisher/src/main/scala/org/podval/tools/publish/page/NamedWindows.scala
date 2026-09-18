@@ -13,7 +13,6 @@ object NamedWindows:
   def of(page: Page): String =
     page match
       case _: FacsimilePage => facsimile
-      case _: AllEntitiesPage => apparatus
       case _: EntityListPage => apparatus
       case _ if page.entityKind.isDefined => apparatus
       case _ if page.doc.flatMap(_.asEntityLists).isDefined => apparatus

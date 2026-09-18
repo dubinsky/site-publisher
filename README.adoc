@@ -309,9 +309,9 @@ Wiki links in Obsidian:
 [#entities]
 == Entities
 
-A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`names/alter-rebbe.xml` → `alter-rebbe`).
+A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`name/alter-rebbe.xml` → `alter-rebbe`). The file may sit anywhere in the tree.
 
-`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`, `/errors.html#no-ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is `/errors.html#unclear`. An entity file whose name is not the first name with spaces turned into underscores is `/errors.html#misnamed-entity`. Each kind on the Errors page is a fragment (`AmbiguousTitle` → `#ambiguous-title`).
+`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`, `/errors.html#no-ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is `/errors.html#unclear`. An entity file whose name is not the first name with spaces turned into underscores is `/errors.html#misnamed-entity`. Each kind on the Errors page is a fragment (`AmbiguousTitle` → `#ambiguous-title`). When more than one kind is present, a TOC links to those fragments.
 
 [source,xml]
 ----
@@ -322,16 +322,18 @@ A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is t
 
 Wiki `+++[[alter-rebbe]]+++` still finds the entity page by file name. Entity refs do not title-walk, so a markdown page titled `alter-rebbe` does not steal `persName ref="alter-rebbe"`.
 
-A TEI `entityLists` file beside a directory (`names.xml` next to `names/`) is that directory's index (`/names/index.html`), not a flat listing of files. Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
+A TEI `entityLists` file is a catalog of buckets, not a store include list. Beside a directory (`name.xml` next to `name/`) it is that directory's index (`/name/index.html`). Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
 
 - the list kind is the element (`listPerson` → `person` files);
-- `@n` is the list id (in-page `#n` and `/names/{n}.html`);
-- `@role` present: entities of that kind whose root `@role` matches; omitted: entities of that kind with no role;
-- `<title>` on the list is the heading; a direct child `<title>` of `entityLists` is the page title.
+- `@n` is the list id (`/name/{n}.html` when the catalog has two or more non-empty lists);
+- `@role` present: entities of that kind whose root `@role` matches, anywhere in the site; omitted: entities of that kind with no role;
+- `<title>` on the list is the list page title; a direct child `<title>` of `entityLists` is the catalog page title.
 
-Empty lists are omitted. Members are sibling entity files in that directory, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. The entity page `<h1>` / `<title>` is that first name, not the file name. Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the source sits under one); the index itself is not a backlink source.
+Empty lists are omitted. Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. The entity page `<h1>` / `<title>` is that first name, not the file name. Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the source sits under one); the catalog itself is not a backlink source.
 
-A synthetic `/name.html` lists every entity (display name, sorted). Inbound `/name` and `/name/{id}` rewrite to that list and to the entity file (`/names/{id}.html` when the file lives there). Emitted hrefs stay the file path.
+When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not inlined). A catalog with a single non-empty list *is* that list (no `{n}` subpage). Several `entityLists` files are independent catalogs.
+
+The catalog directory is an identity prefix in `collection-aliases.json` (`/name` → `/name/index.html`, `/name/{id}` → `/name/{id}.html`), the same Worker mechanism as collection aliases. There is no synthetic `/name.html` dump.
 
 [source,xml]
 ----
@@ -364,7 +366,7 @@ Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are 
 
 `alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>). Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
-Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. The same table includes inbound `/name` (all-entities page) and `/name/{id}` (entity under the `entityLists` directory). Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay `/names/{id}.html`.
+Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. Entity-lists catalogs are an identity prefix (`/name` → `/name/index.html`). Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay the file path (`/name/{id}.html` when the file lives under `name/`).
 
 A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
 

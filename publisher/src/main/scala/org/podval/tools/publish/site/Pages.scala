@@ -4,7 +4,7 @@ import org.podval.metadata.Names
 import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMarkup, Link, LinkKind, Markup, TeiMarkup,
   XmlMarkup}
-import org.podval.tools.publish.page.{Alias, AllEntitiesPage, AssetWithSourcePath, CollectionIndex, DirectoryPage,
+import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
   PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
 import org.podval.tools.publish.util.{Files, Media, Strings}
@@ -77,7 +77,6 @@ final class Pages(site: Site):
 
     indexEntities()
     resolveEntityLists()
-    addNamePages()
     pages.foreach(_.freezeStores())
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
@@ -133,6 +132,10 @@ final class Pages(site: Site):
   private def installCollectionAliases(): Unit =
     StoreTree.aliasPages(siteStore).foreach: (name, target) =>
       installPrefixAlias(name, target, "collection alias")
+    pages.foreach: page =>
+      if page.doc.exists(_.asEntityLists.isDefined) then
+        val segs: Seq[String] = EntityLists.prefix(page)
+        if segs.nonEmpty then installPrefixAlias(segs.mkString("/"), page, "entity lists")
 
   private var siteStoreVar: Option[Stores[Store]] = None
 
@@ -146,19 +149,6 @@ final class Pages(site: Site):
     aliasByPrefix.toSeq.flatMap: (from, alias) =>
       aliasTargetDirectory(alias.real).map: to =>
         CollectionAliases.Entry(from, to, alias.real.path)
-
-  /** Inbound-only prefix `/name`. Not `aliasByPrefix` (must not shorten emitted hrefs). */
-  def inboundAliasEntries: Seq[CollectionAliases.Entry] =
-    val namesDir: Option[Seq[String]] = pages.collectFirst:
-      case page if page.doc.exists(_.asEntityLists.isDefined) => page.path.path.init
-    val name: Option[CollectionAliases.Entry] = pages.collectFirst:
-      case page: AllEntitiesPage =>
-        CollectionAliases.Entry(
-          from = Seq(AllEntitiesPage.segment),
-          to = namesDir.getOrElse(Seq(AllEntitiesPage.segment)),
-          index = page.path
-        )
-    name.toSeq
 
   private def aliasTargetDirectory(page: Page): Option[Seq[String]] =
     aliasDirectory(page).orElse:
@@ -184,7 +174,6 @@ final class Pages(site: Site):
   def rewriteRequest(request: Path): Option[Path] =
     findViaAlias(request).map(_.real.path)
       .orElse(findViaStoreTree(request).map(_.real.path))
-      .orElse(findViaInbound(request).map(_.real.path))
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
@@ -545,7 +534,6 @@ final class Pages(site: Site):
         findExact(path)
           .orElse(findViaAlias(path))
           .orElse(findViaStoreTree(path))
-          .orElse(findViaInbound(path))
           .orElse(findWalk(path, isAbsolute))
 
   private def findExact(path: Path): Option[Page] =
@@ -570,7 +558,9 @@ final class Pages(site: Site):
         .headOption
 
   private def aliasDirectory(page: Page): Option[Seq[String]] =
-    if page.isDirectory then Some(page.path.path.init)
+    if page.doc.exists(_.asEntityLists.isDefined) then
+      Some(EntityLists.prefix(page)).filter(_.nonEmpty)
+    else if page.isDirectory then Some(page.path.path.init)
     else if page.store.isDefined then Some(page.path.withoutHtml.path)
     else None
 
@@ -632,39 +622,6 @@ final class Pages(site: Site):
   private def findEntity(path: Path, entityKind: EntityKind): Option[Page] =
     if path.extension.nonEmpty || path.path.size != 1 then None
     else entityByKindAndId.get((entityKind, path.fileName))
-
-  private def findEntityByFileName(id: String): Option[Page] =
-    val hits: Seq[Page] = entityByKindAndId.iterator.toSeq.collect:
-      case ((_, name), page) if name == id => page
-    hits match
-      case Seq(page) => Some(page)
-      case _ => None
-
-  private def htmlish(extension: Option[String]): Boolean =
-    extension.isEmpty || extension.contains(HtmlMarkup.extension)
-
-  private def findViaInbound(path: Path): Option[Page] =
-    if !htmlish(path.extension) then None
-    else path.path match
-      case Seq(AllEntitiesPage.segment) =>
-        pages.collectFirst { case page: AllEntitiesPage => page }
-      case Seq(AllEntitiesPage.segment, id) =>
-        findEntityByFileName(id)
-      case _ => None
-
-  private def addNamePages(): Unit =
-    if pages.exists(_.entityKind.isDefined) then addUnlessDuplicate(AllEntitiesPage(site))
-
-  private def addUnlessDuplicate(page: Page): Unit =
-    get(page.path) match
-      case Some(existing) =>
-        site.error(
-          page.path,
-          PageError.Duplicate,
-          s"${page.getClass.getSimpleName} collides with $existing"
-        )
-      case None =>
-        add(page)
 
   // path could be `name`, `path/name`(?) - or empty, for intrapage links.
   // fragment could be `#section`, `#section#subsection`, `#^block`, or #id.
@@ -749,17 +706,11 @@ final class Pages(site: Site):
           case _ => None
 
   private def resolveEntityLists(): Unit =
-    pages.foreach:
-      case directory: DirectoryPage =>
-        directory.doc.flatMap(_.asEntityLists).foreach: lists =>
-          val entities: Seq[Page] = EntityLists.entitiesUnder(directory)
-          directory.setStoreChildren(
-            entities.sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)).toList
-          )
-          val listPages: List[EntityListPage] = lists.listPages(directory, get)
-          listPages.foreach(add)
-          listPages.foreach(_.setSiblings(listPages))
-      case _ =>
+    pages.foreach: page =>
+      page.doc.flatMap(_.asEntityLists).foreach: lists =>
+        val listPages: List[EntityListPage] = EntityLists.listPages(page, lists.index, get)
+        listPages.foreach(add)
+        listPages.foreach(_.setSiblings(listPages))
 
   def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
     pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)

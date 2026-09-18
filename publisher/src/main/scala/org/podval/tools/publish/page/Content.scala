@@ -245,29 +245,8 @@ final class EntityListsContent(
     sectionId: Option[String],
     isTerminal: Boolean
   ): Option[Html.Element] =
-    // Hrefs are already published paths / intrapage `#id`; do not mark-and-resolve
-    // (`#jews` would lose the fragment because index `xml` has no ids).
+    // Hrefs are already published paths; do not mark-and-resolve.
     Some(EntityLists.generate(pageContent.source.page, index).toHtml)
-
-  def listPages(
-    directory: DirectoryPage,
-    existing: Path => Option[Page]
-  ): List[EntityListPage] =
-    index.lists.toList.flatMap: spec =>
-      val members: Seq[Page] = EntityLists.members(directory, spec)
-      if members.isEmpty then None
-      else
-        val listPath: Path = EntityLists.listPath(directory, spec)
-        existing(listPath) match
-          case Some(existingPage) =>
-            directory.site.error(
-              listPath,
-              PageError.Duplicate,
-              s"entity list '${spec.id}' collides with $existingPage"
-            )
-            None
-          case None =>
-            Some(EntityListPage(directory.site, listPath, spec, members))
 
 object EntityListsContent:
   def parse(xml: Xml.Element): EntityListsContent =

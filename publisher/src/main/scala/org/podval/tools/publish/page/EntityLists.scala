@@ -1,83 +1,82 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs, TeiMarkup}
-import org.podval.tools.publish.site.Path
+import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
+import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlElement}
 
-/** Member lists for a TEI `entityLists` index, generated at render so the harvested
+/** Member lists for a TEI `entityLists` catalog, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */
 object EntityLists:
-  val expand: String = "⇗"
+  /** URL prefix for list subpages and the Worker identity alias.
+    * Directory catalog (`name/index.html`) → `name`; leaf (`lists.html`) → `lists`. */
+  def prefix(catalog: Page): Seq[String] =
+    if catalog.isDirectory then catalog.path.path.init
+    else catalog.path.withoutHtml.path
 
-  /** Built at render so the index XML `Site.load` walks has no member hrefs (no backlinks). */
-  def generate(page: Page, index: EntityListSpecs.Index): Xml.Element =
-    val kept: Seq[(EntityList, Seq[Page])] = index.lists.flatMap: spec =>
-      val mem: Seq[Page] = members(page, spec)
-      Option.when(mem.nonEmpty)(spec -> mem)
-    val lists: Xml.Nodes = kept.map((spec, mem) =>
-      listXml(spec, mem, withHead = true, jump = Some(listPath(page, spec)), dest = page): Xml.Node
-    )
-    val children: Xml.Nodes =
-      if kept.isEmpty then lists
-      else tocXml(kept.map(_._1), page) +: lists
-    Xml.element("entityLists").setChildren(children)
+  def listPath(catalog: Page, spec: EntityList): Path =
+    Path(prefix(catalog) :+ spec.id).html
 
-  def listXml(
-    spec: EntityList,
-    members: Seq[Page],
-    withHead: Boolean,
-    jump: Option[Path],
-    dest: Page
-  ): Xml.Element =
-    val head: Xml.Nodes =
-      if !withHead then Seq.empty
-      else Seq(Xml.element(TeiMarkup.tei2Html.elementName(XmlElement.Head)).setChildren(headChildren(spec, jump, dest)))
-    val lines: Xml.Nodes = members.map(member =>
-      Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
-    )
-    Xml.element(spec.kind.listElement).setId(spec.id).setChildren(head ++ lines)
-
-  def entitiesUnder(indexPage: Page): Seq[Page] =
-    val dir: Seq[String] = indexPage.path.path.init
-    indexPage.site.pages.pages.filter: page =>
-      page.entityKind.isDefined &&
-      page.sourcePath.exists: sourcePath =>
-        sourcePath.path.startsWith(dir) && sourcePath.path.length == dir.length + 1
-
-  def members(indexPage: Page, spec: EntityList): Seq[Page] =
-    entitiesUnder(indexPage)
+  def members(spec: EntityList, pages: Seq[Page]): Seq[Page] =
+    pages
       .filter(page => page.entityKind.contains(spec.kind) && page.entityRole == spec.role)
       .sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName))
 
-  def listPath(indexPage: Page, spec: EntityList): Path =
-    Path(path = indexPage.path.path.init :+ spec.id).html
+  def kept(index: EntityListSpecs.Index, pages: Seq[Page]): Seq[(EntityList, Seq[Page])] =
+    index.lists.flatMap: spec =>
+      val mem: Seq[Page] = members(spec, pages)
+      Option.when(mem.nonEmpty)(spec -> mem)
+
+  /** Overall catalog: one non-empty list is that list; two or more is TOC only. */
+  def generate(page: Page, index: EntityListSpecs.Index): Xml.Element =
+    val keptLists: Seq[(EntityList, Seq[Page])] = kept(index, page.site.pages.pages)
+    keptLists match
+      case Seq((spec, mem)) =>
+        listXml(spec, mem)
+      case _ =>
+        val children: Xml.Nodes =
+          if keptLists.isEmpty then Seq.empty
+          else Seq(tocXml(keptLists.map(_._1), page))
+        Xml.element("entityLists").setChildren(children)
+
+  def listPages(
+    catalog: Page,
+    index: EntityListSpecs.Index,
+    existing: Path => Option[Page]
+  ): List[EntityListPage] =
+    val keptLists: Seq[(EntityList, Seq[Page])] = kept(index, catalog.site.pages.pages)
+    if keptLists.length <= 1 then Nil
+    else
+      keptLists.toList.flatMap: (spec, mem) =>
+        val path: Path = listPath(catalog, spec)
+        existing(path) match
+          case Some(existingPage) =>
+            catalog.site.error(
+              path,
+              PageError.Duplicate,
+              s"entity list '${spec.id}' collides with $existingPage"
+            )
+            None
+          case None =>
+            Some(EntityListPage(catalog.site, path, spec, mem))
+
+  def listXml(spec: EntityList, members: Seq[Page]): Xml.Element =
+    val lines: Xml.Nodes = members.map(member =>
+      Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
+    )
+    Xml.element(spec.kind.listElement).setId(spec.id).setChildren(lines)
 
   def displayName(page: Page): String =
     page.entityDisplayName.getOrElse(page.title)
 
-  private def tocXml(specs: Seq[EntityList], page: Page): Xml.Element =
+  private def tocXml(specs: Seq[EntityList], catalog: Page): Xml.Element =
     val items: Xml.Nodes = specs.map: spec =>
       Xml.element(XmlElement.Li).setChildren(Seq(
-        Xml.element(XmlElement.A).setHref(s"#${spec.id}").setText(spec.title),
-        Xml.text(" "),
         NamedWindows.setXmlTarget(
-          Xml.element(XmlElement.A).setHref(listPath(page, spec).toString).setText(expand),
-          page
+          Xml.element(XmlElement.A).setHref(listPath(catalog, spec).toString).setText(spec.title),
+          catalog
         )
       ))
     Xml.element(XmlElement.Ul).addClass("entity-lists-toc").setChildren(items)
-
-  private def headChildren(spec: EntityList, jump: Option[Path], dest: Page): Xml.Nodes =
-    val title: Xml.Nodes = Seq(Xml.text(spec.title))
-    jump.fold(title)(path =>
-      title ++ Seq(
-        Xml.text(" "),
-        NamedWindows.setXmlTarget(
-          Xml.element(XmlElement.A).setHref(path.toString).setText(expand),
-          dest
-        )
-      )
-    )
 
   private def memberLink(page: Page, kind: EntityKind): Xml.Element =
     NamedWindows.setXmlTarget(

@@ -95,6 +95,15 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
       assert(PageError.MisnamedEntity.id == "misnamed-entity")
   }
 
+  test("errors page has a TOC when more than one kind is present") {
+    withSite: (_, target) =>
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("""class="site-errors-toc""""), errors)
+      assert(errors.contains("""href="#no-ref""""), errors)
+      assert(errors.contains("""href="#unclear""""), errors)
+      assert(errors.contains("""href="#misnamed-entity""""), errors)
+  }
+
   test("does not write /report pages or inbound /report rewrites") {
     withSite: (site, target) =>
       assert(!File(target, "report.html").isFile)

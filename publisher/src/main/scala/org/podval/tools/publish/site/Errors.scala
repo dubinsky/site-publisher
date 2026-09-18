@@ -29,9 +29,14 @@ final class Errors(
   override protected def syntheticContent: Html.Element =
     val byKind: Map[PageError.Kind, List[PageError]] = errorsVar.groupBy(_.kind)
     val kinds: List[PageError.Kind] = PageError.all.intersect(byKind.keys.toList)
+    val toc: Html.Element = ul(
+      className := "site-errors-toc",
+      kinds.map(kind => li(a(href := s"#${kind.id}", kind.toString)))
+    )
     div(
       className := "site-errors",
       id := "site-errors",
+      Option.when(kinds.length > 1)(toc),
       kinds.map(kind =>
         div(
           className := "kind",

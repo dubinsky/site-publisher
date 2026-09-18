@@ -32,10 +32,10 @@ object StoreTree:
                 kids ++ aliases(None)
           case None =>
             page.doc.flatMap(_.asEntityLists).map: lists =>
-              val dir: Seq[String] = page.path.path.init
+              val prefix: Seq[String] = EntityLists.prefix(page)
               val byId: Map[String, EntityListPage] =
                 page.site.pages.pages.collect:
-                  case p: EntityListPage if p.path.path.init == dir => p.spec.id -> p
+                  case p: EntityListPage if p.path.path.init == prefix => p.spec.id -> p
                 .toMap
               val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
               Seq(By("names", ordered))

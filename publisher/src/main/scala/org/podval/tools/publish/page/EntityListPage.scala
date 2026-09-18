@@ -27,4 +27,4 @@ final class EntityListPage(
   override def next: Option[Page] = siblingsVar.dropWhile(_ != this).drop(1).headOption
 
   override protected def syntheticContent: Html.Element =
-    EntityLists.listXml(spec, members, withHead = false, jump = None, dest = this).toHtml
+    EntityLists.listXml(spec, members).toHtml

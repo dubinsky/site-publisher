@@ -3,9 +3,9 @@ package org.podval.tools.publish.markup
 import org.podval.xml.{Xml, XmlCodec}
 import zio.blocks.schema.{Modifier, Schema}
 
-/** TEI `entityLists` directory index specs: kind + role buckets.
+/** TEI `entityLists` catalog specs: kind + role buckets (site-wide members).
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
-  * The names directory page is `By("names")`; each list page is `By("name")`. */
+  * The catalog page is `By("names")`; each list page is `By("name")`. */
 object EntityLists:
   final case class Index(
     @Modifier.config(XmlCodec.Element, "title")
