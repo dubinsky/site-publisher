@@ -28,12 +28,6 @@ object Footnote:
   def remapped(footnote: Footnote, correlationId: String, number: Int): Footnote =
     Footnote(correlationId, number, footnote.nodes)
 
-  def uniqueInOrder(ids: Seq[String]): Seq[String] =
-    val (ordered, _) = ids.foldLeft((Seq.empty[String], Set.empty[String])):
-      case ((acc, seen), id) if seen.contains(id) => (acc, seen)
-      case ((acc, seen), id) => (acc :+ id, seen + id)
-    ordered
-
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
   def link(correlationId: String): Xml.Element = Xml
@@ -64,7 +58,7 @@ object Footnote:
   /** Harvest bodies, append the list while stubs still have ids, then number the links. */
   def finish(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val (combined: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
-    val treeIds: Seq[String] = uniqueInOrder(linkIds(stripped))
+    val treeIds: Seq[String] = linkIds(stripped).distinct
     if combined.isEmpty && treeIds.isEmpty then xml
     else
       reportOrphans(combined, stripped, report)
@@ -76,7 +70,7 @@ object Footnote:
 
   /** Number footnotes in document-link order; strip bodies from the tree and from parent nodes. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = uniqueInOrder(linkIds(xml)).zipWithIndex.toMap
+    val numbers: Map[String, Int] = linkIds(xml).distinct.zipWithIndex.toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
@@ -105,7 +99,10 @@ object Footnote:
     report: PageErrorReporter
   ): Unit =
     val treeIds: Set[String] = linkIds(tree).toSet
-    val innerIds: Set[String] = combined.values.flatMap(footnote => linkIdsIn(footnote.nodes)).toSet
+    val innerIds: Set[String] =
+      combined.values.flatMap(footnote =>
+        footnote.nodes.flatMap(node => node.asElement.fold(Seq.empty[String])(linkIds))
+      ).toSet
     combined.keys.foreach: id =>
       if !treeIds.contains(id) && !innerIds.contains(id) then
         report.error(PageError.OrphanFootnote, s"orphan footnote '$id'")
@@ -117,7 +114,7 @@ object Footnote:
     xml: Xml.Element,
     footnotes: Map[String, Footnote]
   ): Xml.Element =
-    val toAdd: Seq[Footnote] = uniqueInOrder(linkIds(xml)).flatMap(footnotes.get)
+    val toAdd: Seq[Footnote] = linkIds(xml).distinct.flatMap(footnotes.get)
     if toAdd.isEmpty then xml
     else
       val footnotesDiv: Xml.Element = Xml
@@ -157,10 +154,6 @@ object Footnote:
         case Some(el) if isBody(el) => Seq.empty
         case Some(el) => Seq(el.setChildren(stripInnerBodies(el.getChildren)))
         case None => Seq(node)
-
-  private def linkIdsIn(nodes: Xml.Nodes): Seq[String] =
-    nodes.flatMap: node =>
-      node.asElement.fold(Seq.empty[String])(linkIds)
 
   private def resolveTree(
     element: Xml.Element,

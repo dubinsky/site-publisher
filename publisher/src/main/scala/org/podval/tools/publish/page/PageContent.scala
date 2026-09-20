@@ -130,7 +130,7 @@ final class PageContent private(
 
     val combined: Map[String, Footnote] = footnotes ++ extraFootnotes
     val emitted: Map[String, Footnote] =
-      Footnote.uniqueInOrder(Footnote.linkIds(expanded)).zipWithIndex.flatMap:
+      Footnote.linkIds(expanded).distinct.zipWithIndex.flatMap:
         (id, index) => combined.get(id).map(footnote => id -> Footnote.remapped(footnote, id, index + 1))
       .toMap
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
