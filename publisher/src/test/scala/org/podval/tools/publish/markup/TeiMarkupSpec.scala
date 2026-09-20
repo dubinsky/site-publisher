@@ -346,7 +346,9 @@ final class TeiMarkupSpec extends AnyFunSuite:
     def published(input: String, width: Int = 40): String =
       val xml: Xml.Element = process(input)
       val (notes, harvested) = Footnote.harvest(xml)
-      val resolved: Xml.Element = harvested.transform(el => Footnote.resolveLink(el, notes, attachTip = true))
+      val resolved: Xml.Element = harvested.transform(el =>
+        Footnote.resolveLink(el, notes, notes, attachTip = true, PageErrorReporter.Silent)
+      )
       HtmlXmlWriterConfig.render(resolved, width)
 
     def compact(html: String): String = html.replaceAll("\\s+", " ").replace("= ", "=")

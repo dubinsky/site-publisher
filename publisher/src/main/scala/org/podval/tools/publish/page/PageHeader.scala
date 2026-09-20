@@ -81,14 +81,17 @@ object PageHeader:
     val byLabel: Xml.Nodes = page.by.map(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector, page.site.languageSpec)}:")
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
-    TeiMarkup.finishFootnotes(Xml.element("header").addClass("store-header").setChildren(
-      ancestors.map(el => el: Xml.Node) ++
-        Seq(head: Xml.Node) ++
-        table ++
-        description ++
-        body ++
-        byLabel
-    ))
+    TeiMarkup.finishFootnotes(
+      Xml.element("header").addClass("store-header").setChildren(
+        ancestors.map(el => el: Xml.Node) ++
+          Seq(head: Xml.Node) ++
+          table ++
+          description ++
+          body ++
+          byLabel
+      ),
+      page.source.getOrElse(PageErrorReporter.Silent)
+    )
 
   private[page] def collectorAncestors(page: Page): Seq[Page] =
     def loop(opt: Option[Page]): List[Page] = opt match

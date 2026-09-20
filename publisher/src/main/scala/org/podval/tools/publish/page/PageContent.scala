@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Facsimile, Footnote, Glossary, Ids,
   Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
-import org.podval.tools.publish.site.PageError
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Html, Xml}
 import Html.given
@@ -129,12 +129,14 @@ final class PageContent private(
     )
 
     val combined: Map[String, Footnote] = footnotes ++ extraFootnotes
-    val numbered: Map[String, Footnote] = Footnote.linkIds(expanded).zipWithIndex.flatMap:
-      (id, index) => combined.get(id).map(footnote => id -> Footnote.remapped(footnote, id, index + 1))
-    .toMap
+    val emitted: Map[String, Footnote] =
+      Footnote.uniqueInOrder(Footnote.linkIds(expanded)).zipWithIndex.flatMap:
+        (id, index) => combined.get(id).map(footnote => id -> Footnote.remapped(footnote, id, index + 1))
+      .toMap
+    if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 
     // Add bodies of the footnotes referenced in the selected XML
-    val withFootnotes: Xml.Element = Footnote.appendReferenced(expanded, numbered)
+    val withFootnotes: Xml.Element = Footnote.appendReferenced(expanded, emitted)
 
     // Resolve citations
     val (withCitations: Xml.Element, unknownCitations: Seq[String]) = bibliography.resolve(withFootnotes)
@@ -148,7 +150,8 @@ final class PageContent private(
       isChunked,
       attachTips = true,
       inCopy = false,
-      notes = numbered
+      combined = combined,
+      emitted = emitted
     )
 
     // Convert to HTML
@@ -161,7 +164,8 @@ final class PageContent private(
       isChunked = false,
       attachTips = false,
       inCopy = false,
-      notes = footnotes
+      combined = footnotes,
+      emitted = Map.empty[String, Footnote]
     )
 
   private def markInternalLink(element: Xml.Element): Xml.Element =
@@ -210,7 +214,8 @@ final class PageContent private(
     isChunked: Boolean,
     attachTips: Boolean,
     inCopy: Boolean,
-    notes: Map[String, Footnote]
+    combined: Map[String, Footnote],
+    emitted: Map[String, Footnote]
   ): Xml.Element =
     var result: Xml.Element = element
 
@@ -230,7 +235,13 @@ final class PageContent private(
       )
 
     // Turn footnote links into footnote references
-    result = Footnote.resolveLink(result, notes, attachTips)
+    result = Footnote.resolveLink(
+      result,
+      combined,
+      emitted,
+      attachTips,
+      if isChunked then PageErrorReporter.Silent else source
+    )
 
     if !skipCopy then
       result = Facsimile.resolveLink(result, source.page)
@@ -245,7 +256,8 @@ final class PageContent private(
           isChunked,
           attachTips && !tips.exists(_.isTip(child)) && !inThisCopy,
           inCopy = inThisCopy,
-          notes = notes
+          combined = combined,
+          emitted = emitted
         )
     ))
 

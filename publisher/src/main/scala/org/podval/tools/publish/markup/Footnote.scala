@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 // Details of the footnote internal representation.
@@ -26,6 +27,12 @@ object Footnote:
 
   def remapped(footnote: Footnote, correlationId: String, number: Int): Footnote =
     Footnote(correlationId, number, footnote.nodes)
+
+  def uniqueInOrder(ids: Seq[String]): Seq[String] =
+    val (ordered, _) = ids.foldLeft((Seq.empty[String], Set.empty[String])):
+      case ((acc, seen), id) if seen.contains(id) => (acc, seen)
+      case ((acc, seen), id) => (acc :+ id, seen + id)
+    ordered
 
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
@@ -55,19 +62,21 @@ object Footnote:
     )
 
   /** Harvest bodies, append the list while stubs still have ids, then number the links. */
-  def finish(xml: Xml.Element): Xml.Element =
-    val (footnotes: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
-    if footnotes.isEmpty then xml
+  def finish(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
+    val (combined: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
+    val treeIds: Seq[String] = uniqueInOrder(linkIds(stripped))
+    if combined.isEmpty && treeIds.isEmpty then xml
     else
-      val withBodies: Xml.Element = appendReferenced(stripped, footnotes)
-      withBodies.transform(
-        element => resolveLink(element, footnotes, attachTip = true),
-        stopAtCode = false
-      )
+      reportOrphans(combined, stripped, report)
+      val emitted: Map[String, Footnote] = treeIds.zipWithIndex.flatMap:
+        (id, index) => combined.get(id).map(footnote => id -> remapped(footnote, id, index + 1))
+      .toMap
+      val withBodies: Xml.Element = appendReferenced(stripped, emitted)
+      resolveTree(withBodies, combined, emitted, attachTip = true, report)
 
-  /** Number footnotes in document-link order, then drop bodies from the tree. */
+  /** Number footnotes in document-link order; strip bodies from the tree and from parent nodes. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = linkIds(xml).zipWithIndex.toMap
+    val numbers: Map[String, Int] = uniqueInOrder(linkIds(xml)).zipWithIndex.toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
@@ -77,8 +86,8 @@ object Footnote:
             )
           correlationId -> Footnote(
             correlationId = correlationId,
-            number = numbers(correlationId) + 1,
-            nodes = element.getChildren
+            number = numbers.get(correlationId).fold(0)(_ + 1),
+            nodes = stripInnerBodies(element.getChildren)
           )
       )
       .toMap
@@ -90,6 +99,17 @@ object Footnote:
     )
     (footnotes, stripped)
 
+  def reportOrphans(
+    combined: Map[String, Footnote],
+    tree: Xml.Element,
+    report: PageErrorReporter
+  ): Unit =
+    val treeIds: Set[String] = linkIds(tree).toSet
+    val innerIds: Set[String] = combined.values.flatMap(footnote => linkIdsIn(footnote.nodes)).toSet
+    combined.keys.foreach: id =>
+      if !treeIds.contains(id) && !innerIds.contains(id) then
+        report.error(PageError.OrphanFootnote, s"orphan footnote '$id'")
+
   // Add bodies of the footnotes referenced in the selected XML
   // TODO footnotes placed at the end of elements like table, not the overall end?
   // TODO how do multi-level footnotes look?
@@ -97,7 +117,7 @@ object Footnote:
     xml: Xml.Element,
     footnotes: Map[String, Footnote]
   ): Xml.Element =
-    val toAdd: Seq[Footnote] = linkIds(xml).map(footnotes)
+    val toAdd: Seq[Footnote] = uniqueInOrder(linkIds(xml)).flatMap(footnotes.get)
     if toAdd.isEmpty then xml
     else
       val footnotesDiv: Xml.Element = Xml
@@ -108,18 +128,58 @@ object Footnote:
 
   def resolveLink(
     element: Xml.Element,
-    footnotes: Map[String, Footnote],
-    attachTip: Boolean
+    combined: Map[String, Footnote],
+    emitted: Map[String, Footnote],
+    attachTip: Boolean,
+    report: PageErrorReporter
   ): Xml.Element =
     if !isLink(element) then element
     else
-      val footnote: Footnote = footnotes(getCorrelationId(element))
-      var result: Xml.Element = footnote.link
-      if attachTip then
-        val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
-        if content.nonEmpty then
-          result = tip.attachTip(result, content)
-      result
+      val id: String = getCorrelationId(element)
+      combined.get(id) match
+        case None =>
+          report.error(PageError.UnknownFootnote, s"unknown footnote '$id'")
+          element.add(Link.UnresolvedLinkClass)
+        case Some(_) =>
+          emitted.get(id) match
+            case None => element
+            case Some(footnote) =>
+              var result: Xml.Element = footnote.link
+              if attachTip then
+                val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
+                if content.nonEmpty then
+                  result = tip.attachTip(result, content)
+              result
+
+  private def stripInnerBodies(nodes: Xml.Nodes): Xml.Nodes =
+    nodes.flatMapNodes: node =>
+      node.asElement match
+        case Some(el) if isBody(el) => Seq.empty
+        case Some(el) => Seq(el.setChildren(stripInnerBodies(el.getChildren)))
+        case None => Seq(node)
+
+  private def linkIdsIn(nodes: Xml.Nodes): Seq[String] =
+    nodes.flatMap: node =>
+      node.asElement.fold(Seq.empty[String])(linkIds)
+
+  private def resolveTree(
+    element: Xml.Element,
+    combined: Map[String, Footnote],
+    emitted: Map[String, Footnote],
+    attachTip: Boolean,
+    report: PageErrorReporter
+  ): Xml.Element =
+    val resolved: Xml.Element = resolveLink(element, combined, emitted, attachTip, report)
+    resolved.setChildren(resolved.getChildren.map: child =>
+      child.asElement.fold(child): el =>
+        resolveTree(
+          el,
+          combined,
+          emitted,
+          attachTip && !el.getClasses.exists(_.endsWith("-tip")),
+          report
+        )
+    )
 
 final class Footnote(
   val correlationId: String,

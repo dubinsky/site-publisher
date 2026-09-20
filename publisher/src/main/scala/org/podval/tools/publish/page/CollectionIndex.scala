@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
-import org.podval.tools.publish.site.PageError
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{Xml, XmlElement}
 /** Collection directory index: collector `table.collection-index`, generated at render.
   * Originals are rows; `{base}-{xx}` translations are Язык links, not rows. */
@@ -35,7 +35,10 @@ object CollectionIndex:
     ).map(el => el: Xml.Node)
     val table: Xml.Element =
       Xml.element(XmlElement.Table).addClass("collection-index").setChildren(header +: body)
-    TeiMarkup.finishFootnotes(Xml.element(XmlElement.Div).setChildren(table +: missingNotes(store, originals)))
+    TeiMarkup.finishFootnotes(
+      Xml.element(XmlElement.Div).setChildren(table +: missingNotes(store, originals)),
+      page.source.getOrElse(PageErrorReporter.Silent)
+    )
 
   def listingChildren(store: StoreContent, children: List[Page]): List[Page] =
     if store.isCollection then children.filterNot(isTranslation) else children

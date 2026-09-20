@@ -173,7 +173,7 @@ object TeiMarkup extends Markup(
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */
-  private[publish] def finishFootnotes(xml: Xml.Element): Xml.Element =
+  private[publish] def finishFootnotes(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val converted: Xml.Element = xml.transform(
       element => element.setChildren(
@@ -181,7 +181,7 @@ object TeiMarkup extends Markup(
       ),
       stopAtCode = false
     )
-    Footnote.finish(converted)
+    Footnote.finish(converted, report)
 
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.getName.localName match
     case "store" | "collection" => element.setChildren(Seq.empty)
