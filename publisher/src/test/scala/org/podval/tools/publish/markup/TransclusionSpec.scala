@@ -206,6 +206,14 @@ final class TransclusionSpec extends AnyFunSuite:
       assert(host.contains("Target note"), host)
       assert(host.contains("Host note"), host)
       assert(host.contains("""class="transclusion""""), host)
+      assert(host.contains("""id="_footnote_src_1""""), host)
+      assert(host.contains("""id="_footnote_src_2""""), host)
+      assert(host.contains("""href="#_footnote_src_1""""), host)
+      assert(host.contains("""href="#_footnote_src_2""""), host)
+      val copyAt: Int = host.indexOf("""class="transclusion"""")
+      assert(copyAt >= 0, host)
+      val copyHtml: String = host.substring(copyAt)
+      assert(copyHtml.contains("""id="_footnote_src_2""""), copyHtml)
   }
 
   test("mixed paragraph splits around the aside") {
@@ -258,8 +266,16 @@ final class TransclusionSpec extends AnyFunSuite:
       assert(host.contains("table-with-notes"), host)
       assert(host.contains("""id="_table_1_fn_a""""), host)
       assert(host.contains("""id="_table_2_fn_a""""), host)
+      assert(host.contains("""id="_table_1_fn_src_a""""), host)
+      assert(host.contains("""id="_table_2_fn_src_a""""), host)
+      assert(host.contains("""href="#_table_1_fn_src_a""""), host)
+      assert(host.contains("""href="#_table_2_fn_src_a""""), host)
       assert(host.contains("Host table note"), host)
       assert(host.contains("Copy table note"), host)
+      val copyAt: Int = host.indexOf("""class="transclusion"""")
+      assert(copyAt >= 0, host)
+      val copyHtml: String = host.substring(copyAt)
+      assert(copyHtml.contains("""id="_table_2_fn_src_a""""), copyHtml)
       val pageLists: Int = host.split("""class="footnotes"""").length - 1
       assert(pageLists >= 0, host)
       assert(!host.contains("""id="_footnote_1""""), host)

@@ -123,6 +123,18 @@ final class FootnoteSpec extends AnyFunSuite:
     val withTip: String = render(withTipEl)
     assert(withTip.contains("footnote-tip"), withTip)
     assert(resolve(Xml.element(XmlElement.P), notes, attachTip = true).isElement(XmlElement.P))
+    val copyWithId: Xml.Element = Footnote.resolveLink(
+      Footnote.link("a"),
+      notes,
+      notes,
+      attachTip = false,
+      PageErrorReporter.Silent,
+      withId = true
+    )
+    val copyHtml: String = render(copyWithId)
+    assert(copyHtml.contains("""id="_footnote_src_2""""), copyHtml)
+    assert(!copyHtml.contains("footnote-tip"), copyHtml)
+    assert(!dumped.contains("""id="_footnote_src_2""""), dumped)
   }
 
   test("harvest strips inner bodies from parent nodes and keeps inner stubs") {
@@ -725,4 +737,73 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(withLeftovers.contains("doc "), withLeftovers)
     assert(without.contains("doc "), without)
     assert(!without.contains("leftover-body"), without)
+  }
+
+  test("host tree site is not leftover Document on a tree that omits that site") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("doc"),
+      Footnote.body("doc", Chunk(Xml.text("document note"))),
+      Footnote.link("outer"),
+      Footnote.body("outer", Chunk(
+        Xml.text("see "),
+        Footnote.link("doc")
+      ))
+    ))
+    val (notes, stripped) = Footnote.harvest(xml)
+    val chunk: Xml.Element = stripped.setChildren(
+      stripped.getChildren.filter: node =>
+        !node.asElement.exists: el =>
+          Footnote.isLink(el) && Footnote.getCorrelationId(el) == "doc"
+    )
+    val emitted: Map[String, Footnote] = Footnote.numbered(
+      chunk,
+      notes,
+      PageErrorReporter.Silent,
+      localTables = true,
+      hostTree = Some(stripped),
+      hostFootnotes = notes
+    )
+    assert(emitted.contains("outer"), emitted.keys)
+    assert(!emitted.contains("doc"), emitted.keys)
+    val reuse: Xml.Element = Xml.element(XmlElement.Span).setChildren(notes("outer").nodes)
+      .gather(el => Option.when(Footnote.isLink(el))(el))
+      .head
+    val resolved: Xml.Element = Footnote.resolveLink(
+      reuse,
+      notes,
+      emitted,
+      attachTip = true,
+      PageErrorReporter.Silent
+    )
+    assert(Footnote.isLink(resolved), render(resolved))
+    assert(!resolved.isA, render(resolved))
+  }
+
+  test("inner-only FootnoteScopeConflict is leftover Document when hostTree is passed") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("p1"),
+      Footnote.body("p1", Chunk(
+        Xml.text("first "),
+        Footnote.link("inner")
+      )),
+      Footnote.link("p2"),
+      Footnote.body("p2", Chunk(
+        Xml.text("second "),
+        Footnote.link("inner")
+      )),
+      Footnote.body("inner", Chunk(Xml.text("shared inner")))
+    ))
+    val (notes, stripped) = Footnote.harvest(xml)
+    val reporter: RecordingReporter = RecordingReporter()
+    val emitted: Map[String, Footnote] = Footnote.numbered(
+      stripped,
+      notes,
+      reporter,
+      localTables = true,
+      hostTree = Some(stripped),
+      hostFootnotes = notes
+    )
+    assert(reporter.errors.exists(_._1 eq PageError.FootnoteScopeConflict), reporter.errors)
+    assert(emitted.contains("inner"), emitted.keys)
+    assert(emitted("inner").scope == FootnoteScope.Document)
   }

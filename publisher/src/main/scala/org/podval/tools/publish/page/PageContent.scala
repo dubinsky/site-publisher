@@ -244,13 +244,14 @@ final class PageContent private(
         reportMissing = !isChunked
       )
 
-    // Turn footnote links into footnote references
+    // Copies skip hover tips; src ids stay so backlinks from the host list still resolve.
     result = Footnote.resolveLink(
       result,
       combined,
       emitted,
       attachTips,
-      if isChunked then PageErrorReporter.Silent else source
+      if isChunked then PageErrorReporter.Silent else source,
+      withId = attachTips || inThisCopy
     )
 
     if !skipCopy then

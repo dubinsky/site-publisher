@@ -149,7 +149,13 @@ object Footnote:
       assignScopes(tree, combined, localTables, report, skip = hostAssigned.kinds.keySet)
     val kinds: Map[String, Kind] = hostAssigned.kinds ++ treeAssigned.kinds
     val cycleIds: Set[String] = hostAssigned.cycleIds ++ treeAssigned.cycleIds
-    remapEmitted(tree, combined, kinds, cycleIds)
+    remapEmitted(
+      tree,
+      combined,
+      kinds,
+      cycleIds,
+      hostTreeIds = hostTree.fold(Set.empty[String])(linkIds(_).toSet)
+    )
 
   // Add bodies of the footnotes referenced in the selected XML
   def appendReferenced(
@@ -190,6 +196,16 @@ object Footnote:
     attachTip: Boolean,
     report: PageErrorReporter
   ): Xml.Element =
+    resolveLink(element, combined, emitted, attachTip, report, withId = attachTip)
+
+  def resolveLink(
+    element: Xml.Element,
+    combined: Map[String, Footnote],
+    emitted: Map[String, Footnote],
+    attachTip: Boolean,
+    report: PageErrorReporter,
+    withId: Boolean
+  ): Xml.Element =
     if !isLink(element) then element
     else
       val id: String = getCorrelationId(element)
@@ -201,8 +217,8 @@ object Footnote:
           emitted.get(id) match
             case None => element
             case Some(footnote) =>
-              // Tooltip copies must not steal the published marker's src id (getElementById would hit display:none).
-              val numbered: Xml.Element = footnote.link(withId = attachTip)
+              // Tooltip copies must not steal src ids; transclusion copies skip tips but still need them.
+              val numbered: Xml.Element = footnote.link(withId = withId)
               if !attachTip then numbered
               else
                 val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
@@ -359,7 +375,8 @@ object Footnote:
     tree: Xml.Element,
     combined: Map[String, Footnote],
     kinds: Map[String, Kind],
-    cycleIds: Set[String]
+    cycleIds: Set[String],
+    hostTreeIds: Set[String]
   ): Map[String, Footnote] =
     val treeDocumentIds: Seq[String] =
       linkIds(tree).distinct.filter(id => kinds.get(id).contains(Kind.Document))
@@ -371,8 +388,12 @@ object Footnote:
     val leftoverCycle: Seq[String] =
       cycleIds.toSeq.sorted.filterNot(id => treeDocumentIds.contains(id) || fromBodies.contains(id))
     val taken: Set[String] = (treeDocumentIds ++ fromBodies ++ leftoverCycle).toSet
+    // Inner-only conflict has no host tree site; a call site on another chunk is not leftover.
     val leftoverDocument: Seq[String] =
-      mentionedInBodies.filter(id => !taken.contains(id) && kinds.get(id).contains(Kind.Document))
+      mentionedInBodies.filter: id =>
+        !taken.contains(id) &&
+          kinds.get(id).contains(Kind.Document) &&
+          !hostTreeIds.contains(id)
     val documentIds: Seq[String] =
       (treeDocumentIds ++ fromBodies ++ leftoverCycle ++ leftoverDocument).distinct
     val occurrences: Seq[(String, Option[Xml.Element])] = collectOccurrences(tree)
