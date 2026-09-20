@@ -6,7 +6,6 @@ import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 enum FootnoteScope derives CanEqual:
   case Document
   case Table(index: Int)
-  case Nested(parentId: String)
 
 // Details of the footnote internal representation.
 object Footnote:
@@ -44,12 +43,6 @@ object Footnote:
     scope: FootnoteScope
   ): Footnote =
     Footnote(correlationId, number, footnote.nodes, scope)
-
-  def uniqueInOrder(ids: Seq[String]): Seq[String] =
-    val (ordered, _) = ids.foldLeft((Seq.empty[String], Set.empty[String])):
-      case ((acc, seen), id) if seen.contains(id) => (acc, seen)
-      case ((acc, seen), id) => (acc :+ id, seen + id)
-    ordered
 
   def letterLabel(index0: Int): String =
     val q: Int = index0 / 26
@@ -91,7 +84,7 @@ object Footnote:
     localTables: Boolean = false
   ): Xml.Element =
     val (combined: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
-    val treeIds: Seq[String] = uniqueInOrder(linkIds(stripped))
+    val treeIds: Seq[String] = linkIds(stripped).distinct
     if combined.isEmpty && treeIds.isEmpty then xml
     else
       reportOrphans(combined, stripped, report)
@@ -101,7 +94,7 @@ object Footnote:
 
   /** Number footnotes in document-link order; strip bodies from the tree and from parent nodes. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = uniqueInOrder(linkIds(xml)).zipWithIndex.toMap
+    val numbers: Map[String, Int] = linkIds(xml).distinct.zipWithIndex.toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
@@ -161,7 +154,7 @@ object Footnote:
     val wrapped: Xml.Element =
       if footnotes.values.exists(isTableScope) then wrapTables(xml, footnotes)
       else xml
-    val toAdd: Seq[Footnote] = uniqueInOrder(linkIds(wrapped)).flatMap(footnotes.get).filter: footnote =>
+    val toAdd: Seq[Footnote] = linkIds(wrapped).distinct.flatMap(footnotes.get).filter: footnote =>
       footnote.scope == FootnoteScope.Document
     if toAdd.isEmpty then wrapped
     else
@@ -208,7 +201,7 @@ object Footnote:
     skip: Set[String] = Set.empty
   ): Map[String, Kind] =
     if !localTables then
-      uniqueInOrder(linkIds(tree)).filterNot(skip.contains).map(_ -> Kind.Document).toMap
+      linkIds(tree).distinct.filterNot(skip.contains).map(_ -> Kind.Document).toMap
     else
       val occurrences: Seq[(String, Option[Xml.Element])] =
         collectOccurrences(tree).filter((id, _) => !skip.contains(id))
@@ -243,7 +236,7 @@ object Footnote:
     val grouped: Map[String, Seq[Option[Xml.Element]]] =
       occurrences.foldLeft(Map.empty[String, Seq[Option[Xml.Element]]]):
         case (acc, (id, loc)) => acc.updated(id, acc.getOrElse(id, Seq.empty) :+ loc)
-    uniqueInOrder(occurrences.map(_._1)).map: id =>
+    occurrences.map(_._1).distinct.map: id =>
       val locs: Seq[Option[Xml.Element]] = grouped.getOrElse(id, Seq.empty)
       val tables: Seq[Xml.Element] = uniqueEq(locs.flatten)
       val hasDocument: Boolean = locs.exists(_.isEmpty)
@@ -261,49 +254,24 @@ object Footnote:
     combined: Map[String, Footnote],
     kinds: Map[String, Kind]
   ): Map[String, Footnote] =
+    val occurrences: Seq[(String, Option[Xml.Element])] = collectOccurrences(tree)
     val documentIds: Seq[String] =
-      uniqueInOrder(linkIds(tree)).filter(id => kinds.get(id).contains(Kind.Document))
-    val tableGroups: Seq[Seq[String]] = collectTableGroups(tree, insideTip = false, kinds)
+      occurrences.map(_._1).distinct.filter(id => kinds.get(id).contains(Kind.Document))
+    val tableOccs: Seq[(String, Xml.Element)] = occurrences.flatMap: (id, loc) =>
+      if kinds.get(id).contains(Kind.Table) then loc.map(id -> _) else None
+    val tables: Seq[Xml.Element] = uniqueEq(tableOccs.map(_._2))
     val documentEmitted: Seq[(String, Footnote)] =
       documentIds.zipWithIndex.flatMap: (id, index) =>
         combined.get(id).map(footnote => id -> remapped(footnote, id, index + 1, FootnoteScope.Document))
     val tableEmitted: Seq[(String, Footnote)] =
-      tableGroups.zipWithIndex.flatMap: (ids, index) =>
+      tables.zipWithIndex.flatMap: (table, index) =>
         val k: Int = index + 1
-        uniqueInOrder(ids).zipWithIndex.flatMap: (id, n) =>
+        val ids: Seq[String] = tableOccs.filter((_, t) => t eq table).map(_._1).distinct
+        ids.zipWithIndex.flatMap: (id, n) =>
           combined.get(id).map(footnote =>
             id -> remapped(footnote, id, n + 1, FootnoteScope.Table(k))
           )
     (documentEmitted ++ tableEmitted).toMap
-
-  private def collectTableGroups(
-    element: Xml.Element,
-    insideTip: Boolean,
-    kinds: Map[String, Kind]
-  ): Seq[Seq[String]] =
-    if isCode(element) then Seq.empty
-    else
-      val nextTip: Boolean = insideTip || isTipClass(element)
-      if !nextTip && isLayoutTable(element) then
-        val nested: Seq[Seq[String]] =
-          element.flatMapElements(collectTableGroups(_, nextTip, kinds))
-        val mine: Seq[String] =
-          uniqueInOrder(element.flatMapElements(collectLocalLinks(_, nextTip)))
-            .filter(id => kinds.get(id).contains(Kind.Table))
-        if mine.isEmpty then nested else mine +: nested
-      else
-        element.flatMapElements(collectTableGroups(_, nextTip, kinds))
-
-  private def collectLocalLinks(element: Xml.Element, insideTip: Boolean): Seq[String] =
-    if isCode(element) then Seq.empty
-    else if element.hasClass("table-with-notes") then Seq.empty
-    else
-      val nextTip: Boolean = insideTip || isTipClass(element)
-      if !nextTip && isLayoutTable(element) then Seq.empty
-      else
-        val here: Seq[String] =
-          Option.when(!nextTip && isLink(element))(getCorrelationId(element)).toSeq
-        here ++ element.flatMapElements(collectLocalLinks(_, nextTip))
 
   private def wrapTables(
     element: Xml.Element,
@@ -319,8 +287,11 @@ object Footnote:
       )
       if nextTip || !isLayoutTable(withChildren) then withChildren
       else
-        val ids: Seq[String] = uniqueInOrder(collectLocalLinksFromTable(withChildren)).filter: id =>
-          footnotes.get(id).exists(isTableScope)
+        val ids: Seq[String] = collectOccurrences(withChildren)
+          .flatMap: (id, loc) =>
+            Option.when(loc.exists(_ eq withChildren))(id)
+          .distinct
+          .filter(id => footnotes.get(id).exists(isTableScope))
         if ids.isEmpty then withChildren
         else
           val notes: Seq[Footnote] = ids.flatMap(footnotes.get)
@@ -333,9 +304,6 @@ object Footnote:
             .element(XmlElement.Div)
             .addClass("table-with-notes")
             .setChildren(Seq(withChildren: Xml.Node, list: Xml.Node))
-
-  private def collectLocalLinksFromTable(table: Xml.Element): Seq[String] =
-    table.flatMapElements(collectLocalLinks(_, insideTip = false))
 
   private def isLayoutTable(element: Xml.Element): Boolean =
     element.isElement(XmlElement.Table) &&
@@ -391,22 +359,19 @@ final class Footnote(
 ):
   def label: String = scope match
     case FootnoteScope.Document => number.toString
-    case FootnoteScope.Table(_) | FootnoteScope.Nested(_) => Footnote.letterLabel(number - 1)
+    case FootnoteScope.Table(_) => Footnote.letterLabel(number - 1)
 
   private def linkId: String = scope match
     case FootnoteScope.Document => s"_footnote_src_$number"
     case FootnoteScope.Table(k) => s"_table_${k}_fn_src_$label"
-    case FootnoteScope.Nested(parentId) => s"_nested_${parentId}_src_$label"
 
   private def bodyId: String = scope match
     case FootnoteScope.Document => s"_footnote_$number"
     case FootnoteScope.Table(k) => s"_table_${k}_fn_$label"
-    case FootnoteScope.Nested(parentId) => s"_nested_${parentId}_$label"
 
   private def scopeName: Option[String] = scope match
     case FootnoteScope.Document => None
     case FootnoteScope.Table(_) => Some("table")
-    case FootnoteScope.Nested(_) => Some("nested")
 
   def link: Xml.Element =
     val result: Xml.Element = Xml

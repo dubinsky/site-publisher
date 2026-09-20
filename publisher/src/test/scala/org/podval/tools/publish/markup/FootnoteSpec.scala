@@ -345,6 +345,30 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(!dumped.contains("""id="_footnote_1""""), dumped)
   }
 
+  test("two ids in one table are a then b") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Xml.element(XmlElement.Table).setChildren(Chunk(
+        Xml.element(XmlElement.Tr).setChildren(Chunk(
+          Xml.element(XmlElement.Td).setChildren(Chunk(Footnote.link("x"))),
+          Xml.element(XmlElement.Td).setChildren(Chunk(Footnote.link("y")))
+        ))
+      )),
+      Footnote.body("x", Chunk(Xml.text("letter a"))),
+      Footnote.body("y", Chunk(Xml.text("letter b")))
+    ))
+    val finished: Xml.Element = finishTables(xml)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
+    assert(dumped.contains("""id="_table_1_fn_b""""), dumped)
+    assert(dumped.contains("letter a"), dumped)
+    assert(dumped.contains("letter b"), dumped)
+    assert(!dumped.contains("_table_2"), dumped)
+    val wrappers: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("table-with-notes"))(el)
+    )
+    assert(wrappers.size == 1, dumped)
+  }
+
   test("two tables restart letters at a") {
     val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
       cellTable(Chunk(Footnote.link("x"))),
@@ -417,6 +441,48 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(reporter.errors.exists(_._1 eq PageError.FootnoteScopeConflict), reporter.errors)
     assert(!dumped.contains("table-with-notes"), dumped)
     assert(dumped.contains("""id="_footnote_1""""), dumped)
+  }
+
+  test("conflicted table does not consume k") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("conflict"),
+      cellTable(Chunk(Footnote.link("conflict"))),
+      cellTable(Chunk(Footnote.link("clean"))),
+      Footnote.body("conflict", Chunk(Xml.text("arabic"))),
+      Footnote.body("clean", Chunk(Xml.text("letter")))
+    ))
+    val reporter: RecordingReporter = RecordingReporter()
+    val finished: Xml.Element = finishTables(xml, reporter)
+    val dumped: String = render(finished)
+    assert(reporter.errors.exists(_._1 eq PageError.FootnoteScopeConflict), reporter.errors)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("arabic"), dumped)
+    assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
+    assert(dumped.contains("letter"), dumped)
+    assert(!dumped.contains("_table_2"), dumped)
+    val wrappers: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("table-with-notes"))(el)
+    )
+    assert(wrappers.size == 1, dumped)
+  }
+
+  test("finish with localTables false keeps a layout table arabic") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      cellTable(Chunk(Footnote.link("a"))),
+      Footnote.body("a", Chunk(Xml.text("chrome")))
+    ))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(!dumped.contains("table-with-notes"), dumped)
+    assert(!dumped.contains("table-footnotes"), dumped)
+    assert(!dumped.contains("_table_"), dumped)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("chrome"), dumped)
+    val lists: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnotes"))(el)
+    )
+    assert(lists.size == 1, dumped)
+    assert(!lists.head.hasClass("table-footnotes"), dumped)
   }
 
   test("finishFootnotes on collection-index does not letter abstracts") {
