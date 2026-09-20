@@ -13,16 +13,17 @@ This file is about how to *use* the generator and the *syntax* of each construct
 [#usage]
 == Usage
 
-The source directory must contain `_site_config.yml`. Pass that directory as the only positional argument:
+The source directory must contain `_site_config.yml`.
+Pass that directory as the only positional argument:
 
 ----
 ./gradlew run --args="/path/to/source-directory"
 ----
 
 `--serve` generates and leaves the HTTP server running (same as IntelliJ `@main def generate()`).
-`--log-level` defaults to `INFO`. `--treat-errors-as-warnings`, `--include-drafts`, `--production`,
-and `--target-directory-name` are the other flags. `SITE_PUBLISHER_*` environment variables are the
-same names with hyphens turned into underscores.
+`--log-level` defaults to `INFO`.
+`--treat-errors-as-warnings`, `--include-drafts`, `--production`, and `--target-directory-name` are the other flags.
+`SITE_PUBLISHER_*` environment variables are the same names with hyphens turned into underscores.
 
 `./gradlew build` compiles and tests; `./gradlew test` runs tests only.
 
@@ -31,10 +32,11 @@ Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.2.0`
 [#gradle-plugin]
 === Gradle plugin
 
-A site with Gradle applies plugin id `org.podval.tools.site-publisher` (same version as the
-library). The plugin adds a detached `sitePublisher` configuration and two `JavaExec` tasks that
-run `org.podval.tools.publish.site.Site`. Do not put the library on `implementation`: Scala version
-and Playwright stay off the project compile classpath, and off the Gradle daemon.
+A site with Gradle applies plugin id `org.podval.tools.site-publisher` (same version as the library).
+The plugin adds a detached `sitePublisher` configuration and two `JavaExec` tasks that run
+`org.podval.tools.publish.site.Site`.
+Do not put the library on `implementation`: Scala version and Playwright stay off the project compile classpath, and off
+the Gradle daemon.
 
 ----
 plugins {
@@ -46,11 +48,12 @@ site {
 }
 ----
 
-`pluginManagement.repositories` must include `mavenCentral()` (the plugin marker is published
-there) as well as `gradlePluginPortal()` for other plugins such as Foojay.
+`pluginManagement.repositories` must include `mavenCentral()` (the plugin marker is published there) as well as
+`gradlePluginPortal()` for other plugins such as Foojay.
 
-`./gradlew generateSite` writes the target directory. `./gradlew serveSite` is the same with
-`--serve`. Do not make `generateSite` a dependency of `build`; Pages CI calls it explicitly.
+`./gradlew generateSite` writes the target directory.
+`./gradlew serveSite` is the same with `--serve`.
+Do not make `generateSite` a dependency of `build`; Pages CI calls it explicitly.
 OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables }`.
 
 `site { }` maps to CLI flags (defaults match `SiteOptions`):
@@ -64,19 +67,18 @@ OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables 
 | `includeDrafts` | `false` | `--include-drafts` |
 | `production` | `false` | `--production` |
 
-Both tasks set `--enable-native-access=ALL-UNNAMED`,
-`--sun-misc-unsafe-memory-access=allow`, `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`, and
-`PLAYWRIGHT_BROWSERS_PATH=$GRADLE_USER_HOME/ms-playwright`. `generateSite` launches Java 25.
-Its inputs are the source tree minus the target directory and Gradle `build/`; its output is the
-target directory, so Gradle up-to-date can skip a run when sources are unchanged. The generator
-still deletes and rewrites the target when the task runs.
+Both tasks set `--enable-native-access=ALL-UNNAMED`, `--sun-misc-unsafe-memory-access=allow`,
+`PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`, and `PLAYWRIGHT_BROWSERS_PATH=$GRADLE_USER_HOME/ms-playwright`.
+`generateSite` launches Java 25.
+Its inputs are the source tree minus the target directory and Gradle `build/`; its output is the target directory, so
+Gradle up-to-date can skip a run when sources are unchanged.
+The generator still deletes and rewrites the target when the task runs.
 
-The plugin adds the library as a **default** dependency of the `sitePublisher` configuration, at
-the same version as the plugin (`org.podval.tools:org.podval.tools.publisher:0.2.0`). Gradle
-`defaultDependencies` run only when that configuration is still empty, so a consumer can pick
-another published library version by declaring `sitePublisher` themselves (there is no
-`site.publisherVersion`). Do not add a second coordinate alongside the default — a non-empty
-configuration replaces the default entirely:
+The plugin adds the library as a **default** dependency of the `sitePublisher` configuration, at the same version as the
+plugin (`org.podval.tools:org.podval.tools.publisher:0.2.0`).
+Gradle `defaultDependencies` run only when that configuration is still empty, so a consumer can pick another published
+library version by declaring `sitePublisher` themselves (there is no `site.publisherVersion`).
+Do not add a second coordinate alongside the default — a non-empty configuration replaces the default entirely:
 
 ----
 dependencies {
@@ -84,16 +86,17 @@ dependencies {
 }
 ----
 
-The supported pair is the same version as the plugin. An older library may not accept flags the
-plugin always passes; a newer one is usually fine. A local settings-body `includeBuild` of this repo substitutes
-the library **module** for whatever version string was requested.
+The supported pair is the same version as the plugin.
+An older library may not accept flags the plugin always passes; a newer one is usually fine.
+A local settings-body `includeBuild` of this repo substitutes the library **module** for whatever version string was
+requested.
 
-Site workflows: checkout, setup-java 25, setup-gradle, cache `~/.gradle/ms-playwright`,
-`./gradlew generateSite` (or `:docs:generateSite`), upload `_site` / `docs/_site`, deploy Pages.
-Pin the plugin version in `build.gradle`. Known sites apply the plugin and call `./gradlew generateSite`
-(or `:docs:generateSite`). GitHub Actions can still call
-`dubinsky/site-publisher/.github/actions/generate@v0.1.0` for repos that do not apply the plugin
-(pin the action tag; optional `version` input overrides that action checkout’s `gradle.properties`).
+Site workflows: checkout, setup-java 25, setup-gradle, cache `~/.gradle/ms-playwright`, `./gradlew generateSite` (or
+`:docs:generateSite`), upload `_site` / `docs/_site`, deploy Pages.
+Pin the plugin version in `build.gradle`.
+Known sites apply the plugin and call `./gradlew generateSite` (or `:docs:generateSite`).
+GitHub Actions can still call `dubinsky/site-publisher/.github/actions/generate@v0.1.0` for repos that do not apply the
+plugin (pin the action tag; optional `version` input overrides that action checkout’s `gradle.properties`).
 
 Sites using this publisher:
 
@@ -107,14 +110,15 @@ Sites using this publisher:
 [#dogfooding]
 === Dogfooding an unreleased publisher
 
-This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those
-checkouts exist (`-PxmlDir=` / `-PopentorahDir=`).
+This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those checkouts exist
+(`-PxmlDir=`
+/ `-PopentorahDir=`).
 
-A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **two**
-`includeBuild`s of the same directory: `pluginManagement` (plugin id; pass a **String**, not a
-`File`) and the settings body (library child `org.podval.tools:org.podval.tools.publisher`).
-`pluginManagement` alone does not substitute the library now that it is not the included-build
-root. Do not use `mavenLocal()`.
+A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **two** `includeBuild`s of the
+same directory: `pluginManagement` (plugin id; pass a **String**, not a `File`) and the settings body (library child
+`org.podval.tools:org.podval.tools.publisher`).
+`pluginManagement` alone does not substitute the library now that it is not the included-build root.
+Do not use `mavenLocal()`.
 
 ----
 pluginManagement {
@@ -138,12 +142,11 @@ if (publisherDir.isDirectory() && new File(publisherDir, 'settings.gradle').isFi
 }
 ----
 
-Override with `-PsitePublisherDir=`. OpenTorah / MathWorlds defaults stay
-`../../Podval/site-publisher`. When the directory is missing (CI), Gradle resolves the plugin and
-the library from Maven Central.
+Override with `-PsitePublisherDir=`.
+OpenTorah / MathWorlds defaults stay `../../Podval/site-publisher`.
+When the directory is missing (CI), Gradle resolves the plugin and the library from Maven Central.
 
-Without a site-side plugin, generate from this repo:
-`./gradlew run --args="/path/to/source-directory"`.
+Without a site-side plugin, generate from this repo: `./gradlew run --args="/path/to/source-directory"`.
 
 [#publish]
 === Publish
@@ -153,16 +156,20 @@ Without a site-side plugin, generate from this repo:
 ./gradlew publishAggregationToCentralPortal
 ----
 
-The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), the plugin
-implementation (`org.podval.tools:site-publisher-plugin`), and the plugin marker
-(`org.podval.tools.site-publisher:org.podval.tools.site-publisher.gradle.plugin`). Same version.
+The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), the plugin implementation
+(`org.podval.tools:site-publisher-plugin`),
+and the plugin marker (`org.podval.tools.site-publisher:org.podval.tools.site-publisher.gradle.plugin`).
+Same version.
 Plugin Portal: `./gradlew :site-publisher-plugin:publishPlugins`.
 
 Then release the Central deployment at https://central.sonatype.com/publishing/deployments .
 
-TODO after a release that includes `asset: true` is on Maven Central: bump `sitePublisherVersion` in `~/CognoMath/mathworlds-site` if needed and push that repo (`index.yml` copies `index.html`). Do not push MathWorlds before then; CI resolves the publisher from Central.
+TODO after a release that includes `asset: true` is on Maven Central: bump `sitePublisherVersion` in
+`~/CognoMath/mathworlds-site` if needed and push that repo (`index.yml` copies `index.html`).
+Do not push MathWorlds before then; CI resolves the publisher from Central.
 
-Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as `home`):
+Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as
+`home`):
 
 ----
 header-pages:
@@ -172,21 +179,30 @@ header-pages:
   - graph
 ----
 
-Omitted or empty means no header links (up/prev/next and format icons still appear). Unknown entries are recorded on the Errors page.
+Omitted or empty means no header links (up/prev/next and format icons still appear).
+Unknown entries are recorded on the Errors page.
 
-Optional `facsimiles-url` is the base URL of a facsimile JPEG site (trailing slash as in the collector `tei@facsimilesUrl`). Omitted means none. See <<facsimiles>>.
+Optional `facsimiles-url` is the base URL of a facsimile JPEG site (trailing slash as in the collector
+`tei@facsimilesUrl`).
+Omitted means none.
+See <<facsimiles>>.
 
 ----
 facsimiles-url: https://storage.googleapis.com/facsimiles.alter-rebbe.org/
 ----
 
-Optional `tei-default-calendar` is `julian` or `gregorian` (default `gregorian`). TEI `date/@when` numbers are in that calendar unless the element has `calendar="#julian"`. See <<tei-dates>>.
+Optional `tei-default-calendar` is `julian` or `gregorian` (default `gregorian`).
+TEI `date/@when` numbers are in that calendar unless the element has `calendar="#julian"`.
+See <<tei-dates>>.
 
 ----
 tei-default-calendar: julian
 ----
 
-Optional `named-windows` (default off) reuses four collector window names so collection, names, transcription, and facsimile can sit in separate tabs. Internal links `target` the destination viewer; each page sets `window.name`. Other sites should leave it off.
+Optional `named-windows` (default off) reuses four collector window names so collection, names, transcription, and
+facsimile can sit in separate tabs.
+Internal links `target` the destination viewer; each page sets `window.name`.
+Other sites should leave it off.
 
 ----
 named-windows: true
@@ -196,7 +212,8 @@ named-windows: true
 [#summary]
 == Summary
 
-This here is a static site generator. It:
+This here is a static site generator.
+It:
 
 - is <<opinionated>>;
 - recognizes various <<markup>> languages;
@@ -235,8 +252,7 @@ Supported markup constructs:
 [#opinionated]
 == Opinionated
 
-Since I am writing this site generator for my own use,
-it is going to be opinionated:
+Since I am writing this site generator for my own use, it is going to be opinionated:
 
 - everything is written in Scala
 - no plugins
@@ -255,52 +271,77 @@ Recognized by extension:
 - AsciiDoc (`.adoc`)
 - HTML (`.html`)
 - TEI (`.xml` with a TEI root: `TEI`, `store`, `collection`, `person`, `place`, `org`)
-- DocBook (`.xml` with a DocBook root: `article`, `book`, `chapter`, `appendix`, `part`, `set`, `preface`, `refentry`, `topic`)
+- DocBook (`.xml` with a DocBook root: `article`, `book`, `chapter`, `appendix`, `part`, `set`, `preface`, `refentry`,
+  `topic`)
 
 [#frontmatter]
 == Frontmatter
 
-Internal (YAML between `---` lines in the markup file) or external (same basename, `.yaml` / `.yml`). Do not use both.
+Internal (YAML between `---` lines in the markup file) or external (same basename, `.yaml` / `.yml`).
+Do not use both.
 
-Obsidian treats internal YAML as https://help.obsidian.md/properties[Properties]; it stores extra keys but does not interpret this publisher's fields (`chunk`, `bibliography`, `csl`, …).
+Obsidian treats internal YAML as https://help.obsidian.md/properties[Properties]; it stores extra keys but does not
+interpret this publisher's fields (`chunk`, `bibliography`, `csl`, …).
 
-Set `title` in front matter only when it differs from the file name. Both the file name and the title are used for link resolution. If the document also has a title (`h1`, AsciiDoc `=`, TEI/DocBook title), it must match the front matter `title`; a mismatch is recorded on the Errors page.
+Set `title` in front matter only when it differs from the file name.
+Both the file name and the title are used for link resolution.
+If the document also has a title (`h1`, AsciiDoc `=`, TEI/DocBook title), it must match the front matter `title`; a
+mismatch is recorded on the Errors page.
 
 Useful fields:
 
 - `chunk` / `chunk-depth` — see <<chunking>>
 - `bibliography` / `csl` / `lang` — see <<bibliography>>
 - `toc-depth`
-- `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback. Site `lang` also selects store and selector display names (publisher `Selector.xml`, TEI `<name lang>`); omitted is `en`.
+- `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback.
+  Site `lang` also selects store and selector display names (publisher `Selector.xml`, TEI `<name lang>`); omitted is
+  `en`.
 - `tags`, `categories`, `aliases`
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
-- `asset` — copy the markup file as an asset (no dialect processing, no site chrome). Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …) with `asset: true`. The sidecar is not published. Internal `---` `asset: true` is an error (the file stays markup). A directory `index` so marked stays a directory page (parent/children) but `write` copies the file (no listing, no chrome).
+- `asset` — copy the markup file as an asset (no dialect processing, no site chrome).
+  Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …) with
+  `asset: true`.
+  The sidecar is not published.
+  Internal `---` `asset: true` is an error (the file stays markup).
+  A directory `index` so marked stays a directory page (parent/children) but `write` copies the file (no listing, no
+  chrome).
 
-`permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL. When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf bookmark. A remainder under a non-directory alias does not resolve. A last-dot suffix in a href that is all digits is part of the name (`255.2`), not a file extension.
+`permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL.
+When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki
+`+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf
+bookmark.
+A remainder under a non-directory alias does not resolve.
+A last-dot suffix in a href that is all digits is part of the name (`255.2`), not a file extension.
 
 [#page-names]
 == Page Names
-Jekyll relies on page titles being given explicitly in the front matter
-and ignores the file names; I had to use a TODO Obsidian plugin to set the
-titles from the file names to communicate them to Jekyll;
-as a result, pages where the title is different from the file name
-(e.g., `index` pages)
-had to be marked with TODO in their front matter to disable this plugin
-from setting the front matter title.
+Jekyll relies on page titles being given explicitly in the front matter and ignores the file names; I had to use a TODO
+Obsidian plugin to set the titles from the file names to communicate them to Jekyll; as a result, pages where the title
+is different from the file name (e.g., `index` pages) had to be marked with TODO in their front matter to disable this
+plugin from setting the front matter title.
 
-My plugin uses both the front matter title and the file name for
-link resolution, so I can remove this Obsidian plugin and
-redundant front matter titles which are the same as the file name,
-and set the title in the front matter only when it is different from the file name.
+My plugin uses both the front matter title and the file name for link resolution, so I can remove this Obsidian plugin
+and redundant front matter titles which are the same as the file name, and set the title in the front matter only when
+it is different from the file name.
 
-Obsidian uses file names exclusively and ignores the front matter title;
-for link resolution to use front matter titles also,
-TODO Obsidian plugin needs to be installed.
+Obsidian uses file names exclusively and ignores the front matter title; for link resolution to use front matter titles
+also, TODO Obsidian plugin needs to be installed.
 
-Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian. Block ids: `^id` at the end of a paragraph, or on its own line after a list, table, quote, or code block (blank line before the id). Link with `+++[[note#^id]]+++`.
+Wiki links (`+++[[…]]+++`, including `+++[[note|text]]+++` and `+++[[#id]]+++`) are native Obsidian.
+Block ids: `^id` at the end of a paragraph, or on its own line after a list, table, quote, or code block (blank line
+before the id).
+Link with `+++[[note#^id]]+++`.
 
-Obsidian embeds of **pages** (`+++![[note]]+++`, `+++![[note#heading]]+++`, `+++![[note#^block]]+++`) copy that authored region into the host (any markup on the target). The copy is a boxed `aside.transclusion` whose header is a link to the source (`Notes Title` or `Notes Title § heading`). The gear **Settings** checkbox **Seamless transclusions** hides the box and header (`html.transclusion-clean`). A missing heading or block is an error (not a silent whole-page embed). Footnotes inside a transcluded region are merged and numbered with the host. Media embeds (`+++![[file.pdf]]+++`, images, audio, video) are unchanged. AsciiDoc `include::` and TEI/DocBook `xi:include` are not this feature.
+Obsidian embeds of **pages** (`+++![[note]]+++`, `+++![[note#heading]]+++`, `+++![[note#^block]]+++`) copy that authored
+region into the host (any markup on the target).
+The copy is a boxed `aside.transclusion` whose header is a link to the source (`Notes Title` or
+`Notes Title § heading`).
+The gear **Settings** checkbox **Seamless transclusions** hides the box and header (`html.transclusion-clean`).
+A missing heading or block is an error (not a silent whole-page embed).
+Footnotes inside a transcluded region are merged and numbered with the host.
+Media embeds (`+++![[file.pdf]]+++`, images, audio, video) are unchanged.
+AsciiDoc `include::` and TEI/DocBook `xi:include` are not this feature.
 
 Wiki links in Obsidian:
 
@@ -313,9 +354,21 @@ Wiki links in Obsidian:
 [#entities]
 == Entities
 
-A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root. The entity id is the file name without `.xml` (`name/alter-rebbe.xml` → `alter-rebbe`). The file may sit anywhere in the tree.
+A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is that root.
+The entity id is the file name without `.xml` (`name/alter-rebbe.xml` → `alter-rebbe`).
+The file may sit anywhere in the tree.
 
-`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is exactly that id (not a path, not the displayed name, not a title). A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page. Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`, `/errors.html#no-ref`). That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the name elements that define an entity file. TEI `unclear` is `/errors.html#unclear`. An entity file whose name is not the first name with spaces turned into underscores is `/errors.html#misnamed-entity`. Each kind on the Errors page is a fragment (`AmbiguousTitle` → `#ambiguous-title`). When more than one kind is present, a TOC links to those fragments.
+`persName`, `placeName`, and `orgName` with a non-empty `@ref` resolve to an entity when the kinds match and `@ref` is
+exactly that id (not a path, not the displayed name, not a title).
+A kind mismatch or unknown id is an unresolved internal link and is recorded on the Errors page.
+Without `@ref`, the name is left as-is (not a link) and is recorded on the Errors page (`name without @ref`,
+`/errors.html#no-ref`).
+That check runs on the first parse of TEI documents and of store/collection `title` / `abstract` / `body` — not on the
+name elements that define an entity file.
+TEI `unclear` is `/errors.html#unclear`.
+An entity file whose name is not the first name with spaces turned into underscores is `/errors.html#misnamed-entity`.
+Each kind on the Errors page is a fragment (`AmbiguousTitle` → `#ambiguous-title`).
+When more than one kind is present, a TOC links to those fragments.
 
 [source,xml]
 ----
@@ -324,20 +377,34 @@ A TEI file whose root is `person`, `place`, or `org` is an entity; the kind is t
 <orgName ref="Виленский_кагал">виленский кагал</orgName>
 ----
 
-Wiki `+++[[alter-rebbe]]+++` still finds the entity page by file name. Entity refs do not title-walk, so a markdown page titled `alter-rebbe` does not steal `persName ref="alter-rebbe"`.
+Wiki `+++[[alter-rebbe]]+++` still finds the entity page by file name.
+Entity refs do not title-walk, so a markdown page titled `alter-rebbe` does not steal `persName ref="alter-rebbe"`.
 
-A TEI `entityLists` file is a catalog of buckets, not a store include list. Beside a directory (`name.xml` next to `name/`) it is that directory's index (`/name/index.html`). Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
+A TEI `entityLists` file is a catalog of buckets, not a store include list.
+Beside a directory (`name.xml` next to `name/`) it is that directory's index (`/name/index.html`).
+Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
 
 - the list kind is the element (`listPerson` → `person` files);
 - `@n` is the list id (`/name/{n}.html` when the catalog has two or more non-empty lists);
-- `@role` present: entities of that kind whose root `@role` matches, anywhere in the site; omitted: entities of that kind with no role;
+- `@role` present: entities of that kind whose root `@role` matches, anywhere in the site; omitted: entities of that
+  kind with no role;
 - `<title>` on the list is the list page title; a direct child `<title>` of `entityLists` is the catalog page title.
 
-Empty lists are omitted. Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName` / `orgName`. The entity page `<h1>` / `<title>` is that first name, not the file name. Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the source sits under one); the catalog itself is not a backlink source.
+Empty lists are omitted.
+Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName`
+/ `orgName`.
+The entity page `<h1>` / `<title>` is that first name, not the file name.
+Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the
+source sits under one); the catalog itself is not a backlink source.
 
-When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not inlined). A catalog with a single non-empty list *is* that list (no `{n}` subpage). Several `entityLists` files are independent catalogs.
+When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not
+inlined).
+A catalog with a single non-empty list *is* that list (no `{n}` subpage).
+Several `entityLists` files are independent catalogs.
 
-The catalog directory is an identity prefix in `collection-aliases.json` (`/name` → `/name/index.html`, `/name/{id}` → `/name/{id}.html`), the same Worker mechanism as collection aliases. There is no synthetic `/name.html` dump.
+The catalog directory is an identity prefix in `collection-aliases.json` (`/name` → `/name/index.html`, `/name/{id}` →
+`/name/{id}.html`), the same Worker mechanism as collection aliases.
+There is no synthetic `/name.html` dump.
 
 [source,xml]
 ----
@@ -354,29 +421,80 @@ The catalog directory is an identity prefix in `collection-aliases.json` (`/name
 
 Root `/` is `index.md` / `index.adoc`, or a synthesized listing of that folder.
 
-To open at a specific page instead, set `home` in `_site_config.yml` to an absolute site path. If the document is chunked, use the TOC (`P/index.html`):
+To open at a specific page instead, set `home` in `_site_config.yml` to an absolute site path.
+If the document is chunked, use the TOC (`P/index.html`):
 
 ----
 home: /book/book/index.html
 ----
 
-`/index.html` is then a meta Refresh to that page (not an HTTP 301). Do not also author `index.md` / `index.adoc`. Other root files stay on the site; they are just not listed at `/`.
+`/index.html` is then a meta Refresh to that page (not an HTTP 301).
+Do not also author `index.md` / `index.adoc`.
+Other root files stay on the site; they are just not listed at `/`.
 
-Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are an optional `alias` on the TEI `store` / `collection` root, not site config and not front-matter `permalink`:
+Collection short names (collector `site.xml` `<alias n="rgada" to="…"/>`) are an optional `alias` on the TEI `store` /
+`collection` root, not site config and not front-matter `permalink`:
 
 ----
 <collection n="3140" directory="3140" alias="rgada">
 ----
 
-`alias` is the URL prefix (`/rgada`, `/rgada/003`). The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap), and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`. Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>). Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
+`alias` is the URL prefix (`/rgada`, `/rgada/003`).
+The publisher does not write a Refresh file at `/rgada.html`; `Pages.find`, emitted hrefs (including canonical/sitemap),
+and `serve()` rewrite `/rgada/003` to the written `…/3140/003.html`.
+Inbound old collector facsimile URLs `/rgada/facsimile/003` rewrite the same way (see <<facsimiles>>).
+Front-matter `permalink` / `aliases` remain for leaf Refresh pages.
 
-Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker. The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`. Entity-lists catalogs are an identity prefix (`/name` → `/name/index.html`). Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker. Deploy with `.github/actions/deploy-alias-worker`. Canonical entity hrefs stay the file path (`/name/{id}.html` when the file lives under `name/`).
+Generate also writes `collection-aliases.json` (segment `from` → collection directory `to`) for a Cloudflare Worker.
+The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already
+has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`.
+Entity-lists catalogs are an identity prefix (`/name` → `/name/index.html`).
+Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker.
+Deploy with `.github/actions/deploy-alias-worker`.
+Canonical entity hrefs stay the file path (`/name/{id}.html` when the file lives under `name/`).
 
-A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that directory, and emitted hrefs use the short path.
+A directory permalink (an `index` or TEI store/collection) is also a prefix: `/short/child` resolves under that
+directory, and emitted hrefs use the short path.
 
-A TEI `store` file in the source root (`archive.xml` next to `archive/`) also gets two synthetic indexes, named from the file: `{name}-collections.html` (nested tree of child stores and collections, collector `/collections`) and `{name}-index.html` (flat list of descendant collections, collector `/`). Titles come from this project’s `Selector.xml` catalog in the site `lang` (omitted `lang` is `en`): the store’s `by/@selector` title for the tree (`archive` → Архивы when `lang` is `ru`) and the `case` selector title for the flat list (Дела). When there is exactly one such root store, `/collections` rewrites to the tree page (no Refresh file; Worker table includes it). Point `header-pages` at `{name}-collections` and `home` at `/{name}-index.html` when those should be chrome / the landing page.
+A TEI `store` file in the source root (`archive.xml` next to `archive/`) also gets two synthetic indexes, named from the
+file: `{name}-collections.html` (nested tree of child stores and collections, collector `/collections`) and
+`{name}-index.html` (flat list of descendant collections, collector `/`).
+Titles come from this project’s `Selector.xml` catalog in the site `lang` (omitted `lang` is `en`): the store’s
+`by/@selector` title for the tree (`archive` → Архивы when `lang` is `ru`) and the `case` selector title for the flat
+list (Дела).
+When there is exactly one such root store, `/collections` rewrites to the tree page (no Refresh file; Worker table
+includes it).
+Point `header-pages` at `{name}-collections` and `home` at `/{name}-index.html` when those should be chrome / the
+landing page.
 
-A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index. A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the default width. Store indexes and documents under the collection do not. `xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined. Store children are listed in include order (`name: title`). A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not a page list. Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book` (numeric). A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip translations. `text/@xml:lang` must match the suffix. The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then `abstract`/`body` and the `by/@selector` label. A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому, Расшифровка). The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>. Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`). Documents under a store or collection use the same header. A scanned file under that directory that is not named in the includes is an error (translations are not). Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up` skips them. Missing `pb@missing` photos are listed under the table. Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the <<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
+A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index.
+A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the
+default width.
+Store indexes and documents under the collection do not.
+`xi:include/@href` (relative to the store file) is an ordered child reference, not XInclude: the target is not inlined.
+Store children are listed in include order (`name: title`).
+A `collection` body is `table.collection-index` (Описание, Дата, Кто, Кому, Язык, Документ, Страницы, Расшифровка), not
+a page list.
+Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book`
+(numeric).
+A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык
+is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip
+translations.
+`text/@xml:lang` must match the suffix.
+The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then
+`abstract`/`body` and the `by/@selector` label.
+A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
+Расшифровка).
+The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>.
+Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml`
+(`page.Selectors`).
+Documents under a store or collection use the same header.
+A scanned file under that directory that is not named in the includes is an error (translations are not).
+Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up`
+skips them.
+Missing `pb@missing` photos are listed under the table.
+Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the
+<<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
 
 - directory structure
 - navigation
@@ -386,32 +504,55 @@ A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`)
 [#tei-dates]
 == TEI dates
 
-A TEI `<date when="…">` (and the same on a date range written in `@when` with `..`) gets a hover table of the day in Julian (when used), Gregorian, and Jewish calendars. Month names follow the site `lang`.
+A TEI `<date when="…">` (and the same on a date range written in `@when` with `..`) gets a hover table of the day in
+Julian (when used), Gregorian, and Jewish calendars.
+Month names follow the site `lang`.
 
-`@when` is ISO-ish: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`. A year or month is an interval (first day .. last day). An explicit range uses `..`; the right-hand side may be shorter (`1800-11-15..16`, `1800-11..12`).
+`@when` is ISO-ish: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`.
+A year or month is an interval (first day .. last day).
+An explicit range uses `..`; the right-hand side may be shorter (`1800-11-15..16`, `1800-11..12`).
 
 The numbers in `@when` are Gregorian unless:
 
 - the element has `calendar="#julian"`, or
 - `_site_config.yml` has `tei-default-calendar: julian` and there is no `@calendar`.
 
-Any other `@calendar` value is Gregorian. Dates without `@when` are unchanged. Invalid `@when` is a page error; the element is left as authored.
+Any other `@calendar` value is Gregorian.
+Dates without `@when` are unchanged.
+Invalid `@when` is a page error; the element is left as authored.
 
-The collection index and document-header Дата cell show `@when` as the visible text (not the authored wording). In-text dates keep their authored content.
+The collection index and document-header Дата cell show `@when` as the visible text (not the authored wording).
+In-text dates keep their authored content.
 
 [#tei-gap]
 == TEI `gap`
 
-A TEI `<gap reason="…">` with a non-empty `@reason` gets a hover tip with that text (same family as dates). Missing or blank `@reason` leaves the element as-is. Existing `tei.css` rules for `gap` (`lost` / `illegible` brackets) still apply.
+A TEI `<gap reason="…">` with a non-empty `@reason` gets a hover tip with that text (same family as dates).
+Missing or blank `@reason` leaves the element as-is.
+Existing `tei.css` rules for `gap` (`lost` / `illegible` brackets) still apply.
 
 [#facsimiles]
 == Facsimiles
 
-When `_site_config.yml` has `facsimiles-url`, each TEI document with at least one non-missing `pb` gets a viewer at `P/facsimile.html` (published `/alias/P/facsimile.html` when the collection has `alias`). Photos scroll in a pane under the header (the window is the size; there is no inner `resize` box). Old collector bookmarks `/alias/facsimile/P` (and `/alias/facsimile/P.html`) still resolve to that viewer, including translation `/alias/facsimile/P-xx` (shared original). `#p{n}` fragments are unchanged. New pages emit only the new URL.
+When `_site_config.yml` has `facsimiles-url`, each TEI document with at least one non-missing `pb` gets a viewer at
+`P/facsimile.html` (published `/alias/P/facsimile.html` when the collection has `alias`).
+Photos scroll in a pane under the header (the window is the size; there is no inner `resize` box).
+Old collector bookmarks `/alias/facsimile/P` (and `/alias/facsimile/P.html`) still resolve to that viewer, including
+translation `/alias/facsimile/P-xx` (shared original).
+`#p{n}` fragments are unchanged.
+New pages emit only the new URL.
 
-The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`. A trailing slash on the config value is optional. `pb@facs` overrides that URL. Missing `pb@missing` pages are omitted from the scroller.
+The JPEG for `pb@n` is `{facsimiles-url}{directory of the TEI file}/{n}.jpg`.
+A trailing slash on the config value is optional.
+`pb@facs` overrides that URL.
+Missing `pb@missing` pages are omitted from the scroller.
 
-In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment, `target="facsimile"` (`facsimileViewer` when `named-windows` is on). The site-header format icon does the same without a fragment. Collection **Страницы** is page numbers on the transcription `#p{n}` only. Each photo in the viewer links back to that `pb` in the transcription (`target="text"` / `textViewer`). `{base}-{xx}` translations share the original's viewer.
+In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment,
+`target="facsimile"` (`facsimileViewer` when `named-windows` is on).
+The site-header format icon does the same without a fragment.
+Collection **Страницы** is page numbers on the transcription `#p{n}` only.
+Each photo in the viewer links back to that `pb` in the transcription (`target="text"` / `textViewer`).
+`{base}-{xx}` translations share the original's viewer.
 
 Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
 
@@ -422,37 +563,51 @@ Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Ст�
 - auto-post (same file name)
 - permalink (any file name)
 
-Front matter `description` is the post teaser: Atom `<summary>` and, when present, a `p.post-excerpt` on every `/posts` batch. Not auto-cut from the body. Site `description` is not used here (SEO still falls back to it).
+Front matter `description` is the post teaser: Atom `<summary>` and, when present, a `p.post-excerpt` on every `/posts`
+batch.
+Not auto-cut from the body.
+Site `description` is not used here (SEO still falls back to it).
 
 [#paging]
 == Paging
 
-The `/posts` listing only. In `_site_config.yml`:
+The `/posts` listing only.
+In `_site_config.yml`:
 
 ----
 paginate-posts: 10
 ----
 
-Omitted or less than 1 is off. Page 1 stays `/posts.html`; further batches are `/posts/2.html`, `/posts/3.html`. A `nav.pagination` sits under the list.
+Omitted or less than 1 is off.
+Page 1 stays `/posts.html`; further batches are `/posts/2.html`, `/posts/3.html`.
+A `nav.pagination` sits under the list.
 
 [#seo]
 == SEO
 
-No extra config. Each HTML page `<head>` gets a document title (`Page | Site title`; home is just the site title), `meta name="generator"` pointing at this publisher, description, author, canonical URL, Open Graph, a Twitter summary card, and JSON-LD (`WebSite` / `BlogPosting` / `WebPage`).
+No extra config.
+Each HTML page `<head>` gets a document title (`Page | Site title`; home is just the site title),
+`meta name="generator"` pointing at this publisher, description, author, canonical URL, Open Graph, a Twitter summary
+card, and JSON-LD (`WebSite` / `BlogPosting` / `WebPage`).
 
-Taken from existing fields: site `title`, `description`, `url`, `author`, `lang`, `social.twitter`; page `title`, `description`, `author`, `lang`, `date` (and git/`modified_time` for modified). No image, Facebook, or webmaster keys.
+Taken from existing fields: site `title`, `description`, `url`, `author`, `lang`, `social.twitter`; page `title`,
+`description`, `author`, `lang`, `date` (and git/`modified_time` for modified).
+No image, Facebook, or webmaster keys.
 
 [#graph]
 == Graph
 
 Off by default.
 When `_site_config.yml` has `graph.enabled: true`, generate writes `/graph.json` and `/graph.html`.
-`/graph.html` is a pan/zoom map of canonical authored pages and the resolved internal links between them (Cytoscape.js, loaded only on that page).
+`/graph.html` is a pan/zoom map of canonical authored pages and the resolved internal links between them (Cytoscape.js,
+loaded only on that page).
 Click a vertex to open the page (`named-windows` targets apply when that option is on).
 
 Vertices are authored pages with a source file: notes, posts, TEI documents, entities, stores, and entity-list catalogs.
-Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …) are not vertices; links to those views count as links to the owning page.
-Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions (`kind: transclude`).
+Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …) are not vertices;
+links to those views count as links to the owning page.
+Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions
+(`kind: transclude`).
 `include-transclusions` defaults to `true`; omit it or set it explicitly.
 Unresolved links stay on the Errors page, not as graph nodes.
 
@@ -468,7 +623,8 @@ graph:
 
 `exclude-path-prefixes` match the **source** path (`days/2020-10-23.md`, `archive/lvia/…`), not the published URL.
 Daily notes publish as `/YYYY/MM/DD/index.html`; TEI collection aliases publish as `/lvia1799-2/…`.
-A notes vault typically enables the graph and excludes the Obsidian daily-notes folder (`days` when that is the configured folder).
+A notes vault typically enables the graph and excludes the Obsidian daily-notes folder (`days` when that is the
+configured folder).
 A large TEI archive should leave the graph off, or exclude `archive` to keep only names and notes.
 
 Add `graph` to `header-pages` if you want a header link (there is no automatic icon).
@@ -484,18 +640,25 @@ chunk: true
 chunk-depth: 2
 ----
 
-`P.html` is the unsplit document (wiki `[[P]]` lands there). The split view is `P/index.html` (`P/` on a static host): preamble plus TOC, then `P/Section.html` for each chunk. File hrefs to `P/index.html` stay there; they are not rewritten to `P.html`. No directory listing is synthesized for `P/`.
+`P.html` is the unsplit document (wiki `[[P]]` lands there).
+The split view is `P/index.html` (`P/` on a static host): preamble plus TOC, then `P/Section.html` for each chunk.
+File hrefs to `P/index.html` stay there; they are not rewritten to `P.html`.
+No directory listing is synthesized for `P/`.
 
-When both views exist, the site header has icon links between them (list for chunked, file for one-page). Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
+When both views exist, the site header has icon links between them (list for chunked, file for one-page).
+Chunked TOC shows ancestors plus the current subtree; sibling branches are titles only.
 
 [#toc]
 == Table of contents
 
-A page with `chunk: true` or `toc-depth` gets a generated TOC at the top if none is marked in the body. A placeholder in the body is replaced with that TOC (the first one only) even without those keys; `toc-depth` still controls how deep it goes (default 2).
+A page with `chunk: true` or `toc-depth` gets a generated TOC at the top if none is marked in the body.
+A placeholder in the body is replaced with that TOC (the first one only) even without those keys; `toc-depth` still
+controls how deep it goes (default 2).
 
-Markdown:: Kramdown
-https://kramdown.gettalong.org/converter/html.html#automatic-table-of-contents-generation[`{:toc}`]
-on a list. The list (seed item included) is replaced. Ordered or unordered:
+Markdown:: Kramdown https://kramdown.gettalong.org/converter/html.html#automatic-table-of-contents-generation[`{:toc}`]
+  on a list.
+  The list (seed item included) is replaced.
+  Ordered or unordered:
 
 +
 [source,markdown]
@@ -509,9 +672,8 @@ on a list. The list (seed item included) is replaced. Ordered or unordered:
 +
 or `1. seed` / `{:toc}` for a numbered outline.
 
-A paragraph whose only text is `[TOC]` (any case) is the same placeholder
-(Typora, GitLab). It must be a top-level paragraph: not a link (`[TOC]: /url` then `[TOC]`),
-not in a list, quote, or code span.
+A paragraph whose only text is `[TOC]` (any case) is the same placeholder (Typora, GitLab).
+It must be a top-level paragraph: not a link (`[TOC]: /url` then `[TOC]`), not in a list, quote, or code span.
 
 HTML:: `<div class="toc-placeholder"></div>`.
 
@@ -520,7 +682,9 @@ AsciiDoc, TEI, and DocBook have no in-body placeholder; use `chunk` / `toc-depth
 [#pdf]
 == PDF
 
-Front matter `pdf: true` prints `P.html` to `P.pdf` (Chromium). The site header on `P.html` (and on chunked pages, if any) gets a PDF icon linking to it. The site header is hidden in print, so the PDF itself does not include those icons.
+Front matter `pdf: true` prints `P.html` to `P.pdf` (Chromium).
+The site header on `P.html` (and on chunked pages, if any) gets a PDF icon linking to it.
+The site header is hidden in print, so the PDF itself does not include those icons.
 
 
 [#tables]
@@ -585,7 +749,8 @@ HTML::
 [#task-lists]
 == Task Lists
 
-Unchecked `[ ]` and checked `[x]` items in a list. The static site shows disabled checkboxes.
+Unchecked `[ ]` and checked `[x]` items in a list.
+The static site shows disabled checkboxes.
 
 Markdown:: GFM / FlexMark Task List Extension (Obsidian supports them natively):
 +
@@ -625,6 +790,8 @@ HTML:: the IR shape (already a task list; no conversion):
 
 Hovering a footnote number shows the note; the numbered list is at the end of the (chunk of the) page.
 A note written with no space after the preceding word or element stays adjacent in the HTML.
+A marker in a table cell is published as a lowercase letter with the list under that table.
+Collector `collection-index` and `document-header` tables stay in the page arabic series.
 
 AsciiDoc:: inline note, or a named definition reused with an empty macro:
 +
@@ -634,7 +801,9 @@ See this footnote:[A note.]
 and again footnote:fn[Same note.] later footnote:fn[].
 ----
 
-Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later. Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]). Obsidian also has inline `^[…]` footnotes; this publisher does not.
+Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later.
+  Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]).
+  Obsidian also has inline `^[…]` footnotes; this publisher does not.
 +
 [source,markdown]
 ----
@@ -650,7 +819,8 @@ TEI:: definition and use are the same element at the point of reference (`n` is 
 <p>See this<note place="end">A note.</note>.</p>
 ----
 
-DocBook:: `<footnote>` at the call site (`xml:id` optional). Reuse with `<footnoteref linkend="id"/>`.
+DocBook:: `<footnote>` at the call site (`xml:id` optional).
+  Reuse with `<footnoteref linkend="id"/>`.
 +
 [source,xml]
 ----
@@ -668,9 +838,11 @@ HTML:: IR stubs (same `footnote-correlation-id` on the call site and the body):
 [#glossary]
 == Glossary
 
-A glossary is a description list marked as such. Term links get hover definitions (print inlines them in parentheses).
+A glossary is a description list marked as such.
+Term links get hover definitions (print inlines them in parentheses).
 
-AsciiDoc:: `[glossary]` on the description list; term ids from `[[id]]`. Reference a term with `<<id>>`.
+AsciiDoc:: `[glossary]` on the description list; term ids from `[[id]]`.
+  Reference a term with `<<id>>`.
 +
 [source,asciidoc]
 ----
@@ -680,20 +852,17 @@ See <<posuk>>.
 [[posuk]]posuk:: verse
 ----
 
-Markdown:: PHP Extra definition lists
-(https://michelf.ca/projects/php-markdown/extra/#def-list)
-via FlexMark
-https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
-Mark the list with `{:.glossary}` after it
-(Kramdown https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL],
-same family as <<toc>>).
-Without that marker the list is not a glossary (no term ids, no tooltips).
-The marker also separates adjacent lists.
+Markdown:: PHP Extra definition lists (https://michelf.ca/projects/php-markdown/extra/#def-list) via FlexMark
+  https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
+  Mark the list with `{:.glossary}` after it (Kramdown
+  https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL], same family as <<toc>>).
+  Without that marker the list is not a glossary (no term ids, no tooltips).
+  The marker also separates adjacent lists.
 
-Obsidian does not render PHP Extra definition lists natively
-(https://www.markdownguide.org/tools/obsidian/[Markdown Guide: Obsidian]).
-Community plugin https://obsidian.md/plugins?id=pandoc-extended-markdown[Pandoc Extended Markdown]
-renders Pandoc/PHP Extra `term` / `: definition` lists.
+Obsidian does not render PHP Extra definition lists natively (https://www.markdownguide.org/tools/obsidian/[Markdown
+Guide: Obsidian]).
+Community plugin https://obsidian.md/plugins?id=pandoc-extended-markdown[Pandoc Extended Markdown] renders Pandoc/PHP
+Extra `term` / `: definition` lists.
 `{:.glossary}` is Kramdown IAL, not Obsidian; it shows as a paragraph in the note.
 `+++[[#id]]+++` heading links are native Obsidian.
 +
@@ -707,15 +876,16 @@ posuk
 {:.glossary}
 ----
 
-Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens
-(`Alter Rebbe` → `Alter-Rebbe`).
+Term id is the `id` on `<dt>` if present, otherwise the term text with spaces turned into hyphens (`Alter Rebbe` →
+`Alter-Rebbe`).
 Reference a term with `+++[[#id]]+++` or `[text](#id)`.
 
-A lone `:` after a Markdown term is not a reliable empty definition:
-FlexMark can take the next term as that definition.
+A lone `:` after a Markdown term is not a reliable empty definition: FlexMark can take the next term as that definition.
 Write a real definition line, or omit the term.
 
-TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`. Term id from `xml:id` on the label, else on the item, else the label text with spaces turned into hyphens. Reference a term with `<ref target="#id">` or `<term ref="#id">`.
+TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`.
+  Term id from `xml:id` on the label, else on the item, else the label text with spaces turned into hyphens.
+  Reference a term with `<ref target="#id">` or `<term ref="#id">`.
 +
 [source,xml]
 ----
@@ -726,7 +896,10 @@ TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`. Term
 </list>
 ----
 
-DocBook:: `<glosslist>` (or `<glossary>`) of `<glossentry>` / `<glossterm>` / `<glossdef>`. Term id from `xml:id` on the entry, else the term, else the term text with spaces turned into hyphens. Reference a term with `<link linkend="id">`. `<variablelist>` is a description list, not a glossary.
+DocBook:: `<glosslist>` (or `<glossary>`) of `<glossentry>` / `<glossterm>` / `<glossdef>`.
+  Term id from `xml:id` on the entry, else the term, else the term text with spaces turned into hyphens.
+  Reference a term with `<link linkend="id">`.
+  `<variablelist>` is a description list, not a glossary.
 +
 [source,xml]
 ----
@@ -757,21 +930,26 @@ HTML:: the IR shape (`class="glossary"`; each term is `class="glossary-item"` wi
 [#bibliography]
 == Bibliography
 
-Two kinds, per document (no site-wide file or style). They can appear in the same document.
+Two kinds, per document (no site-wide file or style).
+They can appear in the same document.
 
 === External (`.bib` + CSL)
 
 Front matter:
 
-- `bibliography` — path to a `.bib` file, relative to this source file (`.bib` files are not copied to the site; un-ignore with `_site_ignore` if you want one published)
+- `bibliography` — path to a `.bib` file, relative to this source file (`.bib` files are not copied to the site;
+  un-ignore with `_site_ignore` if you want one published)
 - `csl` — CSL style name from the bundled styles (for example `apa`, `ieee`)
 - `lang` — CSL locale; falls back to the site `lang`, then `en-US`
 
-Both `bibliography` and `csl` are required. Only works cited on the page appear in the list.
-In-text cites become links to `#bibl-{key}` on the matching list entry
-(first key if a cite names several). Unknown keys are highlighted and recorded as a page error.
+Both `bibliography` and `csl` are required.
+Only works cited on the page appear in the list.
+In-text cites become links to `#bibl-{key}` on the matching list entry (first key if a cite names several).
+Unknown keys are highlighted and recorded as a page error.
 
-AsciiDoc:: no `asciidoctor-bibliography` gem. Also `cite:key[]` / `cite:key[p. 12]` (standard inline-macro form).
+AsciiDoc:: no `asciidoctor-bibliography` gem.
+  Also `cite:key[]` / `cite:key[p.
+  12]` (standard inline-macro form).
 +
 [source,asciidoc]
 ----
@@ -781,11 +959,13 @@ AsciiDoc:: no `asciidoctor-bibliography` gem. Also `cite:key[]` / `cite:key[p. 1
 - `bibliography::[]` — list placeholder (otherwise the list is appended)
 ----
 
-Markdown:: Pandoc citation syntax (no extra FlexMark extension). `me@host.com` is left as an email.
-Obsidian does not format `[@key]` natively.
-Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List]
-recognizes Pandoc citekeys in the note (sidebar; optional inline).
-https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations] inserts `[@key]` from a `.bib` file.
+Markdown:: Pandoc citation syntax (no extra FlexMark extension).
+  `me@host.com` is left as an email.
+  Obsidian does not format `[@key]` natively.
+  Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List] recognizes
+  Pandoc
+  citekeys in the note (sidebar; optional inline). https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations]
+  inserts `[@key]` from a `.bib` file.
 +
 [source,markdown]
 ----
@@ -796,7 +976,9 @@ https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations] inserts `[@ke
 See [@knuth79] and [@knuth79, p. 12] and [@knuth79; @lamport94]
 ----
 
-DocBook:: `<citation>key</citation>` (optional locator after a comma). `biblioref` `@linkend` that is not a native entry id is the same. Empty `<bibliography/>` is the list placeholder (otherwise the list is appended).
+DocBook:: `<citation>key</citation>` (optional locator after a comma).
+  `biblioref` `@linkend` that is not a native entry id is the same.
+  Empty `<bibliography/>` is the list placeholder (otherwise the list is appended).
 +
 [source,xml]
 ----
@@ -815,8 +997,9 @@ and
 <div class="bibliography"></div>
 ----
 
-TEI:: `@cRef` on `ref` / `ptr` is the citeproc key. `@n` is an optional locator.
-Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list is appended).
+TEI:: `@cRef` on `ref` / `ptr` is the citeproc key.
+  `@n` is an optional locator.
+  Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list is appended).
 +
 [source,xml]
 ----
@@ -826,9 +1009,10 @@ Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list i
 
 === Internal (in-document list)
 
-Authored entries stay on the page (not cited-only). Links to an entry id get a hover tip.
-Entry ids are as written (`#knuth79`); they do not use the `#bibl-` prefix of the CSL list,
-so the same key can be cited both ways in one document.
+Authored entries stay on the page (not cited-only).
+Links to an entry id get a hover tip.
+Entry ids are as written (`#knuth79`); they do not use the `#bibl-` prefix of the CSL list, so the same key can be cited
+both ways in one document.
 
 AsciiDoc:: `[bibliography]` list with `+++[[[id]]]+++` / `+++[[[id,xreftext]]]+++` anchors; cite with `<<id>>`.
 +
@@ -841,9 +1025,10 @@ See <<knuth79>> and <<lamport94>>.
 * [[[lamport94,Lamport 94]]] Lamport, Leslie. _LaTeX_. 1994.
 ----
 
-TEI:: `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl`
-(not in `teiHeader`). Empty `ptr` shows `@n` or the id. `cit` with a `quote` is a <<quotes,quote>>, not this.
-A bare `@target` that matches a `listBibl` id is treated as `#id`.
+TEI:: `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl` (not in `teiHeader`).
+  Empty `ptr` shows `@n` or the id.
+  `cit` with a `quote` is a <<quotes,quote>>, not this.
+  A bare `@target` that matches a `listBibl` id is treated as `#id`.
 +
 [source,xml]
 ----
@@ -857,7 +1042,8 @@ and <ptr target="#lamport94"/>.</p>
 </listBibl>
 ----
 
-DocBook:: `<bibliography>` with `biblioentry` / `bibliomixed`; cite with `<link linkend="id">` or `<biblioref linkend="id"/>` (empty `biblioref` shows `@xreflabel` or the id).
+DocBook:: `<bibliography>` with `biblioentry` / `bibliomixed`; cite with `<link linkend="id">` or
+  `<biblioref linkend="id"/>` (empty `biblioref` shows `@xreflabel` or the id).
 +
 [source,xml]
 ----
@@ -874,14 +1060,12 @@ Markdown has no native in-document bibliography list.
 [#code-blocks]
 == Code Blocks
 
-Inline code and fenced blocks. A language class on `<code>` (`language-scala`, …) loads highlight.js; `language-mermaid` loads Mermaid instead.
+Inline code and fenced blocks.
+A language class on `<code>` (`language-scala`, …) loads highlight.js; `language-mermaid` loads Mermaid instead.
 
 Markdown:: CommonMark inline `` `code` `` and fenced blocks.
-Obsidian supports both natively, including a language identifier
-(https://help.obsidian.md/syntax#Code[Help: Code]).
-Fenced `+++```mermaid+++` diagrams are native in Obsidian too
-(https://help.obsidian.md/syntax#Diagram[Help: Diagram]);
-this publisher loads Mermaid for `language-mermaid`.
+  Obsidian supports both natively, including a language identifier (https://help.obsidian.md/syntax#Code[Help: Code]).
+  Fenced `+++```mermaid+++` diagrams are native in Obsidian too (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
 +
 [source,markdown]
 ----
@@ -904,7 +1088,9 @@ xs.map(f)
 ----
 ------
 
-TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:lang`). A newline in the content is treated as a block and wrapped in `<pre>`. `<eg>` / `<egXML>` are not converted.
+TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:lang`).
+  A newline in the content is treated as a block and wrapped in `<pre>`.
+  `<eg>` / `<egXML>` are not converted.
 +
 [source,xml]
 ----
@@ -913,7 +1099,8 @@ TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:l
 </code>
 ----
 
-DocBook:: `<code>` / `<literal>` inline; `<programlisting>` / `<screen>` / `<literallayout>` as a block. `@language` (not `xml:lang`) is the highlight.js tag.
+DocBook:: `<code>` / `<literal>` inline; `<programlisting>` / `<screen>` / `<literallayout>` as a block.
+  `@language` (not `xml:lang`) is the highlight.js tag.
 +
 [source,xml]
 ----
@@ -934,9 +1121,11 @@ HTML::
 [#callouts]
 == Callouts
 
-Numbered annotations on lines of *verbatim* (listing, literal, or source), plus a list of those annotations. Not a general footnote mechanism.
+Numbered annotations on lines of *verbatim* (listing, literal, or source), plus a list of those annotations.
+Not a general footnote mechanism.
 
-AsciiDoc:: `<1>` (or `<.>` for automatic numbering) at the end of a line; repeat the numbers in a callout list below. Hide a marker in the raw source behind a line comment (`// <1>`, `# <1>`, `<!--1-->`).
+AsciiDoc:: `<1>` (or `<.>` for automatic numbering) at the end of a line; repeat the numbers in a callout list below.
+  Hide a marker in the raw source behind a line comment (`// <1>`, `# <1>`, `<!--1-->`).
 +
 [source,asciidoc]
 ------
@@ -947,7 +1136,8 @@ require 'sinatra' <1>
 <1> Library import
 ------
 
-DocBook:: `<co>` in a listing; `<calloutlist>` / `<callout arearefs>` below. `@label` on `co` is the marker number.
+DocBook:: `<co>` in a listing; `<calloutlist>` / `<callout arearefs>` below.
+  `@label` on `co` is the marker number.
 +
 [source,xml]
 ----
@@ -970,9 +1160,11 @@ HTML:: the IR shape:
 [#admonitions]
 == Admonitions
 
-Typed notices (note, tip, warning, …). Not listing <<callouts>> and not asides/sidebars.
+Typed notices (note, tip, warning, …).
+Not listing <<callouts>> and not asides/sidebars.
 
-Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]`; optional title; `+`/`-` to fold). No plugin.
+Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]`; optional title; `+`/`-` to fold).
+  No plugin.
 +
 [source,markdown]
 ----
@@ -983,7 +1175,8 @@ Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]
 > Secret.
 ----
 
-AsciiDoc:: `NOTE:` / `TIP:` / `IMPORTANT:` / `CAUTION:` / `WARNING:` (paragraph or `[NOTE]====` block; optional `.Title`).
+AsciiDoc:: `NOTE:` / `TIP:` / `IMPORTANT:` / `CAUTION:` / `WARNING:` (paragraph or `[NOTE]====` block; optional
+           `.Title`).
 +
 [source,asciidoc]
 ----
@@ -1016,7 +1209,8 @@ HTML:: the IR shape (`details` when folded):
 [#asides]
 == Asides
 
-Untyped auxiliary content next to the main flow. Not an <<admonitions,admonition>>.
+Untyped auxiliary content next to the main flow.
+Not an <<admonitions,admonition>>.
 
 AsciiDoc:: `[sidebar]` or a `****` block (optional `.Title`).
 +
@@ -1028,7 +1222,8 @@ Auxiliary content.
 ****
 ----
 
-Markdown:: no native syntax; Obsidian has none. Write an HTML `+++<aside>+++` block.
+Markdown:: no native syntax; Obsidian has none.
+  Write an HTML `+++<aside>+++` block.
 +
 [source,markdown]
 ----
@@ -1060,9 +1255,11 @@ HTML:: `<aside>` (IR adds `class="aside"` if missing); optional title:
 [#quotes]
 == Quotes
 
-Block quotations. Not <<admonitions>> (`> [!tip]`) and not <<asides>>.
+Block quotations.
+Not <<admonitions>> (`> [!tip]`) and not <<asides>>.
 
-AsciiDoc:: `[quote]` (or a `____` block); optional `.Title`; attribution and citation title as `[quote, Author, Source]`.
+AsciiDoc:: `[quote]` (or a `____` block); optional `.Title`; attribution and citation title as
+           `[quote, Author, Source]`.
 +
 [source,asciidoc]
 ----
@@ -1073,14 +1270,17 @@ A little rebellion now and then is a good thing.
 ____
 ----
 
-Markdown:: a CommonMark blockquote (`>`). No attribution syntax (an em-dash line is still quote body). Obsidian `> [!type]` is an <<admonitions,admonition>>, not a quote.
+Markdown:: a CommonMark blockquote (`>`).
+  No attribution syntax (an em-dash line is still quote body).
+  Obsidian `> [!type]` is an <<admonitions,admonition>>, not a quote.
 +
 [source,markdown]
 ----
 > A Markdown quotation.
 ----
 
-DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`. Inline `<quote>` stays `<q>`.
+DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`.
+  Inline `<quote>` stays `<q>`.
 +
 [source,xml]
 ----
@@ -1091,7 +1291,8 @@ DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`. In
 </blockquote>
 ----
 
-HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `<footer>` attribution (`cite` kept as-is):
+HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `<footer>` attribution (`cite` kept
+  as-is):
 +
 [source,html]
 ----
@@ -1102,7 +1303,9 @@ HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `
 </blockquote>
 ----
 
-TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution). A `<bibl>` directly in `<quote>` is attribution too. `<q>` stays inline.
+TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution).
+  A `<bibl>` directly in `<quote>` is attribution too.
+  `<q>` stays inline.
 +
 [source,xml]
 ----
@@ -1115,7 +1318,8 @@ TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution). A `<bibl>` 
 [#strikethrough]
 == Strikethrough
 
-Deleted or superseded text. HTML `<del>` (browser line-through).
+Deleted or superseded text.
+HTML `<del>` (browser line-through).
 
 Markdown:: GFM `~~text~~` (Obsidian native; FlexMark strikethrough extension).
 +
@@ -1138,7 +1342,8 @@ TEI:: `<del>`.
 <p>See <del>TEI struck</del>.</p>
 ----
 
-DocBook:: `<emphasis role="strikethrough">` (or `line-through`). Default `<emphasis>` is `<em>`; `role="bold"` is `<strong>`.
+DocBook:: `<emphasis role="strikethrough">` (or `line-through`).
+  Default `<emphasis>` is `<em>`; `role="bold"` is `<strong>`.
 +
 [source,xml]
 ----
@@ -1155,9 +1360,17 @@ HTML:: `<del>` (IR); `<s>` and `span`/`mark` with `class="line-through"` become 
 [#figures]
 == Figures
 
-A block image (or other graphic) with an optional caption. Inline images stay `<img>`. Local `src` values are resolved to a site path (`/pixel.svg`); a missing file is an error (`missing asset`) and the `<img>` gets `unresolved-asset`. Wiki `+++![[image]]+++` also finds a unique file of that name anywhere in the source tree.
+A block image (or other graphic) with an optional caption.
+Inline images stay `<img>`.
+Local `src` values are resolved to a site path (`/pixel.svg`); a missing file is an error (`missing asset`) and the
+`<img>` gets `unresolved-asset`.
+Wiki `+++![[image]]+++` also finds a unique file of that name anywhere in the source tree.
 
-Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. FlexMark does not turn Obsidian `|WIDTH` / `|WIDTHxHEIGHT` in the alt into `img` `width`/`height` (the size stays in `alt`). Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later); `|WIDTH` or `|WIDTHxHEIGHT` on that wiki embed do become `width`/`height`.
+Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption.
+  FlexMark does not turn Obsidian `|WIDTH` / `|WIDTHxHEIGHT` in the alt into `img` `width`/`height` (the size stays in
+  `alt`).
+  Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later); `|WIDTH` or `|WIDTHxHEIGHT` on that wiki embed do
+  become `width`/`height`.
 +
 [source,markdown]
 ----
@@ -1166,7 +1379,9 @@ Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption. F
 ![[pixel.svg|320x240]]
 ----
 
-AsciiDoc:: block `image::` (optional `.Title`). Inline `image:src[]` is not a figure. Width and height (`image::file.png[alt, 320, 240]` or `width=320, height=240`) are kept on the `<img>`.
+AsciiDoc:: block `image::` (optional `.Title`).
+  Inline `image:src[]` is not a figure.
+  Width and height (`image::file.png[alt, 320, 240]` or `width=320, height=240`) are kept on the `<img>`.
 +
 [source,asciidoc]
 ----
@@ -1174,7 +1389,8 @@ AsciiDoc:: block `image::` (optional `.Title`). Inline `image:src[]` is not a fi
 image::pixel.svg[A square]
 ----
 
-TEI:: `<figure>` with `<graphic url>` and optional `<head>` (caption). `<graphic>` becomes `<img>`.
+TEI:: `<figure>` with `<graphic url>` and optional `<head>` (caption).
+  `<graphic>` becomes `<img>`.
 +
 [source,xml]
 ----
@@ -1211,9 +1427,11 @@ HTML:: `<figure>` (IR adds `class="figure"` if missing); optional `<figcaption>`
 [#pdf-embed]
 == PDF embeds
 
-A PDF file shown on the page. Not <<pdf,PDF generation>> of a page.
+A PDF file shown on the page.
+Not <<pdf,PDF generation>> of a page.
 
-Markdown:: Obsidian `+++![[file.pdf]]+++`; optional `#page=N` and `&height=H` (pixels if H is digits). Alias `+++![[file.pdf|Title]]+++` is the link label.
+Markdown:: Obsidian `+++![[file.pdf]]+++`; optional `#page=N` and `&height=H` (pixels if H is digits).
+  Alias `+++![[file.pdf|Title]]+++` is the link label.
 +
 [source,markdown]
 ----
@@ -1236,28 +1454,34 @@ HTML:: `<object type="application/pdf">` (IR wraps it) or the IR:
 </div>
 ----
 
-The sibling link is always visible and is what remains in print (the inner viewer is hidden). `data` (and the fallback `href`) are resolved like other local assets; `#page=N` is kept.
+The sibling link is always visible and is what remains in print (the inner viewer is hidden).
+`data` (and the fallback `href`) are resolved like other local assets; `#page=N` is kept.
 
 [#video]
 == Video
 
-A local video file, or a YouTube/Vimeo player. Local files use HTML `<video>` (like `<audio>`). Local `src` is resolved like images; YouTube/Vimeo `<iframe>` URLs are left alone.
+A local video file, or a YouTube/Vimeo player.
+Local files use HTML `<video>` (like `<audio>`).
+Local `src` is resolved like images; YouTube/Vimeo `<iframe>` URLs are left alone.
 
-Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`). Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
+Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`).
+  Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
 +
 [source,markdown]
 ----
 ![[clip.mp4]]
 ----
 
-AsciiDoc:: `video::file.mp4[]` (optional `.Title` becomes a figure caption). YouTube/Vimeo: `video::id[youtube]` / `video::id[vimeo]`.
+AsciiDoc:: `video::file.mp4[]` (optional `.Title` becomes a figure caption).
+  YouTube/Vimeo: `video::id[youtube]` / `video::id[vimeo]`.
 +
 [source,asciidoc]
 ----
 video::clip.mp4[]
 ----
 
-DocBook:: `<videodata fileref>`. A YouTube/Vimeo URL becomes an iframe.
+DocBook:: `<videodata fileref>`.
+  A YouTube/Vimeo URL becomes an iframe.
 +
 [source,xml]
 ----

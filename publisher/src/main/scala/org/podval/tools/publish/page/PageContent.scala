@@ -129,10 +129,15 @@ final class PageContent private(
     )
 
     val combined: Map[String, Footnote] = footnotes ++ extraFootnotes
-    val emitted: Map[String, Footnote] =
-      Footnote.linkIds(expanded).distinct.zipWithIndex.flatMap:
-        (id, index) => combined.get(id).map(footnote => id -> Footnote.remapped(footnote, id, index + 1))
-      .toMap
+    val scopeReport: PageErrorReporter =
+      if isChunked then PageErrorReporter.Silent else source
+    val emitted: Map[String, Footnote] = Footnote.numbered(
+      expanded,
+      combined,
+      scopeReport,
+      localTables = true,
+      hostTree = Some(xml)
+    )
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 
     // Add bodies of the footnotes referenced in the selected XML

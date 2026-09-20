@@ -366,6 +366,24 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )
   }
 
+  test("place=end in a table cell becomes a table-local letter") {
+    val xml: Xml.Element = process(
+      """<table>
+        |  <row><cell>x<note place="end">cell note</note></cell></row>
+        |</table>""".stripMargin
+    )
+    val dumpedIr: String = render(xml)
+    assert(Footnote.linkIds(xml).size == 1, dumpedIr)
+    assert(dumpedIr.contains("""class="footnote-link""""), dumpedIr)
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent, localTables = true)
+    val dumped: String = render(finished)
+    assert(dumped.contains("table-with-notes"), dumped)
+    assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
+    assert(dumped.contains("""data-footnote-scope="table""""), dumped)
+    assert(dumped.contains("cell note"), dumped)
+    assert(!dumped.contains("""id="_footnote_1""""), dumped)
+  }
+
   test("row/cell become tr/td and cols becomes colspan") {
     val xml: Xml.Element = process(
       """<table>

@@ -152,6 +152,11 @@ final class CollectionIndexSpec extends AnyFunSuite:
         assert(page.contains("""class="footnote-link""""), page)
         assert(!page.contains("<note"), page)
         assert(page.substring(footnotesAt).contains("when exactly"), page.substring(footnotesAt))
+        assert(!page.contains("table-with-notes"), page)
+        assert(!page.contains("table-footnotes"), page)
+        assert(page.contains("""id="_footnote_1""""), page)
+        val tableAt: Int = page.indexOf("collection-index")
+        assert(tableAt < 0 || footnotesAt > tableAt, page)
       noteNotInline(html(target, "col/index.html"))
       noteNotInline(html(target, "col/000.html"))
   }

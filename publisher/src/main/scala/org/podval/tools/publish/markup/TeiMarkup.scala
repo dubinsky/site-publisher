@@ -181,7 +181,7 @@ object TeiMarkup extends Markup(
       ),
       stopAtCode = false
     )
-    Footnote.finish(converted, report)
+    Footnote.finish(converted, report, localTables = false)
 
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.getName.localName match
     case "store" | "collection" => element.setChildren(Seq.empty)

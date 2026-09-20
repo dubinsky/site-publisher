@@ -579,6 +579,15 @@ div.footnotes {
     margin-top: 2em;
     border-top: 1px solid var(--border-color-01);
 }
+div.table-with-notes > div.footnotes {
+    margin-top: 0.75em;
+    font-size: 0.9em;
+}
+@media print {
+    div.footnotes.table-footnotes {
+        break-before: avoid;
+    }
+}
 a.footnote-link, a.footnote-backlink {
     color: red;
 }

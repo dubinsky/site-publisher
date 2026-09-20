@@ -7,7 +7,7 @@ A table:
 
 | A | B |
 |---|---|
-| 1 | 2 |
+| 1 | 2[^cell] |
 
 Tasks:
 
@@ -15,6 +15,8 @@ Tasks:
 - [x] done already
 
 See this [^note] and again [^note] and **clung**[^note].
+
+[^cell]: Table cell note.
 
 [^note]: Markdown footnote body.
 
