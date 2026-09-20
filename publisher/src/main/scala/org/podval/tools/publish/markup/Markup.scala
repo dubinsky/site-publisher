@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.Files
-import org.podval.xml.{Html, Xml, XmlWriterConfig, XmlParser}
+import org.podval.xml.{Xml, XmlWriterConfig, XmlParser}
 import java.io.File
 
 abstract class Markup(
