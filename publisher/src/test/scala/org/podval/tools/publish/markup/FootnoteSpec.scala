@@ -807,3 +807,48 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(emitted.contains("inner"), emitted.keys)
     assert(emitted("inner").scope == FootnoteScope.Document)
   }
+
+  test("emitLeftovers false omits leftover Document from emitted so inner stub stays IR") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("p1"),
+      Footnote.body("p1", Chunk(
+        Xml.text("first "),
+        Footnote.link("inner")
+      )),
+      Footnote.link("p2"),
+      Footnote.body("p2", Chunk(
+        Xml.text("second "),
+        Footnote.link("inner")
+      )),
+      Footnote.body("inner", Chunk(Xml.text("shared inner")))
+    ))
+    val (notes, stripped) = Footnote.harvest(xml)
+    val chunk: Xml.Element = stripped.setChildren(
+      stripped.getChildren.filter: node =>
+        !node.asElement.exists: el =>
+          Footnote.isLink(el) && Footnote.getCorrelationId(el) == "p2"
+    )
+    val emitted: Map[String, Footnote] = Footnote.numbered(
+      chunk,
+      notes,
+      PageErrorReporter.Silent,
+      localTables = true,
+      hostTree = Some(stripped),
+      hostFootnotes = notes,
+      emitLeftovers = false
+    )
+    assert(emitted.contains("p1"), emitted.keys)
+    assert(!emitted.contains("inner"), emitted.keys)
+    val innerStub: Xml.Element = Xml.element(XmlElement.Span).setChildren(notes("p1").nodes)
+      .gather(el => Option.when(Footnote.isLink(el))(el))
+      .head
+    val resolved: Xml.Element = Footnote.resolveLink(
+      innerStub,
+      notes,
+      emitted,
+      attachTip = true,
+      PageErrorReporter.Silent
+    )
+    assert(Footnote.isLink(resolved), render(resolved))
+    assert(!resolved.isA, render(resolved))
+  }

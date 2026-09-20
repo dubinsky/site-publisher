@@ -131,13 +131,15 @@ final class PageContent private(
     val combined: Map[String, Footnote] = footnotes ++ extraFootnotes
     val scopeReport: PageErrorReporter =
       if isChunked then PageErrorReporter.Silent else source
+    val emitLeftovers: Boolean = !isChunked
     val emitted: Map[String, Footnote] = Footnote.numbered(
       expanded,
       combined,
       scopeReport,
       localTables = true,
       hostTree = Some(xml),
-      hostFootnotes = footnotes
+      hostFootnotes = footnotes,
+      emitLeftovers = emitLeftovers
     )
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 
@@ -145,7 +147,7 @@ final class PageContent private(
     val withFootnotes: Xml.Element = Footnote.appendReferenced(
       expanded,
       emitted,
-      emitLeftovers = !isChunked
+      emitLeftovers = emitLeftovers
     )
 
     // Resolve citations

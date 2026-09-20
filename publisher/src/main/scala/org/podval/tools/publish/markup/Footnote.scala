@@ -141,7 +141,8 @@ object Footnote:
     report: PageErrorReporter,
     localTables: Boolean,
     hostTree: Option[Xml.Element] = None,
-    hostFootnotes: Map[String, Footnote] = Map.empty
+    hostFootnotes: Map[String, Footnote] = Map.empty,
+    emitLeftovers: Boolean = true
   ): Map[String, Footnote] =
     val hostAssigned: Assigned =
       hostTree.fold(Assigned.empty)(assignScopes(_, hostFootnotes, localTables, report))
@@ -154,7 +155,8 @@ object Footnote:
       combined,
       kinds,
       cycleIds,
-      hostTreeIds = hostTree.fold(Set.empty[String])(linkIds(_).toSet)
+      hostTreeIds = hostTree.fold(Set.empty[String])(linkIds(_).toSet),
+      emitLeftovers = emitLeftovers
     )
 
   // Add bodies of the footnotes referenced in the selected XML
@@ -376,7 +378,8 @@ object Footnote:
     combined: Map[String, Footnote],
     kinds: Map[String, Kind],
     cycleIds: Set[String],
-    hostTreeIds: Set[String]
+    hostTreeIds: Set[String],
+    emitLeftovers: Boolean
   ): Map[String, Footnote] =
     val treeDocumentIds: Seq[String] =
       linkIds(tree).distinct.filter(id => kinds.get(id).contains(Kind.Document))
@@ -385,15 +388,20 @@ object Footnote:
         combined.get(parentId).toSeq.flatMap(footnote => linkIds(footnote.nodes))
       .distinct
     val fromBodies: Seq[String] = mentionedInBodies.filter(cycleIds.contains)
+    // Chunks omit leftover bodies; numbering those ids would href a missing target.
     val leftoverCycle: Seq[String] =
-      cycleIds.toSeq.sorted.filterNot(id => treeDocumentIds.contains(id) || fromBodies.contains(id))
+      if !emitLeftovers then Seq.empty
+      else
+        cycleIds.toSeq.sorted.filterNot(id => treeDocumentIds.contains(id) || fromBodies.contains(id))
     val taken: Set[String] = (treeDocumentIds ++ fromBodies ++ leftoverCycle).toSet
     // Inner-only conflict has no host tree site; a call site on another chunk is not leftover.
     val leftoverDocument: Seq[String] =
-      mentionedInBodies.filter: id =>
-        !taken.contains(id) &&
-          kinds.get(id).contains(Kind.Document) &&
-          !hostTreeIds.contains(id)
+      if !emitLeftovers then Seq.empty
+      else
+        mentionedInBodies.filter: id =>
+          !taken.contains(id) &&
+            kinds.get(id).contains(Kind.Document) &&
+            !hostTreeIds.contains(id)
     val documentIds: Seq[String] =
       (treeDocumentIds ++ fromBodies ++ leftoverCycle ++ leftoverDocument).distinct
     val occurrences: Seq[(String, Option[Xml.Element])] = collectOccurrences(tree)
