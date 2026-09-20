@@ -4,9 +4,8 @@ import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, HtmlXmlWriterConfig, XmlElement}
-import Html.given
-import zio.blocks.html.{content as contentAttribute, lang as langAttribute, *}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement, XmlWriterConfig}
+import org.podval.xml.dsl.{*, given}
 
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
@@ -29,30 +28,30 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   protected def extraLibraries: List[js.JSLibrary] = Nil
 
-  protected def syntheticContentOpt: Option[Html.Element] = None
+  protected def syntheticContentOpt: Option[Xml.Element] = None
 
   // TODO use markup.xmlDialect?
   final override def textContent: String = htmlString(markupContent, syntheticContentOpt)
 
   protected def htmlString(
-    markup: Option[Html.Element],
-    synthetic: Option[Html.Element]
+    markup: Option[Xml.Element],
+    synthetic: Option[Xml.Element]
   ): String =
-    HtmlXmlWriterConfig.render(toHtml(
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(pageRoot(
       pageHeader = pageHeader,
       markupContent = markup,
       syntheticContent = synthetic
     ))
 
-  def markupContent: Option[Html.Element]
+  def markupContent: Option[Xml.Element]
 
   final def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] = content.flatMap(_.markupContent(sectionId, isTerminal))
+  ): Option[Xml.Element] = content.flatMap(_.markupContent(sectionId, isTerminal))
 
   // TODO maybe remove this in favour of PageHeader?
-  def pageHeader: Option[Html.Element]
+  def pageHeader: Option[Xml.Element]
 
   // Other HTML/PDF views of the same document (site-header icons). Empty unless this
   // is a FullMarkupPage or one of its chunks.
@@ -61,8 +60,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   protected def formatIsFacsimile: Boolean = false
   protected def isFacsimileViewer: Boolean = false
 
-  final def formatLinks: Seq[Html.Element] = formatSourcePage.toSeq.flatMap: page =>
-    val onePage: Option[Html.Element] =
+  final def formatLinks: Seq[Xml.Element] = formatSourcePage.toSeq.flatMap: page =>
+    val onePage: Option[Xml.Element] =
       if formatIsFacsimile then
         Some(formatLink(
           page.publishedPath.toString,
@@ -73,14 +72,14 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       else Option.when(formatIsChunked)(
         formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
       )
-    val chunked: Option[Html.Element] =
+    val chunked: Option[Xml.Element] =
       Option.when(!formatIsChunked && !formatIsFacsimile && page.chunk)(
         formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
       )
-    val pdf: Option[Html.Element] = Option.when(page.pdf)(
+    val pdf: Option[Xml.Element] = Option.when(page.pdf)(
       formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")
     )
-    val facsimile: Option[Html.Element] = Option.when(!formatIsFacsimile)(
+    val facsimile: Option[Xml.Element] = Option.when(!formatIsFacsimile)(
       site.pages.facsimilePage(page).map: viewer =>
         formatLink(
           viewer.publishedPath.toString,
@@ -91,7 +90,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     ).flatten
     Seq(onePage, chunked, pdf, facsimile).flatten
 
-  final def translationLinks: Seq[Html.Element] =
+  final def translationLinks: Seq[Xml.Element] =
     CollectionIndex.translationsToLink(formatSourcePage.getOrElse(this)).flatMap: translation =>
       CollectionIndex.langOf(translation).map: lang =>
         a(
@@ -106,7 +105,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     icon: Icon,
     label: String,
     target: Option[String] = None
-  ): Html.Element =
+  ): Xml.Element =
     a(
       className := "nav-item page-format",
       href := url,
@@ -117,12 +116,12 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     )
 
   // Based on https://github.com/jekyll/minima
-  private def toHtml(
-    pageHeader: Option[Html.Element],
-    markupContent: Option[Html.Element],
-    syntheticContent: Option[Html.Element]
-  ): Html.Element =
-    def getLanguages(element: Html.Element): Seq[String] =
+  private def pageRoot(
+    pageHeader: Option[Xml.Element],
+    markupContent: Option[Xml.Element],
+    syntheticContent: Option[Xml.Element]
+  ): Xml.Element =
+    def getLanguages(element: Xml.Element): Seq[String] =
       if element.isElement(XmlElement.Code)
       then element.getPrefixedClasses("language")
       else element.flatMapElements(getLanguages)
@@ -130,7 +129,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     val languages: Set[String] = markupContent.fold(Set.empty)(getLanguages(_).toSet)
     val languagesToHighlight: Set[String] = languages - "mermaid"
 
-    val articleBody: Seq[Html.Element] = Seq(markupContent, syntheticContent).flatten
+    val articleBody: Seq[Xml.Element] = Seq(markupContent, syntheticContent).flatten
 
     val libraries: List[js.JSLibrary] =
       List(
@@ -141,11 +140,11 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         site.googleAnalytics.map(js.GoogleAnalytics(_))
       ).flatten ++ extraLibraries :+ site
 
-    html(langAttribute := lang,
+    html(langAttr := lang,
       head(
         meta(charset := "utf-8"),
-        meta(httpEquiv := "X-UA-Compatible", contentAttribute := "IE=edge"),
-        meta(name := "viewport", contentAttribute := "width=device-width, initial-scale=1"),
+        meta(httpEquiv := "X-UA-Compatible", contentAttr := "IE=edge"),
+        meta(name := "viewport", contentAttr := "width=device-width, initial-scale=1"),
         Seo.head(this),
         site.favicon,
         site.license,

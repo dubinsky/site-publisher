@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Section
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
+import org.podval.xml.Xml
 
 // Note: TOC - no sectionId, isTerminal = false
 final class ChunkedMarkupPage(
@@ -14,7 +14,7 @@ final class ChunkedMarkupPage(
   markupPage.site,
   markupPage.path.add(name).html
 ):
-  override def markupContent: Option[Html.Element] = markupPage.markupContent(
+  override def markupContent: Option[Xml.Element] = markupPage.markupContent(
     sectionId = sectionId,
     isTerminal = isTerminal
   )
@@ -31,7 +31,7 @@ final class ChunkedMarkupPage(
 
   override protected def iconDefault: Icon = Icon.note // TODO page/document...
 
-  override def pageHeader: Option[Html.Element] = markupPage.pageHeader
+  override def pageHeader: Option[Xml.Element] = markupPage.pageHeader
 
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(markupPage)
   override protected def formatIsChunked: Boolean = true

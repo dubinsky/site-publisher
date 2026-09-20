@@ -2,8 +2,8 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Files, Icon}
-import org.podval.xml.Html
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 object DirectoryPage:
   val fileName: String = "index"
@@ -23,14 +23,14 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
 
   override def hasSyntheticContent: Boolean = passThroughSourceVar.isEmpty
 
-  override protected def syntheticContentOpt: Option[Html.Element] =
+  override protected def syntheticContentOpt: Option[Xml.Element] =
     if passThroughSourceVar.isDefined || doc.exists(_.suppressDirectoryListing) then None
     else Some(syntheticContent)
 
-  private def syntheticContent: Html.Element =
+  private def syntheticContent: Xml.Element =
     div(className := "directory", listing(children))
 
-  private def listing(pages: Seq[Page]): Html.Element =
+  private def listing(pages: Seq[Page]): Xml.Element =
     ul(className := "page-list", pages.map(page => li(page.listRef())))
 
   override protected def iconDefault: Icon = if isPost then Icon.calendar else Icon.folder

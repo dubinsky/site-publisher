@@ -3,8 +3,8 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.js
 import org.podval.tools.publish.page.SyntheticMarkupPage
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 final class GraphPage(site: Site) extends SyntheticMarkupPage(site, Path("graph").html):
   override def titleDefault: String = "Graph"
@@ -13,7 +13,7 @@ final class GraphPage(site: Site) extends SyntheticMarkupPage(site, Path("graph"
   override protected def langDefault: Option[String] = Some("en")
   override protected def extraLibraries: List[js.JSLibrary] = List(js.GraphCss, js.Cytoscape)
 
-  override protected def syntheticContent: Html.Element =
+  override protected def syntheticContent: Xml.Element =
     div(
       className := "site-graph-wrap",
       div(

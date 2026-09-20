@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.xml.{Html, HtmlXmlWriterConfig, Xml, XmlAttribute}
-import zio.blocks.html.*
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlWriterConfig}
+import org.podval.xml.dsl.{*, given}
 import java.time.{Instant, LocalTime, ZoneId}
 import scala.util.Try
 
@@ -15,14 +15,14 @@ object Feed:
 
   def icon: Icon = Icon.rss
 
-  def feedFooter: Html.Element = a(
+  def feedFooter: Xml.Element = a(
     href := Feed.path.toString,
     icon.html,
     span(className := "rss-feed", "RSS feed")
   )
 
   // jekyll-feed `{% feed_meta %}`: autodiscovery `<link>` in `<head>`.
-  def feedMeta(site: Site): Html.Element = link(
+  def feedMeta(site: Site): Xml.Element = link(
     rel := "alternate",
     `type` := "application/atom+xml",
     titleAttr := site.config.title,
@@ -110,7 +110,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           (page match
             case markupPage: MarkupPage => markupPage
               .markupContent
-              .map(content => HtmlXmlWriterConfig.render(content).trim)
+              .map(content => (HtmlXmlWriterConfig: XmlWriterConfig).render(content).trim)
               .map(html => htmlEl("content", html).set(XmlAttribute.XmlBase, url))
             case _ => None    
           ).toSeq

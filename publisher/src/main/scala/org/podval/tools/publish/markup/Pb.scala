@@ -24,7 +24,7 @@ object Pb:
       .add(Class)
       .set(XmlAttribute.Title, "Facsimile")
       .set(XmlAttribute.Target, "facsimile")
-      .setChildren(Seq(Icon.images.xml: Xml.Node))
+      .setChildren(Seq(Icon.images.html: Xml.Node))
     n.foreach: n =>
       result = result
         .setId(pageId(n))

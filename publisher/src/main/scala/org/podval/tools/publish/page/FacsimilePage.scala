@@ -2,8 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml}
-import Html.toHtml
+import org.podval.xml.Xml
 import scala.annotation.tailrec
 
 final class FacsimilePage(
@@ -21,7 +20,7 @@ final class FacsimilePage(
 
   override protected def iconDefault: Icon = Icon.images
 
-  override def pageHeader: Option[Html.Element] = Some(PageHeader.of(document))
+  override def pageHeader: Option[Xml.Element] = Some(PageHeader.of(document))
 
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(document)
 
@@ -33,8 +32,8 @@ final class FacsimilePage(
 
   override def next: Option[Page] = nextFacsimile(document.next, _.next)
 
-  override protected def syntheticContent: Html.Element =
-    Facsimile.scroller(this).toHtml
+  override protected def syntheticContent: Xml.Element =
+    Facsimile.scroller(this)
 
   @tailrec
   private def nextFacsimile(page: Option[Page], step: MarkupPage => Option[Page]): Option[Page] =

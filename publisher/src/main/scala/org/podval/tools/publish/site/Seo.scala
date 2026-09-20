@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{DirectoryPage, MarkupPage, Page}
 import org.podval.tools.publish.util.{Date, Json}
-import org.podval.xml.Html
-import zio.blocks.html.{Js, content as contentAttribute, title as titleElement, *}
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import java.time.{Instant, LocalTime, ZoneId}
 import scala.util.Try
 
@@ -17,7 +17,7 @@ object Seo:
     then "BlogPosting"
     else "WebPage"
 
-  def head(page: MarkupPage): Seq[Html.Element] =
+  def head(page: MarkupPage): Seq[Xml.Element] =
     val site: Site = page.site
     val pageTitle: String = page.title
     val desc: String = description(page)
@@ -31,35 +31,35 @@ object Seo:
     val isArticle: Boolean = page.date.isDefined
 
     List(
-      Some(titleElement(documentTitle(page))),
-      Some(meta(name := "generator", contentAttribute := s"$generatorName ($generatorUrl)")),
-      Some(meta(attr("property") := "og:title", contentAttribute := pageTitle)),
-      Some(meta(name := "author", contentAttribute := authorName)),
-      Some(meta(attr("property") := "og:locale", contentAttribute := ogLocale(page.lang))),
-      Some(meta(name := "description", contentAttribute := desc)),
-      Some(meta(attr("property") := "og:description", contentAttribute := desc)),
-      Some(meta(name := "twitter:description", contentAttribute := desc)),
+      Some(title(documentTitle(page))),
+      Some(meta(name := "generator", contentAttr := s"$generatorName ($generatorUrl)")),
+      Some(meta(attr("property") := "og:title", contentAttr := pageTitle)),
+      Some(meta(name := "author", contentAttr := authorName)),
+      Some(meta(attr("property") := "og:locale", contentAttr := ogLocale(page.lang))),
+      Some(meta(name := "description", contentAttr := desc)),
+      Some(meta(attr("property") := "og:description", contentAttr := desc)),
+      Some(meta(name := "twitter:description", contentAttr := desc)),
       Some(link(rel := "canonical", href := url)),
-      Some(meta(attr("property") := "og:url", contentAttribute := url)),
-      Some(meta(attr("property") := "og:site_name", contentAttribute := site.config.title)),
-      Some(meta(attr("property") := "og:type", contentAttribute := (if isArticle then "article" else "website"))),
-      published.map(t => meta(attr("property") := "article:published_time", contentAttribute := t)),
+      Some(meta(attr("property") := "og:url", contentAttr := url)),
+      Some(meta(attr("property") := "og:site_name", contentAttr := site.config.title)),
+      Some(meta(attr("property") := "og:type", contentAttr := (if isArticle then "article" else "website"))),
+      published.map(t => meta(attr("property") := "article:published_time", contentAttr := t)),
       Option.when(isArticle)(modified).flatten.map(t =>
-        meta(attr("property") := "article:modified_time", contentAttribute := t)
+        meta(attr("property") := "article:modified_time", contentAttr := t)
       ),
-      Some(meta(name := "twitter:card", contentAttribute := "summary")),
-      Some(meta(name := "twitter:title", contentAttribute := pageTitle)),
+      Some(meta(name := "twitter:card", contentAttr := "summary")),
+      Some(meta(name := "twitter:title", contentAttr := pageTitle)),
       site.config.social.twitter.map(handle =>
-        meta(name := "twitter:site", contentAttribute := s"@${handle.stripPrefix("@")}")
+        meta(name := "twitter:site", contentAttr := s"@${handle.stripPrefix("@")}")
       ),
-      Some(script(`type` := "application/ld+json", Js(jsonLd(
+      Some(script(typeAttr := "application/ld+json", jsonLd(
         page = page,
         url = url,
         desc = desc,
         authorName = authorName,
         published = published,
         modified = modified
-      ))))
+      )))
     ).flatten
 
   private def isHome(page: Page): Boolean = page.path.path == Seq(DirectoryPage.fileName)

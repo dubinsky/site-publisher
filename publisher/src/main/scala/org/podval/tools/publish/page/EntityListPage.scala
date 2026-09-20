@@ -3,8 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.EntityList
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml}
-import Html.toHtml
+import org.podval.xml.Xml
 
 final class EntityListPage(
   site: Site,
@@ -20,11 +19,11 @@ final class EntityListPage(
 
   override protected def iconDefault: Icon = Icon.note
 
-  override def pageHeader: Option[Html.Element] = Some(PageHeader.of(this))
+  override def pageHeader: Option[Xml.Element] = Some(PageHeader.of(this))
 
   override def prev: Option[Page] = siblingsVar.takeWhile(_ != this).lastOption
 
   override def next: Option[Page] = siblingsVar.dropWhile(_ != this).drop(1).headOption
 
-  override protected def syntheticContent: Html.Element =
-    EntityLists.listXml(spec, members).toHtml
+  override protected def syntheticContent: Xml.Element =
+    EntityLists.listXml(spec, members)

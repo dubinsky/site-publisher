@@ -5,8 +5,8 @@ import org.podval.store.{By, Store, Stores}
 import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Http, Icon}
-import org.podval.xml.{Html, Xml}
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import java.io.File
 import java.net.URI
 import java.time.{Instant, LocalDate}
@@ -119,7 +119,7 @@ abstract class Page(
         case None =>
           title
 
-  final def listRef(cls: Option[String] = None): Html.Element =
+  final def listRef(cls: Option[String] = None): Xml.Element =
     val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
     val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
     a(
@@ -150,7 +150,7 @@ abstract class Page(
     withTitle: Boolean = true,
     withIcon: Boolean = true,
     icon: Option[Icon] = None
-  ): Html.Element =
+  ): Xml.Element =
     val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
     val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
     a(
@@ -164,14 +164,14 @@ abstract class Page(
       Option.when(withTitle)(pageLink.titleReal)
     )
 
-  final def navRef(icon: Icon): Html.Element = ref(
+  final def navRef(icon: Icon): Xml.Element = ref(
     cls = Some("nav-item"),
     icon = Some(icon),
     withTitle = false
   )
 
 object Page:
-  def pageList(pages: Seq[Page], cls: Option[String] = None): Html.Element = ul(
+  def pageList(pages: Seq[Page], cls: Option[String] = None): Xml.Element = ul(
     className := "page-list",
     pages.map(page => li(page.ref(cls = cls)))
   )

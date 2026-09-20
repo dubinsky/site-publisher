@@ -2,9 +2,8 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml}
-import Html.toHtml
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 /** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections). */
 final class StoreIndexPage(
@@ -21,7 +20,7 @@ final class StoreIndexPage(
 
   override def parent: Option[DirectoryPage] = None
 
-  override def pageHeader: Option[Html.Element] = Some(
+  override def pageHeader: Option[Xml.Element] = Some(
     header(className := "post-header",
       h1(className := "post-title p-name", itemProp := "name headline", title)
     )
@@ -30,11 +29,10 @@ final class StoreIndexPage(
   override def prev: Option[Page] = None
   override def next: Option[Page] = None
 
-  override protected def syntheticContent: Html.Element =
-    (kind match
+  override protected def syntheticContent: Xml.Element =
+    kind match
       case StoreIndexPage.Kind.Tree => StoreIndexes.tree(root)
       case StoreIndexPage.Kind.Flat => StoreIndexes.flat(root)
-    ).toHtml
 
 object StoreIndexPage:
   enum Kind derives CanEqual:

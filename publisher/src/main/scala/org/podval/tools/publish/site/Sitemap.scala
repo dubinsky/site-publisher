@@ -3,13 +3,13 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, Xml, XmlAttribute}
-import zio.blocks.html.*
+import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.xml.dsl.{*, given}
 
 object Sitemap:
   val path: Path = Path("sitemap").withExtension("xml")
   
-  def sitemapLink: Html.Element = link(
+  def sitemapLink: Xml.Element = link(
     rel := "sitemap", 
     `type` := "application/xml", 
     titleAttr := "Sitemap",

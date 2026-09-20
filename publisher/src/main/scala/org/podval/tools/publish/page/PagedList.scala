@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.xml.Html
-import zio.blocks.html.{nav as navEl, *}
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{nav as navEl, *, given}
 
 /** Batches for the synthetic posts listing. */
 object PagedList:
@@ -12,8 +12,8 @@ object PagedList:
   def slice[A](items: Seq[A], pageIndex: Int, size: Int): Seq[A] =
     items.drop((pageIndex - 1) * size).take(size)
 
-  def nav(current: Int, total: Int, hrefFor: Int => String): Html.Element =
-    def pageLink(i: Int, label: String, cls: String): Html.Element =
+  def nav(current: Int, total: Int, hrefFor: Int => String): Xml.Element =
+    def pageLink(i: Int, label: String, cls: String): Xml.Element =
       a(className := cls, href := hrefFor(i), label)
     navEl(className := "pagination", aria("label") := "Pagination",
       Option.when(current > 1)(pageLink(current - 1, "Newer", "pagination-prev")),

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement, XmlWriterConfig}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -13,7 +13,7 @@ final class MarkdownSpec extends AnyFunSuite:
     MarkdownMarkup.process(parse(source), PageErrorReporter.Silent)._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlWriterConfig.render(element)
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
     Footnote.harvest(xml)
@@ -227,7 +227,7 @@ final class MarkdownSpec extends AnyFunSuite:
     val resolved: Xml.Element = harvested.transform(el =>
       Footnote.resolveLink(el, notes, notes, attachTip = true, PageErrorReporter.Silent)
     )
-    val dumped: String = HtmlXmlWriterConfig.render(resolved, 40)
+    val dumped: String = (HtmlXmlWriterConfig: XmlWriterConfig).render(resolved, 40)
     val compact: String = dumped.replaceAll("\\s+", " ").replace("= ", "=")
     assert(compact.contains("""</strong><span class="footnote-ref""""), dumped)
     assert(!compact.contains("""</strong> <span class="footnote-ref""""), dumped)

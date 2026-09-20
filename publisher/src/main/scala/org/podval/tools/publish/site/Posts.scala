@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{DirectoryPage, Page, PagedList, PagedMarkupPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -48,9 +48,9 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
 
   override def pagerNext: Option[Page] = paged.headOption
 
-  override protected def syntheticContent: Html.Element = batchContent(1)
+  override protected def syntheticContent: Xml.Element = batchContent(1)
 
-  def batchContent(pageIndex: Int): Html.Element =
+  def batchContent(pageIndex: Int): Xml.Element =
     val size: Int = pageSize.getOrElse(Int.MaxValue)
     val batch: Seq[Page] = PagedList.slice(posts, pageIndex, size)
     val total: Int = pageSize.fold(1)(PagedList.batchCount(posts.size, _))

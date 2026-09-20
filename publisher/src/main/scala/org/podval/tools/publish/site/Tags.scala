@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Html, XmlAst}
-import zio.blocks.html.*
+import org.podval.xml.{Xml, XmlAst}
+import org.podval.xml.dsl.{*, given}
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
   override def titleDefault: String = "Tags"
@@ -25,14 +25,14 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
     .filter(_.tags.contains(tag))
     .sortBy(_.title)
 
-  def tagRef(tag: String): Html.Element = a(
+  def tagRef(tag: String): Xml.Element = a(
     className := "page-tag",
     href := s"$path#${XmlAst.toId(tag)}",
     Icon.tag.html,
     tag
   )
 
-  override protected def syntheticContent: Html.Element =
+  override protected def syntheticContent: Xml.Element =
     div(className := "tags",
       h2("All tags"),
       p(tagsAll.map(tagRef)),

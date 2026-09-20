@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.Posts
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
+import org.podval.xml.Xml
 
 /** One batch of the posts listing. Page 1 stays `/posts.html`. */
 final class PagedMarkupPage(
@@ -13,18 +13,18 @@ final class PagedMarkupPage(
   postsPage.site,
   postsPage.path.add(name).html
 ):
-  override def markupContent: Option[Html.Element] = postsPage.markupContent
+  override def markupContent: Option[Xml.Element] = postsPage.markupContent
 
   override def titleDefault: String = s"${postsPage.title} (page $batchIndex)"
 
   override def hasSyntheticContent: Boolean = true
 
-  override protected def syntheticContentOpt: Option[Html.Element] =
+  override protected def syntheticContentOpt: Option[Xml.Element] =
     Some(postsPage.batchContent(batchIndex))
 
   override protected def iconDefault: Icon = postsPage.icon
 
-  override def pageHeader: Option[Html.Element] = postsPage.pageHeader
+  override def pageHeader: Option[Xml.Element] = postsPage.pageHeader
 
   override def up: Option[Page] = Some(postsPage)
 

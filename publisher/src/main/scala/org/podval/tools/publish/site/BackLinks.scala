@@ -1,8 +1,8 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
-import org.podval.xml.Html
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 final class BackLinks:
   private var backLinks: List[BackLink] = List.empty
@@ -11,7 +11,7 @@ final class BackLinks:
 
   def all: Seq[BackLink] = backLinks
 
-  def html(page: MarkupPage): Option[Html.Element] =
+  def html(page: MarkupPage): Option[Xml.Element] =
     val pageBackLinks: Seq[(FullMarkupPage, List[BackLink])] = backLinks
       .filter(_.to.page == page)
       .filterNot(_.from == page)
@@ -28,7 +28,7 @@ final class BackLinks:
   private def groupedItems(
     page: MarkupPage,
     pageBackLinks: Seq[(FullMarkupPage, List[BackLink])]
-  ): Seq[Html.Element] =
+  ): Seq[Xml.Element] =
     val grouped: Map[Option[Page], Seq[(FullMarkupPage, List[BackLink])]] =
       pageBackLinks.groupBy((from, _) => StoreIndexes.collectionOf(from))
     val collectionKeys: Seq[Page] = grouped.keys.flatten.toSeq
@@ -49,7 +49,7 @@ final class BackLinks:
   private def collectionGroup(
     collection: Page,
     members: Seq[(FullMarkupPage, List[BackLink])]
-  ): Html.Element =
+  ): Xml.Element =
     li(className := "backlinks-collection",
       a(
         className := "page-ref",
@@ -60,12 +60,12 @@ final class BackLinks:
       ul(members.map((from, links) => fromItem(from, links)))
     )
 
-  private def fromItem(from: FullMarkupPage, links: List[BackLink]): Html.Element =
+  private def fromItem(from: FullMarkupPage, links: List[BackLink]): Xml.Element =
     li(
       details(
         summary(
           from.ref(),
-          span(className := "backlinks-count", links.length)
+          span(className := "backlinks-count", links.length.toString)
         ),
         ul(className := "backlinks-list", links.map(link =>
           val context = link.context

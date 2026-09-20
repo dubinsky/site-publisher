@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement, XmlWriterConfig}
 
 object Citation:
   object CiteClass extends CssClass("citation")
@@ -50,7 +50,7 @@ object Citation:
     Xml.element(XmlElement.Div).add(ListClass)
 
   def toHtmlString(element: Xml.Element): String =
-    HtmlXmlWriterConfig.render(element)
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
 
   def modeOf(element: Xml.Element): Mode =
     Mode.fromAttr(element.get(ModeAttr).getOrElse("parenthetical"))

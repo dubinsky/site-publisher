@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{LinkKind, Region, Transclusion, WikiLink}
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
-import org.podval.xml.{Html, Xml}
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import scala.collection.mutable
 
 final class TransclusionEdge(
@@ -78,7 +78,7 @@ final class TransclusionEdges:
                     nonAuthoredTarget = true
                   )
 
-  def html(page: MarkupPage): Option[Html.Element] =
+  def html(page: MarkupPage): Option[Xml.Element] =
     if page.hasSyntheticContent && !page.isDirectory then None
     else page.asFullMarkupPage.flatMap: full =>
       val hosts: Seq[FullMarkupPage] = edges
@@ -96,7 +96,7 @@ final class TransclusionEdges:
           ul(grouped(page, hosts))
         )
 
-  private def grouped(page: MarkupPage, hosts: Seq[FullMarkupPage]): Seq[Html.Element] =
+  private def grouped(page: MarkupPage, hosts: Seq[FullMarkupPage]): Seq[Xml.Element] =
     val byCollection: Map[Option[Page], Seq[FullMarkupPage]] =
       hosts.groupBy(from => StoreIndexes.collectionOf(from))
     val collectionKeys: Seq[Page] = byCollection.keys.flatten.toSeq

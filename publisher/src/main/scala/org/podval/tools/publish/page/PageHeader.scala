@@ -5,25 +5,24 @@ import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.Date
-import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
-import Html.toHtml
-import zio.blocks.html.*
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
+import org.podval.xml.dsl.{*, given}
 
 object PageHeader:
-  def of(page: MarkupPage): Html.Element =
+  def of(page: MarkupPage): Xml.Element =
     if isCollector(page) then collectorPageHeader(page) else pageHeader(page)
 
   private def isCollector(page: Page): Boolean =
     page.store.isDefined || page.isInstanceOf[EntityListPage] || collectorAncestors(page).nonEmpty
 
-  def pageHeader(page: MarkupPage): Html.Element =
+  def pageHeader(page: MarkupPage): Xml.Element =
     header(className := "post-header",
       postPath(page),
       h1(className := "post-title p-name", itemProp := "name headline", page.title),
       Option.when(!page.hasSyntheticContent)(articleMeta(page))
     )
 
-  private def postPath(page: Page): Html.Element =
+  private def postPath(page: Page): Xml.Element =
     def parents(page: Page): Seq[Page] = page.parent match
       case None => Seq.empty
       case Some(parent) => parents(parent) :+ parent
@@ -32,7 +31,7 @@ object PageHeader:
     val path: Seq[Page] = if pathFull.isEmpty then pathFull else pathFull.tail
     span(className := "post-path", path.map(page => span("/", page.ref(withIcon = false))))
 
-  private def articleMeta(page: MarkupPage): Html.Element =
+  private def articleMeta(page: MarkupPage): Xml.Element =
     div(className := "post-meta",
       join(
         join(
@@ -56,18 +55,18 @@ object PageHeader:
       )
     )
 
-  private def join(left: Seq[Html.Element], text: String, right: Seq[Html.Element]): Seq[Html.Element] =
+  private def join(left: Seq[Xml.Element], text: String, right: Seq[Xml.Element]): Seq[Xml.Element] =
     if left.nonEmpty && right.nonEmpty
     then left ++ Seq(span(className := "bullet-divider", text)) ++ right
     else left ++ right
 
-  private def timeHtml(label: Option[String], date: Option[Date], cls: String, itemprop: String): Seq[Html.Element] =
+  private def timeHtml(label: Option[String], date: Option[Date], cls: String, itemprop: String): Seq[Xml.Element] =
     date.fold(Seq.empty): date =>
       label.fold(Seq.empty)(label => Seq(span(className := "meta-label", label))) ++
         Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
 
-  def collectorPageHeader(page: MarkupPage): Html.Element =
-    collectorHeaderXml(page).toHtml
+  def collectorPageHeader(page: MarkupPage): Xml.Element =
+    collectorHeaderXml(page)
 
   /** Live collector: ancestor `<l>` lines, then this node's `<l>`, then abstract/body,
     * then this store's `by` selector label (the listing itself stays in the body). */

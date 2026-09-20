@@ -1,20 +1,15 @@
 package org.podval.tools.publish.util
 
-import org.podval.xml.{Html, Xml, XmlElement}
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import zio.blocks.schema.yaml.{Yaml, YamlCodec}
 
 final class Icon(val name: String, val style: Icon.Style):
-  def html: Html.Element = span(
+  def html: Xml.Element = span(
     className += "icon-span",
     className += style.classNames,
     className += s"fa-$name"
   )
-
-  def xml: Xml.Element =
-    val classes: Seq[String] =
-      Seq("icon-span") ++ style.classNames.split(" ").filter(_.nonEmpty).toSeq :+ s"fa-$name"
-    Xml.element(XmlElement.Span).setClasses(classes)
 
 object Icon:
   val file = Icon("file", Regular)

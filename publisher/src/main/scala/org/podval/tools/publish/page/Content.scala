@@ -4,8 +4,7 @@ import org.podval.metadata.Name
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
-import org.podval.xml.{Html, Xml, XmlAttribute, XmlElement}
-import Html.toHtml
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
 sealed abstract class Content:
@@ -32,7 +31,7 @@ sealed abstract class Content:
     pageContent: PageContent,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] = None
+  ): Option[Xml.Element] = None
 
 object Content:
   final class Prepared(
@@ -112,7 +111,7 @@ sealed abstract class AuthoredContent(
     pageContent: PageContent,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] =
+  ): Option[Xml.Element] =
     Some(pageContent.renderAuthored(this, sectionId, isTerminal))
 
 final class DocumentContent(
@@ -173,9 +172,9 @@ final class StoreContent(
     pageContent: PageContent,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] =
+  ): Option[Xml.Element] =
     if !isCollection then None
-    else Some(CollectionIndex.generate(pageContent.source.page, this).toHtml)
+    else Some(CollectionIndex.generate(pageContent.source.page, this))
 
   def bind(
     page: MarkupPage,
@@ -244,9 +243,9 @@ final class EntityListsContent(
     pageContent: PageContent,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] =
+  ): Option[Xml.Element] =
     // Hrefs are already published paths; do not mark-and-resolve.
-    Some(EntityLists.generate(pageContent.source.page, index).toHtml)
+    Some(EntityLists.generate(pageContent.source.page, index))
 
 object EntityListsContent:
   def parse(xml: Xml.Element): EntityListsContent =

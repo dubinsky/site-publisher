@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement, XmlWriterConfig}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.File
@@ -11,7 +11,7 @@ import java.io.File
 final class SectionSpec extends AnyFunSuite:
   private def teiHead: String = TeiMarkup.tei2Html.elementName(XmlElement.Head)
 
-  private def render(element: Xml.Element): String = HtmlXmlWriterConfig.render(element)
+  private def render(element: Xml.Element): String = (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
 
   private def normalizeTree(xml: Xml.Element): Xml.Element =
     val ids: IdGenerator = IdGenerator("_id")
@@ -253,7 +253,7 @@ final class SectionSpec extends AnyFunSuite:
   }
 
   private def tocHtml(toc: Toc, current: Option[String], tocDepth: Int = 2): String =
-    HtmlXmlWriterConfig.render(toc.html(current, tocDepth, chunkDepth = Some(2)))
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(toc.html(current, tocDepth, chunkDepth = Some(2)))
 
   test("chunked TOC expands current path and leaves other branches as titles") {
     val a1: Section = Section("a1", "A1", Seq.empty)
@@ -332,7 +332,7 @@ final class SectionSpec extends AnyFunSuite:
     val a1: Section = Section("a1", "A1", Seq.empty)
     val b1: Section = Section("b1", "B1", Seq.empty)
     val toc: Toc = new Toc(Seq(Section("a", "A", Seq(a1)), Section("b", "B", Seq(b1))))
-    val rendered: String = HtmlXmlWriterConfig.render(toc.html(None, tocDepth = 2, chunkDepth = None))
+    val rendered: String = (HtmlXmlWriterConfig: XmlWriterConfig).render(toc.html(None, tocDepth = 2, chunkDepth = None))
     assert(rendered.contains("A1"))
     assert(rendered.contains("B1"))
   }

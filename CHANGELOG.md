@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Minima chrome and `MarkupPage` wrap are `Xml.Element` via `org.podval.xml.dsl` (inspired by ZIO Blocks HTML).
+  Drop wrap-time `.toHtml` and `zio-blocks-html`.
+  Pin xml 0.3.0.
 - Table-cell footnotes are a per-table lowercase letter series (`a`, `b`, …, `z`, `aa`) with the list under that table
   (`div.table-with-notes`).
   Markdown still defines those bodies at file end; the published page moves them.

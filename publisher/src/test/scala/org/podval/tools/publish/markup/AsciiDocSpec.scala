@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement, XmlWriterConfig}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 
@@ -14,7 +14,7 @@ final class AsciiDocSpec extends AnyFunSuite:
 
   private def cleanup(input: String): String =
     val parsed = XmlParser.parseXml(input).toOption.get
-    HtmlXmlWriterConfig.render(AsciiDocMarkup.cleanup(parsed))
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(AsciiDocMarkup.cleanup(parsed))
 
   private def process(source: String): Xml.Element =
     AsciiDocMarkup.process(
@@ -23,7 +23,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     )._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlWriterConfig.render(element)
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
 
   private def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
     Footnote.harvest(xml)
@@ -144,7 +144,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     val resolved: Xml.Element = harvested.transform(el =>
       Footnote.resolveLink(el, notes, notes, attachTip = true, PageErrorReporter.Silent)
     )
-    val dumped: String = HtmlXmlWriterConfig.render(resolved, 40)
+    val dumped: String = (HtmlXmlWriterConfig: XmlWriterConfig).render(resolved, 40)
     val compact: String = dumped.replaceAll("\\s+", " ").replace("= ", "=")
     assert(compact.contains("""</strong><span class="footnote-ref""""), dumped)
     assert(!compact.contains("""</strong> <span class="footnote-ref""""), dumped)

@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.SyntheticMarkupPage
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.Html
-import zio.blocks.html.*
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 final class Errors(
   site: Site,
@@ -26,10 +26,10 @@ final class Errors(
     if !treatErrorsAsWarnings && errorsVar.nonEmpty then
       throw new IllegalStateException("There were errors")
     
-  override protected def syntheticContent: Html.Element =
+  override protected def syntheticContent: Xml.Element =
     val byKind: Map[PageError.Kind, List[PageError]] = errorsVar.groupBy(_.kind)
     val kinds: List[PageError.Kind] = PageError.all.intersect(byKind.keys.toList)
-    val toc: Html.Element = ul(
+    val toc: Xml.Element = ul(
       className := "site-errors-toc",
       kinds.map(kind => li(a(href := s"#${kind.id}", kind.toString)))
     )

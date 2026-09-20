@@ -1,8 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.{ChunkedMarkupPage, DirectoryPage, FullMarkupPage}
-import org.podval.xml.{Html, CssClass, Xml, XmlElement}
-import zio.blocks.html.*
+import org.podval.xml.{CssClass, Xml, XmlElement}
+import org.podval.xml.dsl.{*, given}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 
 final class Toc(sections: Seq[Section]) extends Sections(sections):
@@ -83,11 +83,11 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     sectionId: Option[String],
     tocDepth: Int,
     chunkDepth: Option[Int]
-  ): Html.Element =
+  ): Xml.Element =
     val current: Option[Section] = sectionId.map(getById)
     div(className := "toc",
       h3("Table of Contents"),
-      toHtml(
+      sectionList(
         sections,
         current,
         tocDepth,
@@ -114,19 +114,19 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
     else if current.exists(_.path.init.exists(_.id == section.id)) then "toc-section toc-ancestor"
     else "toc-section"
 
-  private def toHtml(
+  private def sectionList(
     sections: Seq[Section],
     current: Option[Section],
     tocDepth: Int,
     chunkDepth: Option[Int]
-  ): Html.Element =
+  ): Xml.Element =
     ul(className := "toc", sections.map(section =>
       val sectionId: String = section.id
       li(
         className := itemClass(section, current),
         a(href := s"${chunkName(sectionId, chunkDepth)}#$sectionId", section.title),
         Option.when(showChildren(section, current, tocDepth))(
-          toHtml(
+          sectionList(
             section.sections,
             current,
             tocDepth,

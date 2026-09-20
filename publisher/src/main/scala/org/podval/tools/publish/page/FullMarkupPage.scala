@@ -1,15 +1,15 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
-import org.podval.xml.Html
+import org.podval.xml.Xml
 
 abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
   final override def prev: Option[Page] = parent.flatMap(_.prev(this))
   override def next: Option[Page] = parent.flatMap(_.next(this))
 
-  final override def markupContent: Option[Html.Element] =
+  final override def markupContent: Option[Xml.Element] =
     markupContent(sectionId = None, isTerminal = true)
-  final override def pageHeader: Option[Html.Element] = Option.when(source.isDefined)(PageHeader.of(this))
+  final override def pageHeader: Option[Xml.Element] = Option.when(source.isDefined)(PageHeader.of(this))
   final def chunks: Seq[ChunkedMarkupPage] = content.map(_.toc.chunks(this)).getOrElse(Seq.empty)
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(this)
 

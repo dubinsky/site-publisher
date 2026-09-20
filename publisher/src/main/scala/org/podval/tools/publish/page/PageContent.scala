@@ -4,9 +4,7 @@ import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation
   Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Html, Xml}
-import Html.given
-import Html.toHtml
+import org.podval.xml.Xml
 import java.io.File
 
 /** Prepared once per document (`PageContent.apply`); resolved per chunk in `markupContent`. */
@@ -102,14 +100,14 @@ final class PageContent private(
   def markupContent(
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Option[Html.Element] =
+  ): Option[Xml.Element] =
     doc.markupBody(this, sectionId, isTerminal)
 
   private[page] def renderAuthored(
     authored: AuthoredContent,
     sectionId: Option[String],
     isTerminal: Boolean
-  ): Html.Element =
+  ): Xml.Element =
     val isChunked: Boolean = sectionId.isDefined || !isTerminal
 
     val selected: Xml.Element = authored.selectedXml(
@@ -166,8 +164,7 @@ final class PageContent private(
       emitted = emitted
     )
 
-    // Convert to HTML
-    insertToc(withLinks.toHtml, sectionId, isChunked)
+    insertToc(withLinks, sectionId, isChunked)
 
   /** Resolve `a@href` in already-converted XML (collector header titles). */
   def resolveConverted(xml: Xml.Element): Xml.Element =
@@ -197,18 +194,18 @@ final class PageContent private(
     )
 
   private def insertToc(
-    html: Html.Element,
+    root: Xml.Element,
     sectionId: Option[String],
     isChunked: Boolean
-  ): Html.Element =
+  ): Xml.Element =
     var tocAdded: Boolean = false
     val fullPage: Option[FullMarkupPage] = source.page.asFullMarkupPage
-    def tocHtml: Html.Element = toc.html(
+    def tocHtml: Xml.Element = toc.html(
       sectionId = sectionId,
       tocDepth = fullPage.map(_.tocDepth).getOrElse(2),
       chunkDepth = Option.when(isChunked)(fullPage.map(_.chunkDepth).getOrElse(2))
     )
-    val withPlaceholder: Html.Element = Html.transform(html)(element =>
+    val withPlaceholder: Xml.Element = root.transform(element =>
       if tocAdded || !element.has(Toc.PlaceholderClass) then element else
         tocAdded = true
         tocHtml

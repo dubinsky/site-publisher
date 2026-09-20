@@ -5,8 +5,8 @@ import org.podval.tools.publish.js.{JSLibrary, Js}
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
-import org.podval.xml.{Html, Xml}
-import zio.blocks.html.{Js as _, js as _, *}
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 import com.sun.net.httpserver.HttpServer
 import com.microsoft.playwright.{Browser, Playwright}
 import org.slf4j.{Logger, LoggerFactory}
@@ -111,10 +111,10 @@ final class Site(options: SiteOptions) extends JSLibrary:
   // Google Analytics
   val googleAnalytics: Option[String] = if !options.production then None else config.googleAnalytics
 
-  lazy val license: Option[Html.Element] = config.license.map: license =>
+  lazy val license: Option[Xml.Element] = config.license.map: license =>
     link(rel := "license", titleAttr := license, config.licenseLink.map(licenseLink => href := licenseLink))
 
-  lazy val favicon: Option[Html.Element] =
+  lazy val favicon: Option[Xml.Element] =
     for
       favicon <- config.favicon
       (name, extension) = Files.nameAndExtension(favicon)
@@ -234,7 +234,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   private def stopHttpServer(): Unit =
     httpServerVar.foreach(_.stop(0))
 
-  def siteHeader(page: MarkupPage): Html.Element =
+  def siteHeader(page: MarkupPage): Xml.Element =
     header(className := "site-header",
       div(className := "wrapper",
         a(
@@ -292,7 +292,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
       )
     )
   
-  def siteFooter: Html.Element =
+  def siteFooter: Xml.Element =
     footer(className := "site-footer h-card",
       data(className := "u-url", href := "/"),
       div(className := "wrapper",

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement, XmlWriterConfig}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class DocBookMarkupSpec extends AnyFunSuite:
@@ -15,7 +15,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     processResult(input)._1
 
   private def render(element: Xml.Element): String =
-    HtmlXmlWriterConfig.render(element)
+    (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
 
   test("DocBook roots disambiguate .xml; TEI roots stay TEI") {
     val docbook: Set[String] = Set(
@@ -246,7 +246,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
       val resolved: Xml.Element = harvested.transform(el =>
         Footnote.resolveLink(el, notes, notes, attachTip = true, PageErrorReporter.Silent)
       )
-      HtmlXmlWriterConfig.render(resolved, width)
+      (HtmlXmlWriterConfig: XmlWriterConfig).render(resolved, width)
 
     def compact(html: String): String = html.replaceAll("\\s+", " ").replace("= ", "=")
 

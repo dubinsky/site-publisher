@@ -1,7 +1,7 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js as ZioJs, script, `type`}
-import zio.blocks.html.Dom.Element.Script
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
 
 abstract class JSLibrary:
   def cdn: String
@@ -25,25 +25,23 @@ abstract class JSLibrary:
   def inlineBeforeImports: Boolean = false
 
   /** Script tags for this library (imports + inline, order from [[inlineBeforeImports]]). */
-  final def scripts: List[Script] =
-    val imports: List[Script] = this.imports.map: path =>
+  final def scripts: List[Xml.Element] =
+    val imports: List[Xml.Element] = this.imports.map: path =>
       script().externalJs(s"$cdn/$path")
 
-    val inlineJs: List[Script] = this.inlineJs.toList.map: code =>
-      // Note: `script` does *not* accept optional attributes;
-      // Grok's fix making `Element.when Self-typed is in my ZIO Blocks repository. 
+    val inlineJs: List[Xml.Element] = this.inlineJs.toList.map: code =>
       if isModule
-      then script(`type` := "module").inlineJs(ZioJs(code.value))
-      else script().inlineJs(ZioJs(code.value))
+      then script(typeAttr := "module").inlineJs(code.value)
+      else script().inlineJs(code.value)
 
     if inlineBeforeImports
     then inlineJs ++ imports
     else imports ++ inlineJs
 
   /** Head inline script tags (`headInlineJs`); classic scripts, not `type=module`. */
-  final def headScripts: List[Script] =
+  final def headScripts: List[Xml.Element] =
     headInlineJs.toList.map: code =>
-      script().inlineJs(ZioJs(code.value))
+      script().inlineJs(code.value)
 
 object JSLibrary:
   val preferCloudFlare: Boolean = true
