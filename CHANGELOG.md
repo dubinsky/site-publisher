@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Fixture `mermaid.md`: generated HTML keeps the Mermaid module script (newlines, no `&lt;` / `&amp;`).
 - xml 0.2.0: HTML `<script>` / `<style>` are raw-text (no wrap, no `&lt;` / `&amp;`).
   Cytoscape module import is multiline; drop the head-JS `<` / `&&` / `//` constraint.
 - Opt-in site graph: `graph.enabled` writes `/graph.json` and `/graph.html` (Cytoscape on that page only;

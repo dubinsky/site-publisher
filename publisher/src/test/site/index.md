@@ -4,6 +4,7 @@ title: Home
 This fixture exercises the publisher.
 
 - [[notes]] — tasks, footnotes, tables
+- [[mermaid]] — Mermaid fence
 - [[glossary]] — Markdown glossary
 - [[cite]] — bibliography
 - [[chunked]] — chunked Markdown

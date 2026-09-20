@@ -30,9 +30,12 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     )).generate()
 
   private def html(relative: String): String =
+    htmlRaw(relative).replaceAll("\\s+", " ").replace("= ", "=")
+
+  private def htmlRaw(relative: String): String =
     val file: File = File(targetDirectory, relative)
     assert(file.isFile, s"missing $relative under $targetDirectory")
-    Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
+    Files.read(file)
 
   private def htmlOpen(page: String): String =
     val start: Int = page.indexOf("<html")
@@ -114,6 +117,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val page: String = html("index.html")
     assert(page.contains("Site Publisher Fixture"), page)
     assert(page.contains("""href="/notes.html""""), page)
+    assert(page.contains("""href="/mermaid.html""""), page)
     assert(page.contains("""href="/glossary.html""""), page)
     assert(page.contains("""href="/cite.html""""), page)
     assert(page.contains("""href="/chunked.html""""), page)
@@ -172,6 +176,21 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(errors.contains("missing-page"), errors)
     assert(errors.contains("missing asset"), errors)
     assert(errors.contains("missing.png"), errors)
+  }
+
+  test("fenced mermaid loads Mermaid and keeps the inline module raw") {
+    val page: String = htmlRaw("mermaid.html")
+    assert(page.contains("language-mermaid"), page)
+    assert(page.contains("flowchart LR"), page)
+    assert(page.contains("cdnjs.cloudflare.com/ajax/libs/mermaid/11.13.0/mermaid.esm.min.mjs"), page)
+    assert(page.contains("\nmermaid.initialize"), page)
+    val at: Int = page.indexOf("mermaid.initialize")
+    assert(at >= 0, page)
+    val script: String = page.substring(page.lastIndexOf("<script", at), page.indexOf("</script>", at))
+    assert(!script.contains("&lt;"), script)
+    assert(!script.contains("&amp;"), script)
+    val notes: String = htmlRaw("notes.html")
+    assert(!notes.contains("mermaid.esm.min.mjs"), notes)
   }
 
   test("permalink prefix /short/child resolves under the aliased directory") {
