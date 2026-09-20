@@ -790,8 +790,21 @@ HTML:: the IR shape (already a task list; no conversion):
 
 Hovering a footnote number shows the note; the numbered list is at the end of the (chunk of the) page.
 A note written with no space after the preceding word or element stays adjacent in the HTML.
-A marker in a table cell is published as a lowercase letter with the list under that table.
+
+A marker in a table cell is published as a lowercase Latin letter (`a`, `b`, …, `z`, `aa`) with the list immediately
+under that table (`div.table-with-notes`).
+Markdown and AsciiDoc still define those bodies at the end of the source file; the published page moves them.
 Collector `collection-index` and `document-header` tables stay in the page arabic series.
+
+A footnote inside another footnote is one level of letters `a`, `b` at the end of the parent note.
+There is no nested hover tip: the outer tooltip shows inner letter markers, not a nested list.
+Markdown and AsciiDoc get nested notes only if the processor emits an inner stub.
+TEI `note place="end"` inside another `place="end"` does.
+
+TEI still converts only `place="end"`.
+`place="foot"` and unplaced `note` are unchanged.
+`@n` is ignored.
+Obsidian inline `^[…]` footnotes are unsupported.
 
 AsciiDoc:: inline note, or a named definition reused with an empty macro:
 +
@@ -804,6 +817,7 @@ and again footnote:fn[Same note.] later footnote:fn[].
 Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later.
   Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]).
   Obsidian also has inline `^[…]` footnotes; this publisher does not.
+  A `[^id]` in a table cell uses the same `[^id]:` body at the file end; the published page moves it under the table.
 +
 [source,markdown]
 ----
@@ -812,15 +826,23 @@ See this [^note] and again [^note].
 [^note]: A note.
 ----
 
-TEI:: definition and use are the same element at the point of reference (`n` is currently ignored):
+TEI:: definition and use are the same element at the point of reference (`@n` is ignored):
 +
 [source,xml]
 ----
 <p>See this<note place="end">A note.</note>.</p>
 ----
++
+A `place="end"` inside another `place="end"` is a nested letter on the parent note:
++
+[source,xml]
+----
+<p>See this<note place="end">Outer<note place="end">Inner.</note></note>.</p>
+----
 
 DocBook:: `<footnote>` at the call site (`xml:id` optional).
   Reuse with `<footnoteref linkend="id"/>`.
+  A `<footnote>` inside another footnote's `<para>` is nested the same way if the converter emits an inner stub.
 +
 [source,xml]
 ----
@@ -1065,7 +1087,8 @@ A language class on `<code>` (`language-scala`, …) loads highlight.js; `langua
 
 Markdown:: CommonMark inline `` `code` `` and fenced blocks.
   Obsidian supports both natively, including a language identifier (https://help.obsidian.md/syntax#Code[Help: Code]).
-  Fenced `+++```mermaid+++` diagrams are native in Obsidian too (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
+  Fenced `+++```mermaid+++` diagrams are native in Obsidian too
+  (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
 +
 [source,markdown]
 ----

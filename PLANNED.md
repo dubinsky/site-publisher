@@ -4,8 +4,8 @@ Inventory of site-publisher work that is planned or considered and not yet imple
 Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site Publisher.md`), `README.adoc`,
 `AGENTS.md`, and source TODOs.
 
-TEI date ranges in `@when` (`YYYY`, `YYYY-MM`, and `..` with a shorter right-hand side) already produce hover tables
-and are documented in README **TEI dates** and the design note **TEI dates**.
+TEI date ranges in `@when` (`YYYY`, `YYYY-MM`, and `..` with a shorter right-hand side) already produce hover tables and
+are documented in README **TEI dates** and the design note **TEI dates**.
 They are not on this list.
 
 ## Product features
@@ -53,8 +53,8 @@ They are not on this list.
 - **X Articles** — publish a page to X if/when there is an API (design note +
   [#21](https://github.com/dubinsky/site-publisher/issues/21)).
 - **SEO images, Facebook, webmaster proofs** — documented as absent.
-- **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production`
-  so gtag actually runs.
+- **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
+  runs.
   Do not turn `--production` on until the ids are GA4.
 - **External-link checker** when the site is so configured (`Site.isInternalLink` TODO).
   No config flag exists yet.
@@ -74,7 +74,6 @@ They are not on this list.
 - **Dotted front-matter keys** (`toc.depth`, …) — considered, not done.
 - **`modified_time` as a typed field** — blocked on ZIO Blocks YAML kebab-case
   ([#6](https://github.com/dubinsky/site-publisher/issues/6)); currently an extra-key workaround.
-- **Footnotes at the end of tables** (not only document end); **multi-level footnotes**.
 - **Load less CSS/MathJax** by dialect actually present on the page (today every HTML page always ships all of it,
   because of transclusion).
 - **Configurable HTML converter** (commented `Configurer` in `Site`).
@@ -123,7 +122,7 @@ These are considered and rejected or deferred, not a backlog:
 
 ## GitHub issues that already shipped (still open)
 
-Treat these as stale trackers, not remaining work: transclusion (#11), named windows (#12), date hover tables
-including `@when` ranges (#13), gap tips (#14), `/errors.html` reports (#16), facsimile document viewer (#17), Maven
-artifact (#20, except CLI), entity first-name titles / `/name` catalog (#15 mostly), backlinks grouped by collection
-(#9 mostly), `Content` kinds (#8).
+Treat these as stale trackers, not remaining work: transclusion (#11), named windows (#12), date hover tables including
+`@when` ranges (#13), gap tips (#14), `/errors.html` reports (#16), facsimile document viewer (#17), Maven artifact
+(#20, except CLI), entity first-name titles / `/name` catalog (#15 mostly), backlinks grouped by collection (#9 mostly),
+`Content` kinds (#8).
