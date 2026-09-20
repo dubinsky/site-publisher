@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Table-cell footnotes are a per-table lowercase letter series (`a`, `b`, …, `z`, `aa`) with the list under that table
+  (`div.table-with-notes`).
+  Markdown still defines those bodies at file end; the published page moves them.
+  AsciiDoc `footnote:[…]` stays at the call site.
+  Collector `collection-index` and `document-header` stay in the page arabic series.
+- A footnote inside another footnote is one level of letters `a`, `b` at the end of the parent note.
+  There is no nested hover tip: the outer tooltip shows inner letter markers, not a nested list.
+  TEI `note place="end"` inside another `place="end"` does this.
+  Markdown and AsciiDoc only if the processor emits an inner stub.
+- fix: footnote harvest no longer throws on a marker that lives only inside another note (`Map.apply`).
+  Repeated markers emit one body.
+  Unknown, orphan, scope-conflict, nesting, and cycle cases are Errors-page kinds.
 - Fixture `mermaid.md`: generated HTML keeps the Mermaid module script (newlines, no `&lt;` / `&amp;`).
 - xml 0.2.0: HTML `<script>` / `<style>` are raw-text (no wrap, no `&lt;` / `&amp;`).
   Cytoscape module import is multiline; drop the head-JS `<` / `&&` / `//` constraint.
