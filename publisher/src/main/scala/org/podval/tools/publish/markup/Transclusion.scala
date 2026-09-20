@@ -350,11 +350,39 @@ object Transclusion:
                   ))
                   val n: Int = counter.next()
                   val prefix: String = s"transclusion-$n-"
-                  Footnote.linkIds(expanded).foreach: id =>
-                    toContent.footnotes.get(id).foreach: footnote =>
-                      footnotes.add(prefix + id, Footnote.remapped(footnote, prefix + id, footnote.number))
+                  copyFootnoteClosure(expanded, toContent, prefix, footnotes)
                   val rewritten: Xml.Element = prefixDirect(expanded, n, toPage, toContent)
                   wrap(rewritten, toPage, target, toContent, anchor, href)
+
+  private def copyFootnoteClosure(
+    expanded: Xml.Element,
+    toContent: PageContent,
+    prefix: String,
+    footnotes: FootnoteSink
+  ): Unit =
+    def loop(pending: Seq[String], seen: Set[String]): Unit =
+      pending.headOption match
+        case None => ()
+        case Some(id) if seen.contains(id) => loop(pending.drop(1), seen)
+        case Some(id) =>
+          val inner: Seq[String] = toContent.footnotes.get(id) match
+            case None => Seq.empty
+            case Some(footnote) =>
+              val prefixedNodes: Xml.Nodes = footnote.nodes.map: node =>
+                node.asElement.fold(node)(Footnote.prefixCorrelationTree(_, prefix))
+              footnotes.add(
+                prefix + id,
+                Footnote.remapped(
+                  footnote,
+                  prefix + id,
+                  footnote.number,
+                  footnote.scope,
+                  prefixedNodes
+                )
+              )
+              Footnote.linkIds(footnote.nodes)
+          loop(pending.drop(1) ++ inner, seen + id)
+    loop(Footnote.linkIds(expanded), Set.empty)
 
   private def loopMessage(hops: Int, stack: List[(Page, Region)]): String =
     val frames: String = stack.map((page, region) => s"${page.publishedPath}:$region").mkString(" -> ")

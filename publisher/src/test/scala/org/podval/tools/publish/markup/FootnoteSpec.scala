@@ -223,13 +223,17 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(dumped.indexOf("""id="_footnote_1"""") == dumped.lastIndexOf("""id="_footnote_1""""), dumped)
   }
 
-  test("PageError.all contains UnknownFootnote, OrphanFootnote, and FootnoteScopeConflict") {
+  test("PageError.all contains UnknownFootnote, OrphanFootnote, FootnoteScopeConflict, FootnoteNesting, and FootnoteCycle") {
     assert(PageError.all.contains(PageError.UnknownFootnote))
     assert(PageError.all.contains(PageError.OrphanFootnote))
     assert(PageError.all.contains(PageError.FootnoteScopeConflict))
+    assert(PageError.all.contains(PageError.FootnoteNesting))
+    assert(PageError.all.contains(PageError.FootnoteCycle))
     assert(PageError.UnknownFootnote.id == "unknown-footnote")
     assert(PageError.OrphanFootnote.id == "orphan-footnote")
     assert(PageError.FootnoteScopeConflict.id == "footnote-scope-conflict")
+    assert(PageError.FootnoteNesting.id == "footnote-nesting")
+    assert(PageError.FootnoteCycle.id == "footnote-cycle")
   }
 
   test("finish does not nest footnote-tip inside a tip") {
@@ -499,4 +503,160 @@ final class FootnoteSpec extends AnyFunSuite:
     val tableAt: Int = dumped.indexOf("collection-index")
     val footnotesAt: Int = dumped.indexOf("""class="footnotes"""")
     assert(tableAt >= 0 && footnotesAt > tableAt, dumped)
+  }
+
+  test("reuse of a document id from inside a note stays arabic, not nested") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("doc"),
+      Footnote.body("doc", Chunk(Xml.text("document note"))),
+      Footnote.link("outer"),
+      Footnote.body("outer", Chunk(
+        Xml.text("see "),
+        Footnote.link("doc")
+      ))
+    ))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(!dumped.contains("nested-footnotes"), dumped)
+    assert(!dumped.contains("""data-footnote-scope="nested""""), dumped)
+    val docLinks: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link") && el.getHref.contains("#_footnote_1"))(el)
+    )
+    assert(docLinks.size >= 2, dumped)
+    assert(docLinks.forall(_.getText == "1"), dumped)
+    val topRefs: Seq[Xml.Element] = finished.getChildren.flatMap(_.asElement).filter(_.hasClass("footnote-ref"))
+    assert(topRefs.size == 2, dumped)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_2""""), dumped)
+    assert(!dumped.contains("_footnote_1_n_"), dumped)
+  }
+
+  test("nested letters and inner list; tooltip has markers and no nested list or nested tip") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("outer"),
+      Footnote.body("outer", Chunk(
+        Xml.text("outer "),
+        Footnote.link("inner"),
+        Footnote.body("inner", Chunk(Xml.text("inner note")))
+      ))
+    ))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_a""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_src_a""""), dumped)
+    assert(dumped.contains("""data-footnote-scope="nested""""), dumped)
+    assert(dumped.contains("nested-footnotes"), dumped)
+    assert(dumped.contains("inner note"), dumped)
+    val nestedLists: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("nested-footnotes"))(el)
+    )
+    assert(nestedLists.size == 1, dumped)
+    assert(nestedLists.head.isElement(XmlElement.Span), dumped)
+    val outerBodies: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.getId.contains("_footnote_1"))(el)
+    )
+    assert(outerBodies.size == 1, dumped)
+    assert(outerBodies.head.gather(el =>
+      Option.when(el.hasClass("nested-footnotes"))(el)
+    ).nonEmpty, dumped)
+    val outerTips: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-tip") && el.getText.contains("outer"))(el)
+    )
+    assert(outerTips.size == 1, dumped)
+    val tipHtml: String = render(outerTips.head)
+    assert(tipHtml.contains("""data-footnote-scope="nested""""), tipHtml)
+    assert(tipHtml.contains(">a</a>") || tipHtml.contains(">a<"), tipHtml)
+    assert(!tipHtml.contains("nested-footnotes"), tipHtml)
+    assert(!tipHtml.contains("inner note"), tipHtml)
+    val nestedTips: Seq[Xml.Element] = outerTips.head.gather(el =>
+      Option.when(el.hasClass("footnote-tip"))(el)
+    )
+    assert(nestedTips.size == 1, tipHtml)
+    assert(nestedTips.head eq outerTips.head, tipHtml)
+  }
+
+  test("depth greater than one is FootnoteNesting and promotes onto the outermost inner series") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("c"),
+      Footnote.body("c", Chunk(
+        Xml.text("C "),
+        Footnote.link("b"),
+        Footnote.body("b", Chunk(
+          Xml.text("B "),
+          Footnote.link("a"),
+          Footnote.body("a", Chunk(Xml.text("A")))
+        ))
+      ))
+    ))
+    val reporter: RecordingReporter = RecordingReporter()
+    val finished: Xml.Element = Footnote.finish(xml, reporter)
+    val dumped: String = render(finished)
+    assert(reporter.errors.exists(_._1 eq PageError.FootnoteNesting), reporter.errors)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_a""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_b""""), dumped)
+    assert(dumped.contains("B "), dumped)
+    assert(dumped.contains("A"), dumped)
+    assert(!dumped.contains("_footnote_1_n_a_n_"), dumped)
+    val nestedLists: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("nested-footnotes"))(el)
+    )
+    assert(nestedLists.size == 1, dumped)
+    val nestedHtml: String = render(nestedLists.head)
+    assert(nestedHtml.contains("B "), nestedHtml)
+    assert(nestedHtml.contains("A"), nestedHtml)
+  }
+
+  test("cycle is FootnoteCycle and both bodies still appear in the document list in specified order") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("d"),
+      Footnote.body("d", Chunk(Xml.text("doc"))),
+      Footnote.body("a", Chunk(Xml.text("body-a"), Footnote.link("b"))),
+      Footnote.body("b", Chunk(Xml.text("body-b"), Footnote.link("a")))
+    ))
+    val reporter: RecordingReporter = RecordingReporter()
+    val finished: Xml.Element = Footnote.finish(xml, reporter)
+    val dumped: String = render(finished)
+    assert(reporter.errors.exists(_._1 eq PageError.FootnoteCycle), reporter.errors)
+    assert(reporter.errors.exists((kind, msg) => (kind eq PageError.FootnoteCycle) && msg.contains("'a'")), reporter.errors)
+    assert(reporter.errors.exists((kind, msg) => (kind eq PageError.FootnoteCycle) && msg.contains("'b'")), reporter.errors)
+    val lists: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnotes") && !el.hasClass("nested-footnotes") && !el.hasClass("table-footnotes"))(el)
+    )
+    assert(lists.size == 1, dumped)
+    val listHtml: String = render(lists.head)
+    assert(listHtml.contains("doc"), listHtml)
+    assert(listHtml.contains("body-a"), listHtml)
+    assert(listHtml.contains("body-b"), listHtml)
+    val docAt: Int = listHtml.indexOf("doc")
+    val bodyBAt: Int = listHtml.indexOf("body-b")
+    val bodyAAt: Int = listHtml.indexOf("body-a")
+    assert(docAt >= 0 && bodyBAt > docAt && bodyAAt > bodyBAt, listHtml)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_2""""), dumped)
+    assert(dumped.contains("""id="_footnote_3""""), dumped)
+    assert(!dumped.contains("nested-footnotes"), dumped)
+  }
+
+  test("nested under a table note uses table-local inner ids") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      cellTable(Chunk(Footnote.link("outer"))),
+      Footnote.body("outer", Chunk(
+        Xml.text("table outer "),
+        Footnote.link("inner"),
+        Footnote.body("inner", Chunk(Xml.text("table inner")))
+      ))
+    ))
+    val finished: Xml.Element = finishTables(xml)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
+    assert(dumped.contains("""id="_table_1_fn_a_n_a""""), dumped)
+    assert(dumped.contains("""id="_table_1_fn_a_n_src_a""""), dumped)
+    assert(dumped.contains("""data-footnote-scope="nested""""), dumped)
+    assert(dumped.contains("table inner"), dumped)
+    val pageLists: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnotes") && !el.hasClass("table-footnotes") && !el.hasClass("nested-footnotes"))(el)
+    )
+    assert(pageLists.isEmpty, dumped)
   }

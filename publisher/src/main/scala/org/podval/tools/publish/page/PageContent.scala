@@ -136,7 +136,8 @@ final class PageContent private(
       combined,
       scopeReport,
       localTables = true,
-      hostTree = Some(xml)
+      hostTree = Some(xml),
+      hostFootnotes = footnotes
     )
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 

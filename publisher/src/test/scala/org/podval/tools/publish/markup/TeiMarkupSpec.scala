@@ -384,6 +384,37 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("""id="_footnote_1""""), dumped)
   }
 
+  test("nested place=end in place=end becomes a per-parent letter series") {
+    val xml: Xml.Element = process(
+      """<p>See<note place="end">outer<note place="end">inner</note></note>.</p>"""
+    )
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_a""""), dumped)
+    assert(dumped.contains("""data-footnote-scope="nested""""), dumped)
+    assert(dumped.contains("nested-footnotes"), dumped)
+    assert(dumped.contains("inner"), dumped)
+    assert(!dumped.contains("""id="_footnote_2""""), dumped)
+  }
+
+  test("gloss containing place=end stays document-scope") {
+    val xml: Xml.Element = process(
+      """<p>See <note type="gloss">term<note place="end">expansion</note></note>.</p>"""
+    )
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("expansion"), dumped)
+    assert(!dumped.contains("nested-footnotes"), dumped)
+    assert(!dumped.contains("""data-footnote-scope="nested""""), dumped)
+    assert(!dumped.contains("_footnote_1_n_"), dumped)
+    val leftover: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.isNamed("note"))(el)
+    )
+    assert(leftover.exists(_.getText.contains("term")), dumped)
+  }
+
   test("row/cell become tr/td and cols becomes colspan") {
     val xml: Xml.Element = process(
       """<table>

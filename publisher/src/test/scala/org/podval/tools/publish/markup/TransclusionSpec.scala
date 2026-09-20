@@ -227,3 +227,86 @@ final class TransclusionSpec extends AnyFunSuite:
       assert(host.contains("""class="transclusion""""), host)
       assert(host.contains("after"), host)
   }
+
+  test("host table and copied table use different _table_k_fn_a ids") {
+    withSite(Map(
+      "_site_config.yml" -> config,
+      "index.md" -> "Home.\n",
+      "target.md" ->
+        """---
+          |title: Target
+          |---
+          |## Alpha
+          |
+          || C | [^c] |
+          ||---|---|
+          || 1 | 2 |
+          |
+          |[^c]: Copy table note.
+          |""".stripMargin,
+      "host.md" ->
+        """| H | [^h] |
+          ||---|---|
+          || 1 | 2 |
+          |
+          |[^h]: Host table note.
+          |
+          |![[target#Alpha]]
+          |""".stripMargin
+    )): (_, target) =>
+      val host: String = html(target, "host.html")
+      assert(host.contains("table-with-notes"), host)
+      assert(host.contains("""id="_table_1_fn_a""""), host)
+      assert(host.contains("""id="_table_2_fn_a""""), host)
+      assert(host.contains("Host table note"), host)
+      assert(host.contains("Copy table note"), host)
+      val pageLists: Int = host.split("""class="footnotes"""").length - 1
+      assert(pageLists >= 0, host)
+      assert(!host.contains("""id="_footnote_1""""), host)
+  }
+
+  test("transcluded note-in-note prefixes inner ids on the copy; host inners stay unprefixed") {
+    withSite(Map(
+      "_site_config.yml" -> config,
+      "index.md" -> "Home.\n",
+      "target.md" ->
+        """---
+          |title: Target
+          |---
+          |## Alpha
+          |
+          |Copied <span class="footnote-link" footnote-correlation-id="outer"></span><span class="footnote" footnote-correlation-id="outer"><p>wrap <l>line</l> <hi>x</hi><span class="footnote-link" footnote-correlation-id="inner"></span><span class="footnote" footnote-correlation-id="inner">deep inner</span></p></span>.
+          |""".stripMargin,
+      "host.md" ->
+        """Host <span class="footnote-link" footnote-correlation-id="outer"></span><span class="footnote" footnote-correlation-id="outer">Host outer <span class="footnote-link" footnote-correlation-id="inner"></span><span class="footnote" footnote-correlation-id="inner">Host inner only</span></span>.
+          |
+          |![[target#Alpha]]
+          |""".stripMargin
+    )): (_, target) =>
+      val host: String = html(target, "host.html")
+      assert(host.contains("""class="transclusion""""), host)
+      assert(host.contains("""id="_footnote_1""""), host)
+      assert(host.contains("""id="_footnote_1_n_a""""), host)
+      assert(host.contains("Host inner only"), host)
+      assert(host.contains("""id="_footnote_2""""), host)
+      assert(host.contains("""id="_footnote_2_n_a""""), host)
+      assert(host.contains("deep inner"), host)
+      assert(host.contains("nested-footnotes"), host)
+      val fn1At: Int = host.indexOf("""id="_footnote_1"""")
+      val hostInnerAt: Int = host.indexOf("Host inner only")
+      val fn1nAt: Int = host.indexOf("""id="_footnote_1_n_a"""")
+      val fn2At: Int = host.indexOf("""id="_footnote_2"""")
+      val copyInnerAt: Int = host.indexOf("deep inner")
+      val fn2nAt: Int = host.indexOf("""id="_footnote_2_n_a"""")
+      assert(fn1At >= 0 && fn1nAt > fn1At && hostInnerAt > fn1At, host)
+      assert(fn2At >= 0 && fn2nAt > fn2At && copyInnerAt > fn2At, host)
+      assert(!host.contains("""id="_footnote_3""""), host)
+      val copyChunk: String =
+        if fn2At >= 0 then host.substring(fn2At) else host
+      assert(copyChunk.contains("deep inner"), copyChunk)
+      assert(copyChunk.contains("nested-footnotes"), copyChunk)
+      val hostChunk: String =
+        if fn1At >= 0 && fn2At > fn1At then host.substring(fn1At, fn2At) else host
+      assert(hostChunk.contains("Host inner only"), hostChunk)
+      assert(!hostChunk.contains("deep inner"), hostChunk)
+  }

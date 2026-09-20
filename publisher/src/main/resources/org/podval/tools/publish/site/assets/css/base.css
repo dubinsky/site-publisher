@@ -588,6 +588,9 @@ div.table-with-notes > div.footnotes {
         break-before: avoid;
     }
 }
+span.nested-footnotes {
+    font-size: 0.9em;
+}
 a.footnote-link, a.footnote-backlink {
     color: red;
 }

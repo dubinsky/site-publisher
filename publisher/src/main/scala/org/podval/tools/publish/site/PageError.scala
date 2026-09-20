@@ -42,6 +42,8 @@ object PageError:
   case object UnknownFootnote extends Kind("unknown footnote")
   case object OrphanFootnote extends Kind("orphan footnote")
   case object FootnoteScopeConflict extends Kind("footnote scope conflict")
+  case object FootnoteNesting extends Kind("footnote nesting")
+  case object FootnoteCycle extends Kind("footnote cycle")
 
   val all: List[Kind] = List(
     MalformedFrontMatter,
@@ -67,5 +69,7 @@ object PageError:
     TransclusionLoop,
     UnknownFootnote,
     OrphanFootnote,
-    FootnoteScopeConflict
+    FootnoteScopeConflict,
+    FootnoteNesting,
+    FootnoteCycle
   )
