@@ -1,7 +1,5 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js, js}
-
 object Cytoscape extends JSLibrary:
   val version: String = "3.34.2"
   val scriptPath: String = "/assets/js/graph.js"

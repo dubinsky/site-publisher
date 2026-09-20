@@ -1,12 +1,12 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.js.JSLibrary
+import org.podval.tools.publish.js.{JSLibrary, Js}
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Html, Xml}
-import zio.blocks.html.*
+import zio.blocks.html.{Js as _, js as _, *}
 import com.sun.net.httpserver.HttpServer
 import com.microsoft.playwright.{Browser, Playwright}
 import org.slf4j.{Logger, LoggerFactory}

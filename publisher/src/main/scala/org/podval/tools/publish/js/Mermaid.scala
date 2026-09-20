@@ -1,7 +1,5 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js, js}
-
 object Mermaid extends JSLibrary:
   val version: String = "11.13.0"
   

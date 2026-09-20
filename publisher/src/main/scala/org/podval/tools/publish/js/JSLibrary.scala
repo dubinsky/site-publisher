@@ -1,6 +1,6 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js, script, `type`}
+import zio.blocks.html.{Js as ZioJs, script, `type`}
 import zio.blocks.html.Dom.Element.Script
 
 abstract class JSLibrary:
@@ -33,12 +33,17 @@ abstract class JSLibrary:
       // Note: `script` does *not* accept optional attributes;
       // Grok's fix making `Element.when Self-typed is in my ZIO Blocks repository. 
       if isModule
-      then script(`type` := "module").inlineJs(code)
-      else script().inlineJs(code)
+      then script(`type` := "module").inlineJs(ZioJs(code.value))
+      else script().inlineJs(ZioJs(code.value))
 
     if inlineBeforeImports
     then inlineJs ++ imports
     else imports ++ inlineJs
+
+  /** Head inline script tags (`headInlineJs`); classic scripts, not `type=module`. */
+  final def headScripts: List[Script] =
+    headInlineJs.toList.map: code =>
+      script().inlineJs(ZioJs(code.value))
 
 object JSLibrary:
   val preferCloudFlare: Boolean = true

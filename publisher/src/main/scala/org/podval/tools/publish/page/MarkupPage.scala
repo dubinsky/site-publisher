@@ -156,7 +156,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         libraries.flatMap(library => library.stylesheet.map(ref =>
           link(rel := "stylesheet", href := s"${library.cdn}$ref")
         )),
-        libraries.flatMap(_.headInlineJs.map(code => script().inlineJs(code)))
+        libraries.flatMap(_.headScripts)
       ),
       body(
         site.siteHeader(this),

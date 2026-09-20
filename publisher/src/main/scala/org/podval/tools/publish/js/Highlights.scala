@@ -1,7 +1,5 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js, js}
-
 final class Highlights(languages: Set[String]) extends JSLibrary:
   val version: String = "11.11.1"
 

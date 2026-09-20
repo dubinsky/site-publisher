@@ -1,7 +1,5 @@
 package org.podval.tools.publish.js
 
-import zio.blocks.html.{Js, js}
-
 object MathJax extends JSLibrary:
   val version: String = "4.1.3"
 
