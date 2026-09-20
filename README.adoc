@@ -793,7 +793,9 @@ A note written with no space after the preceding word or element stays adjacent 
 
 A marker in a table cell is published as a lowercase Latin letter (`a`, `b`, …, `z`, `aa`) with the list immediately
 under that table (`div.table-with-notes`).
-Markdown and AsciiDoc still define those bodies at the end of the source file; the published page moves them.
+Markdown still defines those bodies at the end of the source file; the published page moves them.
+AsciiDoc `footnote:[…]` is written at the call site (including in a cell); the published page still lists those notes
+under the table.
 Collector `collection-index` and `document-header` tables stay in the page arabic series.
 
 A footnote inside another footnote is one level of letters `a`, `b` at the end of the parent note.
@@ -807,6 +809,7 @@ TEI still converts only `place="end"`.
 Obsidian inline `^[…]` footnotes are unsupported.
 
 AsciiDoc:: inline note, or a named definition reused with an empty macro:
+  A `footnote:[…]` in a table cell is written at the call site; the published page lists it under the table.
 +
 [source,asciidoc]
 ----
