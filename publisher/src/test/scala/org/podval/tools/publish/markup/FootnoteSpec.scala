@@ -1,13 +1,13 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement, XmlParser, XmlWriterConfig}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
 final class FootnoteSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String =
-    (HtmlXmlWriterConfig: XmlWriterConfig).render(element)
+    HtmlXmlWriterConfig.render(element)
 
   private def resolve(
     element: Xml.Element,
@@ -27,7 +27,7 @@ final class FootnoteSpec extends AnyFunSuite:
   private def published(xml: Xml.Element, width: Int = 40): String =
     val (notes, harvested) = Footnote.harvest(xml)
     val resolved: Xml.Element = harvested.transform(el => resolve(el, notes))
-    (HtmlXmlWriterConfig: XmlWriterConfig).render(resolved, width)
+    HtmlXmlWriterConfig.render(resolved, width)
 
   private final class RecordingReporter extends PageErrorReporter:
     var errors: Seq[(PageError.Kind, String)] = Seq.empty

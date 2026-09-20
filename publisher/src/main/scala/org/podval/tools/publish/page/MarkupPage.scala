@@ -4,7 +4,7 @@ import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement, XmlWriterConfig}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
 import org.podval.xml.dsl.{*, given}
 
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
@@ -37,7 +37,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     markup: Option[Xml.Element],
     synthetic: Option[Xml.Element]
   ): String =
-    (HtmlXmlWriterConfig: XmlWriterConfig).render(pageRoot(
+    HtmlXmlWriterConfig.render(pageRoot(
       pageHeader = pageHeader,
       markupContent = markup,
       syntheticContent = synthetic

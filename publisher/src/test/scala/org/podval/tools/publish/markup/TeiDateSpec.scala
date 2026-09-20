@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlWriterConfig}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
 
 final class TeiDateSpec extends AnyFunSuite:
@@ -10,7 +10,7 @@ final class TeiDateSpec extends AnyFunSuite:
     XmlParser.parseXml(input).toOption.get
 
   private def render(element: Xml.Element): String =
-    (HtmlXmlWriterConfig: XmlWriterConfig).render(element).replaceAll("\\s+", " ").replace("= ", "=")
+    HtmlXmlWriterConfig.render(element).replaceAll("\\s+", " ").replace("= ", "=")
 
   private final class Reporter(
     language: Language = Language.English,

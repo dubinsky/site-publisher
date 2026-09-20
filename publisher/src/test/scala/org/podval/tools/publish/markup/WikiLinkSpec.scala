@@ -1,12 +1,12 @@
 package org.podval.tools.publish.markup
 
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement, XmlWriterConfig}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 
 final class WikiLinkSpec extends AnyFunSuite:
   private def render(element: Xml.Element): String =
-    (HtmlXmlWriterConfig: XmlWriterConfig).render(Xml.element(XmlElement.P).setChildren(Chunk(element)))
+    HtmlXmlWriterConfig.render(Xml.element(XmlElement.P).setChildren(Chunk(element)))
 
   private def embedImage(ref: String, title: Option[String]): Xml.Element =
     val a: Xml.Element = WikiLink.make(transclude = true, ref, title)

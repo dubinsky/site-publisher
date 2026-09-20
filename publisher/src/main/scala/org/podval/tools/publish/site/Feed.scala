@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.{Date, Icon}
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlWriterConfig}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute}
 import org.podval.xml.dsl.{*, given}
 import java.time.{Instant, LocalTime, ZoneId}
 import scala.util.Try
@@ -110,7 +110,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
           (page match
             case markupPage: MarkupPage => markupPage
               .markupContent
-              .map(content => (HtmlXmlWriterConfig: XmlWriterConfig).render(content).trim)
+              .map(content => HtmlXmlWriterConfig.render(content).trim)
               .map(html => htmlEl("content", html).set(XmlAttribute.XmlBase, url))
             case _ => None    
           ).toSeq
