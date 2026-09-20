@@ -142,7 +142,11 @@ final class PageContent private(
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 
     // Add bodies of the footnotes referenced in the selected XML
-    val withFootnotes: Xml.Element = Footnote.appendReferenced(expanded, emitted)
+    val withFootnotes: Xml.Element = Footnote.appendReferenced(
+      expanded,
+      emitted,
+      emitLeftovers = !isChunked
+    )
 
     // Resolve citations
     val (withCitations: Xml.Element, unknownCitations: Seq[String]) = bibliography.resolve(withFootnotes)

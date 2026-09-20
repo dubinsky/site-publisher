@@ -73,12 +73,6 @@ object Footnote:
   def linkIds(nodes: Xml.Nodes): Seq[String] =
     nodes.flatMap(node => node.asElement.fold(Seq.empty[String])(linkIds))
 
-  def uniqueInOrder(ids: Seq[String]): Seq[String] =
-    val (ordered, _) = ids.foldLeft((Seq.empty[String], Set.empty[String])):
-      case ((acc, seen), id) if seen.contains(id) => (acc, seen)
-      case ((acc, seen), id) => (acc :+ id, seen + id)
-    ordered
-
   /** Replace leftover containers (caller says which) with the IR bodies inside them. */
   def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =
     xml.transform(element =>
@@ -96,8 +90,7 @@ object Footnote:
     localTables: Boolean = false
   ): Xml.Element =
     val (combined: Map[String, Footnote], stripped: Xml.Element) = harvest(xml)
-    val treeIds: Seq[String] = uniqueInOrder(linkIds(stripped))
-    if combined.isEmpty && treeIds.isEmpty then xml
+    if combined.isEmpty && linkIds(stripped).isEmpty then xml
     else
       reportOrphans(combined, stripped, report)
       val emitted: Map[String, Footnote] = numbered(stripped, combined, report, localTables)
@@ -106,7 +99,7 @@ object Footnote:
 
   /** Number footnotes in document-link order; strip bodies from the tree and from parent nodes. */
   def harvest(xml: Xml.Element): (Map[String, Footnote], Xml.Element) =
-    val numbers: Map[String, Int] = uniqueInOrder(linkIds(xml)).zipWithIndex.toMap
+    val numbers: Map[String, Int] = linkIds(xml).distinct.zipWithIndex.toMap
     val footnotes: Map[String, Footnote] = xml
       .gather(element =>
         Option.when(isBody(element)):
@@ -161,21 +154,26 @@ object Footnote:
   // Add bodies of the footnotes referenced in the selected XML
   def appendReferenced(
     xml: Xml.Element,
-    footnotes: Map[String, Footnote]
+    footnotes: Map[String, Footnote],
+    emitLeftovers: Boolean = true
   ): Xml.Element =
     val wrapped: Xml.Element =
       if footnotes.values.exists(isTableScope) then wrapTables(xml, footnotes)
       else xml
-    val treeIds: Seq[String] = uniqueInOrder(linkIds(wrapped))
+    val treeIds: Seq[String] = linkIds(wrapped).distinct
     val treeDocs: Seq[Footnote] = treeIds.flatMap(footnotes.get).filter(isDocumentScope)
-    val mentioned: Set[String] = footnotes.values.flatMap(footnote => linkIds(footnote.nodes)).toSet
-    val leftoverDocs: Seq[Footnote] = footnotes.values
-      .filter: footnote =>
-        isDocumentScope(footnote) &&
-          !treeIds.contains(footnote.correlationId) &&
-          mentioned.contains(footnote.correlationId)
-      .toSeq
-      .sortBy(_.number)
+    // Cycle/conflict leftovers have no tree marker; chunks omit them so they are not repeated.
+    val leftoverDocs: Seq[Footnote] =
+      if !emitLeftovers then Seq.empty
+      else
+        val mentioned: Set[String] = footnotes.values.flatMap(footnote => linkIds(footnote.nodes)).toSet
+        footnotes.values
+          .filter: footnote =>
+            isDocumentScope(footnote) &&
+              !treeIds.contains(footnote.correlationId) &&
+              mentioned.contains(footnote.correlationId)
+          .toSeq
+          .sortBy(_.number)
     val toAdd: Seq[Footnote] = treeDocs ++ leftoverDocs
     if toAdd.isEmpty then wrapped
     else
@@ -203,12 +201,12 @@ object Footnote:
           emitted.get(id) match
             case None => element
             case Some(footnote) =>
-              var result: Xml.Element = footnote.link
-              if attachTip then
+              // Tooltip copies must not steal the published marker's src id (getElementById would hit display:none).
+              val numbered: Xml.Element = footnote.link(withId = attachTip)
+              if !attachTip then numbered
+              else
                 val content: Xml.Nodes = footnote.nodes.filterNot(_.isWhitespace)
-                if content.nonEmpty then
-                  result = tip.attachTip(result, content)
-              result
+                if content.isEmpty then numbered else tip.attachTip(numbered, content)
 
   // gatherWithContext has one context slot; a table inside a tip would hide the tip.
   private enum Kind derives CanEqual:
@@ -233,13 +231,13 @@ object Footnote:
   ): Assigned =
     val treeOccs: Seq[(String, Option[Xml.Element])] =
       if !localTables then
-        uniqueInOrder(linkIds(tree)).filterNot(skip.contains).map(_ -> None)
+        linkIds(tree).distinct.filterNot(skip.contains).map(_ -> None)
       else
         collectOccurrences(tree).filter((id, _) => !skip.contains(id))
     val noteOccs: Seq[(String, String)] =
       footnotes.toSeq.flatMap: (parentId, footnote) =>
         if skip.contains(parentId) then Seq.empty
-        else uniqueInOrder(linkIds(footnote.nodes)).filterNot(skip.contains).map(_ -> parentId)
+        else linkIds(footnote.nodes).distinct.filterNot(skip.contains).map(_ -> parentId)
     combine(treeOccs, noteOccs, report)
 
   /** `None` is running text; `Some(table)` is that layout table (identity). */
@@ -275,10 +273,10 @@ object Footnote:
     val notesById: Map[String, Seq[String]] =
       noteOccs.foldLeft(Map.empty[String, Seq[String]]):
         case (acc, (id, parent)) => acc.updated(id, acc.getOrElse(id, Seq.empty) :+ parent)
-    val ids: Seq[String] = uniqueInOrder(treeOccs.map(_._1) ++ noteOccs.map(_._1))
+    val ids: Seq[String] = (treeOccs.map(_._1) ++ noteOccs.map(_._1)).distinct
     val initial: Map[String, Kind] = ids.map: id =>
       val locs: Seq[Option[Xml.Element]] = treeById.getOrElse(id, Seq.empty)
-      val parents: Seq[String] = uniqueInOrder(notesById.getOrElse(id, Seq.empty))
+      val parents: Seq[String] = notesById.getOrElse(id, Seq.empty).distinct
       val tables: Seq[Xml.Element] = uniqueEq(locs.flatten)
       val hasDocument: Boolean = locs.exists(_.isEmpty)
       val kind: Kind =
@@ -339,27 +337,22 @@ object Footnote:
         (Set.empty, done2, found2)
     ._3
 
-  private def nestedDepth(id: String, kinds: Map[String, Kind], seen: Set[String] = Set.empty): Int =
-    if seen.contains(id) then 0
-    else kinds.get(id) match
-      case Some(Kind.Nested(parent)) => 1 + nestedDepth(parent, kinds, seen + id)
-      case _ => 0
-
-  private def outermostParent(id: String, kinds: Map[String, Kind], seen: Set[String] = Set.empty): String =
-    kinds.get(id) match
-      case Some(Kind.Nested(parent)) if !seen.contains(id) =>
-        kinds.get(parent) match
-          case Some(Kind.Nested(_)) => outermostParent(parent, kinds, seen + id)
-          case _ => parent
-      case Some(Kind.Nested(parent)) => parent
-      case _ => id
-
   private def promoteDeep(kinds: Map[String, Kind], report: PageErrorReporter): Map[String, Kind] =
+    def depthAndOutermost(id: String): (Int, String) =
+      def walk(current: String, depth: Int, seen: Set[String]): (Int, String) =
+        if seen.contains(current) then (depth, current)
+        else kinds.get(current) match
+          case Some(Kind.Nested(parent)) => walk(parent, depth + 1, seen + current)
+          case _ => (depth, current)
+      walk(id, 0, Set.empty)
     kinds.map: (id, kind) =>
       kind match
-        case Kind.Nested(_) if nestedDepth(id, kinds) > 1 =>
-          report.error(PageError.FootnoteNesting, s"footnote '$id' is nested deeper than one level")
-          id -> Kind.Nested(outermostParent(id, kinds))
+        case Kind.Nested(_) =>
+          val (depth, outermost) = depthAndOutermost(id)
+          if depth > 1 then
+            report.error(PageError.FootnoteNesting, s"footnote '$id' is nested deeper than one level")
+            id -> Kind.Nested(outermost)
+          else id -> kind
         case _ => id -> kind
 
   private def remapEmitted(
@@ -369,16 +362,19 @@ object Footnote:
     cycleIds: Set[String]
   ): Map[String, Footnote] =
     val treeDocumentIds: Seq[String] =
-      uniqueInOrder(linkIds(tree)).filter(id => kinds.get(id).contains(Kind.Document))
-    val fromBodies: Seq[String] =
-      uniqueInOrder(
-        combined.keys.toSeq.sorted.flatMap: parentId =>
-          combined.get(parentId).toSeq.flatMap(footnote => linkIds(footnote.nodes))
-      ).filter(cycleIds.contains)
+      linkIds(tree).distinct.filter(id => kinds.get(id).contains(Kind.Document))
+    val mentionedInBodies: Seq[String] =
+      combined.keys.toSeq.sorted.flatMap: parentId =>
+        combined.get(parentId).toSeq.flatMap(footnote => linkIds(footnote.nodes))
+      .distinct
+    val fromBodies: Seq[String] = mentionedInBodies.filter(cycleIds.contains)
     val leftoverCycle: Seq[String] =
       cycleIds.toSeq.sorted.filterNot(id => treeDocumentIds.contains(id) || fromBodies.contains(id))
+    val taken: Set[String] = (treeDocumentIds ++ fromBodies ++ leftoverCycle).toSet
+    val leftoverDocument: Seq[String] =
+      mentionedInBodies.filter(id => !taken.contains(id) && kinds.get(id).contains(Kind.Document))
     val documentIds: Seq[String] =
-      uniqueInOrder(treeDocumentIds ++ fromBodies ++ leftoverCycle)
+      (treeDocumentIds ++ fromBodies ++ leftoverCycle ++ leftoverDocument).distinct
     val occurrences: Seq[(String, Option[Xml.Element])] = collectOccurrences(tree)
     val tableOccs: Seq[(String, Xml.Element)] = occurrences.flatMap: (id, loc) =>
       if kinds.get(id).contains(Kind.Table) then loc.map(id -> _) else None
@@ -390,7 +386,7 @@ object Footnote:
     val tableEmitted: Seq[(String, Footnote)] =
       tables.zipWithIndex.flatMap: (table, index) =>
         val k: Int = index + 1
-        val ids: Seq[String] = uniqueInOrder(tableOccs.filter((_, t) => t eq table).map(_._1))
+        val ids: Seq[String] = tableOccs.filter((_, t) => t eq table).map(_._1).distinct
         ids.zipWithIndex.flatMap: (id, n) =>
           combined.get(id).map: footnote =>
             id -> remapped(footnote, id, n + 1, FootnoteScope.Table(k), footnote.nodes)
@@ -418,7 +414,7 @@ object Footnote:
       case (id, Kind.Nested(p)) if p == parentId => id
     .toSet
     val fromNodes: Seq[String] = combined.get(parentId).toSeq
-      .flatMap(footnote => uniqueInOrder(linkIds(footnote.nodes)))
+      .flatMap(footnote => linkIds(footnote.nodes).distinct)
       .filter(nested.contains)
     val leftover: Seq[String] = nested.toSeq.sorted.filterNot(fromNodes.contains)
     fromNodes ++ leftover
@@ -437,11 +433,11 @@ object Footnote:
       )
       if nextTip || !isLayoutTable(withChildren) then withChildren
       else
-        val ids: Seq[String] = uniqueInOrder(
-          collectOccurrences(withChildren)
-            .flatMap: (id, loc) =>
-              Option.when(loc.exists(_ eq withChildren))(id)
-        ).filter(id => footnotes.get(id).exists(isTableScope))
+        val ids: Seq[String] = collectOccurrences(withChildren)
+          .flatMap: (id, loc) =>
+            Option.when(loc.exists(_ eq withChildren))(id)
+          .distinct
+          .filter(id => footnotes.get(id).exists(isTableScope))
         if ids.isEmpty then withChildren
         else
           val notes: Seq[Footnote] = ids.flatMap(footnotes.get)
@@ -543,14 +539,14 @@ final class Footnote(
     case FootnoteScope.Table(_) => Some("table")
     case FootnoteScope.Nested(_) => Some("nested")
 
-  def link: Xml.Element =
+  def link(withId: Boolean = true): Xml.Element =
     val result: Xml.Element = Xml
       .element(XmlElement.A)
       .add(Footnote.LinkClass)
-      .setId(linkId)
       .setHref(s"#$bodyId")
       .setText(label)
-    scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
+    val withScope: Xml.Element = scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
+    if withId then withScope.setId(linkId) else withScope
 
   def body(nested: Seq[Footnote] = Seq.empty): Xml.Element =
     val kids: Xml.Nodes =

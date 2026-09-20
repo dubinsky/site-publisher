@@ -44,7 +44,7 @@ final class FootnoteSpec extends AnyFunSuite:
       number = 1,
       nodes = Chunk(Xml.text("a note"))
     )
-    val withTip: Xml.Element = Footnote.tip.attachTip(footnote.link, footnote.nodes)
+    val withTip: Xml.Element = Footnote.tip.attachTip(footnote.link(), footnote.nodes)
     val rendered: String = render(withTip).replaceAll("\\s+", " ").replace("= ", "=")
     assert(Footnote.tip.isRef(withTip))
     assert(rendered.contains("""class="footnote-ref""""))
@@ -545,6 +545,10 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(dumped.contains("""id="_footnote_1""""), dumped)
     assert(dumped.contains("""id="_footnote_1_n_a""""), dumped)
     assert(dumped.contains("""id="_footnote_1_n_src_a""""), dumped)
+    val srcMarkers: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.getId.contains("_footnote_1_n_src_a"))(el)
+    )
+    assert(srcMarkers.size == 1, dumped)
     assert(dumped.contains("""data-footnote-scope="nested""""), dumped)
     assert(dumped.contains("nested-footnotes"), dumped)
     assert(dumped.contains("inner note"), dumped)
@@ -569,6 +573,10 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(tipHtml.contains(">a</a>") || tipHtml.contains(">a<"), tipHtml)
     assert(!tipHtml.contains("nested-footnotes"), tipHtml)
     assert(!tipHtml.contains("inner note"), tipHtml)
+    val tipSrc: Seq[Xml.Element] = outerTips.head.gather(el =>
+      Option.when(el.getId.contains("_footnote_1_n_src_a"))(el)
+    )
+    assert(tipSrc.isEmpty, tipHtml)
     val nestedTips: Seq[Xml.Element] = outerTips.head.gather(el =>
       Option.when(el.hasClass("footnote-tip"))(el)
     )
@@ -653,10 +661,68 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
     assert(dumped.contains("""id="_table_1_fn_a_n_a""""), dumped)
     assert(dumped.contains("""id="_table_1_fn_a_n_src_a""""), dumped)
+    val tableSrc: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.getId.contains("_table_1_fn_a_n_src_a"))(el)
+    )
+    assert(tableSrc.size == 1, dumped)
     assert(dumped.contains("""data-footnote-scope="nested""""), dumped)
     assert(dumped.contains("table inner"), dumped)
     val pageLists: Seq[Xml.Element] = finished.gather(el =>
       Option.when(el.hasClass("footnotes") && !el.hasClass("table-footnotes") && !el.hasClass("nested-footnotes"))(el)
     )
     assert(pageLists.isEmpty, dumped)
+  }
+
+  test("inner-only FootnoteScopeConflict emits one document body") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("p1"),
+      Footnote.body("p1", Chunk(
+        Xml.text("first "),
+        Footnote.link("inner")
+      )),
+      Footnote.link("p2"),
+      Footnote.body("p2", Chunk(
+        Xml.text("second "),
+        Footnote.link("inner")
+      )),
+      Footnote.body("inner", Chunk(Xml.text("shared inner")))
+    ))
+    val reporter: RecordingReporter = RecordingReporter()
+    val finished: Xml.Element = Footnote.finish(xml, reporter)
+    val dumped: String = render(finished)
+    assert(reporter.errors.exists(_._1 eq PageError.FootnoteScopeConflict), reporter.errors)
+    assert(dumped.contains("shared inner"), dumped)
+    assert(!dumped.contains("nested-footnotes"), dumped)
+    assert(!dumped.contains("""data-footnote-scope="nested""""), dumped)
+    val innerBodies: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnote") && el.getId.contains("_footnote_3"))(el)
+    )
+    assert(innerBodies.size == 1, dumped)
+    assert(innerBodies.head.getText.contains("shared inner"), render(innerBodies.head))
+    val innerLinks: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link") && el.getHref.contains("#_footnote_3"))(el)
+    )
+    assert(innerLinks.size >= 2, dumped)
+    assert(innerLinks.forall(_.getText == "3"), dumped)
+  }
+
+  test("appendReferenced omits leftover document bodies when emitLeftovers is false") {
+    val treeNote: Footnote = Footnote(
+      correlationId = "d",
+      number = 1,
+      nodes = Chunk(Xml.text("doc "), Footnote.link("a"))
+    )
+    val leftover: Footnote = Footnote(
+      correlationId = "a",
+      number = 2,
+      nodes = Chunk(Xml.text("leftover-body"))
+    )
+    val notes: Map[String, Footnote] = Map("d" -> treeNote, "a" -> leftover)
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(Footnote.link("d")))
+    val withLeftovers: String = render(Footnote.appendReferenced(xml, notes))
+    val without: String = render(Footnote.appendReferenced(xml, notes, emitLeftovers = false))
+    assert(withLeftovers.contains("leftover-body"), withLeftovers)
+    assert(withLeftovers.contains("doc "), withLeftovers)
+    assert(without.contains("doc "), without)
+    assert(!without.contains("leftover-body"), without)
   }
