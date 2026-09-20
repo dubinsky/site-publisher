@@ -13,7 +13,9 @@ object Cytoscape extends JSLibrary:
     s"${JSLibrary.jsDelivr}cytoscape@$version/dist"
   )
 
-  // Keep this one line: HTML pretty-print wraps text and XML-escapes `<` / `&` in `<script>`.
   override def inlineJs: Some[Js] = Some:
     val cytoscape: String = s"$cdn/cytoscape.esm.min.mjs"
-    js"import cytoscape from $cytoscape; import { run } from $scriptPath; run(cytoscape);"
+    js"""import cytoscape from $cytoscape;
+        |import { run } from $scriptPath;
+        |run(cytoscape);
+        |""".stripMargin

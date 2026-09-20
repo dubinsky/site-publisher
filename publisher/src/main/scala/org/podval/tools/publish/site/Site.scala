@@ -335,8 +335,6 @@ object Site:
     val primary: String = lang.takeWhile(c => c != '-' && c != '_')
     Language.forName(lang).orElse(Language.forName(primary))
 
-  // Inline JS is XML-escaped (`<` → `&lt;`, `&&` → `&amp;&amp;`) and pretty-print wraps lines
-  // (`//` would comment out the rest). Keep head JS free of those; put non-trivial scripts in assets.
   private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
 
   def main(args: Array[String]): Unit =
