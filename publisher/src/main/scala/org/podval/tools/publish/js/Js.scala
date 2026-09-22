@@ -1,6 +1,7 @@
 package org.podval.tools.publish.js
 
 /** Raw JavaScript. `js"..."` quotes `String` holes and splices `Js` holes. */
+// TODO move to XML library (or eliminate)
 final class Js private (val value: String):
   override def toString: String = value
   def stripMargin: Js = Js(value.stripMargin)

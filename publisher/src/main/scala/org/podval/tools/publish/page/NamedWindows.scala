@@ -2,6 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.Config
 import org.podval.xml.{Xml, XmlAttribute}
+import Xml.given
 
 /** Collector four named browsing contexts. Opt-in (`named-windows`); default off. */
 object NamedWindows:

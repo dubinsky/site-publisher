@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
+import Xml.given
 import java.io.File
 
 object HtmlMarkup extends Markup(

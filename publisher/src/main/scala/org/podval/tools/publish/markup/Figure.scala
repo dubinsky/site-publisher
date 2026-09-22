@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import Xml.given
 
 /** Markup-neutral figure IR. CSS styles only these classes.
   * `<figure class="figure">`, optional `figcaption.figure-caption`. */

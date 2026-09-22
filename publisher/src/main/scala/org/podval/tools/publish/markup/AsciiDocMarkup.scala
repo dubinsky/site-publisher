@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
+import Xml.given
 import java.io.File
 
 // TODO deal with

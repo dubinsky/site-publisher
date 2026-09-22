@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import Xml.given
 
 enum FootnoteScope derives CanEqual:
   case Document

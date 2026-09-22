@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlElement}
+import Xml.given
 
 object DescriptionList:
   def groupItems(

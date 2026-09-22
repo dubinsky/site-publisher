@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import Xml.given
 
 /** TEI `pb` harvested from the raw tree for collection `Страницы`, missing-photo notes, and facsimile JPEGs. */
 final class Pb(

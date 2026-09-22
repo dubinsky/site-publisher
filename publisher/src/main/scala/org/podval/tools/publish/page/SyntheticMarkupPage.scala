@@ -2,6 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 
 abstract class SyntheticMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
   final override def hasSyntheticContent: Boolean = true

@@ -2,6 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 
 abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
   final override def prev: Option[Page] = parent.flatMap(_.prev(this))

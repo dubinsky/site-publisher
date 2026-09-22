@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import Xml.given
 
 final class Tip(prefix: String):
   object RefClass extends CssClass(s"$prefix-ref")

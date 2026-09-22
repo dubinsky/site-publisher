@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
+import Xml.given
 import java.io.File
 
 object DocBookMarkup extends Markup(

@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
+import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
 

@@ -1,6 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 import org.podval.xml.dsl.{nav as navEl, *, given}
 
 /** Batches for the synthetic posts listing. */

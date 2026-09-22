@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
+import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 
 final class TeiDateSpec extends AnyFunSuite:

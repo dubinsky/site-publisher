@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import Xml.given
 
 /** Markup-neutral admonition IR. CSS styles only these classes.
   * Type is `data-type` (lowercase). Optional Obsidian fold is a `<details>`. */

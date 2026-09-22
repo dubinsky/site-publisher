@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlElement}
+import Xml.given
 
 /** Markup-neutral callout IR. CSS styles only these classes.
   * Markers sit in verbatim (`span.callout`); the numbered list is `ol.callout-list`. */

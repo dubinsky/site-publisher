@@ -3,6 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{Xml, XmlElement}
+import Xml.given
 
 /** Collector `Index.Tree` / `Index.Flat` for a root TEI `store`: nested archive tree and
   * a flat list of descendant collections. Generated at render so listing hrefs are not backlinks. */

@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlElement}
+import Xml.given
 
 /** Markup-neutral aside IR. CSS styles only these classes.
   * Untyped auxiliary content (`<aside class="aside">`), optional title. */

@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.metadata.{Language, Name}
 import org.podval.xml.{Xml, XmlAttribute, XmlCodec}
+import Xml.given
 import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 

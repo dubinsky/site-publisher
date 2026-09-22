@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 
 sealed abstract class LinkKind
 

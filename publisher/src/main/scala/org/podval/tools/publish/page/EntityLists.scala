@@ -3,6 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlElement}
+import Xml.given
 
 /** Member lists for a TEI `entityLists` catalog, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */

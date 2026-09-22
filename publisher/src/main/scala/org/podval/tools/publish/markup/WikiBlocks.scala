@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 
 final class WikiBlocks private(blocks: Seq[WikiBlock]):

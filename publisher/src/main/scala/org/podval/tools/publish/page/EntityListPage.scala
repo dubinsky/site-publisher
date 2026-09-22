@@ -4,6 +4,7 @@ import org.podval.tools.publish.markup.EntityList
 import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 
 final class EntityListPage(
   site: Site,

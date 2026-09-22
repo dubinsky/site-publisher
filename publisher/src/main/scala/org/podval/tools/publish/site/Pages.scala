@@ -9,6 +9,7 @@ import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionInde
   PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 import java.io.File
 
 final class Pages(site: Site):

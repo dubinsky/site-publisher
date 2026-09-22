@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlCodec}
+import Xml.given
 import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 

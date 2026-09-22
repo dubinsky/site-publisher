@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlElement}
+import Xml.given
 
 // Details of the glossary internal representation.
 // Markup processors convert their HTML into this shape; definitions() does not

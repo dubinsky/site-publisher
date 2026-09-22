@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 
 /** HTML-shaped leftovers → shared IR.
   * Dialect soup (`quoteblock`, `[!tip]`, TEI `cit`, `videoblock`, …) is converted on `XxxMarkup` first.
