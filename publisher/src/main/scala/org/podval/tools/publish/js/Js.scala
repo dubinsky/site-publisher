@@ -1,7 +1,29 @@
 package org.podval.tools.publish.js
 
-/** Raw JavaScript. `js"..."` quotes `String` holes and splices `Js` holes. */
-// TODO move to XML library (or eliminate)
+/** Raw JavaScript. `js"..."` quotes `String` holes and splices `Js` holes.
+  *
+  * Stays in site-publisher. The interpolator builds a JavaScript source string.
+  * It never builds an element, and the writer never sees `Js`. `JSLibrary` unwraps
+  * `.value` into `script().inlineJs`, which appends a text child. After that call a
+  * quoted hole and a classpath resource are the same text node. Moving `Js` into
+  * `org.podval.xml` without changing that signature only changes the import.
+  *
+  * The production holes are the analytics id, the Mermaid URL, and the Cytoscape URL
+  * plus `/assets/js/graph.js`. MathJax and Highlights use `js"..."` with no holes.
+  * `Site` wraps `siteSettings.js` in `Js` because `headInlineJs` is `Option[Js]`.
+  * Nothing outside `JsSpec` splices a `Js` hole. The only caller is site-publisher.
+  *
+  * A `String` hole escapes `<` to `\u003c` inside a JavaScript literal.
+  * `protectHtmlRawText` later rewrites `</` across the whole script body, including
+  * resource files that never went through `js"..."`. Those two passes stay separate.
+  *
+  * `inlineJs` and `externalJs` on the XML DSL set a text child and a `src` attribute.
+  * This interpolator is the code that quotes JavaScript literals.
+  *
+  * A shorter publisher stays local too: `Option[String]` on `JSLibrary`, a quoter for
+  * those three holes, and `siteSettings.js` as the string `Files.readResource` already
+  * returns.
+  */
 final class Js private (val value: String):
   override def toString: String = value
   def stripMargin: Js = Js(value.stripMargin)
