@@ -206,7 +206,6 @@ object MarkdownMarkup extends Markup(
 //  private val bodyStartString: String = ":"
 //
 //  @tailrec
-//  // TODO this loop has commonality with the WikiLinksFeature.convertWikiLinks() loop...
 //  private def convertMarkdownFootnotes(result: Xml.Nodes, text: String): Xml.Nodes =
 //    if text.isEmpty then result else
 //      val start: Int = text.indexOf(startsString)
