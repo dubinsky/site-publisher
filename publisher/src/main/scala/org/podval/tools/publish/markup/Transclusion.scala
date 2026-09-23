@@ -57,7 +57,7 @@ object Region:
       case Some(section: Link.ToSection) => Some(Section(section.id))
       case Some(block: Link.ToBlock) => Some(Block(block.id))
       case Some(toId: Link.ToId) =>
-        content.xml.gather(el => Option.when(el.getId.contains(toId.id))(el)).headOption.map: el =>
+        content.xml.elements(_.getId.contains(toId.id)).headOption.map: el =>
           if isDocSection(el) then Section(toId.id) else Block(toId.id)
 
   def hostOf(anchor: Xml.Element, content: PageContent): Region =
@@ -416,9 +416,9 @@ object Transclusion:
             ))
           case _ => None
       case Region.Section(id) =>
-        content.xml.gather(el => Option.when(el.isElement(XmlElement.Div) && el.hasClass("section") && el.getId.contains(id))(el)).headOption
+        content.xml.elements(el => el.isElement(XmlElement.Div) && el.hasClass("section") && el.getId.contains(id)).headOption
       case Region.Block(id) =>
-        content.xml.gather(el => Option.when(el.getId.contains(id))(el)).headOption
+        content.xml.elements(_.getId.contains(id)).headOption
       case Region.Preamble =>
         None
 

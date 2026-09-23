@@ -17,3 +17,6 @@ private[markup] object DialectWalk:
 
   def gather[A](xml: Xml.Element)(f: Xml.Element => Option[A]): Seq[A] =
     xml.gather(f, stopAtCode = false)
+
+  def elements(xml: Xml.Element)(predicate: Xml.Element => Boolean): Seq[Xml.Element] =
+    xml.elements(predicate, stopAtCode = false)

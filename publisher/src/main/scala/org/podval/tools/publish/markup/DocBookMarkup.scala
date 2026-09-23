@@ -46,42 +46,81 @@ object DocBookMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val coNumbers: IdGenerator = IdGenerator("")
-    // Convert footnotes, glossary, quotes, and code in a second pass so IR `class` values are kept.
-    val converted: Xml.Element = DialectWalk.transform(xml): element =>
-      val renameSections: Boolean = !(element eq xml) || !xml.getName.localNameIn(rootElements)
-      convertSpecial(db2Html.convert(element), renameSections)
-    val title: Option[Xml.Element] = documentTitle(converted)
-    val body: Xml.Element = title.fold(converted)(stripDocumentTitle(converted, _))
-    val footnoteIds: Set[String] = footnoteDefinitionIds(body)
-    val biblIds: Set[String] = bibliographyEntryIds(body)
-    val withIr: Xml.Element = DialectWalk.rewrite(body): (element, parent) =>
-      convertFootnote(element, footnoteCorrelationIds)
-        .orElse(convertFootnoteRef(element, footnoteIds))
-        .orElse(convertCo(element, coNumbers)) match
-        case Some(nodes) =>
-          Xml.Rewrite.Replace(nodes)
-        case None =>
-          val steps: Seq[Xml.Element => Xml.Element] = Seq(
-            convertGlossary,
-            convertVariableList,
-            convertAdmonition,
-            convertAside,
-            convertQuote,
-            convertFigure,
-            convertVideo,
-            convertCalloutList,
-            convertBibliography,
-            convertCitation,
-            el => convertCiteLink(el, biblIds)
-          )
-          val result: Xml.Element = steps.foldLeft(element)((el, step) => step(el))
-          // Do not re-wrap `<code>` already inside `<pre>`.
-          // `convertCode` sees the element from before these steps.
-          if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
-          else convertCode(element) match
-            case Some(nodes) => rewriteCode(nodes)
-            case None => Xml.Rewrite.Keep(result)
+    val rawTitle: Option[Xml.Element] = documentTitle(xml)
+    val title: Option[Xml.Element] = rawTitle.map: element =>
+      DialectWalk.transform(element)(el => convertSpecial(db2Html.convert(el), renameSections = true))
+    val stripped: Xml.Element = rawTitle.fold(xml)(stripDocumentTitle(xml, _))
+    val footnoteIds: Set[String] = footnoteDefinitionIds(stripped)
+    val biblIds: Set[String] = bibliographyEntryIds(stripped)
+    // One walk. `Emit` keeps IR `class` values from being renamed on a second visit.
+    val withIr: Xml.Element = stripped.rewrite(
+      (element, parent) =>
+        walk(
+          element,
+          parent,
+          isRoot = parent.isEmpty,
+          footnoteCorrelationIds,
+          coNumbers,
+          footnoteIds,
+          biblIds
+        ),
+      stopAtCode = false
+    )
     (markHeadedDivs(withIr), title)
+
+  private def walk(
+    element: Xml.Element,
+    parent: Option[Xml.Element],
+    isRoot: Boolean,
+    footnoteCorrelationIds: IdGenerator,
+    coNumbers: IdGenerator,
+    footnoteIds: Set[String],
+    biblIds: Set[String]
+  ): Xml.Rewrite =
+    val renameSections: Boolean = !isRoot || !element.getName.localNameIn(rootElements)
+    val converted: Xml.Element = convertSpecial(db2Html.convert(element), renameSections)
+    val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
+      node.asElement match
+        case Some(child) =>
+          walk(
+            child,
+            Some(converted),
+            isRoot = false,
+            footnoteCorrelationIds,
+            coNumbers,
+            footnoteIds,
+            biblIds
+          ) match
+            case Xml.Rewrite.Keep(result) => Seq(result)
+            case Xml.Rewrite.Emit(nodes) => nodes
+            case Xml.Rewrite.Replace(nodes) => nodes
+        case None =>
+          Seq(node)
+    val ready: Xml.Element = converted.setChildren(children)
+    convertFootnote(ready, footnoteCorrelationIds)
+      .orElse(convertFootnoteRef(ready, footnoteIds))
+      .orElse(convertCo(ready, coNumbers)) match
+      case Some(nodes) =>
+        Xml.Rewrite.Emit(nodes)
+      case None =>
+        val steps: Seq[Xml.Element => Xml.Element] = Seq(
+          convertGlossary,
+          convertVariableList,
+          convertAdmonition,
+          convertAside,
+          convertQuote,
+          convertFigure,
+          convertVideo,
+          convertCalloutList,
+          convertBibliography,
+          convertCitation,
+          el => convertCiteLink(el, biblIds)
+        )
+        val result: Xml.Element = steps.foldLeft(ready)((el, step) => step(el))
+        if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Emit(Seq(result))
+        else convertCode(ready) match
+          case Some(nodes) => Xml.Rewrite.Emit(nodes)
+          case None => Xml.Rewrite.Emit(Seq(result))
 
   // Transform is parent-first, so this is a second pass after convert.
   private def markHeadedDivs(xml: Xml.Element): Xml.Element =
@@ -354,7 +393,7 @@ object DocBookMarkup extends Markup(
       Some(Seq(Callout.marker(number)))
 
   private def bibliographyEntryIds(xml: Xml.Element): Set[String] =
-    DialectWalk.gather(xml)(el => Option.when(el.isNamed("bibliography"))(el)).flatMap(entryIds).toSet
+    DialectWalk.elements(xml)(_.isNamed("bibliography")).flatMap(entryIds).toSet
 
   private def entryIds(list: Xml.Element): Seq[String] =
     list.childElements
@@ -400,16 +439,6 @@ object DocBookMarkup extends Markup(
         val key: Option[String] = fragment.filter(Citation.isBibKey)
         val locator: Option[String] = element.get("xrefstyle").map(_.trim).filter(_.nonEmpty)
         key.fold(element)(k => Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item(k, locator))))
-
-  // `rewrite` visits Replace nodes again with the same parent.
-  // Inline `code` (and `literal` renamed to `code`) stays `code`, so Keep it.
-  // A `pre` wrapper is Replace so the inner `code` sees `pre`.
-  private def rewriteCode(nodes: Xml.Nodes): Xml.Rewrite =
-    nodes match
-      case Seq(only) if only.asElement.exists(_.isNamed("code")) =>
-        Xml.Rewrite.Keep(only.asElement.get)
-      case _ =>
-        Xml.Rewrite.Replace(nodes)
 
   private def convertCode(element: Xml.Element): Option[Xml.Nodes] =
     val language: Option[String] =

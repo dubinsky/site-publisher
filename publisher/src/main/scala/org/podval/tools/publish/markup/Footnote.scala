@@ -98,7 +98,7 @@ object Footnote:
     xml.transform(element =>
       element.setChildren(element.getChildren.convertElements(leftover =>
         Option.when(isContainer(leftover))(
-          leftover.gather(el => Option.when(isBody(el))(el: Xml.Node))
+          leftover.elements(isBody)
         )
       ))
     )

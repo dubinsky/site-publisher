@@ -67,7 +67,7 @@ object Citation:
       .filter(_.key.nonEmpty)
 
   def gather(xml: Xml.Element): Seq[Xml.Element] =
-    xml.gather(element => Option.when(isCite(element))(element))
+    xml.elements(isCite)
 
   def isBibKey(token: String): Boolean =
     token.nonEmpty && token.charAt(0).isLetter && token.forall(c => c.isLetterOrDigit || c == '_' || c == '-' || c == ':')
