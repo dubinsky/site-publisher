@@ -3,7 +3,7 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Xml, XmlAttribute}
+import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 object Sitemap:
@@ -20,22 +20,26 @@ object Sitemap:
 final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
   override protected def iconDefault: Icon = Icon("map", Icon.Regular)
 
-  override def xmlContent: Xml.Element =Xml
-    .element("urlset")
-    .set(XmlAttribute.Xmlns("xsi"), "http://www.w3.org/2001/XMLSchema-instance")
-    .set("xsi:schemaLocation", "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd")
-    .set(XmlAttribute.Xmlns, "http://www.sitemaps.org/schemas/sitemap/0.9")
-    .setChildren(urls)
+  override def xmlContent: Xml.Element =
+    val xsi: String = "http://www.w3.org/2001/XMLSchema-instance"
+    val location: String =
+      "http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+    val sitemapNs: String = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    element(
+      "urlset",
+      xmlns("xsi") := xsi,
+      attr("xsi:schemaLocation") := location,
+      xmlns := sitemapNs,
+      urls
+    )
 
   private def urls: List[Xml.Element] = site
     .pages
     .pages
     .filter(_.path.extension.contains(HtmlMarkup.extension))
     .map: page =>
-      val loc = Xml.element("loc").setText(s"${site.uri}${page.publishedPath}")
+      val loc: Xml.Element = element("loc", s"${site.uri}${page.publishedPath}")
       // Date format: 2009-08-07T14:30:00-04:00
       val lastmod: Option[Xml.Element] = page.dateModifiedGit.map: date =>
-        Xml.element("lastmod").setText(date.toString)
-      Xml
-        .element("url")
-        .setChildren(Seq(loc) ++ lastmod.toSeq)
+        element("lastmod", date.toString)
+      element("url", Seq(loc) ++ lastmod.toSeq)
