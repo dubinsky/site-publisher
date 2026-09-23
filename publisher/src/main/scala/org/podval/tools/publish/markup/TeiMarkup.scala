@@ -52,7 +52,7 @@ object TeiMarkup extends Markup(
   ): (Xml.Element, Option[Xml.Element]) =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
-    // Convert footnotes, glossary, quotes, pb, and code in a second pass so IR `class` values are kept.
+    // Xml2Html and TEI renames. IR `class` is added in the rewrite below.
     val converted: Xml.Element = DialectWalk.transform(xml): element =>
       convertSpecial(tei2Html.convert(element), errorReporter)
     // Title while the root is still `store` / `collection`. Header chrome is
@@ -62,7 +62,11 @@ object TeiMarkup extends Markup(
     val body: Xml.Element = DialectWalk.transform(withoutTitle)(convertStoreChrome)
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
-    // TODO does it really need to be a separate pass?
+    // Separate from the Xml2Html walk. `rewrite` re-enters nodes it creates, and
+    // `Xml2Html.convert` on that visit renames `class` to `tei-class` on the new tip,
+    // icon, and IR elements. `rewrite` replaces one element with several nodes
+    // (`note`, block `code`) and passes the parent, so `code` inside `pre` stays
+    // unwrapped. `convertCite` needs `biblIds`, gathered from the whole tree above.
     val withIr: Xml.Element = DialectWalk.rewrite(body): (element, parent) =>
       convertFootnote(element, footnoteCorrelationIds) match
         case Some(nodes) =>
@@ -77,6 +81,7 @@ object TeiMarkup extends Markup(
             convertQuote,
             convertFigure,
             convertPb,
+            el => TeiDate.convert(el, errorReporter),
             TeiGap.convert
           )
           val result: Xml.Element = steps.foldLeft(element)((el, step) => step(el))
@@ -145,9 +150,6 @@ object TeiMarkup extends Markup(
       case "term" =>
         teiHref(stripped).fold(stripped)(value => stripped.setHref(value).renameKeepingClass("a"))
 
-      case "date" =>
-        TeiDate.convert(stripped, errorReporter)
-
       case name if isEntityName(name) =>
         val ref: Option[String] = stripped.get("ref").map(_.trim).filter(_.nonEmpty)
         ref.fold(stripped)(_ => stripped.copyAttribute("ref", "href").renameKeepingClass("a"))
@@ -159,11 +161,13 @@ object TeiMarkup extends Markup(
         stripped
 
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`).
-    * `TeiGap` after Xml2Html so `gap-tip` `class` is not rewritten to `tei-class`. */
+    * Date and gap tips are a second walk: the first re-enters the tip span and would
+    * rename `class` to `tei-class`. */
   private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
-    DialectWalk.transform(DialectWalk.transform(xml): element =>
+    val converted: Xml.Element = DialectWalk.transform(xml): element =>
       convertSpecial(tei2Html.convert(element), errorReporter)
-    )(TeiGap.convert)
+    DialectWalk.transform(converted): element =>
+      TeiGap.convert(TeiDate.convert(element, errorReporter))
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */

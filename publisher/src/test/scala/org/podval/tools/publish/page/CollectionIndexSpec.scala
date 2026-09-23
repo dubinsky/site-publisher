@@ -196,7 +196,8 @@ final class CollectionIndexSpec extends AnyFunSuite:
     )): (_, target) =>
       val index: String = html(target, "col/index.html")
       assert(index.contains("""class="date-ref""""), index)
-      assert(index.contains("""class="date-tip""""), index)
+      assert(index.contains("""<span class="date-tip">"""), index)
+      assert(!index.contains("""tei-class="date-tip""""), index)
       assert(index.contains("1798-08-11"), index)
       assert(index.contains("Julian"), index)
       assert(index.contains("1798 август 11"), index)

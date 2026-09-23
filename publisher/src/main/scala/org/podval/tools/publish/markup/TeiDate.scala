@@ -6,7 +6,9 @@ import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
-/** TEI `<date>` temporal attributes → hover table in Julian / Gregorian / Jewish. */
+/** TEI `<date>` temporal attributes → hover table in Julian / Gregorian / Jewish.
+  * Call after `Xml2Html`. The walk re-enters `span.date-tip`, and `Xml2Html.convert`
+  * on that visit renames `class` to `tei-class`. */
 object TeiDate:
   val julianName: String = "julian"
   val gregorianName: String = "gregorian"
@@ -37,6 +39,7 @@ object TeiDate:
         )
 
   def convert(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
+    // The wrapped `<date>` is visited again as a child of `span.date-ref`.
     if !element.isNamed("date") || element.get(Converted).isDefined then element
     else
       val values: Map[String, String] = temporalValues(element)

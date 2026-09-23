@@ -188,9 +188,9 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</TEI>""".stripMargin
     ))
     java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/tei-date-dump.html"), dumped)
-    java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/tei-date-dump.html"), dumped)
     assert(dumped.contains("""class="date-ref""""), dumped)
-    assert(dumped.contains("""class="date-tip""""), dumped)
+    assert(dumped.contains("""<span class="date-tip">"""), dumped)
+    assert(!dumped.contains("""tei-class="date-tip""""), dumped)
     assert(dumped.contains("11 августа"), dumped)
     assert(dumped.contains("1798 August 11"), dumped)
     assert(!dumped.contains("Julian"), dumped)
@@ -202,7 +202,8 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |  <text><body><p>On <date notBefore="1800-11-15" notAfter="1800-11-16">15 или 16 ноября 1800</date>.</p></body></text>
         |</TEI>""".stripMargin
     ))
-    assert(dumped.contains("""class="date-tip""""), dumped)
+    assert(dumped.contains("""<span class="date-tip">"""), dumped)
+    assert(!dumped.contains("""tei-class="date-tip""""), dumped)
     assert(dumped.contains("15 или 16 ноября 1800"), dumped)
     assert(dumped.contains(">Not before<"), dumped)
     assert(dumped.contains(">Not after<"), dumped)
