@@ -95,8 +95,20 @@ abstract class Page(
   protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
-  final def isPost: Boolean = postDate.isDefined || frontMatter.post // TODO take permalink into account?
-  final def date: Option[Date] = postDate.map(Date.Local(_)).orElse(content(_.frontMatter.date))
+
+  // `_posts` path, `post: true`, or absolute permalink `/YYYY/MM/DD/title`.
+  final def isPost: Boolean =
+    postDate.isDefined || frontMatter.post || permalinkPostDate.isDefined
+
+  final def date: Option[Date] =
+    postDate.map(Date.Local(_))
+      .orElse(content(_.frontMatter.date))
+      .orElse(permalinkPostDate.map(Date.Local(_)))
+
+  private def permalinkPostDate: Option[LocalDate] =
+    frontMatter.permalink.map(_.trim).filter(_.startsWith("/")).flatMap: permalink =>
+      Posts.date(path.relativize(permalink))
+
   final def dateModified: Option[Date] = content(_.frontMatter.modifiedTime)
   final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
 

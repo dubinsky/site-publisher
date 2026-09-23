@@ -86,8 +86,6 @@ They are not planned work.
 - Multiple markup files for one name
 - Multiple standalone front-matter files
 - Unknown XML dialect as `PageError` instead of `markup.get` crash
-- Permalink must be absolute (enforcement)
-- `isPost` should take permalink into account
 - Page lookup indexes (path / title / `LinkKind`) — entity lookup is indexed; general `get`/`find` is still linear
 
 ### Research only ([#21](https://github.com/dubinsky/site-publisher/issues/21))

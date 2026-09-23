@@ -314,6 +314,7 @@ Useful fields:
   chrome).
 
 `permalink` (absolute, e.g. `/short`) and `aliases` (relative or absolute) each create a Refresh page at that URL.
+A `permalink` that does not start with `/` is an error (`/errors.html#permalink`) and creates no alias.
 When the page is a directory (an `index` or a TEI `store` / `collection` beside its folder), `/permalink/child` and wiki
 `+++[[permalink/child]]+++` resolve to `child` under that directory — the short name is a path prefix, not only a leaf
 bookmark.
@@ -589,9 +590,17 @@ Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Ст�
 [#blog-posts]
 == Blog Posts
 
-- directory
-- auto-post (same file name)
-- permalink (any file name)
+A page is a blog post in one of three ways:
+
+- A file in `_posts/` or `_drafts/` named `YYYY-MM-DD-title` is published at `/YYYY/MM/DD/title.html`.
+- Front matter `post: true` keeps the file path and adds a Refresh page at `/YYYY/MM/DD/{file name}.html`.
+  `date` is required.
+  `post-title` replaces the file name in that path.
+- Front matter `permalink: /YYYY/MM/DD/title` does the same for any source file name.
+  The Refresh page is that permalink.
+
+`/posts` lists each real post once.
+The Refresh file is not a second entry.
 
 Front matter `description` is the post teaser: Atom `<summary>` and, when present, a `p.post-excerpt` on every `/posts`
 batch.

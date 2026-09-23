@@ -28,6 +28,7 @@ object PageError:
   case object NoId extends Kind("no id")
   case object NoTitle extends Kind("no title")
   case object NoDate extends Kind("no date")
+  case object Permalink extends Kind("permalink")
   case object SelfLink extends Kind("spurious external link to this site")
   case object Unresolved extends Kind("unresolved")
   case object NotInStore extends Kind("not in store")
@@ -56,6 +57,7 @@ object PageError:
     NoId,
     NoTitle,
     NoDate,
+    Permalink,
     SelfLink,
     Unresolved,
     NotInStore,

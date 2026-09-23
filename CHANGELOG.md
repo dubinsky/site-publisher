@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- permalinks cleanup;
 - TEI `note/@n` and DocBook `footnote/@label`, when non-blank, are the footnote marker.
   Series order and fragment ids are unchanged.
   The same marker may be used more than once.

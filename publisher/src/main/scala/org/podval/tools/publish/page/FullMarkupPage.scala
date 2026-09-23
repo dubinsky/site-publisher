@@ -13,9 +13,17 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
   final def chunks: Seq[ChunkedMarkupPage] = content.map(_.toc.chunks(this)).getOrElse(Seq.empty)
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(this)
 
-  // TODO permalink must be absolute
-  final def aliases: Seq[Alias] = (postPath.toSeq ++ frontMatter.permalink.toSeq ++ frontMatter.aliases)
-    .map(Alias(site, this, _))
+  final def aliases: Seq[Alias] =
+    (postPath.toSeq ++ permalinkAlias.toSeq ++ frontMatter.aliases).map(Alias(site, this, _))
+
+  private def permalinkAlias: Option[String] = frontMatter.permalink match
+    case None => None
+    case Some(raw) =>
+      val permalink: String = raw.trim
+      if permalink.startsWith("/") then Some(permalink)
+      else
+        site.error(path, PageError.Permalink, s"permalink must be absolute: $raw")
+        None
 
   private def postPath: Option[String] = if !frontMatter.post then None else date match
     case None =>

@@ -121,6 +121,8 @@ Modify the path in `generate()` temporarily for other sites during development; 
   `TransclusionEdge` harvest; transclude stubs are not backlinks; reverse list is **Embedded in**.
   Front-matter `permalink` / `aliases` are Refresh pages; if the target is a directory, `/permalink/child` and
   `[[permalink/child]]` resolve `child` under it (`Pages.find` longest alias prefix).
+  `permalink` must start with `/`; otherwise it is `PageError.Permalink` and creates no alias.
+  An absolute permalink `/YYYY/MM/DD/title` makes the page a post, as `_posts` and `post: true` do.
   TEI `store`/`collection` `@alias` is the collection short name (collector `site.xml` `<alias n= to=>`); it does not
   write a Refresh file.
   `Page.publishedPath` emits the short href; `serve()` rewrites it to the written file.
