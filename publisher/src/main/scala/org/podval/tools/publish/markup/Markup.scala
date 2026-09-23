@@ -55,7 +55,6 @@ abstract class Markup(
 
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
       case Right(frontMatter) =>
-        // TODO mark as stand-alone for round-trip
         if firstReading && frontMatter.asset && frontMatterInternalContent.isDefined then
           site.error(
             sourcePath = sourcePath,
