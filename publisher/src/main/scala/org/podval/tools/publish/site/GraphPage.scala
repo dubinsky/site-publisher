@@ -10,7 +10,6 @@ final class GraphPage(site: Site) extends SyntheticMarkupPage(site, Path("graph"
   override def titleDefault: String = "Graph"
   override protected def descriptionDefault: Option[String] = Some("Site page graph")
   override protected def iconDefault: Icon = Icon("share-nodes", Icon.Solid)
-  override protected def langDefault: Option[String] = Some("en")
   override protected def extraLibraries: List[js.JSLibrary] = List(js.GraphCss, js.Cytoscape)
 
   override protected def syntheticContent: Xml.Element =

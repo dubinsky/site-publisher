@@ -84,7 +84,7 @@ abstract class Page(
 
   def source: Option[PageSource] = None
 
-  // TODO not final: overridden in AssetWithSourcePath
+  // Note: not final: overridden in AssetWithSourcePath
   def sourcePath: Option[Path] = source.map(_.sourcePath)
 
   final def content: Option[PageContent] = source.map(_.content)

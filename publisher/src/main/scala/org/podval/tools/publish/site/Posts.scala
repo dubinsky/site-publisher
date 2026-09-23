@@ -24,7 +24,6 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
   override def titleDefault: String = "Posts"
   override protected def descriptionDefault: Option[String] = Some("All posts")
   override protected def iconDefault: Icon = Icon.envelope
-  override protected def langDefault: Option[String] = Some("en")
 
   def posts: List[Page] = site
     .pages

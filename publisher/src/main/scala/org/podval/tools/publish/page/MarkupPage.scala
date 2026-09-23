@@ -11,8 +11,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   override def titleDefault: String = path.fileName
 
   final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
-  // TODO set to "en" and clean up overrides
-  protected def langDefault: Option[String] = None
+  protected def langDefault: Option[String] = Some("en")
 
   private var sourceVar: Option[PageSource] = None
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)

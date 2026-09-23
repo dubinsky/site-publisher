@@ -287,7 +287,6 @@ final class PageContent private(
       case Some(linkTo) =>
         if WikiLink.isTranscluded(element) then element
         else
-          // TODO do the same with section links in Toc - and move this there?
           val href: String = if !isChunked || !linkTo.isIntrapage || linkTo.fragment.isEmpty then linkTo.url else
             source.page.asFullMarkupPage match
               case None => linkTo.url
