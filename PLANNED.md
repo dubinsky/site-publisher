@@ -59,7 +59,7 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
   Wiki `![[image]]` already gets `width`/`height`.
 - **Markdown native in-document bibliography** — none; citeproc only.
 - **DocBook**: no task lists, wiki links, or PDF embeds.
-  Front matter TODO: implement some DocBook styling parameters.
+  Front matter TODO: implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
 - **`HtmlIr.normalize` for TEI and DocBook** — not run yet (leftovers stay native names until dialect converters).
 - **Dotted front-matter keys** (`toc.depth`, …) — considered, not done.
 - **`modified_time` as a typed field** — blocked on ZIO Blocks YAML kebab-case
