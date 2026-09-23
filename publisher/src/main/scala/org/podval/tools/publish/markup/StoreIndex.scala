@@ -11,8 +11,8 @@ import zio.blocks.schema.{Modifier, Schema}
   * listings use the wrapped tree. Collection `part`s and `pageType` feed `CollectionIndex`. */
 @Modifier.config(XmlCodec.IgnoreUnknown, "")
 final case class StoreIndex(
-  @Modifier.config(XmlCodec.Attribute, "") n: Option[String] = None,
-  @Modifier.config(XmlCodec.Attribute, "") alias: Option[String] = None,
+  n: Option[String] = None,
+  alias: Option[String] = None,
   @Modifier.config(XmlCodec.Attribute, "pageType") pageTypeName: Option[String] = None,
   @Modifier.config(XmlCodec.Element, "name") names: Seq[Name] = Seq.empty,
   @Modifier.config(XmlCodec.Element, "title") titles: Seq[Xml.Element] = Seq.empty,
@@ -21,6 +21,7 @@ final case class StoreIndex(
   @Modifier.config(XmlCodec.Element, "part") parts: Seq[CollectionPart] = Seq.empty,
   @Modifier.config(XmlCodec.Element, "by") axis: Option[StoreIndex.Axis] = None,
   @Modifier.config(XmlCodec.Include, "") hrefs: Seq[String] = Seq.empty,
+  // StoreIndex.apply overwrites whatever decode read, and the field is not XML.
   isCollection: Boolean = false
 ) derives CanEqual:
   def selector: Option[String] = axis.flatMap(_.selector)
@@ -37,7 +38,7 @@ final case class StoreIndex(
 object StoreIndex:
   @Modifier.config(XmlCodec.IgnoreUnknown, "")
   final case class Axis(
-    @Modifier.config(XmlCodec.Attribute, "") selector: Option[String] = None
+    selector: Option[String] = None
   ) derives CanEqual
 
   object Axis:
