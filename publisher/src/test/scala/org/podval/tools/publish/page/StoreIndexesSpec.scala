@@ -98,12 +98,30 @@ final class StoreIndexesSpec extends AnyFunSuite:
   test("wraps StoreIndex as org.podval.store") {
     withSite(): (site, _) =>
       val root: Page = site.pages.pages.find(StoreIndexes.isRootStore).get
-      val tree = root
-      assert(tree.resolve("/books").last.names.hasName("книги"))
-      assert(tree.resolve("/books").structureNames == Seq("archive", "books"))
+      val tree = StoreTree.node(root)
+      assert(StoreTree.node(root) eq tree)
+      val atRoot = StoreTree.resolvePage(tree, "/").get
+      assert(atRoot.page.path == root.path)
+      assert(atRoot.hop.isEmpty)
+      assert(StoreTree.by(atRoot.page).map(_.selector) == Selectors.forName("archive"))
+      assert(StoreTree.pageOf(tree.resolve("/archive").last).isEmpty)
+      assert(StoreTree.pageAt(tree, "/archive").isEmpty)
+      val books = tree.resolve("/books")
+      assert(books.last.names.hasName("книги"))
+      assert(books.structureNames == Seq("archive", "books"))
+      val booksResolved = StoreTree.resolvePage(tree, "/books").get
+      assert(booksResolved.path.structureNames == books.structureNames)
+      assert(booksResolved.hop.map(_.selector) == Selectors.forName("archive"))
+      assert(StoreTree.by(booksResolved.page).map(_.selector) == Selectors.forName("book"))
+      assert(booksResolved.hop.map(_.selector) != StoreTree.by(booksResolved.page).map(_.selector))
       val derzhavin = tree.resolve("/books/Державин")
       assert(derzhavin.last.names.hasName("Державин"))
       assert(derzhavin.structureNames == Seq("archive", "books", "book", "Державин"))
+      val derzhavinResolved = StoreTree.resolvePage(tree, "/books/Державин").get
+      assert(derzhavinResolved.path.structureNames == derzhavin.structureNames)
+      assert(derzhavinResolved.hop.map(_.selector) == Selectors.forName("book"))
+      assert(StoreTree.by(derzhavinResolved.page).map(_.selector) == Selectors.forName("document"))
+      assert(derzhavinResolved.hop.map(_.selector) != StoreTree.by(derzhavinResolved.page).map(_.selector))
       val rgada = root.store.flatMap(_.boundChildren.find(_.store.flatMap(_.alias).contains("rgada")))
       assert(rgada.isDefined)
       assert(tree.resolve("/rgada").last.names.hasName("РГАДА"))

@@ -23,7 +23,7 @@ object StoreIndexes:
     val spec: Language.Spec = root.site.languageSpec
     val fromSelector: Option[String] = kind match
       case StoreIndexPage.Kind.Tree =>
-        root.by.map(_.selector.pluralOrNames.toLanguageString(using spec))
+        StoreTree.by(root).map(_.selector.pluralOrNames.toLanguageString(using spec))
       case StoreIndexPage.Kind.Flat =>
         Selectors.forName("case").map(_.pluralOrNames.toLanguageString(using spec))
     fromSelector
@@ -39,9 +39,9 @@ object StoreIndexes:
 
   private def treeIndex(storePage: Page): Xml.Element =
     val selectorLabel: String =
-      storePage.by.map(_.selector).map(PageHeader.selectorDisplayName(_, storePage.site.languageSpec))
+      StoreTree.by(storePage).map(_.selector).map(PageHeader.selectorDisplayName(_, storePage.site.languageSpec))
         .getOrElse("")
-    val items: Xml.Nodes = childrenOf(storePage).map(treeItem)
+    val items: Xml.Nodes = StoreTree.childPages(storePage).map(treeItem)
     Xml.element(XmlElement.Div).addClass("tree-index").setChildren(Seq(
       Xml.element(XmlElement.Ul).setChildren(Seq(
         Xml.element(XmlElement.Li).setChildren(Seq(Xml.element(XmlElement.Em).setText(selectorLabel))),
@@ -53,7 +53,7 @@ object StoreIndexes:
 
   private def treeItem(page: Page): Xml.Element =
     val nested: Xml.Nodes =
-      if page.store.exists(!_.isCollection) && childrenOf(page).nonEmpty
+      if page.store.exists(!_.isCollection) && StoreTree.childPages(page).nonEmpty
       then Seq(treeIndex(page))
       else Seq.empty
     Xml.element(XmlElement.Li).setChildren(Seq(treeLink(page)) ++ nested)
@@ -117,10 +117,6 @@ object StoreIndexes:
     def walk(page: Page): Seq[Page] =
       page.store match
         case Some(store) if store.isCollection => Seq(page)
-        case Some(_) => childrenOf(page).flatMap(walk)
+        case Some(_) => StoreTree.childPages(page).flatMap(walk)
         case None => Seq.empty
     walk(root)
-
-  private def childrenOf(page: Page): List[Page] =
-    page.by.map(_.stores.flatMap(StoreTree.pageOf).toList)
-      .getOrElse(page.asStores.flatMap(StoreTree.pageOf).toList)

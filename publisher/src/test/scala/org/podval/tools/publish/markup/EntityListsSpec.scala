@@ -1,6 +1,6 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, Page, StoreTree}
+import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, Page, Selectors, StoreTree}
 import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
@@ -163,13 +163,18 @@ final class EntityListsSpec extends AnyFunSuite:
       val directory: DirectoryPage = site.pages.pages.collect:
         case page: DirectoryPage if page.doc.exists(_.asEntityLists.isDefined) => page
       .head
-      val tree = directory
+      val tree = StoreTree.node(directory)
       val jews = tree.resolve("/jews")
       assert(jews.last.names.hasName("jews"))
       assert(jews.last.names.hasName("Жиды"))
       assert(jews.structureNames == Seq("names", "jews"), jews.structureNames)
       assert(tree.resolve("/names/jews").structureNames == Seq("names", "jews"))
       val jewsPage = StoreTree.pageOf(jews.last).get
+      val jewsResolved = StoreTree.resolvePage(tree, "/jews").get
+      assert(jewsResolved.page.path == jewsPage.path)
+      assert(jewsResolved.hop.map(_.selector) == Selectors.forName("names"))
+      assert(StoreTree.by(jewsResolved.page).map(_.selector) == Selectors.forName("name"))
+      assert(jewsResolved.hop.map(_.selector) != StoreTree.by(jewsResolved.page).map(_.selector))
       assert(jewsPage.isInstanceOf[EntityListPage])
       assert(site.pages.rewriteRequest(Path.fromHref("/jews")).contains(jewsPage.path))
       assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).contains(jewsPage.path))
@@ -181,6 +186,9 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(zalman.last.names.hasName("Залман Борухович"))
       assert(zalman.structureNames == Seq("names", "jews", "name", "alter-rebbe"), zalman.structureNames)
       val zalmanPage = StoreTree.pageOf(zalman.last).get
+      val zalmanResolved = StoreTree.resolvePage(tree, "/jews/alter-rebbe").get
+      assert(zalmanResolved.hop.map(_.selector) == Selectors.forName("name"))
+      assert(StoreTree.by(zalmanResolved.page).isEmpty)
       assert(site.pages.rewriteRequest(Path.fromHref("/jews/alter-rebbe")).contains(zalmanPage.path))
       val vilna = tree.resolve("/places/Вильна")
       assert(vilna.last.names.hasName("Вильна"))

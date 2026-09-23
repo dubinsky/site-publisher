@@ -81,7 +81,8 @@ final class Pages(site: Site):
 
     indexEntities()
     resolveEntityLists()
-    pages.foreach(_.freezeStores())
+    // After entity-list pages exist. Earlier `resolveOption` reads must not stick.
+    pages.foreach(page => StoreTree.node(page).freeze())
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
 

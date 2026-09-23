@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Names
-import org.podval.store.{By, Store, Stores}
 import org.podval.tools.publish.markup.{EntityKind, Link}
 import org.podval.tools.publish.site.{Path, Posts, Site}
 import org.podval.tools.publish.util.{Date, Http, Icon}
@@ -14,12 +13,11 @@ import java.time.{Instant, LocalDate}
 abstract class Page(
   val site: Site,
   val path: Path
-) extends Stores[Store] derives CanEqual:
-  override lazy val names: Names = StoreTree.namesOf(this)
-  private var frozenStores: Option[Seq[Store]] = None
-  override def stores: Seq[Store] = frozenStores.getOrElse(StoreTree.childrenOf(this))
-  final def freezeStores(): Unit = frozenStores = Some(StoreTree.childrenOf(this))
-  final def by: Option[By[Store]] = axes.headOption
+) derives CanEqual:
+  lazy val names: Names = StoreTree.namesOf(this)
+
+  // Identity intern for `StoreTree.node`. Path equality must not key this (`Stores.indexOf` uses `eq`).
+  private[page] var nodeSlot: Option[StoreTree.PageNode] = None
 
   final override def equals(obj: Any): Boolean = obj.asInstanceOf[Matchable] match
     case that: Page => this.path == that.path

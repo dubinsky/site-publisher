@@ -77,7 +77,7 @@ object PageHeader:
     val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
-    val byLabel: Xml.Nodes = page.by.map(_.selector).toSeq.map: selector =>
+    val byLabel: Xml.Nodes = StoreTree.by(page).map(_.selector).toSeq.map: selector =>
       Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector, page.site.languageSpec)}:")
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(
@@ -142,7 +142,7 @@ object PageHeader:
   private[page] def selectorName(page: Page): Option[String] =
     page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
-      parent.by.map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
+      StoreTree.by(parent).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
         .orElse:
           Option.when(
             parentIndex.exists(_.isCollection) && page.store.isEmpty
