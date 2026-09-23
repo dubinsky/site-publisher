@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
 - `<date>` accepts `@from`, `@to`, `@notBefore`, and `@notAfter`.
 - The hover table's columns match the ends present.
   Uncertainty headers are `Not before` and `Not after`.
