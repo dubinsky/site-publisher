@@ -71,14 +71,6 @@ final class Site(options: SiteOptions) extends JSLibrary:
       uri.getScheme == null
     catch case e: URISyntaxException => true
 
-  // TODO make HTML converter configurable.
-//  private val configurer: Configurer = Configurer.get(options.option("configurer", "Default"))
-//  def get(name: String): Configurer = Class
-//    .forName(if name.contains(".") then name else s"${Configurer.getClass.getName}$name")
-//    .getDeclaredConstructor()
-//    .newInstance()
-//    .asInstanceOf[Configurer]
-
   // Components
   val pages: Pages = Pages(this)
   val ignore: Ignore = Ignore(this)

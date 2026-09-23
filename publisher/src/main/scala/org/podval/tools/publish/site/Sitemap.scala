@@ -16,7 +16,6 @@ object Sitemap:
     href := path.toString
   )
 
-// TODO <?xml version='1.0' encoding='UTF-8'?>
 final class Sitemap(site: Site) extends SyntheticXmlAsset(site, Sitemap.path):
   override protected def iconDefault: Icon = Icon("map", Icon.Regular)
 

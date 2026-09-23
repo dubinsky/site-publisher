@@ -507,11 +507,16 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
   }
 
   test("sitemap, robots, and feed mention generated pages") {
+    val declaration: String = """<?xml version="1.0" encoding="UTF-8"?>"""
+    val sitemapRaw: String = htmlRaw("sitemap.xml")
+    assert(sitemapRaw.startsWith(s"$declaration\n<urlset"), sitemapRaw)
     val sitemap: String = html("sitemap.xml")
     assert(sitemap.contains("http://fixture.test/index.html"), sitemap)
     assert(sitemap.contains("http://fixture.test/notes.html"), sitemap)
     val robots: String = html("robots.txt")
     assert(robots.contains("http://fixture.test/sitemap.xml"), robots)
+    val feedRaw: String = htmlRaw("feed.xml")
+    assert(feedRaw.startsWith(s"$declaration\n<feed"), feedRaw)
     val feed: String = html("feed.xml")
     assert(feed.contains("hello"), feed)
     assert(feed.contains("Greeting from the newest fixture post"), feed)
