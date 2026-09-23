@@ -7,7 +7,7 @@ import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 import Xml.given
 
-/** TEI `<date when>` (and `..` ranges) → hover table in Julian / Gregorian / Jewish. */
+/** TEI `<date>` temporal attributes → hover table in Julian / Gregorian / Jewish. */
 object TeiDate:
   val julianName: String = "julian"
   val gregorianName: String = "gregorian"
@@ -16,6 +16,16 @@ object TeiDate:
   object RefClass extends CssClass("date-ref")
   object TipClass extends CssClass("date-tip")
   private object Converted extends XmlAttribute("data-calendars")
+
+  private val temporalNames: Seq[String] = Seq("when", "notBefore", "notAfter", "from", "to")
+
+  // Start-like then end-like. `from`/`notBefore` and `to`/`notAfter` are mutually exclusive.
+  private val endSpecs: Seq[(String, String, Boolean)] = Seq(
+    ("from", "From", false),
+    ("notBefore", "Not before", false),
+    ("to", "To", true),
+    ("notAfter", "Not after", true)
+  )
 
   def defaultIsJulian(value: Option[String]): Boolean =
     value.map(_.trim).filter(_.nonEmpty) match
@@ -27,22 +37,55 @@ object TeiDate:
           s"Unknown tei-default-calendar '$name' (expected $julianName or $gregorianName)"
         )
 
-  // TODO look into TEI `dateRange` @from/@to
   def convert(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     if !element.isNamed("date") || element.get(Converted).isDefined then element
     else
-      val when: Option[String] = element.get("when").map(_.trim).filter(_.nonEmpty)
-      when.fold(element): value =>
-        val useJulian: Boolean =
-          element.get("calendar").map(_.trim).filter(_.nonEmpty) match
-            case Some(calendar) => calendar == julianCalendarRef
-            case None => errorReporter.teiDefaultCalendarIsJulian
-        given Language.Spec = errorReporter.languageSpec
-        tooltipTable(value, useJulian) match
-          case Right(table) => wrap(element, table)
-          case Left(message) =>
-            errorReporter.error(PageError.InvalidDate, s"$message (when=$value)")
-            element
+      val values: Map[String, String] = temporalValues(element)
+      if values.isEmpty then element
+      else
+        val conflicts: Seq[String] = schematronErrors(values)
+        if conflicts.nonEmpty then reject(element, errorReporter, conflicts)
+        else
+          val useJulian: Boolean = sourceIsJulian(element, errorReporter)
+          given Language.Spec = errorReporter.languageSpec
+          hover(values, useJulian) match
+            case Right(table) => wrap(element, table)
+            case Left(messages) => reject(element, errorReporter, messages)
+
+  private def reject(
+    element: Xml.Element,
+    errorReporter: PageErrorReporter,
+    messages: Seq[String]
+  ): Xml.Element =
+    messages.foreach(message => errorReporter.error(PageError.InvalidDate, message))
+    element
+
+  private def temporalValues(element: Xml.Element): Map[String, String] =
+    Map.from(temporalNames.flatMap: name =>
+      element.get(name).map(_.trim).filter(_.nonEmpty).map(value => name -> value)
+    )
+
+  private def sourceIsJulian(element: Xml.Element, errorReporter: PageErrorReporter): Boolean =
+    element.get("calendar").map(_.trim).filter(_.nonEmpty) match
+      case Some(calendar) => calendar == julianCalendarRef
+      case None => errorReporter.teiDefaultCalendarIsJulian
+
+  private def schematronErrors(values: Map[String, String]): Seq[String] =
+    val endOrder: Seq[String] = Seq("notBefore", "notAfter", "from", "to")
+    val withWhen: Seq[String] = endOrder.filter(values.contains)
+    val whenError: Seq[String] = values.get("when").filter(_ => withWhen.nonEmpty).toSeq.map: when =>
+      val names: String = withWhen.map(name => s"@$name").mkString(", ")
+      val shown: String = ("when" +: withWhen).map(name => s"$name=${values(name)}").mkString(", ")
+      s"The @when attribute cannot be used with $names ($shown)"
+    val fromError: Seq[String] = (values.get("from"), values.get("notBefore")) match
+      case (Some(from), Some(notBefore)) =>
+        Seq(s"The @from and @notBefore attributes cannot be used together (from=$from, notBefore=$notBefore)")
+      case _ => Seq.empty
+    val toError: Seq[String] = (values.get("to"), values.get("notAfter")) match
+      case (Some(to), Some(notAfter)) =>
+        Seq(s"The @to and @notAfter attributes cannot be used together (to=$to, notAfter=$notAfter)")
+      case _ => Seq.empty
+    whenError ++ fromError ++ toError
 
   private def wrap(date: Xml.Element, table: Xml.Element): Xml.Element =
     var tip: Xml.Element = Xml
@@ -59,53 +102,91 @@ object TeiDate:
       .add(RefClass)
       .setChildren(Seq(value: Xml.Node, tip: Xml.Node))
 
-  private enum Parsed derives CanEqual:
-    case Point(year: Int, month: Int, day: Int)
-    case Range(from: Seq[Int], to: Seq[Int])
+  private final case class Bound(
+    header: String,
+    name: String,
+    raw: String,
+    numbers: Seq[Int],
+    last: Boolean
+  )
 
-  private def tooltipTable(when: String, useJulian: Boolean)(using spec: Language.Spec): Either[String, Xml.Element] =
-    parsedWhen(when).flatMap: parsed =>
-      if useJulian then julianTable(parsed) else gregorianTable(parsed)
+  private final case class Column(julian: Option[String], gregorian: String, jewish: String)
 
-  private def julianTable(parsed: Parsed)(using spec: Language.Spec): Either[String, Xml.Element] =
-    parsed match
-      case Parsed.Point(year, month, day) =>
+  private def hover(
+    values: Map[String, String],
+    useJulian: Boolean
+  )(using Language.Spec): Either[Seq[String], Xml.Element] =
+    values.get("when") match
+      case Some(raw) =>
+        parseValue("when", raw) match
+          case Left(message) => Left(Seq(message))
+          case Right(Seq(year, month, day)) => pointHover(year, month, day, raw, useJulian)
+          case Right(numbers) =>
+            endsColumns(Seq(
+              Bound("From", "when", raw, numbers, last = false),
+              Bound("To", "when", raw, numbers, last = true)
+            ), useJulian)
+      case None =>
+        val cells: Seq[Either[String, (String, Column)]] = endSpecs.flatMap: (name, header, last) =>
+          values.get(name).map: raw =>
+            parseValue(name, raw) match
+              case Left(message) => Left(message)
+              case Right(numbers) =>
+                loadBound(Bound(header, name, raw, numbers, last), useJulian).map(column => (header, column))
+        val errors: Seq[String] = cells.collect { case Left(message) => message }
+        if errors.nonEmpty then Left(errors)
+        else
+          val columns: Seq[Column] = cells.collect { case Right((_, column)) => column }
+          Right(endsTable(
+            valueHeaders = cells.collect { case Right((header, _)) => header },
+            julian = if useJulian then Some(columns.map(_.julian.get)) else None,
+            gregorian = columns.map(_.gregorian),
+            jewish = columns.map(_.jewish)
+          ))
+
+  private def pointHover(
+    year: Int,
+    month: Int,
+    day: Int,
+    raw: String,
+    useJulian: Boolean
+  )(using Language.Spec): Either[Seq[String], Xml.Element] =
+    val loaded: Either[String, Xml.Element] =
+      if useJulian then
         catchBound(Julian.Year(year).month(month).day(day)).map: d =>
-          pointTable(
-            julian = Some(dayString(d)),
-            gregorian = dayString(d.to(Gregorian)),
-            jewish = dayString(d.to(Jewish))
-          )
-      case Parsed.Range(from, to) =>
-        for
-          fromDay <- catchBound(julianBound(from, last = false))
-          toDay <- catchBound(julianBound(to, last = true))
-        yield intervalTable(
-          julian = Some((dayString(fromDay), dayString(toDay))),
-          gregorian = (dayString(fromDay.to(Gregorian)), dayString(toDay.to(Gregorian))),
-          jewish = (dayString(fromDay.to(Jewish)), dayString(toDay.to(Jewish)))
-        )
-
-  private def gregorianTable(parsed: Parsed)(using spec: Language.Spec): Either[String, Xml.Element] =
-    parsed match
-      case Parsed.Point(year, month, day) =>
+          pointTable(Some(dayString(d)), dayString(d.to(Gregorian)), dayString(d.to(Jewish)))
+      else
         catchBound(Gregorian.Year(year).month(month).day(day)).map: d =>
-          pointTable(
-            julian = None,
-            gregorian = dayString(d),
-            jewish = dayString(d.to(Jewish))
-          )
-      case Parsed.Range(from, to) =>
-        for
-          fromDay <- catchBound(gregorianBound(from, last = false))
-          toDay <- catchBound(gregorianBound(to, last = true))
-        yield intervalTable(
-          julian = None,
-          gregorian = (dayString(fromDay), dayString(toDay)),
-          jewish = (dayString(fromDay.to(Jewish)), dayString(toDay.to(Jewish)))
-        )
+          pointTable(None, dayString(d), dayString(d.to(Jewish)))
+    loaded.left.map(message => Seq(s"$message (when=$raw)"))
 
-  private def julianBound(numbers: Seq[Int], last: Boolean): Julian.Day =
+  private def endsColumns(
+    bounds: Seq[Bound],
+    useJulian: Boolean
+  )(using Language.Spec): Either[Seq[String], Xml.Element] =
+    val loaded: Seq[Either[String, Column]] = bounds.map(bound => loadBound(bound, useJulian))
+    val errors: Seq[String] = loaded.collect { case Left(message) => message }.distinct
+    if errors.nonEmpty then Left(errors)
+    else
+      val columns: Seq[Column] = loaded.collect { case Right(column) => column }
+      Right(endsTable(
+        valueHeaders = bounds.map(_.header),
+        julian = if useJulian then Some(columns.map(_.julian.get)) else None,
+        gregorian = columns.map(_.gregorian),
+        jewish = columns.map(_.jewish)
+      ))
+
+  private def loadBound(bound: Bound, useJulian: Boolean)(using Language.Spec): Either[String, Column] =
+    val loaded: Either[String, Column] =
+      if useJulian then
+        catchBound(julianBound(bound.name, bound.numbers, bound.last)).map: day =>
+          Column(Some(dayString(day)), dayString(day.to(Gregorian)), dayString(day.to(Jewish)))
+      else
+        catchBound(gregorianBound(bound.name, bound.numbers, bound.last)).map: day =>
+          Column(None, dayString(day), dayString(day.to(Jewish)))
+    loaded.left.map(message => s"$message (${bound.name}=${bound.raw})")
+
+  private def julianBound(name: String, numbers: Seq[Int], last: Boolean): Julian.Day =
     numbers match
       case Seq(year) =>
         val y: Julian.Year = Julian.Year(year)
@@ -116,9 +197,9 @@ object TeiDate:
       case Seq(year, month, day) =>
         Julian.Year(year).month(month).day(day)
       case _ =>
-        throw IllegalArgumentException(s"Too few dashes in 'when': ${numbers.mkString("-")}")
+        throw IllegalArgumentException(s"Too few dashes in '$name': ${numbers.mkString("-")}")
 
-  private def gregorianBound(numbers: Seq[Int], last: Boolean): Gregorian.Day =
+  private def gregorianBound(name: String, numbers: Seq[Int], last: Boolean): Gregorian.Day =
     numbers match
       case Seq(year) =>
         val y: Gregorian.Year = Gregorian.Year(year)
@@ -129,7 +210,7 @@ object TeiDate:
       case Seq(year, month, day) =>
         Gregorian.Year(year).month(month).day(day)
       case _ =>
-        throw IllegalArgumentException(s"Too few dashes in 'when': ${numbers.mkString("-")}")
+        throw IllegalArgumentException(s"Too few dashes in '$name': ${numbers.mkString("-")}")
 
   private def catchBound[A](load: => A): Either[String, A] =
     try Right(load)
@@ -139,23 +220,23 @@ object TeiDate:
     day.toLanguageString
 
   private def pointTable(julian: Option[String], gregorian: String, jewish: String): Xml.Element =
-    val julianRow: Option[Xml.Element] = julian.map(value => dataRow("Julian", Seq(value)))
-    table(Seq(headerRow(Seq("Calendar", "Date"))) ++ julianRow.toSeq ++ Seq(
-      dataRow("Gregorian", Seq(gregorian)),
-      dataRow("Jewish", Seq(jewish))
-    ))
+    endsTable(
+      valueHeaders = Seq("Date"),
+      julian = julian.map(value => Seq(value)),
+      gregorian = Seq(gregorian),
+      jewish = Seq(jewish)
+    )
 
-  private def intervalTable(
-    julian: Option[(String, String)],
-    gregorian: (String, String),
-    jewish: (String, String)
+  private def endsTable(
+    valueHeaders: Seq[String],
+    julian: Option[Seq[String]],
+    gregorian: Seq[String],
+    jewish: Seq[String]
   ): Xml.Element =
-    val julianRow: Option[Xml.Element] = julian.map((from, to) => dataRow("Julian", Seq(from, to)))
-    val (gregorianFrom, gregorianTo) = gregorian
-    val (jewishFrom, jewishTo) = jewish
-    table(Seq(headerRow(Seq("Calendar", "From", "To"))) ++ julianRow.toSeq ++ Seq(
-      dataRow("Gregorian", Seq(gregorianFrom, gregorianTo)),
-      dataRow("Jewish", Seq(jewishFrom, jewishTo))
+    val julianRow: Option[Xml.Element] = julian.map(values => dataRow("Julian", values))
+    table(Seq(headerRow("Calendar" +: valueHeaders)) ++ julianRow.toSeq ++ Seq(
+      dataRow("Gregorian", gregorian),
+      dataRow("Jewish", jewish)
     ))
 
   private def table(rows: Seq[Xml.Element]): Xml.Element =
@@ -171,30 +252,16 @@ object TeiDate:
       (calendar +: values).map(text => Xml.element(XmlElement.Td).setText(text): Xml.Node)
     )
 
-  private def parsedWhen(when: String): Either[String, Parsed] =
-    if when.contains("..") then
-      when.split("\\.\\.", 2).toSeq match
-        case Seq(fromPart, toPart) if fromPart.nonEmpty && toPart.nonEmpty =>
-          for
-            fromNumbers <- parseNumbers(fromPart)
-            toNumbers <- parseNumbers(toPart)
-            _ <- Either.cond(
-              toNumbers.length <= fromNumbers.length,
-              (),
-              s"Too many dashes in the 'to': $when"
-            )
-          yield Parsed.Range(fromNumbers, fromNumbers.dropRight(toNumbers.length) ++ toNumbers)
-        case _ =>
-          Left(s"Bad explicit interval: $when")
-    else
-      parseNumbers(when).flatMap:
-        case Seq(year, month, day) => Right(Parsed.Point(year, month, day))
-        case numbers => Right(Parsed.Range(numbers, numbers))
+  private def parseValue(name: String, raw: String): Either[String, Seq[Int]] =
+    val parsed: Either[String, Seq[Int]] =
+      if raw.contains("..") then Left("`..` is not a W3C temporal value")
+      else parseNumbers(name, raw)
+    parsed.left.map(message => s"$message ($name=$raw)")
 
-  private def parseNumbers(when: String): Either[String, Seq[Int]] =
-    val parts: Seq[String] = when.split("-").toSeq
-    if parts.isEmpty || parts.exists(_.isEmpty) then Left(s"Too few dashes in 'when': $when")
-    else if parts.length > 3 then Left(s"Too many dashes in 'when': $when")
+  private def parseNumbers(name: String, raw: String): Either[String, Seq[Int]] =
+    val parts: Seq[String] = raw.split("-").toSeq
+    if parts.isEmpty || parts.exists(_.isEmpty) then Left(s"Too few dashes in '$name': $raw")
+    else if parts.length > 3 then Left(s"Too many dashes in '$name': $raw")
     else
       try Right(parts.map(_.toInt))
-      catch case _: NumberFormatException => Left(s"Not a date: $when")
+      catch case _: NumberFormatException => Left("Not a date")

@@ -504,25 +504,49 @@ Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`)
 [#tei-dates]
 == TEI dates
 
-A TEI `<date when="…">` (and the same on a date range written in `@when` with `..`) gets a hover table of the day in
-Julian (when used), Gregorian, and Jewish calendars.
+A TEI `<date>` with `@when`, `@from`, `@to`, `@notBefore`, or `@notAfter` gets a hover table.
+`..` in any of those attributes is `InvalidDate`, and the element is left as authored.
+Each value is `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
 Month names follow the site `lang`.
+The column headers stay English.
 
-`@when` is ISO-ish: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`.
-A year or month is an interval (first day .. last day).
-An explicit range uses `..`; the right-hand side may be shorter (`1800-11-15..16`, `1800-11..12`).
+A full day on `@when` is one column, `Date`.
+A year or a month on `@when` is both ends of that year or month.
+A year or a month on `@from` or `@notBefore` expands to the first day of that end only.
+A year or a month on `@to` or `@notAfter` expands to the last day of that end only.
+`@from` equal to `@to`, or `@notBefore` equal to `@notAfter`, stays two columns, not `Date`.
 
-The numbers in `@when` are Gregorian unless:
+| What you write | Hover columns |
+|---|---|
+| `@when` on a full day (`YYYY-MM-DD`) | Date |
+| `@when` on a year or a month | From, To |
+| `@from` and `@to` | From, To |
+| `@notBefore` and `@notAfter` | Not before, Not after |
+| `@from` only | From |
+| `@to` only | To |
+| `@notBefore` only | Not before |
+| `@notAfter` only | Not after |
+| `@from` and `@notAfter` | From, Not after |
+| `@notBefore` and `@to` | Not before, To |
 
-- the element has `calendar="#julian"`, or
-- `_site_config.yml` has `tei-default-calendar: julian` and there is no `@calendar`.
+These combinations are `InvalidDate`, and the element is left as authored:
 
+- `@when` together with `@notBefore`, `@notAfter`, `@from`, or `@to`
+- `@from` together with `@notBefore`
+- `@to` together with `@notAfter`
+
+`@from` with `@notAfter`, and `@notBefore` with `@to`, are allowed.
+
+The numbers are Gregorian unless the element has `calendar="#julian"`, or `_site_config.yml` has
+`tei-default-calendar: julian` and `@calendar` is omitted.
 Any other `@calendar` value is Gregorian.
-Dates without `@when` are unchanged.
-Invalid `@when` is a page error; the element is left as authored.
+This disagrees with the TEI Guidelines: the attributes are not rewritten to Gregorian; `@calendar` selects how the
+numbers are read, and it still describes the prose.
 
-The collection index and document-header Дата cell show `@when` as the visible text (not the authored wording).
-In-text dates keep their authored content.
+The collection index and document-header Дата cell show `@when` as the visible text when `@when` is present.
+Otherwise the cell shows the element's own text, still inside `<date>`, so the tip can attach.
+In-text dates always keep their text.
+A `<date>` with none of `@when`, `@from`, `@to`, `@notBefore`, and `@notAfter` is unchanged.
 
 [#tei-gap]
 == TEI `gap`

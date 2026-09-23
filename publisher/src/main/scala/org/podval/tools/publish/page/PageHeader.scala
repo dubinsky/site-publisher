@@ -209,8 +209,12 @@ object PageHeader:
 
   private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
     date.fold(Seq.empty[Xml.Node]): el =>
-      el.get("when").map(_.trim).filter(_.nonEmpty) match
+      def present(name: String): Option[String] =
+        el.get(name).map(_.trim).filter(_.nonEmpty)
+      present("when") match
         case Some(when) => Seq(el.setChildren(Seq(Xml.text(when))))
+        case None if Seq("from", "to", "notBefore", "notAfter").exists(name => present(name).isDefined) =>
+          Seq(el)
         case None => el.getChildren
 
   private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =

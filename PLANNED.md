@@ -4,9 +4,10 @@ Inventory of site-publisher work that is planned or considered and not yet imple
 Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site Publisher.md`), `README.adoc`,
 `AGENTS.md`, and source TODOs.
 
-TEI date ranges in `@when` (`YYYY`, `YYYY-MM`, and `..` with a shorter right-hand side) already produce hover tables and
-are documented in README **TEI dates** and the design note **TEI dates**.
-They are not on this list.
+Year-only and month-only `@when` still produce a closed From/To hover table (README **TEI dates**).
+They are not planned work.
+`..` is not a syntax.
+`@from`, `@to`, `@notBefore`, and `@notAfter` ship with this change, so they are not a new bullet.
 
 ## Product features
 
@@ -122,7 +123,7 @@ These are considered and rejected or deferred, not a backlog:
 
 ## GitHub issues that already shipped (still open)
 
-Treat these as stale trackers, not remaining work: transclusion (#11), named windows (#12), date hover tables including
-`@when` ranges (#13), gap tips (#14), `/errors.html` reports (#16), facsimile document viewer (#17), Maven artifact
-(#20, except CLI), entity first-name titles / `/name` catalog (#15 mostly), backlinks grouped by collection (#9 mostly),
-`Content` kinds (#8).
+Treat these as stale trackers, not remaining work: transclusion (#11), named windows (#12), hover tables (#13), gap tips
+(#14), `/errors.html` reports (#16), facsimile document viewer (#17), Maven artifact (#20, except CLI), entity
+first-name titles / `/name` catalog (#15 mostly), backlinks grouped by collection (#9 mostly), `Content` kinds (#8).
+The `..` encoding is withdrawn.

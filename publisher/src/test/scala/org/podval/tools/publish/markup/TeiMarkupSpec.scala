@@ -194,6 +194,18 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!dumped.contains("Julian"), dumped)
   }
 
+  test("body date with notBefore and notAfter keeps the text and gets a tooltip") {
+    val dumped: String = render(process(
+      """<TEI>
+        |  <text><body><p>On <date notBefore="1800-11-15" notAfter="1800-11-16">15 или 16 ноября 1800</date>.</p></body></text>
+        |</TEI>""".stripMargin
+    ))
+    assert(dumped.contains("""class="date-tip""""), dumped)
+    assert(dumped.contains("15 или 16 ноября 1800"), dumped)
+    assert(dumped.contains(">Not before<"), dumped)
+    assert(dumped.contains(">Not after<"), dumped)
+  }
+
   test("pb becomes a facsimile anchor with p{n} id") {
     val dumped: String = render(process(
       """<TEI>

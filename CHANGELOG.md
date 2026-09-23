@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `<date>` accepts `@from`, `@to`, `@notBefore`, and `@notAfter`.
+- The hover table's columns match the ends present.
+  Uncertainty headers are `Not before` and `Not after`.
+- `..` in a temporal attribute is `InvalidDate`.
+- Attribute numbers stay in the source calendar (`@calendar="#julian"` or `tei-default-calendar`), not
+  Gregorian-normalized.
 - Minima chrome and `MarkupPage` wrap are `Xml.Element` via `org.podval.xml.dsl` (inspired by ZIO Blocks HTML).
   Drop wrap-time `.toHtml` and `zio-blocks-html`.
   Pin xml 0.3.0.

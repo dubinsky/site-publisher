@@ -18,7 +18,7 @@ final class CollectionIndexSpec extends AnyFunSuite:
 
   private def tei(
     abstractText: String,
-    when: String = "1798-08-11",
+    date: String = """<date when="1798-08-11">11 августа 1798</date>""",
     author: String = """<author><persName ref="alter-rebbe">the Rebbe</persName></author>""",
     addressee: String = """<persName role="addressee" ref="ab">Someone</persName>""",
     transcriber: String = """<editor role="transcriber"><persName ref="ab">A</persName></editor>""",
@@ -34,7 +34,7 @@ final class CollectionIndexSpec extends AnyFunSuite:
        |    </titleStmt></fileDesc>
        |    <profileDesc>
        |      <abstract>$abstractText</abstract>
-       |      <creation><date when="$when">11 августа 1798</date></creation>
+       |      <creation>$date</creation>
        |      <correspDesc><correspAction>$addressee</correspAction></correspDesc>
        |    </profileDesc>
        |  </teiHeader>
@@ -206,6 +206,52 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(doc.contains("document-header"), doc)
       assert(doc.contains("1798-08-11"), doc)
       assert(doc.contains("5558 Элул 10"), doc)
+  }
+
+  test("end attributes keep the authored Дата phrase and an uncertainty tooltip") {
+    val date: String =
+      """<date notBefore="1800-11-15" notAfter="1800-11-16">15 или 16 ноября 1800</date>"""
+    withSite(Map(
+      "_site_config.yml" -> (siteConfig + "tei-default-calendar: julian\n"),
+      "col/003.xml" -> tei(abstractText = "Uncertain day", date = date)
+    )): (_, target) =>
+      def showsPhrase(page: String): Unit =
+        assert(page.contains("15 или 16 ноября 1800"), page)
+        assert(page.contains("""class="date-ref""""), page)
+        assert(page.contains(">Not before<"), page)
+        assert(page.contains(">Not after<"), page)
+        assert(!page.contains("1800-11-15..16"), page)
+        assert(!page.contains("1800-11-15 \u2013 1800-11-16"), page)
+      showsPhrase(html(target, "col/index.html"))
+      val doc: String = html(target, "col/003.html")
+      assert(doc.contains("document-header"), doc)
+      showsPhrase(doc)
+  }
+
+  test("whitespace when plus notBefore still wraps the Дата cell") {
+    val date: String =
+      """<date when="   " notBefore="1800-11-15">15 ноября 1800</date>"""
+    withSite(Map(
+      "_site_config.yml" -> (siteConfig + "tei-default-calendar: julian\n"),
+      "col/003.xml" -> tei(abstractText = "Blank when", date = date)
+    )): (_, target) =>
+      val doc: String = html(target, "col/003.html")
+      assert(doc.contains("""class="date-ref""""), doc)
+      assert(doc.contains("15 ноября 1800"), doc)
+  }
+
+  test("dotdot when is invalid-date and the document keeps the raw attribute") {
+    withSite(Map(
+      "col/003.xml" -> tei(
+        abstractText = "Old range",
+        date = """<date when="1800-11-15..16">15 или 16 ноября 1800</date>"""
+      )
+    )): (_, target) =>
+      val errors: String = html(target, "errors.html")
+      assert(errors.contains("""id="invalid-date""""), errors)
+      val doc: String = html(target, "col/003.html")
+      assert(doc.contains("when=\"1800-11-15..16\""), doc)
+      assert(!doc.contains("date-ref"), doc)
   }
 
   test("collection under a store with includes still publishes TEI documents") {
