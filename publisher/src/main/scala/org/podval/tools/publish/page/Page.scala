@@ -125,9 +125,9 @@ abstract class Page(
 
   final def listRef(cls: Option[String] = None): Xml.Element =
     val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
-    val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
     a(
-      className := clss,
+      className := "page-ref",
+      cls.map(extra => className += extra),
       href := pageLink.url,
       this.icon.html,
       listTitle
@@ -155,13 +155,10 @@ abstract class Page(
     withIcon: Boolean = true,
     icon: Option[Icon] = None
   ): Xml.Element =
-    val clss = (Seq("page-ref") ++ cls.toSeq).mkString(" ")
     val pageLink: Link = Link(this, fragment = None, isIntrapage = false)
     a(
-      className := clss,
-      // TODO this results in duplicate class attribute!!!
-//      className := "page-ref",
-//      cls.map(cls => className += cls),
+      className := "page-ref",
+      cls.map(extra => className += extra),
       href := pageLink.url,
       NamedWindows.targetAttr(this).map(name => target := name),
       Option.when(withIcon)(icon.getOrElse(this.icon).html),
