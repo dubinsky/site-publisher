@@ -30,7 +30,6 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   protected def syntheticContentOpt: Option[Xml.Element] = None
 
-  // TODO use markup.xmlDialect?
   final override def textContent: String = htmlString(markupContent, syntheticContentOpt)
 
   protected def htmlString(
