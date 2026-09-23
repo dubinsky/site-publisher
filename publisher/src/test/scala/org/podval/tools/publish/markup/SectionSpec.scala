@@ -89,8 +89,8 @@ final class SectionSpec extends AnyFunSuite:
       if element.isElement(XmlElement.Head) then element.rename(teiHead) else element
     )
     val marked: Xml.Element = TeiMarkup.markHeadedDivs(converted)
-    val outer: Xml.Element = marked.getChildren.flatMap(_.asElement).head
-    val inner: Xml.Element = outer.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Div)).get
+    val outer: Xml.Element = marked.childElements.head
+    val inner: Xml.Element = outer.childElements.find(_.isElement(XmlElement.Div)).get
     assert(!Section.is(marked))
     assert(!Section.is(outer))
     assert(Section.is(inner))

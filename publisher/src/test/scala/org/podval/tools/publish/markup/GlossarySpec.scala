@@ -176,7 +176,7 @@ final class GlossarySpec extends AnyFunSuite:
     val defs: Map[String, Xml.Nodes] = Glossary.definitions(xml)
     assert(defs.keySet == Set("mud"))
     assert(definitionText(defs, "mud") == "wet dirt")
-    assert(Glossary.isList(xml.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Dl)).get))
+    assert(Glossary.isList(xml.childElements.find(_.isElement(XmlElement.Dl)).get))
   }
 
   test("Markdown term text with spaces becomes a hyphenated id") {

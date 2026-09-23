@@ -36,7 +36,7 @@ object Glossary:
   // Direct `dd`, or TagSoup's wrapper `<dl>` around `dt`/`dd` inside a `div`.
   private def definitionNodes(item: Xml.Element): Option[Xml.Nodes] =
     def dds(element: Xml.Element): Seq[Xml.Element] =
-      element.getChildren.flatMap(_.asElement).toSeq.flatMap: child =>
+      element.childElements.toSeq.flatMap: child =>
         if child.isElement(XmlElement.Dd) then Seq(child) else dds(child)
     dds(item).headOption
       .map(_.getChildren.filterNot(_.isWhitespace))

@@ -89,7 +89,7 @@ object Content:
             (title, MarkupContent(PageContent.prepareAuthored(source, processed)))
 
   private def entityName(xml: Xml.Element, kind: EntityKind): Option[String] =
-    xml.getChildren.flatMap(_.asElement)
+    xml.childElements
       .find(_.isNamed(kind.nameElement))
       .map(_.getText.trim)
       .filter(_.nonEmpty)

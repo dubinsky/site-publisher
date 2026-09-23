@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
+import org.podval.xml.XmlNode.flatMapNodes
 import java.io.File
 
 object TeiMarkup extends Markup(
@@ -104,12 +105,12 @@ object TeiMarkup extends Markup(
           root.childrenNamed("teiHeader")
             .flatMap(_.childrenNamed("fileDesc"))
             .flatMap(_.childrenNamed("titleStmt"))
-            .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
+            .flatMap(_.childElements.filter(isTeiTitle))
         )
       case "store" | "collection" | "entityLists" =>
-        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle))
+        pickTitle(root.childElements.filter(isTeiTitle))
       case "div" if root.hasClass("store") || root.hasClass("collection") =>
-        pickTitle(root.getChildren.flatMap(_.asElement).filter(isTeiTitle))
+        pickTitle(root.childElements.filter(isTeiTitle))
       case _ =>
         None
 
@@ -118,7 +119,7 @@ object TeiMarkup extends Markup(
     nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
   private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
-    root.setChildren(Xml.flatMapNodes(root.getChildren): node =>
+    root.setChildren(root.getChildren.flatMapNodes: node =>
       if node eq title then Seq.empty
       else node.asElement.match
         case Some(el) => Seq(stripTitle(el, title))
@@ -252,7 +253,7 @@ object TeiMarkup extends Markup(
       .toSet
 
   private def entryIds(list: Xml.Element): Seq[String] = list
-    .getChildren.flatMap(_.asElement)
+    .childElements
     .filter(isBibliographyEntry)
     .flatMap(xmlId)
 
@@ -457,12 +458,13 @@ object TeiMarkup extends Markup(
 
   // Footnotes in TEI:
   // <note place="end" n="3">Footnote body</note>
-  // TODO do not ignore n?
+  // `@n` is only the visible marker. Series order and fragment ids ignore it.
   private def convertFootnote(element: Xml.Element, correlationIds: IdGenerator): Option[Xml.Nodes] =
     val isFootnote: Boolean = element.isNamed("note") && element.get("place").contains("end")
     if !isFootnote then None else Some:
-      val correlationId = correlationIds.generate()
+      val correlationId: String = correlationIds.generate()
+      val marker: Option[String] = element.get("n")
       Seq(
-        Footnote.link(correlationId),
-        Footnote.body(correlationId, element.getChildren)
+        Footnote.link(correlationId, marker),
+        Footnote.body(correlationId, element.getChildren, marker)
       )

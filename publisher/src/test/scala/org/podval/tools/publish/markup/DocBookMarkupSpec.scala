@@ -240,6 +240,29 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(leftover.isEmpty, dumped)
   }
 
+  test("footnote label is the visible marker; blank label keeps the series number") {
+    val xml: Xml.Element = process(
+      """<article>
+        |<para>See<footnote xml:id="fn" label="*"><para>star</para></footnote>
+        |and<footnoteref linkend="fn"/>
+        |then<footnote label="  "><para>blank</para></footnote>.</para>
+        |</article>""".stripMargin
+    )
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_2""""), dumped)
+    assert(!dumped.contains("footnote-label"), dumped)
+    val links: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(links == Seq("*", "*", "2"), dumped)
+    val backs: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-backlink"))(el.getText.trim)
+    )
+    assert(backs == Seq("*", "2"), dumped)
+  }
+
   test("footnote after text or a preceding element has no separating HTML space") {
     def published(input: String, width: Int = 40): String =
       val xml: Xml.Element = process(input)

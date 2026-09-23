@@ -34,7 +34,6 @@ They are not planned work.
 - **Apparatus** ([#22](https://github.com/dubinsky/site-publisher/issues/22)): use `gap` / `supplied` / `corr` in place
   of some notes (with CSS); use `hand` instead of notes like “написано пером, зачёркнуто карандашом”.
   Gap `@reason` tooltips already exist.
-- **Honor TEI footnote `@n`** instead of ignoring it.
 - **Store-tree `By("names")` / `By("name")` hops** (`/jews`, `/jews/alter-rebbe`) — design-note TODO.
 - **Entity mentions, collector-style** ([#15](https://github.com/dubinsky/site-publisher/issues/15),
   [#9](https://github.com/dubinsky/site-publisher/issues/9)):

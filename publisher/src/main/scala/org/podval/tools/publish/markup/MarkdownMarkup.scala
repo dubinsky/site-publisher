@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst, XmlElement}
+import org.podval.xml.XmlNode.convertElements
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.definition.DefinitionExtension
@@ -74,7 +75,7 @@ object MarkdownMarkup extends Markup(
 
   private[markup] def convert(xml: Xml.Element): Xml.Element =
     xml.transform((element: Xml.Element) =>
-      val children: Xml.Nodes = Xml.convertElements(element.getChildren)(HtmlMarkup.unwrapSpuriousParagraph)
+      val children: Xml.Nodes = element.getChildren.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
       convertAdmonition(convertTaskList(element.setChildren(convertDescriptionLists(children))))
     )
 
@@ -200,9 +201,7 @@ object MarkdownMarkup extends Markup(
   //   <a class="footnote-link" footnote-correlation-id="N"/>
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
     if !element.isElement(XmlElement.Sup) then None else
-      for correlationId <- element
-        .getChildren
-        .flatMap(_.asElement)
+      for correlationId <- element.childElements
         .find(_.hasClass("footnote-ref"))
         .map(_.getText)
       yield
@@ -222,9 +221,7 @@ object MarkdownMarkup extends Markup(
           .getId
           .flatMap: id =>
             Option.when(id.startsWith("fn-"))(id.substring("fn-".length))
-        body <- element
-          .getChildren
-          .flatMap(_.asElement)
+        body <- element.childElements
           .find(_.hasClass("footnote-backref"))
           .map(backLink => unwrapFootnoteParagraphs(element.getChildren.takeWhile(_ ne backLink)))
       yield
@@ -258,7 +255,7 @@ object MarkdownMarkup extends Markup(
   // FlexMark leaves Kramdown `{:toc}` on the last item: `<li>seed {:toc}</li>`.
   private def isKramdownTocList(element: Xml.Element): Boolean =
     (element.isElement(XmlElement.Ul) || element.isElement(XmlElement.Ol)) &&
-    element.getChildren.flatMap(_.asElement).exists: item =>
+    element.childElements.exists: item =>
       item.isElement(XmlElement.Li) && item.getText.trim.endsWith("{:toc}")
 
   // Typora / GitLab `[TOC]` as a whole paragraph, not a link or `[TOC]:` reference.

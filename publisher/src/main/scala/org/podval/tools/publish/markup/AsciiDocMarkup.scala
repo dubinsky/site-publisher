@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.XmlNode.convertElements
 import java.io.File
 
 object AsciiDocMarkup extends Markup(
@@ -86,8 +87,8 @@ object AsciiDocMarkup extends Markup(
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
-      children = Xml.convertElements(children)(convertBibliographyWrapper)
-      children = Xml.convertElements(children)(HtmlMarkup.unwrapSpuriousParagraph)
+      children = children.convertElements(convertBibliographyWrapper)
+      children = children.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
       children = removeSpuriousDivs(children)
       if asciidoctorGlossaryClasses.forall(result.hasClass) then
         children = convertGlossaryLists(children)
@@ -134,14 +135,12 @@ object AsciiDocMarkup extends Markup(
 
   private def isSpuriousDiv(element: Xml.Element): Boolean =
     element.getClasses.exists(spuriousDivClasses.contains) ||
-    element
-      .getChildren
-      .flatMap(_.asElement)
+    element.childElements
       .headOption
       .flatMap(HtmlMarkup.headerLevel)
       .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
 
-  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = Xml.convertElements(children)(element =>
+  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = children.convertElements(element =>
     convertBibliographyWrapper(element).orElse(
       Option.when(element.isElement(XmlElement.Div) && isSpuriousDiv(element))(
         removeSpuriousDivs(element.getChildren)
@@ -362,15 +361,15 @@ object AsciiDocMarkup extends Markup(
     if !element.isElement(XmlElement.Div) || !element.hasClass("colist") then element
     else
       val innerOl: Option[Xml.Element] =
-        element.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Ol))
+        element.childElements.find(_.isElement(XmlElement.Ol))
       val fromTable: Option[Xml.Element] =
-        element.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Table)).map: table =>
-          val rows: Seq[Xml.Element] = table.getChildren.flatMap(_.asElement).flatMap: child =>
+        element.childElements.find(_.isElement(XmlElement.Table)).map: table =>
+          val rows: Seq[Xml.Element] = table.childElements.flatMap: child =>
             if child.isElement(XmlElement.Tr) then Seq(child)
-            else child.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Tr))
+            else child.childElements.filter(_.isElement(XmlElement.Tr))
           val items: Seq[Xml.Element] = rows.map: tr =>
             val cells: Seq[Xml.Element] =
-              tr.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Td))
+              tr.childElements.filter(_.isElement(XmlElement.Td))
             Xml.element(XmlElement.Li).setChildren(cells.lift(1).fold(Seq.empty[Xml.Node])(_.getChildren))
           Xml.element(XmlElement.Ol).setChildren(items)
       innerOl.orElse(fromTable).fold(element)(_.add(Callout.ListClass))
@@ -457,9 +456,7 @@ object AsciiDocMarkup extends Markup(
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
     val isFootnoteLink: Boolean = element.isElement(XmlElement.Sup) /* && element.hasClass("footnote") */
     if !isFootnoteLink then None else
-      for correlationId: String <- element
-        .getChildren
-        .flatMap(_.asElement)
+      for correlationId: String <- element.childElements
         .find(_.hasClass("footnote"))
         .flatMap(_.getTextOpt)
       yield
@@ -473,9 +470,7 @@ object AsciiDocMarkup extends Markup(
     val isFootnoteBody: Boolean = element.isElement(XmlElement.Div) && element.hasClass("footnote")
     if !isFootnoteBody then None else
       // 'a' child
-      for correlationId: String <- element
-        .getChildren
-        .flatMap(_.asElement)
+      for correlationId: String <- element.childElements
         .headOption
         .flatMap(_.getTextOpt)
       yield

@@ -3,6 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
+import org.podval.xml.XmlNode.flatMapNodes
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -91,17 +92,17 @@ object DocBookMarkup extends Markup(
     db2Html.is(element, XmlElement.Title)
 
   private def documentTitle(root: Xml.Element): Option[Xml.Element] =
-    val children: Seq[Xml.Element] = root.getChildren.flatMap(_.asElement)
+    val children: Seq[Xml.Element] = root.childElements
     children.find(isDbTitle).orElse:
       children.filter(el => el.getName.localNameIn(infoElements))
-        .flatMap(_.getChildren.flatMap(_.asElement).find(isDbTitle))
+        .flatMap(_.childElements.find(isDbTitle))
         .headOption
 
   private def stripDocumentTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
     if root.getChildren.exists(_ eq title) then
       root.setChildren(root.getChildren.filterNot(_ eq title))
     else
-      root.setChildren(Xml.flatMapNodes(root.getChildren): node =>
+      root.setChildren(root.getChildren.flatMapNodes: node =>
         node.asElement.filter(el => el.getName.localNameIn(infoElements)) match
           case Some(info) if info.getChildren.exists(_ eq title) =>
             val stripped: Xml.Element = info.setChildren(info.getChildren.filterNot(_ eq title))
@@ -212,11 +213,16 @@ object DocBookMarkup extends Markup(
         case Some(el) if el.isNamed("colspec") || el.isNamed("spanspec") => Seq.empty
         case _ => Seq(node)
 
+  // `@label` is the same visible marker as TEI `@n`.
   private def convertFootnote(element: Xml.Element, correlationIds: IdGenerator): Option[Xml.Nodes] =
     if !element.isNamed("footnote") then None
     else
       val correlationId: String = xmlId(element).getOrElse(correlationIds.generate())
-      Some(Seq(Footnote.link(correlationId), Footnote.body(correlationId, element.getChildren)))
+      val marker: Option[String] = element.get("label")
+      Some(Seq(
+        Footnote.link(correlationId, marker),
+        Footnote.body(correlationId, element.getChildren, marker)
+      ))
 
   private def footnoteDefinitionIds(xml: Xml.Element): Set[String] =
     DialectWalk.gather(xml)(el => Option.when(el.isNamed("footnote"))(xmlId(el)).flatten).toSet
@@ -261,7 +267,7 @@ object DocBookMarkup extends Markup(
       Xml.element(XmlElement.Dl).setChildren(items)
 
   private def convertVarListEntry(entry: Xml.Element): Xml.Nodes =
-    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
+    val children: Seq[Xml.Element] = entry.childElements
     val dts: Seq[Xml.Element] = children.filter(_.isNamed("term")).map: term =>
       Xml.element(XmlElement.Dt).setChildren(term.getChildren.filterNot(_.isWhitespace))
     val dds: Seq[Xml.Element] = children.filter(_.isNamed("listitem")).map: item =>
@@ -351,7 +357,7 @@ object DocBookMarkup extends Markup(
     DialectWalk.gather(xml)(el => Option.when(el.isNamed("bibliography"))(el)).flatMap(entryIds).toSet
 
   private def entryIds(list: Xml.Element): Seq[String] =
-    list.getChildren.flatMap(_.asElement)
+    list.childElements
       .filter(isBibliographyEntry)
       .flatMap(xmlId)
 

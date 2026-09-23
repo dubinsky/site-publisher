@@ -2,6 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
+import org.podval.xml.XmlNode.{convertElements, flatMapNodes}
 
 enum FootnoteScope derives CanEqual:
   case Document
@@ -19,6 +20,9 @@ object Footnote:
   private object BackLinkClass extends CssClass("footnote-backlink")
 
   private object ScopeAttr extends XmlAttribute("data-footnote-scope")
+
+  // Authored marker (TEI `@n`, DocBook `label`). Not a correlation id and not a series position.
+  private object Marker extends XmlAttribute("footnote-label")
 
   private val alphabet: String = "abcdefghijklmnopqrstuvwxyz"
 
@@ -45,7 +49,7 @@ object Footnote:
     nodes: Xml.Nodes,
     parentBodyId: Option[String] = None
   ): Footnote =
-    Footnote(correlationId, number, nodes, scope, parentBodyId)
+    Footnote(correlationId, number, nodes, scope, parentBodyId, footnote.authoredMarker)
 
   def letterLabel(index0: Int): String =
     val q: Int = index0 / 26
@@ -55,16 +59,32 @@ object Footnote:
 
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
-  def link(correlationId: String): Xml.Element = Xml
-    .element(XmlElement.Span)
-    .add(LinkClass)
-    .set(CorrelationId, correlationId)
-  
-  def body(correlationId: String, content: Xml.Nodes): Xml.Element = Xml
-    .element(XmlElement.Span)
-    .add(BodyClass)
-    .set(CorrelationId, correlationId)
-    .setChildren(content)
+  def link(correlationId: String, marker: Option[String] = None): Xml.Element = putMarker(
+    Xml
+      .element(XmlElement.Span)
+      .add(LinkClass)
+      .set(CorrelationId, correlationId),
+    marker
+  )
+
+  def body(
+    correlationId: String,
+    content: Xml.Nodes,
+    marker: Option[String] = None
+  ): Xml.Element = putMarker(
+    Xml
+      .element(XmlElement.Span)
+      .add(BodyClass)
+      .set(CorrelationId, correlationId)
+      .setChildren(content),
+    marker
+  )
+
+  private def putMarker(element: Xml.Element, marker: Option[String]): Xml.Element =
+    marker.map(_.trim).filter(_.nonEmpty).fold(element)(element.set(Marker, _))
+
+  private def readMarker(element: Xml.Element): Option[String] =
+    element.get(Marker).map(_.trim).filter(_.nonEmpty)
 
   def linkIds(xml: Xml.Element): Seq[String] = xml.gather(element =>
     Option.when(isLink(element))(getCorrelationId(element))
@@ -76,7 +96,7 @@ object Footnote:
   /** Replace leftover containers (caller says which) with the IR bodies inside them. */
   def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =
     xml.transform(element =>
-      element.setChildren(Xml.convertElements(element.getChildren)(leftover =>
+      element.setChildren(element.getChildren.convertElements(leftover =>
         Option.when(isContainer(leftover))(
           leftover.gather(el => Option.when(isBody(el))(el: Xml.Node))
         )
@@ -110,7 +130,8 @@ object Footnote:
           correlationId -> Footnote(
             correlationId = correlationId,
             number = numbers.get(correlationId).fold(0)(_ + 1),
-            nodes = stripInnerBodies(element.getChildren)
+            nodes = stripInnerBodies(element.getChildren),
+            marker = readMarker(element)
           )
       )
       .toMap
@@ -516,7 +537,7 @@ object Footnote:
     footnote.scope == FootnoteScope.Document
 
   private def stripInnerBodies(nodes: Xml.Nodes): Xml.Nodes =
-    Xml.flatMapNodes(nodes): node =>
+    nodes.flatMapNodes: node =>
       node.asElement match
         case Some(el) if isBody(el) => Seq.empty
         case Some(el) => Seq(el.setChildren(stripInnerBodies(el.getChildren)))
@@ -546,22 +567,29 @@ final class Footnote(
   val number: Int,
   val nodes: Xml.Nodes,
   val scope: FootnoteScope = FootnoteScope.Document,
-  parentBodyId: Option[String] = None
+  parentBodyId: Option[String] = None,
+  marker: Option[String] = None
 ):
-  def label: String = scope match
+  // Blank is absent. `remapped` copies this so chunks and transclusion keep it.
+  private val authoredMarker: Option[String] = marker.map(_.trim).filter(_.nonEmpty)
+
+  // Fragment ids use the series. The authored marker is only the visible text.
+  private def seriesLabel: String = scope match
     case FootnoteScope.Document => number.toString
     case FootnoteScope.Table(_) => Footnote.letterLabel(number - 1)
     case FootnoteScope.Nested(_) => Footnote.letterLabel(number - 1)
 
+  private def markerText: String = authoredMarker.getOrElse(seriesLabel)
+
   private def linkId: String = scope match
     case FootnoteScope.Document => s"_footnote_src_$number"
-    case FootnoteScope.Table(k) => s"_table_${k}_fn_src_$label"
-    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_src_$label"
+    case FootnoteScope.Table(k) => s"_table_${k}_fn_src_$seriesLabel"
+    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_src_$seriesLabel"
 
   private[markup] def bodyId: String = scope match
     case FootnoteScope.Document => s"_footnote_$number"
-    case FootnoteScope.Table(k) => s"_table_${k}_fn_$label"
-    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_$label"
+    case FootnoteScope.Table(k) => s"_table_${k}_fn_$seriesLabel"
+    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_$seriesLabel"
 
   private def scopeName: Option[String] = scope match
     case FootnoteScope.Document => None
@@ -573,7 +601,7 @@ final class Footnote(
       .element(XmlElement.A)
       .add(Footnote.LinkClass)
       .setHref(s"#$bodyId")
-      .setText(label)
+      .setText(markerText)
     val withScope: Xml.Element = scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
     if withId then withScope.setId(linkId) else withScope
 
@@ -598,4 +626,4 @@ final class Footnote(
     .element(XmlElement.A)
     .add(Footnote.BackLinkClass)
     .setHref(s"#$linkId")
-    .setText(label)
+    .setText(markerText)

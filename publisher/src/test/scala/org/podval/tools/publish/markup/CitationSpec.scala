@@ -165,7 +165,7 @@ final class CitationSpec extends AnyFunSuite:
     val native: Seq[Xml.Element] =
       resolved.gather(el => Option.when(BibliographyItem.isList(el))(el)).toSeq
     assert(native.size == 1, dumped)
-    assert(native.head.getChildren.flatMap(_.asElement).exists(_.getId.contains("knuth-book")), dumped)
+    assert(native.head.childElements.exists(_.getId.contains("knuth-book")), dumped)
     val generated: Seq[Xml.Element] =
       resolved.gather(el => Option.when(Citation.isList(el))(el)).toSeq
     assert(generated.size == 1, dumped)
@@ -355,7 +355,7 @@ final class CitationSpec extends AnyFunSuite:
     assert(dumped.contains("unresolved-citation"), dumped)
     assert(dumped.contains("csl-bib-body") || dumped.contains("csl-entry"), dumped)
     val lists: Seq[Xml.Element] =
-      resolved.getChildren.flatMap(_.asElement).filter(Citation.isList).toSeq
+      resolved.childElements.filter(Citation.isList).toSeq
     assert(lists.size == 1, dumped)
   }
 
@@ -365,7 +365,7 @@ final class CitationSpec extends AnyFunSuite:
     val xml: Xml.Element = wrap(Xml.element(XmlElement.P).setChildren(Chunk(stub)))
     val (resolved, labels) = bib.resolve(xml)
     assert(labels.isEmpty)
-    val last: Xml.Element = resolved.getChildren.flatMap(_.asElement).last
+    val last: Xml.Element = resolved.childElements.last
     assert(Citation.isList(last), render(resolved))
     assert(render(last).toLowerCase.contains("knuth"), render(last))
     assert(render(last).contains(s"""id="${Citation.entryId("knuth79")}""""), render(last))

@@ -30,7 +30,7 @@ object TaskList:
     li.add(ItemClass).setChildren(normalizeCheckbox(box) +: rest)
 
   def asList(list: Xml.Element): Xml.Element =
-    val hasTask: Boolean = list.getChildren.flatMap(_.asElement).exists(_.has(ItemClass))
+    val hasTask: Boolean = list.childElements.exists(_.has(ItemClass))
     if !hasTask then list else list.add(ListClass)
 
   private def normalizeCheckbox(element: Xml.Element): Xml.Element =

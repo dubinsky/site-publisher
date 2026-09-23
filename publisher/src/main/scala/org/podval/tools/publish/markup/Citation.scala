@@ -57,9 +57,7 @@ object Citation:
     Mode.fromAttr(element.get(ModeAttr).getOrElse("parenthetical"))
 
   def itemsOf(element: Xml.Element): Seq[Item] =
-    element
-      .getChildren
-      .flatMap(_.asElement)
+    element.childElements
       .filter(_.has(ItemClass))
       .map: item =>
         Item(

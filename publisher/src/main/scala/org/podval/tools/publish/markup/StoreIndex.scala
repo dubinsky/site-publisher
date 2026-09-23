@@ -13,13 +13,13 @@ import zio.blocks.schema.{Modifier, Schema}
 final case class StoreIndex(
   n: Option[String] = None,
   alias: Option[String] = None,
-  @Modifier.config(XmlCodec.Attribute, "pageType") pageTypeName: Option[String] = None,
-  @Modifier.config(XmlCodec.Element, "name") names: Seq[Name] = Seq.empty,
-  @Modifier.config(XmlCodec.Element, "title") titles: Seq[Xml.Element] = Seq.empty,
-  @Modifier.config(XmlCodec.Element, "abstract") description: Option[Xml.Element] = None,
+  @Modifier.rename("pageType") pageTypeName: Option[String] = None,
+  names: Seq[Name] = Seq.empty,
+  @Modifier.rename("title") titles: Seq[Xml.Element] = Seq.empty,
+  @Modifier.rename("abstract") description: Option[Xml.Element] = None,
   body: Option[Xml.Element] = None,
-  @Modifier.config(XmlCodec.Element, "part") parts: Seq[CollectionPart] = Seq.empty,
-  @Modifier.config(XmlCodec.Element, "by") axis: Option[StoreIndex.Axis] = None,
+  parts: Seq[CollectionPart] = Seq.empty,
+  axis: Option[StoreIndex.Axis] = None,
   @Modifier.config(XmlCodec.Include, "") hrefs: Seq[String] = Seq.empty,
   // StoreIndex.apply overwrites whatever decode read, and the field is not XML.
   isCollection: Boolean = false
@@ -36,6 +36,7 @@ final case class StoreIndex(
     names.find(_.languageSpec.language.exists(_.name == lang)).orElse(names.headOption).map(_.name)
 
 object StoreIndex:
+  @Modifier.config(XmlCodec.Element, "by")
   @Modifier.config(XmlCodec.IgnoreUnknown, "")
   final case class Axis(
     selector: Option[String] = None

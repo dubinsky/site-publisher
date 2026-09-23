@@ -36,12 +36,12 @@ final class TaskListSpec extends AnyFunSuite:
     assert(dumped.contains("""type="checkbox""""), dumped)
     assert(dumped.contains("""disabled="disabled""""), dumped)
     assert(!dumped.contains("""class="checklist""""), dumped)
-    val items: Seq[Xml.Element] = xml.getChildren.flatMap(_.asElement)
+    val items: Seq[Xml.Element] = xml.childElements
       .filter(el => el.isElement(XmlElement.Ul) || el.isElement(XmlElement.Ol))
-      .flatMap(_.getChildren.flatMap(_.asElement).filter(_.has(TaskList.ItemClass)))
+      .flatMap(_.childElements.filter(_.has(TaskList.ItemClass)))
       .toSeq
     assert(items.size == 2, dumped)
-    val boxes: Seq[Xml.Element] = items.flatMap(_.getChildren.flatMap(_.asElement).filter(_.has(TaskList.CheckboxClass)))
+    val boxes: Seq[Xml.Element] = items.flatMap(_.childElements.filter(_.has(TaskList.CheckboxClass)))
     assert(boxes.size == 2, dumped)
     assert(boxes.head.get("checked").isEmpty, dumped)
     assert(boxes(1).get("checked").contains("checked"), dumped)
@@ -96,13 +96,13 @@ final class TaskListSpec extends AnyFunSuite:
     ).toSeq
     val list: Xml.Element = lists.find(_.has(TaskList.ListClass)).getOrElse:
       throw new AssertionError(s"no task-list: $dumped")
-    val lis: Seq[Xml.Element] = list.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li)).toSeq
+    val lis: Seq[Xml.Element] = list.childElements.filter(_.isElement(XmlElement.Li)).toSeq
     assert(lis.size == 3, dumped)
     assert(lis(0).has(TaskList.ItemClass), dumped)
     assert(!lis(1).has(TaskList.ItemClass), dumped)
     assert(lis(2).has(TaskList.ItemClass), dumped)
     assert(lis(1).getText.contains("plain"), dumped)
-    val boxes: Seq[Xml.Element] = lis.flatMap(_.getChildren.flatMap(_.asElement).filter(_.has(TaskList.CheckboxClass)))
+    val boxes: Seq[Xml.Element] = lis.flatMap(_.childElements.filter(_.has(TaskList.CheckboxClass)))
     assert(boxes.size == 2, dumped)
     assert(boxes.head.get("checked").isEmpty, dumped)
     assert(boxes(1).get("checked").contains("checked"), dumped)

@@ -35,9 +35,7 @@ object HtmlMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
-    val (result: Xml.Element, title: Option[Xml.Element]) = xml
-      .getChildren
-      .flatMap(_.asElement)
+    val (result: Xml.Element, title: Option[Xml.Element]) = xml.childElements
       .find(element => headerLevel(element).contains(1))
       .fold((xml, None)): h1 =>
         (xml.setChildren(xml.getChildren.filterNot(_ eq h1)), Some(h1))

@@ -54,7 +54,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li))
+    val items: Seq[String] = foundLists.head.childElements.filter(_.isElement(XmlElement.Li))
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)
@@ -81,7 +81,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(!dumped.contains("""class="colist""""), dumped)
     val foundLists: Seq[Xml.Element] = lists(xml)
     assert(foundLists.size == 1, dumped)
-    val items: Seq[String] = foundLists.head.getChildren.flatMap(_.asElement).filter(_.isElement(XmlElement.Li))
+    val items: Seq[String] = foundLists.head.childElements.filter(_.isElement(XmlElement.Li))
       .map(_.getText.trim).toSeq
     assert(items.exists(_.contains("Library import")), dumped)
     assert(items.exists(_.contains("URL mapping")), dumped)
@@ -114,7 +114,7 @@ final class CalloutSpec extends AnyFunSuite:
     assert(marks(xml).head.get("data-value").contains("1"), dumped)
     assert(!dumped.contains("""class="conum""""), dumped)
     assert(lists(xml).size == 1, dumped)
-    assert(lists(xml).head.getChildren.flatMap(_.asElement).exists(_.getText.contains("note")), dumped)
+    assert(lists(xml).head.childElements.exists(_.getText.contains("note")), dumped)
   }
 
   test("HTML that is already IR is unchanged by HtmlMarkup.process") {

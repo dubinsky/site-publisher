@@ -37,7 +37,7 @@ object Video:
       if withClass.get("controls").isDefined then withClass
       else withClass.set("controls", "controls")
     val src: Option[String] = withControls.get(XmlAttribute.Src).filter(_.nonEmpty)
-    val hasMarkup: Boolean = withControls.getChildren.flatMap(_.asElement).nonEmpty
+    val hasMarkup: Boolean = withControls.childElements.nonEmpty
     if hasMarkup || src.isEmpty then withControls
     else
       val label: String = withControls

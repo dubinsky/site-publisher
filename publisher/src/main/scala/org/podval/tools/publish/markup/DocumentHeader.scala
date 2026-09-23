@@ -41,7 +41,7 @@ object DocumentHeader:
     ).headOption
 
   private def children(element: Xml.Element, name: String): Seq[Xml.Element] =
-    element.getChildren.flatMap(_.asElement).filter(_.isNamed(name)).toSeq
+    element.childElements.filter(_.isNamed(name)).toSeq
 
   private def child(element: Xml.Element, name: String): Option[Xml.Element] =
     children(element, name).headOption

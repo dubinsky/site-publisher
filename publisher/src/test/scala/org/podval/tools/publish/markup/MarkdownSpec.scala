@@ -273,7 +273,7 @@ final class MarkdownSpec extends AnyFunSuite:
       Option.when(element.isElement(XmlElement.Pre))(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Code)).get
+    val preCode: Xml.Element = pres.head.childElements.find(_.isElement(XmlElement.Code)).get
     assert(preCode.hasClass("language-scala"), dumped)
     assert(preCode.getText.contains("xs.map(f)"), dumped)
   }

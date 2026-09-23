@@ -835,7 +835,9 @@ TEI `note place="end"` inside another `place="end"` does.
 
 TEI still converts only `place="end"`.
 `place="foot"` and unplaced `note` are unchanged.
-`@n` is ignored.
+`@n`, when non-blank, is the marker at the call site and in the list.
+Order and fragment ids stay on the generated series.
+The same marker may appear on more than one note.
 Obsidian inline `^[…]` footnotes are unsupported.
 
 AsciiDoc:: inline note, or a named definition reused with an empty macro:
@@ -859,11 +861,19 @@ See this [^note] and again [^note].
 [^note]: A note.
 ----
 
-TEI:: definition and use are the same element at the point of reference (`@n` is ignored):
+TEI:: definition and use are the same element at the point of reference (`@n`, when non-blank, is the marker):
 +
 [source,xml]
 ----
 <p>See this<note place="end">A note.</note>.</p>
+----
++
+A non-blank `@n` is that marker.
+The next note with no `@n` is still numbered in series.
++
+[source,xml]
+----
+<p>See this<note place="end" n="*">A note.</note> and <note place="end">the next.</note>.</p>
 ----
 +
 A `place="end"` inside another `place="end"` is a nested letter on the parent note:
@@ -873,7 +883,7 @@ A `place="end"` inside another `place="end"` is a nested letter on the parent no
 <p>See this<note place="end">Outer<note place="end">Inner.</note></note>.</p>
 ----
 
-DocBook:: `<footnote>` at the call site (`xml:id` optional).
+DocBook:: `<footnote>` at the call site (`xml:id` optional; non-blank `label` is the same marker).
   Reuse with `<footnoteref linkend="id"/>`.
   A `<footnote>` inside another footnote's `<para>` is nested the same way if the converter emits an inner stub.
 +

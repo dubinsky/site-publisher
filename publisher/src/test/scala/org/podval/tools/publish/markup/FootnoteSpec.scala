@@ -70,7 +70,7 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(notes("a").number == 1)
     assert(notes("b").number == 2)
     assert(notes("a").nodes.map(_.getText).mkString == "first")
-    assert(stripped.getChildren.flatMap(_.asElement).forall(!Footnote.isBody(_)))
+    assert(stripped.childElements.forall(!Footnote.isBody(_)))
     assert(Footnote.linkIds(stripped).toSeq == Seq("a", "b"))
   }
 
@@ -156,7 +156,7 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(!notes("outer").nodes.exists(_.asElement.exists(Footnote.isBody)))
     assert(notes("inner").nodes.map(_.getText).mkString == "inner note")
     assert(Footnote.linkIds(stripped).toSeq == Seq("outer"))
-    assert(stripped.getChildren.flatMap(_.asElement).forall(!Footnote.isBody(_)))
+    assert(stripped.childElements.forall(!Footnote.isBody(_)))
   }
 
   test("resolveLink missing from combined does not throw") {
@@ -326,6 +326,92 @@ final class FootnoteSpec extends AnyFunSuite:
     assert(Footnote.letterLabel(25) == "z")
     assert(Footnote.letterLabel(26) == "aa")
     assert(Footnote.letterLabel(27) == "ab")
+  }
+
+  test("authored marker replaces visible text and leaves series ids in place") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("a", Some("3")),
+      Footnote.body("a", Chunk(Xml.text("marked")), Some("3")),
+      Footnote.link("b", Some("  ")),
+      Footnote.body("b", Chunk(Xml.text("blank")), Some("  ")),
+      Footnote.link("c", Some("*")),
+      Footnote.body("c", Chunk(Xml.text("star")), Some("*")),
+      Footnote.link("d", Some("*")),
+      Footnote.body("d", Chunk(Xml.text("again")), Some("*"))
+    ))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_2""""), dumped)
+    assert(dumped.contains("""id="_footnote_3""""), dumped)
+    assert(dumped.contains("""id="_footnote_4""""), dumped)
+    assert(!dumped.contains("footnote-label"), dumped)
+    val links: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(links == Seq("3", "2", "*", "*"), dumped)
+    val backs: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-backlink"))(el.getText.trim)
+    )
+    assert(backs == Seq("3", "2", "*", "*"), dumped)
+  }
+
+  test("table authored marker keeps the letter id") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      cellTable(Chunk(
+        Xml.text("x"),
+        Footnote.link("cell", Some("*"))
+      )),
+      Footnote.body("cell", Chunk(Xml.text("cell note")), Some("*"))
+    ))
+    val finished: Xml.Element = finishTables(xml)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_table_1_fn_a""""), dumped)
+    assert(dumped.contains("""id="_table_1_fn_src_a""""), dumped)
+    assert(!dumped.contains("""id="_footnote_1""""), dumped)
+    assert(!dumped.contains("footnote-label"), dumped)
+    val links: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(links == Seq("*"), dumped)
+    val backs: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-backlink"))(el.getText.trim)
+    )
+    assert(backs == Seq("*"), dumped)
+  }
+
+  test("nested authored marker keeps the letter id") {
+    val xml: Xml.Element = Xml.element(XmlElement.Div).setChildren(Chunk(
+      Footnote.link("outer", Some("126")),
+      Footnote.body(
+        "outer",
+        Chunk(
+          Xml.text("outer "),
+          Footnote.link("inner", Some("iv")),
+          Footnote.body("inner", Chunk(Xml.text("inner")), Some("iv"))
+        ),
+        Some("126")
+      )
+    ))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_a""""), dumped)
+    assert(dumped.contains("""id="_footnote_1_n_src_a""""), dumped)
+    assert(!dumped.contains("""id="_footnote_2""""), dumped)
+    assert(!dumped.contains("footnote-label"), dumped)
+    val outerSrc: Seq[String] = finished.gather(el =>
+      Option.when(el.getId.contains("_footnote_src_1"))(el.getText.trim)
+    )
+    assert(outerSrc == Seq("126"), dumped)
+    val innerSrc: Seq[String] = finished.gather(el =>
+      Option.when(el.getId.contains("_footnote_1_n_src_a"))(el.getText.trim)
+    )
+    assert(innerSrc == Seq("iv"), dumped)
+    val backs: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-backlink"))(el.getText.trim)
+    )
+    assert(backs == Seq("126", "iv"), dumped)
   }
 
   test("table wrap uses letters; two cells sharing a note emit one body") {
@@ -537,7 +623,7 @@ final class FootnoteSpec extends AnyFunSuite:
     )
     assert(docLinks.size >= 2, dumped)
     assert(docLinks.forall(_.getText == "1"), dumped)
-    val topRefs: Seq[Xml.Element] = finished.getChildren.flatMap(_.asElement).filter(_.hasClass("footnote-ref"))
+    val topRefs: Seq[Xml.Element] = finished.childElements.filter(_.hasClass("footnote-ref"))
     assert(topRefs.size == 2, dumped)
     assert(dumped.contains("""id="_footnote_1""""), dumped)
     assert(dumped.contains("""id="_footnote_2""""), dumped)

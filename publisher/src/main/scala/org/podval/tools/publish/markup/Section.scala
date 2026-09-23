@@ -50,7 +50,7 @@ object Section:
     element.isElement(XmlElement.Div) && element.has(SectionClass)
 
   def heading(section: Xml.Element): Option[Xml.Element] =
-    section.getChildren.flatMap(_.asElement).find(_.has(HeadingClass))
+    section.childElements.find(_.has(HeadingClass))
 
   def isPermalink(element: Xml.Element): Boolean =
     element.has(AnchorClass) || element.has(LinkClass)
@@ -83,7 +83,7 @@ object Section:
           element
 
   private def permalinksAttached(header: Xml.Element): Boolean =
-    header.getChildren.flatMap(_.asElement).exists(_.has(AnchorClass))
+    header.childElements.exists(_.has(AnchorClass))
 
   // AsciiDoctor sectanchors + sectlinks: hover §, heading text is a self-link.
   // If the heading already contains an <a> (e.g. a glossary term), only add the hover anchor.

@@ -5,7 +5,7 @@ import zio.blocks.schema.{Modifier, Schema}
 
 final case class EntityList(
   kind: EntityKind,
-  @Modifier.config(XmlCodec.Attribute, "n") id: String,
+  @Modifier.rename("n") id: String,
   role: Option[String] = None,
   @Modifier.config(XmlCodec.Element, "title")
   @Modifier.alias("tei-title")

@@ -18,6 +18,6 @@ final class EntityCodecSpec extends AnyFunSuite:
     assert(index.title.contains("Имена"))
     assert(index.lists.map(_.kind) == Seq(EntityKind.Person, EntityKind.Place))
     val encoded: Xml.Element = EntityLists.Index.codec.encode(index)
-    assert(encoded.getChildren.flatMap(_.asElement).map(_.getName.qName) ==
+    assert(encoded.childElements.map(_.getName.qName) ==
       Seq("title", "listPerson", "listPlace"))
   }

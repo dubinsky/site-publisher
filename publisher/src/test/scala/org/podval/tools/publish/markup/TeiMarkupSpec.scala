@@ -168,7 +168,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |</collection>""".stripMargin
     )).get
     val title: Xml.Element = index.parts.head.title.get
-    assert(title.getChildren.flatMap(_.asElement).map(_.getName.qName) == Seq("hi"), title.getChildren)
+    assert(title.childElements.map(_.getName.qName) == Seq("hi"), title.getChildren)
   }
 
   test("collection part title keeps TEI default xmlns") {
@@ -265,7 +265,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(xml.gather(el => Option.when(el.isElement(XmlElement.Title) || el.isNamed("tei-title"))(el)).isEmpty, dumped)
     val people: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("listPerson"))(el)).toSeq
     assert(people.exists(_.getId.contains("jews")), dumped)
-    assert(people.exists(el => el.getChildren.flatMap(_.asElement).exists(h =>
+    assert(people.exists(el => el.childElements.exists(h =>
       h.isNamed("tei-head") && h.getText.contains("Жиды")
     )), dumped)
     val index = EntityLists.harvest(parse(
@@ -380,6 +380,69 @@ final class TeiMarkupSpec extends AnyFunSuite:
       published("""<p>See <ref target="#x">this</ref><note place="end">A note.</note>.</p>"""),
       "</a>"
     )
+  }
+
+  test("note @n is the visible marker; blank @n keeps the series number") {
+    val xml: Xml.Element = process(
+      """<div>
+        |<p>A<note place="end" n="*">star</note> B<note place="end" n="3">three</note>
+        |C<note place="end">plain</note> D<note place="end" n="  ">blank</note>.</p>
+        |<note n="nope">not an endnote</note>
+        |</div>""".stripMargin
+    )
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("""id="_footnote_4""""), dumped)
+    assert(!dumped.contains("""id="_footnote_5""""), dumped)
+    assert(!dumped.contains("footnote-label"), dumped)
+    val links: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(links == Seq("*", "3", "3", "4"), dumped)
+    val backs: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-backlink"))(el.getText.trim)
+    )
+    assert(backs == Seq("*", "3", "3", "4"), dumped)
+    val leftover: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.isNamed("note"))(el)
+    )
+    assert(leftover.exists(_.getText.contains("not an endnote")), dumped)
+    assert(leftover.exists(_.get("n").contains("nope")), dumped)
+  }
+
+  test("note @n in a table or a parent note keeps the series id") {
+    val table: Xml.Element = Footnote.finish(
+      process("""<table><row><cell>x<note place="end" n="*">cell</note></cell></row></table>"""),
+      PageErrorReporter.Silent,
+      localTables = true
+    )
+    val tableDumped: String = render(table)
+    assert(tableDumped.contains("""id="_table_1_fn_a""""), tableDumped)
+    assert(tableDumped.contains("""id="_table_1_fn_src_a""""), tableDumped)
+    assert(!tableDumped.contains("footnote-label"), tableDumped)
+    val tableLinks: Seq[String] = table.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(tableLinks == Seq("*"), tableDumped)
+
+    val nested: Xml.Element = Footnote.finish(
+      process("""<p>See<note place="end" n="126">outer<note place="end" n="iv">inner</note></note>.</p>"""),
+      PageErrorReporter.Silent
+    )
+    val nestedDumped: String = render(nested)
+    assert(nestedDumped.contains("""id="_footnote_1""""), nestedDumped)
+    assert(nestedDumped.contains("""id="_footnote_1_n_a""""), nestedDumped)
+    assert(!nestedDumped.contains("""id="_footnote_2""""), nestedDumped)
+    assert(!nestedDumped.contains("footnote-label"), nestedDumped)
+    val outerSrc: Seq[String] = nested.gather(el =>
+      Option.when(el.getId.contains("_footnote_src_1"))(el.getText.trim)
+    )
+    assert(outerSrc == Seq("126"), nestedDumped)
+    val innerSrc: Seq[String] = nested.gather(el =>
+      Option.when(el.getId.contains("_footnote_1_n_src_a"))(el.getText.trim)
+    )
+    assert(innerSrc == Seq("iv"), nestedDumped)
   }
 
   test("place=end in a table cell becomes a table-local letter") {
@@ -527,7 +590,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
       Option.when(element.isElement(XmlElement.Pre))(element)
     ).toSeq
     assert(pres.size == 1, dumped)
-    val preCode: Xml.Element = pres.head.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Code)).get
+    val preCode: Xml.Element = pres.head.childElements.find(_.isElement(XmlElement.Code)).get
     assert(preCode.hasClass("language-java"), dumped)
     assert(preCode.getText.contains("Width"), dumped)
     val plain: Xml.Element = codes.find(c => !c.getClasses.exists(_.startsWith("language-"))).get
