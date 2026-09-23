@@ -5,7 +5,6 @@ import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKi
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
 sealed abstract class Content:

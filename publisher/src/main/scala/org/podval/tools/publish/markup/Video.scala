@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 /** Markup-neutral video IR. CSS styles only these classes.
   * Local file: `<video class="video" controls>`. YouTube/Vimeo: `<iframe class="video-embed">`. */

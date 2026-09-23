@@ -71,7 +71,6 @@ They are not planned work.
 - **DocBook**: no task lists, wiki links, or PDF embeds.
   Front matter TODO: implement some DocBook styling parameters.
 - **`HtmlIr.normalize` for TEI and DocBook** — not run yet (leftovers stay native names until dialect converters).
-- **AsciiDoc `a.bare` print CSS** — skip “print URL after text” for bare links.
 - **Dotted front-matter keys** (`toc.depth`, …) — considered, not done.
 - **`modified_time` as a typed field** — blocked on ZIO Blocks YAML kebab-case
   ([#6](https://github.com/dubinsky/site-publisher/issues/6)); currently an extra-key workaround.

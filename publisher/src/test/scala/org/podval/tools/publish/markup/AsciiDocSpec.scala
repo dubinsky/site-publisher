@@ -151,6 +151,26 @@ final class AsciiDocSpec extends AnyFunSuite:
     assert(!compact.contains("""</strong> <span class="footnote-ref""""), dumped)
   }
 
+  test("cleanup drops class bare and keeps another role") {
+    val plain: Xml.Element = process("See https://example.org for more.\n")
+    val plainDump: String = render(plain)
+    val plainLinks: Seq[Xml.Element] = plain.gather(element =>
+      Option.when(element.isElement(XmlElement.A) && element.getHref.contains("https://example.org"))(element)
+    ).toSeq
+    assert(plainLinks.size == 1, plainDump)
+    assert(plainLinks.head.getClasses.isEmpty, plainDump)
+    assert(plainLinks.head.getText.contains("https://example.org"), plainDump)
+
+    val marked: Xml.Element = process("See https://example.org[role=external] for more.\n")
+    val markedDump: String = render(marked)
+    val markedLinks: Seq[Xml.Element] = marked.gather(element =>
+      Option.when(element.isElement(XmlElement.A) && element.getHref.contains("https://example.org"))(element)
+    ).toSeq
+    assert(markedLinks.size == 1, markedDump)
+    assert(markedLinks.head.getClasses == Seq("external"), markedDump)
+    assert(markedLinks.head.getText.contains("https://example.org"), markedDump)
+  }
+
   test("|=== table survives cleanup without tableblock") {
     val xml: Xml.Element = process(
       """#|===

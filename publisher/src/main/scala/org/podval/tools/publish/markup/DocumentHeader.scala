@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlAttribute}
-import Xml.given
 
 /** TEI `teiHeader` fields for the collector `document-header` table. Harvested from the raw tree. */
 final class DocumentHeader(

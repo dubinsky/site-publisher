@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{Xml, XmlWriterConfig}
-import Xml.given
 import java.io.File
 
 // Note: this exists only to parse XML to disambiguate the dialect

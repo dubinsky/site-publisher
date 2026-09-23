@@ -3,7 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.site.Posts
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 
 /** One batch of the posts listing. Page 1 stays `/posts.html`. */
 final class PagedMarkupPage(

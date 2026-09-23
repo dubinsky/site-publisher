@@ -3,16 +3,8 @@ package org.podval.tools.publish.markup
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
-import Xml.given
 import java.io.File
 
-// TODO deal with
-// class="bare" means “this anchor’s label is the bare URI”.
-// Default AsciiDoc print CSS treats non-bare http(s) links specially—e.g. appends the URL after the text.
-// For bare links that would duplicate the URL, so rules like:
-//   a.bare, a[href^="#"], a[href^="mailto:"] { text-decoration: none !important }
-//   a[href^="http:"]:not(.bare)::after, a[href^="https:"]:not(.bare)::after { content: "(" attr(href) ")"; ... }
-//skip the “print URL after text” decoration when class="bare" is present.
 object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
   extension = "adoc",
@@ -94,8 +86,8 @@ object AsciiDocMarkup extends Markup(
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
 
       var children: Xml.Nodes = result.getChildren
-      children = children.convertElements(convertBibliographyWrapper)
-      children = children.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
+      children = Xml.convertElements(children)(convertBibliographyWrapper)
+      children = Xml.convertElements(children)(HtmlMarkup.unwrapSpuriousParagraph)
       children = removeSpuriousDivs(children)
       if asciidoctorGlossaryClasses.forall(result.hasClass) then
         children = convertGlossaryLists(children)
@@ -133,7 +125,7 @@ object AsciiDocMarkup extends Markup(
   // see, for example, https://tiffnix.com/soupault#html-de-uglifier-plugin.
 
   private val spuriousClasses: Set[String] = Set(
-    "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
+    "bare", "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"
   )
 
   private val spuriousDivClasses: Set[String] = Set(
@@ -149,7 +141,7 @@ object AsciiDocMarkup extends Markup(
       .flatMap(HtmlMarkup.headerLevel)
       .exists(headerLevel => element.hasClass(s"sect${headerLevel - 1}"))
 
-  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = children.convertElements(element =>
+  private def removeSpuriousDivs(children: Xml.Nodes): Xml.Nodes = Xml.convertElements(children)(element =>
     convertBibliographyWrapper(element).orElse(
       Option.when(element.isElement(XmlElement.Div) && isSpuriousDiv(element))(
         removeSpuriousDivs(element.getChildren)

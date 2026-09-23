@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 
 final class Ids private(anchors: Seq[Ids.Id]):
   private def getById(id: String): Option[Ids.Id] = anchors.find(_.id == id)

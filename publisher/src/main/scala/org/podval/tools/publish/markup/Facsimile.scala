@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, NamedWindows, Page}
 import org.podval.tools.publish.site.Path
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 /** Per-document facsimile viewer: JPEG URLs and scroller XML. `pb` hrefs are filled at render. */
 object Facsimile:

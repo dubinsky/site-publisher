@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlAttribute}
-import Xml.given
 
 /** TEI `<gap reason>` → hover tip with the reason text. */
 object TeiGap:

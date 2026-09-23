@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 object WikiLink:
   private object WikiLinkClass extends CssClass("wiki-link")

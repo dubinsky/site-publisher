@@ -3,7 +3,6 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.Section
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 
 // Note: TOC - no sectionId, isTerminal = false
 final class ChunkedMarkupPage(

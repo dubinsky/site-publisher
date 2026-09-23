@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.{Xml, XmlElement}
-import org.podval.xml.Xml.given
 
 object MarkdownWikiBlock:
   // Paragraph: `text ^id` on the same block. Lists, tables, quotes, and code fences:

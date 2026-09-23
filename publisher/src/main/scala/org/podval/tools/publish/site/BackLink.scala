@@ -3,7 +3,6 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.{Ids, Link, LinkKind, WikiLink}
 import org.podval.tools.publish.page.FullMarkupPage
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 
 final class BackLink private(
   val to: Link,

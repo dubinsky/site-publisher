@@ -74,20 +74,17 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
 
   def storeChildren: Option[List[Page]] = storeChildrenVar
 
-  private lazy val directories: List[Page] = site
+  // Recomputed: `containingDirectory` changes once selector hops are registered.
+  private def filesystemChildren: List[Page] = site
     .pages
     .pages
-    .filter(_.isDirectory)
-    .filter(_.path.path.length > 1)
-    .filter(_.path.path.init.init == path.path.init) // TODO unify with the Page.parent path calculations
-    .sortBy(_.title)
-
-  private lazy val pages: List[Page] = site
-    .pages
-    .pages
-    .filterNot(_.isDirectory)
-    .filterNot(_.isInstanceOf[PdfPage]) // PDF is an alternate of the HTML page, not a sibling
+    .filter(page => page != this && page.containingDirectory == path.path.init)
+    .filterNot(_.isInstanceOf[PdfPage])
     .filterNot(_.isInstanceOf[FacsimilePage])
     .filterNot(_.isInstanceOf[StoreIndexPage])
-    .filter(_.path.path.init == path.path.init)  // TODO unify with the Page.parent path calculations
-    .sortBy(_.title.toLowerCase)
+
+  private def directories: List[Page] =
+    filesystemChildren.filter(_.isDirectory).sortBy(_.title)
+
+  private def pages: List[Page] =
+    filesystemChildren.filterNot(_.isDirectory).sortBy(_.title.toLowerCase)

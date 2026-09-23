@@ -2,7 +2,6 @@ package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.Link
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 
 final class LinkContext private(
   val url: String,

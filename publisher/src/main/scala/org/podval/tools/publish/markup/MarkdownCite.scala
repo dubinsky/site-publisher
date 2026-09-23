@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlElement}
-import Xml.given
 import scala.annotation.tailrec
 
 object MarkdownCite:

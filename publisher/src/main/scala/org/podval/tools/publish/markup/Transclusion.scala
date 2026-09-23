@@ -5,7 +5,6 @@ import org.podval.tools.publish.page.{AuthoredContent, ChunkedMarkupPage, FullMa
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 enum Region derives CanEqual:
   case Whole

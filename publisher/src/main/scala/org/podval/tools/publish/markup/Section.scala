@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{CssClass, Xml, XmlAst, XmlElement}
-import Xml.given
 
 final class Section(
   val id: String,

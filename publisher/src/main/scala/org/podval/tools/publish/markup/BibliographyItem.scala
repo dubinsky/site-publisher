@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml}
-import Xml.given
 
 /** Native in-document bibliography entries (`class="bibliography-item"` + authored id).
   * Not citeproc `csl-entry`. Dialects convert native lists into this IR. */

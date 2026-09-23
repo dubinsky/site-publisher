@@ -5,7 +5,6 @@ import org.opentorah.calendar.roman.{Gregorian, Julian}
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 /** TEI `<date>` temporal attributes → hover table in Julian / Gregorian / Jewish. */
 object TeiDate:

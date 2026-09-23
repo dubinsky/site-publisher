@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml}
-import Xml.given
 
 /** File refs on media IR (`img@src`, `video`/`audio`/`source@src`, `object@data`).
   * Not page links: no title-walk, backlinks, or tips. Lookup is `Pages.resolveAsset`. */

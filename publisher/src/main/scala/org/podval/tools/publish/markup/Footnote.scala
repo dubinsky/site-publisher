@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 enum FootnoteScope derives CanEqual:
   case Document
@@ -77,7 +76,7 @@ object Footnote:
   /** Replace leftover containers (caller says which) with the IR bodies inside them. */
   def unwrapLeftovers(xml: Xml.Element, isContainer: Xml.Element => Boolean): Xml.Element =
     xml.transform(element =>
-      element.setChildren(element.getChildren.convertElements(leftover =>
+      element.setChildren(Xml.convertElements(element.getChildren)(leftover =>
         Option.when(isContainer(leftover))(
           leftover.gather(el => Option.when(isBody(el))(el: Xml.Node))
         )
@@ -517,7 +516,7 @@ object Footnote:
     footnote.scope == FootnoteScope.Document
 
   private def stripInnerBodies(nodes: Xml.Nodes): Xml.Nodes =
-    nodes.flatMapNodes: node =>
+    Xml.flatMapNodes(nodes): node =>
       node.asElement match
         case Some(el) if isBody(el) => Seq.empty
         case Some(el) => Seq(el.setChildren(stripInnerBodies(el.getChildren)))

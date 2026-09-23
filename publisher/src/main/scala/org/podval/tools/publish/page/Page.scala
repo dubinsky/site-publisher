@@ -51,19 +51,25 @@ abstract class Page(
 
   def up: Option[Page] = parent
 
-  // Not lazy: selector hops are known only after `Pages.resolveStores`.
-  def parent: Option[DirectoryPage] =
-    val parentDirectory: Option[Seq[String]] =
-      if isDirectory && path.path.length > 1 then Some(path.path.init.init)
-      else if !isDirectory && path.path.nonEmpty then Some(path.path.init)
-      else None
-
-    parentDirectory.flatMap(directoryParent)
+  /** Directory segments that contain this page, after empty selector hops.
+    * Empty means the site root. Not cached: hops are known only after `Pages.resolveStores`.
+    */
+  private[page] def containingDirectory: Seq[String] =
+    val raw: Seq[String] =
+      if isDirectory && path.path.length > 1 then path.path.init.init
+      else if !isDirectory && path.path.nonEmpty then path.path.init
+      else Seq.empty
+    skipSelectorHops(raw)
 
   @scala.annotation.tailrec
-  private def directoryParent(directory: Seq[String]): Option[DirectoryPage] =
+  private def skipSelectorHops(directory: Seq[String]): Seq[String] =
+    if directory.nonEmpty && site.pages.isSelectorHop(directory) then skipSelectorHops(directory.init)
+    else directory
+
+  // Not lazy: selector hops are known only after `Pages.resolveStores`.
+  def parent: Option[DirectoryPage] =
+    val directory: Seq[String] = containingDirectory
     if directory.isEmpty then None
-    else if site.pages.isSelectorHop(directory) then directoryParent(directory.init)
     else Some(site.pages.getOrAddDirectory(Path(directory :+ DirectoryPage.fileName *).html))
 
   def isAlias: Boolean = false

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlElement}
-import Xml.given
+
 /** Markup-neutral strikethrough IR is HTML `<del>`. Browser default is the style. */
 object Strike:
   def is(element: Xml.Element): Boolean = element.isElement(XmlElement.Del)

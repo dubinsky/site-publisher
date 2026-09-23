@@ -4,7 +4,6 @@ import org.podval.metadata.Language
 import org.podval.tools.publish.markup.Markup
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path}
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 import scala.ref.SoftReference
 
 final class PageSource(

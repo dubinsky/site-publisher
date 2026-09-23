@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
-import Xml.given
 import java.io.File
 
 object DocBookMarkup extends Markup(
@@ -47,53 +46,46 @@ object DocBookMarkup extends Markup(
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val coNumbers: IdGenerator = IdGenerator("")
     // Convert footnotes, glossary, quotes, and code in a second pass so IR `class` values are kept.
-    val converted: Xml.Element = xml.transform(
-      element =>
-        val renameSections: Boolean = !(element eq xml) || !xml.getName.localNameIn(rootElements)
-        convertSpecial(db2Html.convert(element), renameSections),
-      stopAtCode = false
-    )
+    val converted: Xml.Element = DialectWalk.transform(xml): element =>
+      val renameSections: Boolean = !(element eq xml) || !xml.getName.localNameIn(rootElements)
+      convertSpecial(db2Html.convert(element), renameSections)
     val title: Option[Xml.Element] = documentTitle(converted)
     val body: Xml.Element = title.fold(converted)(stripDocumentTitle(converted, _))
     val footnoteIds: Set[String] = footnoteDefinitionIds(body)
     val biblIds: Set[String] = bibliographyEntryIds(body)
-    val withIr: Xml.Element = body.rewrite(
-      (element, parent) =>
-        convertFootnote(element, footnoteCorrelationIds)
-          .orElse(convertFootnoteRef(element, footnoteIds))
-          .orElse(convertCo(element, coNumbers)) match
-          case Some(nodes) =>
-            Xml.Rewrite.Replace(nodes)
-          case None =>
-            var result: Xml.Element = element
-            result = convertGlossary(result)
-            result = convertVariableList(result)
-            result = convertAdmonition(result)
-            result = convertAside(result)
-            result = convertQuote(result)
-            result = convertFigure(result)
-            result = convertVideo(result)
-            result = convertCalloutList(result)
-            result = convertBibliography(result)
-            result = convertCitation(result)
-            result = convertCiteLink(result, biblIds)
-            // Do not re-wrap `<code>` already inside `<pre>`.
-            if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
-            else convertCode(element) match
-              case Some(nodes) => rewriteCode(nodes)
-              case None => Xml.Rewrite.Keep(result)
-      ,
-      stopAtCode = false
-    )
+    val withIr: Xml.Element = DialectWalk.rewrite(body): (element, parent) =>
+      convertFootnote(element, footnoteCorrelationIds)
+        .orElse(convertFootnoteRef(element, footnoteIds))
+        .orElse(convertCo(element, coNumbers)) match
+        case Some(nodes) =>
+          Xml.Rewrite.Replace(nodes)
+        case None =>
+          val steps: Seq[Xml.Element => Xml.Element] = Seq(
+            convertGlossary,
+            convertVariableList,
+            convertAdmonition,
+            convertAside,
+            convertQuote,
+            convertFigure,
+            convertVideo,
+            convertCalloutList,
+            convertBibliography,
+            convertCitation,
+            el => convertCiteLink(el, biblIds)
+          )
+          val result: Xml.Element = steps.foldLeft(element)((el, step) => step(el))
+          // Do not re-wrap `<code>` already inside `<pre>`.
+          // `convertCode` sees the element from before these steps.
+          if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
+          else convertCode(element) match
+            case Some(nodes) => rewriteCode(nodes)
+            case None => Xml.Rewrite.Keep(result)
     (markHeadedDivs(withIr), title)
 
   // Transform is parent-first, so this is a second pass after convert.
   private def markHeadedDivs(xml: Xml.Element): Xml.Element =
-    xml.transform(
-      // TODO use isDbTitle
-      element => Section.markHeaded(element, db2Html.is(_, XmlElement.Title)),
-      stopAtCode = false
-    )
+    DialectWalk.transform(xml): element =>
+      Section.markHeaded(element, isDbTitle)
 
   private def isDbTitle(element: Xml.Element): Boolean =
     db2Html.is(element, XmlElement.Title)
@@ -109,14 +101,14 @@ object DocBookMarkup extends Markup(
     if root.getChildren.exists(_ eq title) then
       root.setChildren(root.getChildren.filterNot(_ eq title))
     else
-      root.setChildren(root.getChildren.flatMapNodes(node =>
+      root.setChildren(Xml.flatMapNodes(root.getChildren): node =>
         node.asElement.filter(el => el.getName.localNameIn(infoElements)) match
           case Some(info) if info.getChildren.exists(_ eq title) =>
             val stripped: Xml.Element = info.setChildren(info.getChildren.filterNot(_ eq title))
             if stripped.getChildren.forall(_.isWhitespace) then Seq.empty else Seq(stripped)
           case _ =>
             Seq(node)
-      ))
+    )
 
   private def xmlId(element: Xml.Element): Option[String] =
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
@@ -227,7 +219,7 @@ object DocBookMarkup extends Markup(
       Some(Seq(Footnote.link(correlationId), Footnote.body(correlationId, element.getChildren)))
 
   private def footnoteDefinitionIds(xml: Xml.Element): Set[String] =
-    xml.gather(el => Option.when(el.isNamed("footnote"))(xmlId(el)).flatten, stopAtCode = false).toSet
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("footnote"))(xmlId(el)).flatten).toSet
 
   private def convertFootnoteRef(element: Xml.Element, footnoteIds: Set[String]): Option[Xml.Nodes] =
     if !element.isA || !element.hasClass("footnoteref") then None
@@ -241,17 +233,14 @@ object DocBookMarkup extends Markup(
       element
     else
       val titles: Xml.Nodes = element.getChildren.filter(node => node.asElement.exists(isDbTitle))
-      val entries: Seq[Xml.Element] = element.gather(
-        el => Option.when(el.isNamed("glossentry"))(convertGlossEntry(el)),
-        stopAtCode = false
-      )
+      val entries: Seq[Xml.Element] = DialectWalk.gather(element): el =>
+        Option.when(el.isNamed("glossentry"))(convertGlossEntry(el))
       val dl: Xml.Element = Xml.element(XmlElement.Dl).add(Glossary.ListClass).setChildren(entries)
       if titles.isEmpty then dl else Xml.element(XmlElement.Div).setChildren(titles ++ Seq(dl))
 
   private def convertGlossEntry(entry: Xml.Element): Xml.Element =
-    val children: Seq[Xml.Element] = entry.getChildren.flatMap(_.asElement)
-    val term: Option[Xml.Element] = children.find(_.isNamed("glossterm"))
-    val definition: Option[Xml.Element] = children.find(_.isNamed("glossdef"))
+    val term: Option[Xml.Element] = entry.childNamed("glossterm")
+    val definition: Option[Xml.Element] = entry.childNamed("glossdef")
     val dt: Xml.Element =
       Xml.element(XmlElement.Dt).setChildren(term.fold(Seq.empty)(_.getChildren.filterNot(_.isWhitespace)))
     val dd: Option[Xml.Element] = definition.map: defn =>
@@ -359,10 +348,7 @@ object DocBookMarkup extends Markup(
       Some(Seq(Callout.marker(number)))
 
   private def bibliographyEntryIds(xml: Xml.Element): Set[String] =
-    xml.gather(
-      el => Option.when(el.isNamed("bibliography"))(el),
-      stopAtCode = false
-    ).flatMap(entryIds).toSet
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("bibliography"))(el)).flatMap(entryIds).toSet
 
   private def entryIds(list: Xml.Element): Seq[String] =
     list.getChildren.flatMap(_.asElement)

@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.page.Page
 import org.podval.xml.{CssClass, Xml}
-import Xml.given
 
 final class Link(
   val page: Page,

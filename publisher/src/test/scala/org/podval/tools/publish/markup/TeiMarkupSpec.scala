@@ -187,6 +187,8 @@ final class TeiMarkupSpec extends AnyFunSuite:
         |  <text><body><p>On <date when="1798-08-11">11 августа</date>.</p></body></text>
         |</TEI>""".stripMargin
     ))
+    java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/tei-date-dump.html"), dumped)
+    java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/tei-date-dump.html"), dumped)
     assert(dumped.contains("""class="date-ref""""), dumped)
     assert(dumped.contains("""class="date-tip""""), dumped)
     assert(dumped.contains("11 августа"), dumped)

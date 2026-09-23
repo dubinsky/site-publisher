@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{Xml, XmlElement}
-import Xml.given
+
 /** Collection directory index: collector `table.collection-index`, generated at render.
   * Originals are rows; `{base}-{xx}` translations are Язык links, not rows. */
 object CollectionIndex:

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, Xml, XmlElement}
-import Xml.given
 
 /** Markup-neutral quote IR. CSS styles only these classes.
   * `<blockquote class="quote">`, optional title and attribution. */

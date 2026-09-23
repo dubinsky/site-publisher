@@ -3,7 +3,6 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
-import Xml.given
 import java.io.File
 
 object TeiMarkup extends Markup(
@@ -28,18 +27,14 @@ object TeiMarkup extends Markup(
     namesWithoutRef: Boolean
   ): Unit =
     if namesWithoutRef then
-      xml.gather(
-        el =>
-          Option.when(
-            EntityKind.forNameElement(el.getName.localName).isDefined &&
-            el.get("ref").map(_.trim).forall(_.isEmpty)
-          )(el.getText),
-        stopAtCode = false
+      DialectWalk.gather(xml)(el =>
+        Option.when(
+          EntityKind.forNameElement(el.getName.localName).isDefined &&
+          el.get("ref").map(_.trim).forall(_.isEmpty)
+        )(el.getText)
       ).foreach(text => errorReporter.error(PageError.NoRef, text))
-    xml.gather(
-      el => Option.when(el.isNamed("unclear"))(el.getText),
-      stopAtCode = false
-    ).foreach(text => errorReporter.error(PageError.Unclear, text))
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("unclear"))(el.getText))
+      .foreach(text => errorReporter.error(PageError.Unclear, text))
 
   private[publish] def expectedEntityFileName(displayName: String): String =
     displayName.replace(' ', '_')
@@ -58,42 +53,39 @@ object TeiMarkup extends Markup(
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
 
     // Convert footnotes, glossary, quotes, pb, and code in a second pass so IR `class` values are kept.
-    val converted: Xml.Element = xml.transform(
-      element => convertSpecial(tei2Html.convert(element), errorReporter),
-      stopAtCode = false
-    )
+    val converted: Xml.Element = DialectWalk.transform(xml): element =>
+      convertSpecial(tei2Html.convert(element), errorReporter)
     // Title while the root is still `store` / `collection`. Header chrome is
     // `PageHeader.collectorPageHeader`; the store/collection tree is emptied.
     val title: Option[Xml.Element] = documentTitle(converted)
     val withoutTitle: Xml.Element = title.fold(converted)(stripTitle(converted, _))
-    val body: Xml.Element = withoutTitle.transform(convertStoreChrome, stopAtCode = false)
+    val body: Xml.Element = DialectWalk.transform(withoutTitle)(convertStoreChrome)
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // TODO does it really need to be a separate pass?
-    val withIr: Xml.Element = body.rewrite(
-      (element, parent) =>
-        convertFootnote(element, footnoteCorrelationIds) match
-          case Some(nodes) =>
-            Xml.Rewrite.Replace(nodes)
-          case None =>
-            var result: Xml.Element = element
-            result = convertGlossary(result).getOrElse(result)
-            result = convertListBibl(result, headerBiblIds)
-            result = convertCite(result, biblIds)
-            result = fillEmptyPointer(result, biblIds)
-            result = convertBibliographyPlaceholder(result)
-            result = convertQuote(result)
-            result = convertFigure(result)
-            result = convertPb(result)
-            result = TeiGap.convert(result)
-            // Do not re-wrap `<code>` already inside `<pre>`.
-            if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
-            else convertCode(element) match
-              case Some(nodes) => rewriteCode(nodes)
-              case None => Xml.Rewrite.Keep(result)
-      ,
-      stopAtCode = false
-    )
+    val withIr: Xml.Element = DialectWalk.rewrite(body): (element, parent) =>
+      convertFootnote(element, footnoteCorrelationIds) match
+        case Some(nodes) =>
+          Xml.Rewrite.Replace(nodes)
+        case None =>
+          val steps: Seq[Xml.Element => Xml.Element] = Seq(
+            el => convertGlossary(el).getOrElse(el),
+            el => convertListBibl(el, headerBiblIds),
+            el => convertCite(el, biblIds),
+            el => fillEmptyPointer(el, biblIds),
+            convertBibliographyPlaceholder,
+            convertQuote,
+            convertFigure,
+            convertPb,
+            TeiGap.convert
+          )
+          val result: Xml.Element = steps.foldLeft(element)((el, step) => step(el))
+          // Do not re-wrap `<code>` already inside `<pre>`.
+          // `convertCode` sees the element from before these steps.
+          if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
+          else convertCode(element) match
+            case Some(nodes) => rewriteCode(nodes)
+            case None => Xml.Rewrite.Keep(result)
 
     (markHeadedDivs(withIr), title)
 
@@ -104,9 +96,9 @@ object TeiMarkup extends Markup(
     root.getName.qName match
       case "TEI" =>
         pickTitle(
-          root.getChildren.flatMap(_.asElement).filter(_.isNamed("teiHeader"))
-            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.isNamed("fileDesc")))
-            .flatMap(_.getChildren.flatMap(_.asElement).filter(_.isNamed("titleStmt")))
+          root.childrenNamed("teiHeader")
+            .flatMap(_.childrenNamed("fileDesc"))
+            .flatMap(_.childrenNamed("titleStmt"))
             .flatMap(_.getChildren.flatMap(_.asElement).filter(isTeiTitle))
         )
       case "store" | "collection" | "entityLists" =>
@@ -121,19 +113,17 @@ object TeiMarkup extends Markup(
     nonempty.find(_.get(XmlAttribute.Type).contains("main")).orElse(nonempty.headOption)
 
   private def stripTitle(root: Xml.Element, title: Xml.Element): Xml.Element =
-    root.setChildren(root.getChildren.flatMapNodes(node =>
+    root.setChildren(Xml.flatMapNodes(root.getChildren): node =>
       if node eq title then Seq.empty
       else node.asElement.match
         case Some(el) => Seq(stripTitle(el, title))
         case None => Seq(node)
-    ))
+    )
 
   // Transform is parent-first, so this is a second pass after convert.
   private[markup] def markHeadedDivs(xml: Xml.Element): Xml.Element =
-    xml.transform(
-      element => Section.markHeaded(element, tei2Html.is(_, XmlElement.Head)),
-      stopAtCode = false
-    )
+    DialectWalk.transform(xml): element =>
+      Section.markHeaded(element, tei2Html.is(_, XmlElement.Head))
 
   private def convertSpecial(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     val stripped: Xml.Element = dropIncludes(element)
@@ -171,23 +161,18 @@ object TeiMarkup extends Markup(
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`).
     * `TeiGap` after Xml2Html so `gap-tip` `class` is not rewritten to `tei-class`. */
   private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
-    xml.transform(
-      element => convertSpecial(tei2Html.convert(element), errorReporter),
-      stopAtCode = false
-    ).transform(TeiGap.convert, stopAtCode = false)
+    DialectWalk.transform(DialectWalk.transform(xml): element =>
+      convertSpecial(tei2Html.convert(element), errorReporter)
+    )(TeiGap.convert)
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */
   private[publish] def finishFootnotes(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
-    val converted: Xml.Element = xml.rewrite(
-      (element, _) =>
-        convertFootnote(element, footnoteCorrelationIds) match
-          case Some(nodes) => Xml.Rewrite.Replace(nodes)
-          case None => Xml.Rewrite.Keep(element)
-      ,
-      stopAtCode = false
-    )
+    val converted: Xml.Element = DialectWalk.rewrite(xml): (element, _) =>
+      convertFootnote(element, footnoteCorrelationIds) match
+        case Some(nodes) => Xml.Rewrite.Replace(nodes)
+        case None => Xml.Rewrite.Keep(element)
     Footnote.finish(converted, report, localTables = false)
 
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.getName.localName match
@@ -257,10 +242,8 @@ object TeiMarkup extends Markup(
   // listBibl in teiHeader / fileDesc is catalogue metadata, not the document bibliography.
   // Identity of the list element is not stable across transform copies; skip by entry xml:id.
   private def headerListBiblEntryIds(xml: Xml.Element): Set[String] =
-    xml.gather(el => Option.when(el.isNamed("teiHeader"))(el), stopAtCode = false)
-      .flatMap(header =>
-        header.gather(el => Option.when(el.isNamed("listBibl"))(el), stopAtCode = false)
-      )
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("teiHeader"))(el))
+      .flatMap(header => DialectWalk.gather(header)(el => Option.when(el.isNamed("listBibl"))(el)))
       .flatMap(entryIds)
       .toSet
 
@@ -269,8 +252,8 @@ object TeiMarkup extends Markup(
     .filter(isBibliographyEntry)
     .flatMap(xmlId)
 
-  private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] = xml
-    .gather(el => Option.when(el.isNamed("listBibl"))(el), stopAtCode = false)
+  private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] =
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("listBibl"))(el))
     .flatMap(entryIds)
     .filterNot(headerBiblIds.contains)
     .toSet

@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 /** Markup-neutral PDF embed IR. CSS styles only these classes.
   * Wrapper `div.pdf-embed`: `<object type="application/pdf">` (inner fallback link)

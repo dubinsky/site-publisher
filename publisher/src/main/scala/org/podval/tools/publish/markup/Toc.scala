@@ -69,7 +69,10 @@ final class Toc(sections: Seq[Section]) extends Sections(sections):
         (xml, this)
 
       case Some(sectionId) =>
-        (xml.elementById(sectionId), getById(sectionId))
+        val element: Xml.Element = xml.getById(sectionId).getOrElse(
+          throw new NoSuchElementException(s"id $sectionId")
+        )
+        (element, getById(sectionId))
 
     if isTerminal then element else sections.sections.headOption.map(_.id) match
       case None =>
