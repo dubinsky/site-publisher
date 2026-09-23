@@ -7,7 +7,8 @@ final class SiteOptions(
   val treatErrorsAsWarnings: Boolean = false,
   val production: Boolean = false,
   val serve: Boolean = false,
-  logLevelOpt: Option[String] = None
+  logLevelOpt: Option[String] = None,
+  val prettyPrint: Boolean = false
 ):
   def targetDirectoryName: String = targetDirectoryNameOpt.getOrElse("_site")
   def draftsDirectoryName: Option[String] = Option.when(includeDrafts)("_drafts")
@@ -25,6 +26,7 @@ object SiteOptions:
     treatErrorsAsWarnings = options.booleanOption("treat-errors-as-warnings"),
     production = options.booleanOption("production"),
     serve = options.booleanOption("serve"),
-    logLevelOpt = options.option("log-level")
+    logLevelOpt = options.option("log-level"),
+    prettyPrint = options.booleanOption("pretty-print")
   )
   

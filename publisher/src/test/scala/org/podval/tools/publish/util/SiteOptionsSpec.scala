@@ -1,5 +1,6 @@
 package org.podval.tools.publish.util
 
+import org.podval.tools.publish.site.Site
 import org.scalatest.funsuite.AnyFunSuite
 
 final class SiteOptionsSpec extends AnyFunSuite:
@@ -41,6 +42,22 @@ final class SiteOptionsSpec extends AnyFunSuite:
   test("--serve=false is off") {
     val options: SiteOptions = SiteOptions.forArgs(Array("/src", "--serve=false"))
     assert(!options.serve)
+  }
+
+  test("--pretty-print and --pretty-print=false") {
+    val on: SiteOptions = SiteOptions.forArgs(Array("/src", "--pretty-print"))
+    assert(on.prettyPrint)
+    assert(!on.serve)
+    val off: SiteOptions = SiteOptions.forArgs(Array("/src", "--pretty-print=false"))
+    assert(!off.prettyPrint)
+  }
+
+  test("--pretty-print with --serve is rejected before a site is built") {
+    val options: SiteOptions = SiteOptions.forArgs(Array("/src", "--pretty-print", "--serve"))
+    val caught: IllegalArgumentException = intercept[IllegalArgumentException] {
+      Site.rejectPrettyPrintWithServe(options)
+    }
+    assert(caught.getMessage.contains("--pretty-print"))
   }
 
   test("Options.option is None for an unknown name") {

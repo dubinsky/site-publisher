@@ -21,6 +21,10 @@ Pass that directory as the only positional argument:
 ----
 
 `--serve` generates and leaves the HTTP server running (same as IntelliJ `@main def generate()`).
+`--pretty-print` rewrites authored TEI and DocBook XML in place and does not generate a site.
+It skips a file whose bytes would not change.
+It does not reformat Markdown, AsciiDoc, or HTML.
+`--pretty-print` together with `--serve` is an error.
 `--log-level` defaults to `INFO`.
 `--treat-errors-as-warnings`, `--include-drafts`, `--production`, and `--target-directory-name` are the other flags.
 `SITE_PUBLISHER_*` environment variables are the same names with hyphens turned into underscores.
@@ -53,7 +57,9 @@ site {
 
 `./gradlew generateSite` writes the target directory.
 `./gradlew serveSite` is the same with `--serve`.
-Do not make `generateSite` a dependency of `build`; Pages CI calls it explicitly.
+`./gradlew prettyPrintSite` passes `--pretty-print` and does not publish `_site`.
+`generateSite` and `serveSite` pass `--pretty-print=false`.
+Do not make `generateSite` or `prettyPrintSite` a dependency of `build`; Pages CI calls generate explicitly.
 OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables }`.
 
 `site { }` maps to CLI flags (defaults match `SiteOptions`):

@@ -9,9 +9,7 @@ import java.io.File
 
 abstract class Markup(
   final val name: String,
-  // Write policy (`render`, `plus`).
-  // TODO use xmlWriterConfig.plus(HtmlXmlWriterConfig) for printing mixed HTML
-  // and xmlWriterConfig for pretty-printing native.
+  // Native-source layout. Published pages render with HtmlXmlWriterConfig.
   final val xmlWriterConfig: XmlWriterConfig,
   final val extension: String,
   additionalExtensions: Set[String] = Set.empty,

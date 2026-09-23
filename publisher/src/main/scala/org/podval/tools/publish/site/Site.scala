@@ -130,6 +130,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     config.social.linkedin.map(SocialLink.LinkedIn(_))
   ).flatten
 
+  def prettyPrint(): Unit = PrettyPrint.run(this)
+
   def generate(): Unit =
     try
       loadAndGenerate()
@@ -339,6 +341,13 @@ object Site:
 
   def main(args: Array[String]): Unit =
     val options: SiteOptions = SiteOptions.forArgs(args)
+    rejectPrettyPrintWithServe(options)
     val site: Site = Site(options)
-    if options.serve then site.serve() else site.generate()
+    if options.prettyPrint then site.prettyPrint()
+    else if options.serve then site.serve()
+    else site.generate()
+
+  def rejectPrettyPrintWithServe(options: SiteOptions): Unit =
+    if options.prettyPrint && options.serve then
+      throw IllegalArgumentException("--pretty-print does not generate or serve")
 

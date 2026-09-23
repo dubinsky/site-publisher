@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `--pretty-print` and Gradle `prettyPrintSite` rewrite authored TEI and DocBook in place.
+  `generateSite` and `serveSite` pass `--pretty-print=false`.
+  Unchanged files are not opened for write.
+- TEI and DocBook writer configs self-close empty elements.
+  Published HTML stays on `HtmlXmlWriterConfig`.
+
 ## [0.3.0] - 2026-09-23
 
 - `<date>` accepts `@from`, `@to`, `@notBefore`, and `@notAfter`.

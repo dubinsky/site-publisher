@@ -78,8 +78,6 @@ They are not planned work.
 - **Load less CSS/MathJax** by dialect actually present on the page (today every HTML page always ships all of it,
   because of transclusion).
 - **Configurable HTML converter** (commented `Configurer` in `Site`).
-- **Pretty-print native XML** ([#19](https://github.com/dubinsky/site-publisher/issues/19); `Markup.xmlWriterConfig`
-  TODO for mixed HTML vs native).
 - **CSS cleanup / modularize / modernize** ([#18](https://github.com/dubinsky/site-publisher/issues/18)); tei.css still
   wants to merge `em` and `hi`.
 

@@ -337,9 +337,8 @@ final class Pages(site: Site):
       // TODO error if frontMatter.length > 1
       val markupPath: Path = markup.head
       val sidecar: Option[Path] = frontMatter.headOption
-      val asset: Boolean = sidecarAsset(sidecar)
-      val internal: Boolean = asset && hasInternalFrontMatter(markupPath)
-      if asset && !internal && markupPath.fileName != DirectoryPage.fileName then
+      val passThrough: Boolean = Pages.isAssetPassThrough(site, markupPath, sidecar)
+      if passThrough && markupPath.fileName != DirectoryPage.fileName then
         ForName(
           markup = None,
           assets = markup ++ nonFrontMatter
@@ -349,22 +348,10 @@ final class Pages(site: Site):
           markup = Some(ForMarkup(
             markup = markupPath,
             standAloneFrontMatter = sidecar,
-            passThrough = asset && !internal
+            passThrough = passThrough
           )),
           assets = nonFrontMatter
         )
-
-  // Sidecar `asset: true` copies the markup file; the sidecar is not published.
-  // Internal `---` plus a sidecar is left as markup so `AmbiguousFrontMatter` is
-  // reported when the file is read. A directory `index` so marked stays a
-  // `DirectoryPage` (`passThrough`); write copies the file.
-  private def sidecarAsset(sidecar: Option[Path]): Boolean =
-    sidecar
-      .flatMap(path => FrontMatter.parse(Some(Files.read(site.sourceFile(path)))).toOption)
-      .exists(_.asset)
-
-  private def hasInternalFrontMatter(sourcePath: Path): Boolean =
-    FrontMatter.split(Files.read(site.sourceFile(sourcePath)))._1.isDefined
 
   private def addPassThroughIndex(sourcePath: Path, path: Path): Page =
     val (page: DirectoryPage, addIt: Boolean) = get(path.html) match
@@ -755,6 +742,17 @@ final class Pages(site: Site):
     path.extension.fold(true)(pagePath.extension.contains)
 
 object Pages:
+  /** Sidecar `asset: true` and no internal front matter: copy the file, do not process it.
+    * A directory `index` so marked stays a `DirectoryPage` (`passThrough`); write copies the file.
+    * Internal `---` plus a sidecar stays markup so `AmbiguousFrontMatter` is reported when the file is read.
+    */
+  def isAssetPassThrough(site: Site, markupPath: Path, sidecar: Option[Path]): Boolean =
+    val asset: Boolean = sidecar
+      .flatMap(path => FrontMatter.parse(Some(Files.read(site.sourceFile(path)))).toOption)
+      .exists(_.asset)
+    val internal: Boolean = asset && FrontMatter.split(Files.read(site.sourceFile(markupPath)))._1.isDefined
+    asset && !internal
+
   private final class ForMarkup(
     val markup: Path,
     val standAloneFrontMatter: Option[Path],

@@ -50,13 +50,25 @@ final class SitePublisherPluginTest {
           }
           def gen = tasks.named('generateSite', JavaExec).get()
           def serve = tasks.named('serveSite', JavaExec).get()
+          def pretty = tasks.named('prettyPrintSite', JavaExec).get()
           assert gen.mainClass.get() == 'org.podval.tools.publish.site.Site'
           assert serve.mainClass.get() == 'org.podval.tools.publish.site.Site'
+          assert pretty.mainClass.get() == 'org.podval.tools.publish.site.Site'
           assert gen.outputs.files.files.any { it.name == '_site' }
           assert gen.inputs.hasInputs
+          assert pretty.inputs.hasInputs
+          def genArgs = gen.argumentProviders[0].asArguments().toList()
+          def serveArgs = serve.argumentProviders[0].asArguments().toList()
+          def prettyArgs = pretty.argumentProviders[0].asArguments().toList()
+          assert genArgs.contains('--pretty-print=false')
+          assert serveArgs.contains('--pretty-print=false')
+          assert prettyArgs.contains('--pretty-print')
+          assert !prettyArgs.any { it == '--serve' || it.startsWith('--serve=') }
           def buildTask = tasks.named('build').get()
           def buildDeps = buildTask.taskDependencies.getDependencies(buildTask)
-          assert buildDeps.every { it.name != 'generateSite' && it.name != 'serveSite' }
+          assert buildDeps.every {
+            it.name != 'generateSite' && it.name != 'serveSite' && it.name != 'prettyPrintSite'
+          }
         }
       }
       """

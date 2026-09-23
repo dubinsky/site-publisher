@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Registers {@code generateSite} / {@code serveSite} as {@link JavaExec} on a detached
+ * Registers {@code generateSite} / {@code serveSite} / {@code prettyPrintSite} as {@link JavaExec} on a detached
  * {@code sitePublisher} configuration. Does not put the publisher on the consumer compile classpath.
  */
 public final class SitePublisherPlugin implements Plugin<Project> {
@@ -24,6 +24,7 @@ public final class SitePublisherPlugin implements Plugin<Project> {
   public static final String CONFIGURATION_NAME = "sitePublisher";
   public static final String GENERATE_TASK = "generateSite";
   public static final String SERVE_TASK = "serveSite";
+  public static final String PRETTY_PRINT_TASK = "prettyPrintSite";
   public static final String MAIN_CLASS = "org.podval.tools.publish.site.Site";
   public static final String PUBLISHER_COORDINATE =
     "org.podval.tools:org.podval.tools.publisher:" + PublisherVersion.get();
@@ -47,7 +48,7 @@ public final class SitePublisherPlugin implements Plugin<Project> {
 
     Configuration classpath = project.getConfigurations().create(CONFIGURATION_NAME, configuration -> {
       configuration.setDescription(
-        "Classpath for generateSite / serveSite (org.podval.tools.publisher). Not the compile classpath."
+        "Classpath for generateSite / serveSite / prettyPrintSite (org.podval.tools.publisher). Not the compile classpath."
       );
       configuration.setCanBeConsumed(false);
       configuration.setCanBeResolved(true);
@@ -62,9 +63,11 @@ public final class SitePublisherPlugin implements Plugin<Project> {
     );
 
     registerSiteExec(project, extension, classpath, java25, GENERATE_TASK,
-      "Generate the static site into the target directory", false);
+      "Generate the static site into the target directory", false, false);
     registerSiteExec(project, extension, classpath, java25, SERVE_TASK,
-      "Generate the static site and serve it locally", true);
+      "Generate the static site and serve it locally", true, false);
+    registerSiteExec(project, extension, classpath, java25, PRETTY_PRINT_TASK,
+      "Pretty-print authored TEI and DocBook sources in place", false, true);
   }
 
   private static void registerSiteExec(
@@ -74,7 +77,8 @@ public final class SitePublisherPlugin implements Plugin<Project> {
     Provider<JavaLauncher> javaLauncher,
     String taskName,
     String description,
-    boolean serve
+    boolean serve,
+    boolean prettyPrint
   ) {
     project.getTasks().register(taskName, JavaExec.class, task -> {
       task.setGroup("documentation");
@@ -97,6 +101,7 @@ public final class SitePublisherPlugin implements Plugin<Project> {
       args.getIncludeDrafts().set(extension.getIncludeDrafts());
       args.getProduction().set(extension.getProduction());
       args.getServe().set(serve);
+      args.getPrettyPrint().set(prettyPrint);
       task.getArgumentProviders().add(args);
 
       DirectoryProperty sourceDirectory = extension.getSourceDirectory();
@@ -111,12 +116,17 @@ public final class SitePublisherPlugin implements Plugin<Project> {
         .withPathSensitivity(PathSensitivity.RELATIVE)
         .ignoreEmptyDirectories();
 
-      task.getOutputs().dir(project.getLayout().dir(targetDirectory)).withPropertyName("siteTarget");
-      // The generator rewrites the tree when it runs; up-to-date can skip the run. Do not cache.
-      task.getOutputs().cacheIf(ignored -> false);
-
-      if (serve) {
+      // Pretty-print rewrites sources. It does not publish the target directory.
+      if (prettyPrint) {
         task.getOutputs().upToDateWhen(ignored -> false);
+        task.getOutputs().cacheIf(ignored -> false);
+      } else {
+        task.getOutputs().dir(project.getLayout().dir(targetDirectory)).withPropertyName("siteTarget");
+        // The generator rewrites the tree when it runs; up-to-date can skip the run. Do not cache.
+        task.getOutputs().cacheIf(ignored -> false);
+        if (serve) {
+          task.getOutputs().upToDateWhen(ignored -> false);
+        }
       }
     });
   }
