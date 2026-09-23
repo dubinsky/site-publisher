@@ -70,23 +70,29 @@ object TeiMarkup extends Markup(
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // TODO does it really need to be a separate pass?
-    val withIr: Xml.Element = body.transform(stopAtCode = false, transformElement = element =>
-      var result: Xml.Element = element.setChildren(
-        element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
-      )
-      result = convertGlossary(result).getOrElse(result)
-      result = convertListBibl(result, headerBiblIds)
-      result = convertCite(result, biblIds)
-      result = fillEmptyPointer(result, biblIds)
-      result = convertBibliographyPlaceholder(result)
-      result = convertQuote(result)
-      result = convertFigure(result)
-      result = convertPb(result)
-      result = TeiGap.convert(result)
-      // Do not re-wrap `<code>` already inside `<pre>`.
-      if !result.isNamed("pre") then
-        result = result.setChildren(result.getChildren.convertElements(convertCode))
-      result
+    val withIr: Xml.Element = body.rewrite(
+      (element, parent) =>
+        convertFootnote(element, footnoteCorrelationIds) match
+          case Some(nodes) =>
+            Xml.Rewrite.Replace(nodes)
+          case None =>
+            var result: Xml.Element = element
+            result = convertGlossary(result).getOrElse(result)
+            result = convertListBibl(result, headerBiblIds)
+            result = convertCite(result, biblIds)
+            result = fillEmptyPointer(result, biblIds)
+            result = convertBibliographyPlaceholder(result)
+            result = convertQuote(result)
+            result = convertFigure(result)
+            result = convertPb(result)
+            result = TeiGap.convert(result)
+            // Do not re-wrap `<code>` already inside `<pre>`.
+            if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
+            else convertCode(element) match
+              case Some(nodes) => rewriteCode(nodes)
+              case None => Xml.Rewrite.Keep(result)
+      ,
+      stopAtCode = false
     )
 
     (markHeadedDivs(withIr), title)
@@ -174,10 +180,12 @@ object TeiMarkup extends Markup(
     * then harvest, number, and append the list. */
   private[publish] def finishFootnotes(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
-    val converted: Xml.Element = xml.transform(
-      element => element.setChildren(
-        element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
-      ),
+    val converted: Xml.Element = xml.rewrite(
+      (element, _) =>
+        convertFootnote(element, footnoteCorrelationIds) match
+          case Some(nodes) => Xml.Rewrite.Replace(nodes)
+          case None => Xml.Rewrite.Keep(element)
+      ,
       stopAtCode = false
     )
     Footnote.finish(converted, report, localTables = false)
@@ -433,6 +441,15 @@ object TeiMarkup extends Markup(
 
     pendingLabel.foreach(emit(_, None))
     result
+
+  // `rewrite` visits Replace nodes again with the same parent.
+  // Inline `code` is still `code`, so Keep it; a `pre` wrapper is Replace so the inner `code` sees `pre`.
+  private def rewriteCode(nodes: Xml.Nodes): Xml.Rewrite =
+    nodes match
+      case Seq(only) if only.asElement.exists(_.isNamed("code")) =>
+        Xml.Rewrite.Keep(only.asElement.get)
+      case _ =>
+        Xml.Rewrite.Replace(nodes)
 
   // Code in TEI: <code lang="scala"> (tagdocs). `code` is not reserved; @lang is.
   // Inline stays <code class="language-…">; a newline means a block, wrapped in <pre>.

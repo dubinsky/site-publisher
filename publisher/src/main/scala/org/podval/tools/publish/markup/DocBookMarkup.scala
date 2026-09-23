@@ -57,28 +57,32 @@ object DocBookMarkup extends Markup(
     val body: Xml.Element = title.fold(converted)(stripDocumentTitle(converted, _))
     val footnoteIds: Set[String] = footnoteDefinitionIds(body)
     val biblIds: Set[String] = bibliographyEntryIds(body)
-    val withIr: Xml.Element = body.transform(
-      element =>
-        var result: Xml.Element = element.setChildren(
-          element.getChildren.convertElements(convertFootnote(_, footnoteCorrelationIds))
-        )
-        result = result.setChildren(result.getChildren.convertElements(convertFootnoteRef(_, footnoteIds)))
-        result = convertGlossary(result)
-        result = convertVariableList(result)
-        result = convertAdmonition(result)
-        result = convertAside(result)
-        result = convertQuote(result)
-        result = convertFigure(result)
-        result = convertVideo(result)
-        result = convertCalloutList(result)
-        result = result.setChildren(result.getChildren.convertElements(convertCo(_, coNumbers)))
-        result = convertBibliography(result)
-        result = convertCitation(result)
-        result = convertCiteLink(result, biblIds)
-        // Do not re-wrap `<code>` already inside `<pre>`.
-        if !result.isNamed("pre") then
-          result = result.setChildren(result.getChildren.convertElements(convertCode))
-        result,
+    val withIr: Xml.Element = body.rewrite(
+      (element, parent) =>
+        convertFootnote(element, footnoteCorrelationIds)
+          .orElse(convertFootnoteRef(element, footnoteIds))
+          .orElse(convertCo(element, coNumbers)) match
+          case Some(nodes) =>
+            Xml.Rewrite.Replace(nodes)
+          case None =>
+            var result: Xml.Element = element
+            result = convertGlossary(result)
+            result = convertVariableList(result)
+            result = convertAdmonition(result)
+            result = convertAside(result)
+            result = convertQuote(result)
+            result = convertFigure(result)
+            result = convertVideo(result)
+            result = convertCalloutList(result)
+            result = convertBibliography(result)
+            result = convertCitation(result)
+            result = convertCiteLink(result, biblIds)
+            // Do not re-wrap `<code>` already inside `<pre>`.
+            if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Keep(result)
+            else convertCode(element) match
+              case Some(nodes) => rewriteCode(nodes)
+              case None => Xml.Rewrite.Keep(result)
+      ,
       stopAtCode = false
     )
     (markHeadedDivs(withIr), title)
@@ -404,6 +408,16 @@ object DocBookMarkup extends Markup(
         val key: Option[String] = fragment.filter(Citation.isBibKey)
         val locator: Option[String] = element.get("xrefstyle").map(_.trim).filter(_.nonEmpty)
         key.fold(element)(k => Citation.cite(Citation.Mode.Parenthetical, Seq(Citation.Item(k, locator))))
+
+  // `rewrite` visits Replace nodes again with the same parent.
+  // Inline `code` (and `literal` renamed to `code`) stays `code`, so Keep it.
+  // A `pre` wrapper is Replace so the inner `code` sees `pre`.
+  private def rewriteCode(nodes: Xml.Nodes): Xml.Rewrite =
+    nodes match
+      case Seq(only) if only.asElement.exists(_.isNamed("code")) =>
+        Xml.Rewrite.Keep(only.asElement.get)
+      case _ =>
+        Xml.Rewrite.Replace(nodes)
 
   private def convertCode(element: Xml.Element): Option[Xml.Nodes] =
     val language: Option[String] =
