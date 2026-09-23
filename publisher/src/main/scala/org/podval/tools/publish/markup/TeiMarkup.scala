@@ -216,7 +216,7 @@ object TeiMarkup extends Markup(
   // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
   // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.
   private def convertFigure(element: Xml.Element): Xml.Element =
-    if !element.isNamed("figure") || Figure.is(element) then element
+    if !element.isElement(XmlElement.Figure) || Figure.is(element) then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val heads: Xml.Nodes = children.filter(isTeiCaption)

@@ -4,11 +4,11 @@ import org.podval.xml.{Xml, XmlElement}
 import Xml.given
 /** Markup-neutral strikethrough IR is HTML `<del>`. Browser default is the style. */
 object Strike:
-  def is(element: Xml.Element): Boolean = element.isNamed("del")
+  def is(element: Xml.Element): Boolean = element.isElement(XmlElement.Del)
 
   def normalize(element: Xml.Element): Xml.Element =
     if is(element) then element
-    else if element.isNamed("s") then element.rename("del")
+    else if element.isElement(XmlElement.S) then element.rename("del")
     else if isLineThroughWrapper(element) then
       element
         .setClasses(element.getClasses.filterNot(_ == "line-through"))
@@ -17,4 +17,4 @@ object Strike:
 
   private def isLineThroughWrapper(element: Xml.Element): Boolean =
     element.hasClass("line-through") &&
-    (element.isElement(XmlElement.Span) || element.isNamed("mark"))
+    (element.isElement(XmlElement.Span) || element.isElement(XmlElement.Mark))

@@ -16,7 +16,7 @@ object Quote:
   def isTitle(element: Xml.Element): Boolean = element.has(TitleClass)
 
   def isAttribution(element: Xml.Element): Boolean =
-    element.isNamed("footer") && element.has(AttributionClass)
+    element.isElement(XmlElement.Footer) && element.has(AttributionClass)
 
   def make(
     title: Option[String],
@@ -39,11 +39,11 @@ object Quote:
       )
 
   def normalize(element: Xml.Element): Xml.Element =
-    if !element.isNamed("blockquote") then element
+    if !element.isElement(XmlElement.Blockquote) then element
     else
       val withClass: Xml.Element = if is(element) then element else element.add(Class)
       withClass.setChildren(withClass.getChildren.map: node =>
-        node.asElement.filter(el => el.isNamed("footer") && !el.has(AttributionClass)) match
+        node.asElement.filter(el => el.isElement(XmlElement.Footer) && !el.has(AttributionClass)) match
           case Some(footer) => footer.add(AttributionClass)
           case None => node
       )

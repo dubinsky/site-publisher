@@ -298,7 +298,7 @@ object DocBookMarkup extends Markup(
       Aside.make(title, body).setId(xmlId(element))
 
   private def convertQuote(element: Xml.Element): Xml.Element =
-    if (!element.isNamed("blockquote") && !element.isNamed("epigraph")) || Quote.is(element) then
+    if (!element.isElement(XmlElement.Blockquote) && !element.isNamed("epigraph")) || Quote.is(element) then
       element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)

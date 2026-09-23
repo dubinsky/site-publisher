@@ -162,7 +162,7 @@ object AsciiDocMarkup extends Markup(
   // so the bibliography class is not lost. Citeproc's empty `div.bibliography` is
   // left for Bibliography.resolve (`Citation.isPlaceholder`).
   private def convertBibliographyWrapper(element: Xml.Element): Option[Xml.Nodes] =
-    if !element.isNamed("div") || !element.hasClass("bibliography") then None
+    if !element.isElement(XmlElement.Div) || !element.hasClass("bibliography") then None
     else if Citation.isPlaceholder(element) then None
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
@@ -254,17 +254,17 @@ object AsciiDocMarkup extends Markup(
     Option.when(digits.nonEmpty && digits.forall(_.isDigit))(digits)
 
   private def isConumIcon(element: Xml.Element): Boolean =
-    element.isNamed("i") && element.hasClass("conum")
+    element.isElement(XmlElement.I) && element.hasClass("conum")
 
   private def isGuardBold(element: Xml.Element): Boolean =
-    element.isNamed("b") && calloutNumber(element.getText).isDefined
+    element.isElement(XmlElement.B) && calloutNumber(element.getText).isDefined
 
   private val asciidocAdmonitionTypes: Set[String] =
     Set("note", "tip", "important", "caution", "warning")
 
   // Asciidoctor: <div class="sidebarblock"><div class="content">…; `content` is unwrapped first.
   private def convertSidebar(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("sidebarblock") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("sidebarblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], body: Xml.Nodes) =
@@ -279,7 +279,7 @@ object AsciiDocMarkup extends Markup(
   // Asciidoctor: <div class="quoteblock"> optional div.title, blockquote, optional div.attribution.
   // Inner paragraph/content wrappers are still on the blockquote; unwrap them into the IR body.
   private def convertQuote(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("quoteblock") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("quoteblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], rest: Xml.Nodes) =
@@ -303,7 +303,7 @@ object AsciiDocMarkup extends Markup(
   // Asciidoctor: <div class="imageblock"><div class="content">img</div> optional div.title.
   // `content` is unwrapped first; title is a sibling after the image.
   private def convertImageBlock(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("imageblock") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("imageblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (body: Xml.Nodes, caption: Option[String]) =
@@ -318,7 +318,7 @@ object AsciiDocMarkup extends Markup(
 
   // Asciidoctor: <div class="videoblock"> optional div.title, then video or youtube/vimeo iframe.
   private def convertVideoBlock(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("videoblock") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("videoblock") then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
       val (title: Option[String], rest: Xml.Nodes) =
@@ -329,7 +329,7 @@ object AsciiDocMarkup extends Markup(
             case None =>
               (None, children)
       val inner: Option[Xml.Element] = rest.flatMap(_.asElement).find: child =>
-        child.isNamed("video") || child.isNamed("iframe")
+        child.isElement(XmlElement.Video) || child.isElement(XmlElement.Iframe)
       inner.fold(element): media =>
         val normalized: Xml.Element = Video.normalize(media).setId(element.getId.filter(_ => title.isEmpty))
         title.fold(normalized)(caption => Figure.make(Some(caption), Seq(normalized)).setId(element.getId))
@@ -339,7 +339,7 @@ object AsciiDocMarkup extends Markup(
 
   // Asciidoctor: <div class="admonitionblock note"><table> icon + content cells.
   private def convertAdmonition(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("admonitionblock") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("admonitionblock") then element
     else
       val typeName: String =
         element.getClasses.find(asciidocAdmonitionTypes.contains).getOrElse("note")
@@ -367,7 +367,7 @@ object AsciiDocMarkup extends Markup(
       Admonition.make(typeName, titleFromContent.orElse(titleFromIcon), body)
 
   private def convertCalloutList(element: Xml.Element): Xml.Element =
-    if !element.isNamed("div") || !element.hasClass("colist") then element
+    if !element.isElement(XmlElement.Div) || !element.hasClass("colist") then element
     else
       val innerOl: Option[Xml.Element] =
         element.getChildren.flatMap(_.asElement).find(_.isElement(XmlElement.Ol))
@@ -390,7 +390,7 @@ object AsciiDocMarkup extends Markup(
   // Asciidoctor html5: ul.checklist; default glyphs &#10003;/&#10063;, %interactive inputs,
   // icons=font Font Awesome.
   private def convertTaskList(element: Xml.Element): Xml.Element =
-    if !element.isNamed("ul") && !element.isNamed("ol") then element
+    if !element.isElement(XmlElement.Ul) && !element.isElement(XmlElement.Ol) then element
     else
       val acceptMarkers: Boolean = element.hasClass("checklist")
       val children: Xml.Nodes = element.getChildren.map: node =>
@@ -421,12 +421,12 @@ object AsciiDocMarkup extends Markup(
       case None => li
 
   private def isInteractiveCheckbox(element: Xml.Element): Boolean =
-    element.isNamed("input") && (
+    element.isElement(XmlElement.Input) && (
       element.get(XmlAttribute.Type).contains("checkbox") || element.get("data-item-complete").isDefined
     )
 
   private def isFaCheckbox(element: Xml.Element): Boolean =
-    element.isNamed("i") && (
+    element.isElement(XmlElement.I) && (
       element.hasClass("fa-check-square-o") || element.hasClass("fa-square-o")
     )
 
@@ -463,7 +463,7 @@ object AsciiDocMarkup extends Markup(
   // To:
   //   <a class="footnote-link" footnote-correlation-id="N"/>
   private def convertFootnoteLink(element: Xml.Element): Option[Xml.Element] =
-    val isFootnoteLink: Boolean = element.isNamed("sup") /* && element.hasClass("footnote") */
+    val isFootnoteLink: Boolean = element.isElement(XmlElement.Sup) /* && element.hasClass("footnote") */
     if !isFootnoteLink then None else
       for correlationId: String <- element
         .getChildren

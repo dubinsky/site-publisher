@@ -2,7 +2,7 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.Strings
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlElement}
 import org.podval.xml.Xml.given
 
 object MarkdownWikiBlock:
@@ -44,7 +44,7 @@ object MarkdownWikiBlock:
       if !changed then (element, false) else (element.setChildren(acc), true)
 
   private def standaloneBlockId(element: Xml.Element): Option[String] =
-    if !element.isNamed("p") || element.getChildren.exists(_.asElement.isDefined) then None
+    if !element.isElement(XmlElement.P) || element.getChildren.exists(_.asElement.isDefined) then None
     else blockIdIn(element.getText.trim).collect:
       case (before, id) if before.isEmpty => id
 
