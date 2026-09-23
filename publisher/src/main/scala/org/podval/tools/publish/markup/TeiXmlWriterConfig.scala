@@ -10,7 +10,9 @@ object TeiXmlWriterConfig extends XmlWriterConfig(
     "person", "place", "org"
   ),
   unStack = Set("choice"),
-  nest = Set("p", "head", "salute", "dateline", "l"),
+  // `l` is not nested: a long verse line would otherwise break onto its own `<l>` / `</l>` lines.
+  stick = Set("l"),
+  nest = Set("p", "head", "salute", "dateline"),
   break = Set("lb"),
   cling = Set(
     "note", "lb", "sic", "corr",

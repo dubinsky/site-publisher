@@ -1,6 +1,9 @@
 package org.podval.tools.publish.site
 
+import org.podval.tools.publish.markup.TeiXmlWriterConfig
 import org.podval.tools.publish.util.SiteOptions
+import org.podval.xml.Xml
+import org.podval.xml.Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files as NioFiles, Path as NioPath}
@@ -38,6 +41,26 @@ final class PrettyPrintSpec extends AnyFunSuite:
       val at: Int = value.indexOf("xmlns=", from)
       if at < 0 then None else Some((at, at + "xmlns=".length))
     }.size
+
+  test("a long verse line keeps the words on the l tags") {
+    val words: String = "вступившія въ " + "слово " * 20 + "означенна"
+    val verse: Xml.Element = Xml.element("p").setChildren(Seq(
+      Xml.element("l").setText("short"),
+      Xml.element("l").setText(words),
+      Xml.element("l").setChildren(Seq(
+        Xml.element("date").setText("Ноября 18 го дня " * 8),
+        Xml.text(".")
+      ))
+    ))
+    val dumped: String = TeiXmlWriterConfig.render(verse)
+    val lines: Array[String] = dumped.split("\n")
+    assert(lines.exists(line => line.contains("<l>short</l>")), dumped)
+    assert(lines.exists(line => line.contains("<l>вступившія")), dumped)
+    assert(lines.exists(line => line.contains("означенна</l>")), dumped)
+    assert(lines.exists(line => line.contains("<l><date")), dumped)
+    assert(!lines.exists(_.trim == "<l>"), dumped)
+    assert(!lines.exists(_.trim == "</l>"), dumped)
+  }
 
   test("TEI document keeps one xmlns, clung note, and date attribute") {
     val source: String =
