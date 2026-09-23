@@ -25,7 +25,6 @@ final case class FrontMatter(
   // Note: not using nested `Icon` to avoid weird-looking JSON display of the property in Obsidian.
   icon: Option[String] = None,
   iconStyle: Option[Icon.Style] = None,
-//  modified_time: Option[Date] = None, TODO does not work because of the hard-coded camel case; see `modifiedTime()`
   tocDepth: Option[Int] = None,
   chunk: Boolean = false,
   chunkDepth: Option[Int] = None,
@@ -47,7 +46,8 @@ final case class FrontMatter(
       case _ => false
     )
     .map(_._2)
-  
+
+  // Note: modified_time: Option[Date] = None does not work because of the hard-coded camel case
   private var modifiedTimeVar: Option[Date] = None
   def modifiedTime: Option[Date] = modifiedTimeVar
 

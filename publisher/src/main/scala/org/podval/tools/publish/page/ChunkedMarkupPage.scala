@@ -29,7 +29,7 @@ final class ChunkedMarkupPage(
   override def titleDefault: String =
     if sectionId.isEmpty then markupPage.title else path.fileName
 
-  override protected def iconDefault: Icon = Icon.note // TODO page/document...
+  override protected def iconDefault: Icon = Icon.note
 
   override def pageHeader: Option[Xml.Element] = markupPage.pageHeader
 
