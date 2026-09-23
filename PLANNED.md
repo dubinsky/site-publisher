@@ -4,11 +4,6 @@ Inventory of site-publisher work that is planned or considered and not yet imple
 Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site Publisher.md`), `README.adoc`,
 `AGENTS.md`, and source TODOs.
 
-Year-only and month-only `@when` still produce a closed From/To hover table (README **TEI dates**).
-They are not planned work.
-`..` is not a syntax.
-`@from`, `@to`, `@notBefore`, and `@notAfter` ship with this change, so they are not a new bullet.
-
 ## Product features
 
 ### Graph (explicit follow-ups)
@@ -44,9 +39,6 @@ They are not planned work.
   - compact “Имена:” / document-id lists (current grouping is only by collection path on ordinary backlinks)
 - **Facsimile: viewer for individual images** (fragments, alternative scans) — leftover of
   [#17](https://github.com/dubinsky/site-publisher/issues/17).
-  The document scroller exists; `LinkKind.Facsimile` is unused.
-- **Serve stamped raw TEI** (`GET /alias/P.xml` with `publicationStmt`, license, `sourceDesc`, …).
-  Explicitly deferred: “until someone asks.”
 
 ### Publishing / SEO / analytics
 
@@ -63,7 +55,6 @@ They are not planned work.
 
 ### Markup / dialect parity
 
-- **Markdown inline footnotes** `^[…]` — README: this publisher does not.
 - **Obsidian `|WIDTH` / `|WIDTHxHEIGHT` on `![alt](src)`** — FlexMark leaves the size in `alt`.
   Wiki `![[image]]` already gets `width`/`height`.
 - **Markdown native in-document bibliography** — none; citeproc only.
@@ -95,23 +86,8 @@ They are not planned work.
   wrapping, agglutination — not a committed feature list.
 - An Obsidian plugin so the editor also resolves by front-matter title (vault-side, not the generator).
 
-## Deliberate non-goals (documented as “does not”)
-
-These are considered and rejected or deferred, not a backlog:
-
-- AsciiDoc `include::` and store `xi:include` as page transclusion
-- Site-level bibliography / CSL
-- Authored-list paging / Jekyll `/page/:num/`
-- Collector facsimile facets
-- PDF.js
-- Markdown/Quarto listing callouts
-- Graph Playwright visual tests
-- `generateSite` as part of `build`; incremental generate inside the tool (Gradle up-to-date skip only)
-
 ## Not features of the publisher (rollout / docs)
 
-- Push **mathworlds-site** after a Central release that includes `asset: true`.
-- Pin consumers (graph, transclusion, errors TOC, `entityLists`, `name/` URLs) to a Central version past **0.2.0**.
 - README “Opinionated” section: “TODO expound.”
 - Narrative TODOs in the design-note intro (dates, 11ty link, Jekyll plugin link) — writing, not product.
 

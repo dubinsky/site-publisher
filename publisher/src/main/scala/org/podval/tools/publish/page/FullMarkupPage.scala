@@ -30,7 +30,7 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
       site.error(path, PageError.NoDate, s"No date for an automatic blog post")
       None
     case Some(date) =>
-      val title: String = frontMatter.postTitle.getOrElse(path.fileName) // TODO titleFromPath?
+      val title: String = frontMatter.postTitle.getOrElse(path.fileName)
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
 
   final def tags: List[String] = frontMatter.tags
