@@ -302,6 +302,27 @@ final class TeiDateSpec extends AnyFunSuite:
     assert(dumped.contains("1994"), dumped)
   }
 
+  test("too few dashes names the attribute once") {
+    val (dumped, reporter) = convert("""<date from="1800--11">x</date>""")
+    assert(invalid(reporter) == Seq("Too few dashes in 'from': 1800--11"))
+    assert(!dumped.contains("date-ref"), dumped)
+  }
+
+  test("too many dashes names the attribute once") {
+    val (dumped, reporter) = convert("""<date from="1800-11-15-16">x</date>""")
+    assert(invalid(reporter) == Seq("Too many dashes in 'from': 1800-11-15-16"))
+    assert(!dumped.contains("date-ref"), dumped)
+  }
+
+  test("trailing hyphen is too few dashes") {
+    val (dumped, reporter) = convert("""<date from="1800-11-">x</date>""")
+    assert(invalid(reporter) == Seq("Too few dashes in 'from': 1800-11-"))
+    assert(!dumped.contains("date-ref"), dumped)
+    val day: (String, Reporter) = convert("""<date when="1800-11-15-">x</date>""")
+    assert(invalid(day._2) == Seq("Too few dashes in 'when': 1800-11-15-"))
+    assert(!day._1.contains("date-ref"), day._1)
+  }
+
   test("invalid when is reported and left unchanged") {
     val (dumped, reporter) = convert("""<date when="not-a-date">x</date>""")
     assert(invalid(reporter) == Seq("Not a date (when=not-a-date)"))

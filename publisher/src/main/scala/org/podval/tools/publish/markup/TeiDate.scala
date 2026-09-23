@@ -120,45 +120,25 @@ object TeiDate:
       case Some(raw) =>
         parseValue("when", raw) match
           case Left(message) => Left(Seq(message))
-          case Right(Seq(year, month, day)) => pointHover(year, month, day, raw, useJulian)
           case Right(numbers) =>
-            endsColumns(Seq(
-              Bound("From", "when", raw, numbers, last = false),
-              Bound("To", "when", raw, numbers, last = true)
-            ), useJulian)
+            val bounds: Seq[Bound] = numbers match
+              case Seq(_, _, _) => Seq(Bound("Date", "when", raw, numbers, last = false))
+              case _ => Seq(
+                Bound("From", "when", raw, numbers, last = false),
+                Bound("To", "when", raw, numbers, last = true)
+              )
+            endsColumns(bounds, useJulian)
       case None =>
-        val cells: Seq[Either[String, (String, Column)]] = endSpecs.flatMap: (name, header, last) =>
+        val parsed: Seq[Either[String, Bound]] = endSpecs.flatMap: (name, header, last) =>
           values.get(name).map: raw =>
-            parseValue(name, raw) match
-              case Left(message) => Left(message)
-              case Right(numbers) =>
-                loadBound(Bound(header, name, raw, numbers, last), useJulian).map(column => (header, column))
-        val errors: Seq[String] = cells.collect { case Left(message) => message }
-        if errors.nonEmpty then Left(errors)
-        else
-          val columns: Seq[Column] = cells.collect { case Right((_, column)) => column }
-          Right(endsTable(
-            valueHeaders = cells.collect { case Right((header, _)) => header },
-            julian = if useJulian then Some(columns.map(_.julian.get)) else None,
-            gregorian = columns.map(_.gregorian),
-            jewish = columns.map(_.jewish)
-          ))
-
-  private def pointHover(
-    year: Int,
-    month: Int,
-    day: Int,
-    raw: String,
-    useJulian: Boolean
-  )(using Language.Spec): Either[Seq[String], Xml.Element] =
-    val loaded: Either[String, Xml.Element] =
-      if useJulian then
-        catchBound(Julian.Year(year).month(month).day(day)).map: d =>
-          pointTable(Some(dayString(d)), dayString(d.to(Gregorian)), dayString(d.to(Jewish)))
-      else
-        catchBound(Gregorian.Year(year).month(month).day(day)).map: d =>
-          pointTable(None, dayString(d), dayString(d.to(Jewish)))
-    loaded.left.map(message => Seq(s"$message (when=$raw)"))
+            parseValue(name, raw).map(numbers => Bound(header, name, raw, numbers, last))
+        val parseErrors: Seq[String] = parsed.collect { case Left(message) => message }
+        val bounds: Seq[Bound] = parsed.collect { case Right(bound) => bound }
+        if bounds.isEmpty then Left(parseErrors)
+        else endsColumns(bounds, useJulian) match
+          case Left(calendarErrors) => Left(parseErrors ++ calendarErrors)
+          case Right(_) if parseErrors.nonEmpty => Left(parseErrors)
+          case Right(table) => Right(table)
 
   private def endsColumns(
     bounds: Seq[Bound],
@@ -219,14 +199,6 @@ object TeiDate:
   private def dayString(day: Language.ToString)(using spec: Language.Spec): String =
     day.toLanguageString
 
-  private def pointTable(julian: Option[String], gregorian: String, jewish: String): Xml.Element =
-    endsTable(
-      valueHeaders = Seq("Date"),
-      julian = julian.map(value => Seq(value)),
-      gregorian = Seq(gregorian),
-      jewish = Seq(jewish)
-    )
-
   private def endsTable(
     valueHeaders: Seq[String],
     julian: Option[Seq[String]],
@@ -253,13 +225,14 @@ object TeiDate:
     )
 
   private def parseValue(name: String, raw: String): Either[String, Seq[Int]] =
-    val parsed: Either[String, Seq[Int]] =
-      if raw.contains("..") then Left("`..` is not a W3C temporal value")
-      else parseNumbers(name, raw)
-    parsed.left.map(message => s"$message ($name=$raw)")
+    if raw.contains("..") then Left(s"`..` is not a W3C temporal value ($name=$raw)")
+    else parseNumbers(name, raw) match
+      case Left("Not a date") => Left(s"Not a date ($name=$raw)")
+      case other => other
 
   private def parseNumbers(name: String, raw: String): Either[String, Seq[Int]] =
-    val parts: Seq[String] = raw.split("-").toSeq
+    // limit -1 keeps a trailing empty piece; the default split would drop it and accept `1800-11-`.
+    val parts: Seq[String] = raw.split("-", -1).toSeq
     if parts.isEmpty || parts.exists(_.isEmpty) then Left(s"Too few dashes in '$name': $raw")
     else if parts.length > 3 then Left(s"Too many dashes in '$name': $raw")
     else
