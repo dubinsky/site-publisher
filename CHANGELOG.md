@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Pin xml 0.4.0.
 - `check-links` (default off) requests author-written `http` and `https` URLs and lists failures on the Errors page.
 - permalinks cleanup;
 - TEI `note/@n` and DocBook `footnote/@label`, when non-blank, are the footnote marker.
