@@ -6,16 +6,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 ## Product features
 
-### Tags and categories ([issue #10](https://github.com/dubinsky/site-publisher/issues/10))
-
-- Handle **categories** (possibly as wiki links).
-  Front matter already parses `categories`; nothing consumes them.
-  `LinkKind.Category` is unused.
-- **Auto-create category pages.**
-- **Per-tag pages.**
-  There is one synthetic `/tags.html` with fragments, not `/tags/{tag}.html`.
-  `LinkKind.Tag` is unused.
-
 ### TEI / collector remaining
 
 - **Apparatus** ([#22](https://github.com/dubinsky/site-publisher/issues/22)): use `gap` / `supplied` / `corr` in place
@@ -34,13 +24,9 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 ### Publishing / SEO / analytics
 
-- **X Articles** — publish a page to X if/when there is an API (design note +
-  [#21](https://github.com/dubinsky/site-publisher/issues/21)).
 - **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
   runs.
   Do not turn `--production` on until the ids are GA4.
-- **Package a CLI** ([#20](https://github.com/dubinsky/site-publisher/issues/20) leftover).
-  Library + Gradle plugin are on Central; a packaged CLI is not.
 
 ### Markup / dialect parity
 
@@ -62,13 +48,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
   Index the last segment to candidates in list order and keep that ancestor walk.
   A source-path suffix stays a scan.
 - `Pages.facsimilePage` still scans for the viewer of a document.
-
-### Research only ([#21](https://github.com/dubinsky/site-publisher/issues/21))
-
-- Look at Steph Ango’s vault, MkDocs Material, KaTeX as a MathJax alternative.
-- README still has open questions about Obsidian wiki-link case sensitivity, titles vs file names, ambiguous names,
-  wrapping, agglutination — not a committed feature list.
-- An Obsidian plugin so the editor also resolves by front-matter title (vault-side, not the generator).
 
 ## Not features of the publisher (rollout / docs)
 

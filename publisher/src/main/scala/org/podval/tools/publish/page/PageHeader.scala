@@ -36,22 +36,26 @@ object PageHeader:
       join(
         join(
           join(
-            timeHtml(Option.when(page.dateModified.nonEmpty)("Published:"), page.date, "dt-published", "datePublished"),
+            join(
+              timeHtml(Option.when(page.dateModified.nonEmpty)("Published:"), page.date, "dt-published", "datePublished"),
+              "•",
+              timeHtml(Some("Updated:"), page.dateModified, "dt-modified", "dateModified")
+            ),
             "•",
-            timeHtml(Some("Updated:"), page.dateModified, "dt-modified", "dateModified")
-          ),
-          "•",
-          page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
-            Seq(
-              span(className := "post-authors",
-                span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
-                  span(className := "p-author h-card", itemProp := "name", author)
+            page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
+              Seq(
+                span(className := "post-authors",
+                  span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
+                    span(className := "p-author h-card", itemProp := "name", author)
+                  )
                 )
               )
-            )
+          ),
+          "|",
+          page.asFullMarkupPage.toSeq.flatMap(_.tags).map(page.site.tags.tagRef)
         ),
         "|",
-        page.asFullMarkupPage.toSeq.flatMap(_.tags).map(page.site.tags.tagRef)
+        page.asFullMarkupPage.toSeq.flatMap(full => page.site.categories.chips(full))
       )
     )
 

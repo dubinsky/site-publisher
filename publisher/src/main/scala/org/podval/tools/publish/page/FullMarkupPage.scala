@@ -34,6 +34,7 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
 
   final def tags: List[String] = frontMatter.tags
+  final def categories: List[String] = frontMatter.categories
 
   final def author: Option[String] = content(_.frontMatter.author)
 

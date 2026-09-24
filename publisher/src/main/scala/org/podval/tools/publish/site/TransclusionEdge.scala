@@ -31,7 +31,7 @@ final class TransclusionEdges:
     from.content.toSeq.flatMap: content =>
       content.xml.gather: element =>
         if !WikiLink.isTranscluded(element) then None
-        else element.getHref.map: href =>
+        else element.getHref.filterNot(Transclusion.isObsidianBase).map: href =>
           val fromRegion: Region = Region.hostOf(element, content)
           val kind: Option[LinkKind] = LinkKind.of(element)
           from.site.pages.resolve(href, kind, from) match

@@ -86,6 +86,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val git: Git = Git(sourceDirectory)
   val backLinks: BackLinks = BackLinks()
   val transclusions: TransclusionEdges = TransclusionEdges()
+  val categories: Categories = Categories()
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
   val externalLinks: ExternalLinks = ExternalLinks(this)
@@ -178,6 +179,9 @@ final class Site(options: SiteOptions) extends JSLibrary:
   private def load(): Unit =
     // Load all pages
     pages.load()
+
+    // After throwIfErrors: a missing category hub is an unresolved link, not a failed build.
+    categories.resolve(this)
 
     // Gather back-links from authored trees. Store / entity-lists `xml` is an empty
     // root, so generated index → entity hrefs are not backlinks.

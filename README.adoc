@@ -296,7 +296,7 @@ Useful fields:
 - `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback.
   Site `lang` also selects store and selector display names (publisher `Selector.xml`, TEI `<name lang>`); omitted is
   `en`.
-- `tags`, `categories`, `aliases`
+- `tags`, `categories` (<<categories>>), `aliases`
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
 - `asset` — copy the markup file as an asset (no dialect processing, no site chrome).
@@ -314,6 +314,21 @@ When the page is a directory (an `index` or a TEI `store` / `collection` beside 
 bookmark.
 A remainder under a non-directory alias does not resolve.
 A last-dot suffix in a href that is all digits is part of the name (`255.2`), not a file extension.
+
+[#categories]
+== Categories
+
+`categories` is a list of links to authored pages.
+A value is a wiki link (`+++[[Books]]+++` or `+++[[Books|label]]+++`) or a bare name (`Books`).
+It resolves the same way as a wiki link in the body.
+The target is a normal page: its prose stays, and the generator appends the pages that name it, sorted by title.
+A value that resolves to nothing is an unresolved link on the Errors page.
+No category page is created for it.
+`!+++[[Note.base]]+++` and `!+++[[Note.base#View]]+++` are Obsidian queries and are omitted, with no error.
+The member page header lists each category beside its tags.
+A wiki link in the body is a backlink.
+It does not put the page in that list.
+A page may name several categories.
 
 [#page-names]
 == Page Names

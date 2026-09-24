@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.page.{AuthoredContent, ChunkedMarkupPage, FullMarkupPage, NamedWindows, Page,
   PageContent}
 import org.podval.tools.publish.site.PageError
-import org.podval.tools.publish.util.Strings
+import org.podval.tools.publish.util.{Files, Strings}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 enum Region derives CanEqual:
@@ -189,6 +189,16 @@ object Transclusion:
     )
     expanded.flatMap(_.asElement).headOption.getOrElse(element)
 
+  // Obsidian Bases files are queries (`![[Books.base]]`, `![[Books.base#Favorites]]`).
+  // The category member list replaces them. Drop the embed and do not report it.
+  private[publish] def isObsidianBase(href: String): Boolean =
+    val (path: String, _) = Strings.splitFirst(href.trim, '#')
+    val name: String = path.split('/').map(_.trim).filterNot(_.isEmpty).lastOption.getOrElse(path.trim)
+    Files.nameAndExtension(name)._2.exists(_.equalsIgnoreCase("base"))
+
+  private def isBaseTransclude(element: Xml.Element): Boolean =
+    WikiLink.isTranscluded(element) && element.getHref.exists(isObsidianBase)
+
   private def expandNodes(
     nodes: Xml.Nodes,
     fromPage: FullMarkupPage,
@@ -205,6 +215,8 @@ object Transclusion:
         case None => Seq(node)
         case Some(element) if element.isNamed(XmlElement.Code.localName) => Seq(element)
         case Some(element) if isChrome(element) => Seq(element)
+        case Some(element) if isBaseTransclude(element) =>
+          Seq.empty
         case Some(element) if WikiLink.isTranscluded(element) =>
           Seq(expandHop(
             element,
@@ -218,6 +230,7 @@ object Transclusion:
             footnotes
           ))
         case Some(element) if element.isElement(XmlElement.P) =>
+          val droppedBase: Boolean = element.getChildren.exists(_.asElement.exists(isBaseTransclude))
           val kids: Xml.Nodes = expandNodes(
             element.getChildren,
             fromPage,
@@ -229,7 +242,8 @@ object Transclusion:
             host,
             footnotes
           )
-          splitParagraph(element.setChildren(kids))
+          if droppedBase && kids.forall(_.isWhitespace) then Seq.empty
+          else splitParagraph(element.setChildren(kids))
         case Some(element) =>
           Seq(element.setChildren(expandNodes(
             element.getChildren,

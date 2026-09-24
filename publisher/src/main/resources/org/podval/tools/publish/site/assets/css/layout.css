@@ -640,7 +640,8 @@ a.pb .icon-span {
 
 
 /* LMD */
-.page-tag {
+.page-tag,
+.page-category {
     display: inline-block;
     background: var(--brand-color-very-light);
     padding: 0 .5rem;
@@ -663,6 +664,10 @@ a.pb .icon-span {
 
 .icon-span {
     padding-right: .3em;
+}
+
+.category-members {
+    margin-top: 1.5rem;
 }
 
 ul.page-list {

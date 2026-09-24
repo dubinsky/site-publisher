@@ -160,7 +160,9 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           div(className := "wrapper",
             article(className := "post h-entry", itemScope := true, itemType := s"http://schema.org/${Seo.schemaType(this)}",
               pageHeader,
-              div(className := "post-content e-content", itemProp := "articleBody", articleBody),
+              div(className := "post-content e-content", itemProp := "articleBody",
+                articleBody ++ site.categories.html(this).toSeq
+              ),
               a(className := "u-url", href := path.toString, hidden := true)
             ),
             site.backLinks.html(this),

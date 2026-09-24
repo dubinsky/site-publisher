@@ -74,9 +74,11 @@ object GraphJson:
     s"""{"source":${Json.string(edge.source)},"target":${Json.string(edge.target)},"kind":${Json.string(edge.kind)}}"""
 
   private def linkEdges(site: Site, ids: Set[String]): Seq[Edge] =
-    site.backLinks.all.flatMap: link =>
+    val body: Seq[Edge] = site.backLinks.all.flatMap: link =>
       directed(link.from, link.to.page, "link", ids)
-    .distinctBy(key)
+    val categories: Seq[Edge] = site.categories.membership.flatMap: link =>
+      directed(link.from, link.to, "link", ids)
+    (body ++ categories).distinctBy(key)
 
   private def transcludeEdges(site: Site, ids: Set[String]): Seq[Edge] =
     if !site.config.graph.includeTransclusions then Seq.empty
