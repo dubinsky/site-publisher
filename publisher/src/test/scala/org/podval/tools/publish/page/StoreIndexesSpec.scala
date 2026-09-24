@@ -128,6 +128,10 @@ final class StoreIndexesSpec extends AnyFunSuite:
       val booksPage = StoreTree.pageOf(tree.resolve("/books").last).get
       assert(site.pages.rewriteRequest(Path.fromHref("/books")).contains(booksPage.path))
       val from: Page = site.pages.pages.head
+      val hop: Path = Path("archive", "books", "book", "index").html
+      assert(!site.pages.pages.exists(_.path == hop))
+      site.pages.resolve(hop.toString, None, from).foreach: link =>
+        assert(site.pages.pages.exists(_ eq link.page))
       assert(site.pages.resolve("/books", None, from).map(_.page.real).contains(booksPage))
       val derzhavinPage = StoreTree.pageOf(derzhavin.last).get
       assert(site.pages.rewriteRequest(Path.fromHref("/books/Державин")).contains(derzhavinPage.path))

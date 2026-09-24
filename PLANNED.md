@@ -6,14 +6,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 ## Product features
 
-### Graph (explicit follow-ups)
-
-- **Local graph** (“PR 4”): `?focus=/notes.html` on `/graph.html`, and/or a per-page overlay.
-  v1 is the global page only.
-  Overlay must not load Cytoscape + JSON on every TEI page.
-- **Arrows checkbox**: JSON is already directed so a later setting can show A→B vs B→A.
-  The canvas currently draws undirected strokes.
-
 ### Tags and categories ([issue #10](https://github.com/dubinsky/site-publisher/issues/10))
 
 - Handle **categories** (possibly as wiki links).
@@ -44,7 +36,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 - **X Articles** — publish a page to X if/when there is an API (design note +
   [#21](https://github.com/dubinsky/site-publisher/issues/21)).
-- **SEO images, Facebook, webmaster proofs** — documented as absent.
 - **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
   runs.
   Do not turn `--production` on until the ids are GA4.
@@ -55,23 +46,22 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 - **Obsidian `|WIDTH` / `|WIDTHxHEIGHT` on `![alt](src)`** — FlexMark leaves the size in `alt`.
   Wiki `![[image]]` already gets `width`/`height`.
-- **Markdown native in-document bibliography** — none; citeproc only.
-- **DocBook**: no task lists, wiki links, or PDF embeds.
-  Front matter TODO: implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
+- **DocBook**: TODO: implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
 - **`HtmlIr.normalize` for TEI and DocBook** — not run yet (leftovers stay native names until dialect converters).
-- **Dotted front-matter keys** (`toc.depth`, …) — considered, not done.
-- **`modified_time` as a typed field** — blocked on ZIO Blocks YAML kebab-case
-  ([#6](https://github.com/dubinsky/site-publisher/issues/6)); currently an extra-key workaround.
-- **Load less CSS/MathJax** by dialect actually present on the page (today every HTML page always ships all of it,
-  because of transclusion).
-- **Configurable HTML converter** (commented `Configurer` in `Site`).
 - **CSS cleanup / modularize / modernize** ([#18](https://github.com/dubinsky/site-publisher/issues/18)); tei.css still
   wants to merge `em` and `hi`.
 
 ### Scan / robustness
 
-- Page lookup indexes (path / title / `LinkKind`) — entity lookup is indexed; general `get`/`find` is still linear.
-  `Pages.get` still walks the page list (`TODO make a map for quick lookups`).
+- Title-walk candidate index for `Pages.findWalk`.
+  Exact published path is a map (`Pages.get`).
+  Store includes use a source-path map (`findBySource`).
+  Entity `@ref` uses `entityByKindAndId`.
+  A link that misses those still walks every page.
+  The last segment matches `titleFromPath` or `title`, then ancestors, then a source-path suffix.
+  Index the last segment to candidates in list order and keep that ancestor walk.
+  A source-path suffix stays a scan.
+- `Pages.facsimilePage` still scans for the viewer of a document.
 
 ### Research only ([#21](https://github.com/dubinsky/site-publisher/issues/21))
 
@@ -84,10 +74,3 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 - README “Opinionated” section: “TODO expound.”
 - Narrative TODOs in the design-note intro (dates, 11ty link, Jekyll plugin link) — writing, not product.
-
-## GitHub issues that already shipped (still open)
-
-Treat these as stale trackers, not remaining work: transclusion (#11), named windows (#12), hover tables (#13), gap tips
-(#14), `/errors.html` reports (#16), facsimile document viewer (#17), Maven artifact (#20, except CLI), entity
-first-name titles / `/name` catalog (#15 mostly), backlinks grouped by collection (#9 mostly), `Content` kinds (#8).
-The `..` encoding is withdrawn.

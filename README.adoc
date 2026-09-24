@@ -166,13 +166,6 @@ The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), th
 (`org.podval.tools:site-publisher-plugin`),
 and the plugin marker (`org.podval.tools.site-publisher:org.podval.tools.site-publisher.gradle.plugin`).
 Same version.
-Plugin Portal: `./gradlew :site-publisher-plugin:publishPlugins`.
-
-Then release the Central deployment at https://central.sonatype.com/publishing/deployments .
-
-TODO after a release that includes `asset: true` is on Maven Central: bump `sitePublisherVersion` in
-`~/CognoMath/mathworlds-site` if needed and push that repo (`index.yml` copies `index.html`).
-Do not push MathWorlds before then; CI resolves the publisher from Central.
 
 Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as
 `home`):

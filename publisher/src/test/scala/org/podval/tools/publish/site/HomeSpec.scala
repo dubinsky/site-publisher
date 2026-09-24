@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.tools.publish.page.Page
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -79,11 +80,16 @@ final class HomeSpec extends AnyFunSuite:
             |Hello.
             |""".stripMargin
       )
-    ): (_, target) =>
+    ): (site, target) =>
       val index: String = html(target, "index.html")
       assert(index.toLowerCase.contains("refresh"), index)
       assert(index.contains("/about.html"), index)
       assert(!index.contains("""class="directory""""), index)
+      val indexPage: Page = site.pages.pages.find(_.path == Path("index").html).get
+      assert(indexPage.isAlias)
+      val about: Page = site.pages.pages.find(_.path == Path("about").html).get
+      val resolved = site.pages.resolve("/index.html", None, about).get
+      assert(resolved.page eq indexPage)
   }
 
   test("home cannot coexist with an authored index") {

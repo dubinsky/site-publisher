@@ -18,12 +18,41 @@ final class Pages(site: Site):
 
   def pages: List[Page] = pagesVar
 
+  // First occupant wins, matching `List.find`. `Page.equals` is path identity, so
+  // dropping a page uses `eq` and then promotes the earliest page still listed.
+  private var byPath: Map[Path, Page] = Map.empty
+  private var bySource: Map[Path, Page] = Map.empty
+
   // Header pages
   private var headerPagesVar: List[Page] = List.empty
   def headerPages: List[Page] = headerPagesVar
 
-  // TODO make a map for quick lookups:
-  private def get(path: Path): Option[Page] = pages.find(_.path == path)
+  private def get(path: Path): Option[Page] = byPath.get(path)
+
+  private def track(page: Page): Unit =
+    if !byPath.contains(page.path) then byPath = byPath.updated(page.path, page)
+    trackSource(page)
+
+  // Source is often attached after `add` (`claimPage` fills an empty directory).
+  private def trackSource(page: Page): Unit =
+    page.sourcePath.foreach: source =>
+      if !bySource.contains(source) then bySource = bySource.updated(source, page)
+
+  private def removeWhere(drop: Page => Boolean): Unit =
+    val removed: List[Page] = pagesVar.filter(drop)
+    pagesVar = pagesVar.filterNot(drop)
+    removed.foreach(untrack)
+
+  private def untrack(page: Page): Unit =
+    if byPath.get(page.path).exists(_ eq page) then
+      byPath = pagesVar.find(_.path == page.path) match
+        case Some(next) => byPath.updated(page.path, next)
+        case None => byPath.removed(page.path)
+    page.sourcePath.foreach: source =>
+      if bySource.get(source).exists(_ eq page) then
+        bySource = pagesVar.find(_.sourcePath.contains(source)) match
+          case Some(next) => bySource.updated(source, next)
+          case None => bySource.removed(source)
 
   def facsimilePage(page: Page): Option[FacsimilePage] =
     val original: Page = Facsimile.original(page)
@@ -98,7 +127,7 @@ final class Pages(site: Site):
                 s"home: '$home' cannot coexist with an authored index"
               )
             case Some(_: DirectoryPage) =>
-              pagesVar = pagesVar.filterNot(page => page.path == index && page.isInstanceOf[DirectoryPage])
+              removeWhere(page => page.path == index && page.isInstanceOf[DirectoryPage])
               add(new Alias(site, target, index))
             case None =>
               add(new Alias(site, target, index))
@@ -175,6 +204,7 @@ final class Pages(site: Site):
 
   private def add(page: Page): Unit =
     pagesVar = pagesVar.appended(page)
+    track(page)
     page match
       case alias: Alias =>
         aliasByPrefix = aliasByPrefix.updated(alias.path.withoutHtml.path, alias)
@@ -380,7 +410,7 @@ final class Pages(site: Site):
       case None =>
         (DirectoryPage(site, path.html), true)
     page.setPassThrough(sourcePath)
-    if addIt then add(page)
+    if addIt then add(page) else trackSource(page)
     page
 
   private def addMarkup(
@@ -398,7 +428,7 @@ final class Pages(site: Site):
         )
         markupPage.setSource(pageSource)
         parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
-        if addIt then add(markupPage)
+        if addIt then add(markupPage) else trackSource(markupPage)
         markupPage
 
   // `None` skips the file: unknown dialect, or the parse-failure placeholder
@@ -480,7 +510,7 @@ final class Pages(site: Site):
       case _ =>
 
     selectorHopsVar = hops
-    pagesVar = pagesVar.filterNot(isHopPage)
+    removeWhere(isHopPage)
     pages.foreach:
       case page: MarkupPage =>
         page.store.filter(_.hrefs.nonEmpty).foreach: store =>
@@ -491,7 +521,7 @@ final class Pages(site: Site):
     page.isDirectory && page.source.isEmpty && selectorHopsVar.contains(page.path.path.init)
 
   private def findBySource(sourcePath: Path): Option[Page] =
-    pages.find(_.sourcePath.contains(sourcePath))
+    bySource.get(sourcePath)
 
   private def addStoreIndexes(): Unit =
     val roots: Seq[Page] = pages.filter(StoreIndexes.isRootStore)
@@ -747,7 +777,8 @@ final class Pages(site: Site):
       val name: String = names.last
       val init: Seq[String] = names.init
       val done: Boolean = init.isEmpty
-      val is: Boolean = current.title == name || current.titleFromPath == name
+      // `titleFromPath` does not read content. `title` parses on a cache miss.
+      val is: Boolean = current.titleFromPath == name || current.title == name
       Option.when(is)(page).flatMap: (to: Page) =>
         current.parent match
           case None =>
