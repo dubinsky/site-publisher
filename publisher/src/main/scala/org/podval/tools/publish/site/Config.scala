@@ -21,6 +21,7 @@ final class Config(
   val home: Option[String] = None,
   val facsimilesUrl: Option[String] = None,
   val namedWindows: Boolean = false,
+  val checkLinks: Boolean = false,
   val teiDefaultCalendar: Option[String] = None,
   val social: Config.Social = Config.Social(),
   val graph: Config.Graph = Config.Graph()

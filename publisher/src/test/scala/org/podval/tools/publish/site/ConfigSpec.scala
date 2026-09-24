@@ -44,6 +44,14 @@ final class ConfigSpec extends AnyFunSuite:
     assert(decode(required + "named-windows: true\n").namedWindows)
   }
 
+  test("check-links defaults to false") {
+    assert(!decode(required).checkLinks)
+  }
+
+  test("check-links maps from kebab-case") {
+    assert(decode(required + "check-links: true\n").checkLinks)
+  }
+
   test("graph defaults to off") {
     val graph: Config.Graph = decode(required).graph
     assert(!graph.enabled)

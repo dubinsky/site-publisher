@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.metadata.{Language, Name}
-import org.podval.xml.{Xml, XmlAttribute, XmlCodec}
+import org.podval.xml.{Xml, XmlAttribute, XmlCodec, XmlTag}
 import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 
@@ -20,8 +20,8 @@ final case class StoreIndex(
   parts: Seq[CollectionPart] = Seq.empty,
   axis: Option[StoreIndex.Axis] = None,
   @Modifier.config(XmlCodec.Include, "") hrefs: Seq[String] = Seq.empty,
-  // Not XML. apply sets this from the wrapper tag (`collection` or `store`).
-  @Modifier.transient() isCollection: Boolean = false
+  // Tag field: the wrapper is `<collection>` or `<store>`.
+  isCollection: Boolean = false
 ) derives CanEqual:
   def selector: Option[String] = axis.flatMap(_.selector)
 
@@ -45,7 +45,18 @@ object StoreIndex:
     given schema: Schema[Axis] = Schema.derived
 
   given schema: Schema[StoreIndex] = Schema.derived
-  val codec: XmlCodec[StoreIndex] = XmlCodec.derived
+
+  private val rootTag: XmlTag[Boolean] = XmlTag(
+    isCollection => if isCollection then "collection" else "store",
+    {
+      case "collection" => Some(true)
+      case "store" => Some(false)
+      case _ => None
+    },
+    Seq("store", "collection")
+  )
+
+  val codec: XmlCodec[StoreIndex] = XmlCodec.derived[StoreIndex, Boolean]("isCollection", rootTag)
 
   def apply(xml: Xml.Element): Option[StoreIndex] =
     Option.when(TeiMarkup.isStoreRoot(xml)):
@@ -55,7 +66,6 @@ object StoreIndex:
         else decoded.n.map(_.trim).filter(_.nonEmpty).map(Name(_, Language.Spec.empty)).toSeq
       decoded.copy(
         names = mergedNames,
-        isCollection = xml.isNamed("collection"),
         description = decoded.description.filter(_.getChildren.nonEmpty),
         body = decoded.body.filter(_.getChildren.nonEmpty)
       )

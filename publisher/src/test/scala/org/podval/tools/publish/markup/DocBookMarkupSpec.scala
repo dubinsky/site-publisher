@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlParser, XmlElement}
-import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 
 final class DocBookMarkupSpec extends AnyFunSuite:

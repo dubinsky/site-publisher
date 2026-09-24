@@ -48,8 +48,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 - **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
   runs.
   Do not turn `--production` on until the ids are GA4.
-- **External-link checker** when the site is so configured (`Site.isInternalLink` TODO).
-  No config flag exists yet.
 - **Package a CLI** ([#20](https://github.com/dubinsky/site-publisher/issues/20) leftover).
   Library + Gradle plugin are on Central; a packaged CLI is not.
 

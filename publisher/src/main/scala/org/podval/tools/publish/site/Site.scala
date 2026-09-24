@@ -64,18 +64,19 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   val uri: URI = URI(config.url)
 
+  // Both hosts must be present: `mailto:` and a scheme-less site `url` both have host null.
+  def sameSiteHost(uri: URI): Boolean =
+    val hrefHost: String = uri.getHost
+    val siteHost: String = this.uri.getHost
+    hrefHost != null && siteHost != null && hrefHost.equalsIgnoreCase(siteHost)
+
   def isInternalLink(
     href: String,
     errorReporter: PageErrorReporter
   ): Boolean =
-    // TODO verify that external link is not broken if the Site is so configured
     try
       val uri: URI = URI(href)
-      // Both hosts must be present: `mailto:` and a scheme-less site `url` both have host null.
-      val hrefHost: String = uri.getHost
-      val siteHost: String = this.uri.getHost
-      if hrefHost != null && siteHost != null && hrefHost.equalsIgnoreCase(siteHost) then
-        errorReporter.error(PageError.SelfLink, href)
+      if sameSiteHost(uri) then errorReporter.error(PageError.SelfLink, href)
       uri.getScheme == null
     catch case e: URISyntaxException => true
 
@@ -87,6 +88,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val transclusions: TransclusionEdges = TransclusionEdges()
   val tags: Tags = Tags(this)
   val posts: Posts = Posts(this)
+  val externalLinks: ExternalLinks = ExternalLinks(this)
 
   // Errors
   val errors: Errors = Errors(this, treatErrorsAsWarnings = options.treatErrorsAsWarnings)
@@ -146,6 +148,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
   private def loadAndGenerate(): Unit =
     try
       load()
+
+      if config.checkLinks then log.info("Checking external links")
 
       // Wipe out output directory
       Files.deleteDirectory(targetDirectory)

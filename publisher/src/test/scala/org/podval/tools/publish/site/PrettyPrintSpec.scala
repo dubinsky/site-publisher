@@ -3,7 +3,6 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.TeiXmlWriterConfig
 import org.podval.tools.publish.util.SiteOptions
 import org.podval.xml.Xml
-import org.podval.xml.Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files as NioFiles, Path as NioPath}

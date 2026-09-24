@@ -5,7 +5,6 @@ import org.asciidoctor.Asciidoctor
 import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
-import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 import zio.blocks.chunk.Chunk
 import java.io.{ByteArrayInputStream, File}

@@ -234,6 +234,7 @@ It:
 - supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
 - can emit an interactive <<graph>> of pages;
+- checks <<external-links>> when `check-links` is set;
 
 Supported markup constructs:
 
@@ -668,6 +669,36 @@ A large TEI archive should leave the graph off, or exclude `archive` to keep onl
 
 Add `graph` to `header-pages` if you want a header link (there is no automatic icon).
 Pipeline notes belong in the Site Publisher design note, not here.
+
+[#external-links]
+== External links
+
+Off by default.
+When `_site_config.yml` has `check-links: true`, generate requests each author-written `http` and `https` URL and lists
+failures on the Errors page (`#broken-link`).
+
+----
+check-links: true
+----
+
+Checked: links (`a@href`) and media (`img` / `video` / `audio` / `source` `@src`, PDF `object@data`), including links
+inside footnotes and bibliography entries.
+An absolute URL whose host is the site `url` is a spurious self-link and is not requested.
+`mailto:`, `tel:`, `javascript:`, and `data:` are not requested.
+URLs inside code, and URLs only reached by transcluding another page, are checked on the page that authors them.
+The same URL is requested once per generate.
+Each page that contains it gets one error.
+
+The request is `HEAD`.
+On 403, 405, or 501 it is retried once with `GET`.
+Redirects are followed.
+A status of 400 or higher, or a timeout or connection failure, is a broken link.
+The error text includes the status or the failure message.
+
+Footer social links, the license link, and facsimile JPEGs are not checked.
+Generation still finishes.
+The Errors page is the report, as for unresolved links.
+Timeouts are 5 seconds to connect and 10 seconds per request.
 
 [#chunking]
 == Chunking

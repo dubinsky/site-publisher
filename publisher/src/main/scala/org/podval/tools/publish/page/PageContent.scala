@@ -164,11 +164,14 @@ final class PageContent private(
       emitted = emitted
     )
 
-    insertToc(withLinks, sectionId, isChunked)
+    val rendered: Xml.Element = insertToc(withLinks, sectionId, isChunked)
+    // Citeproc entry links exist only on this tree. Chunks repeat a slice of it.
+    if !isChunked then source.page.site.externalLinks.check(rendered, source)
+    rendered
 
   /** Resolve `a@href` in already-converted XML (collector header titles). */
   def resolveConverted(xml: Xml.Element): Xml.Element =
-    resolveLinks(
+    val resolved: Xml.Element = resolveLinks(
       xml.transform(markInternalLink, stopAtCode = false),
       isChunked = false,
       attachTips = false,
@@ -176,6 +179,9 @@ final class PageContent private(
       combined = footnotes,
       emitted = Map.empty[String, Footnote]
     )
+    // Store title, abstract, body, and document-header cells never pass through `renderAuthored`.
+    source.page.site.externalLinks.check(resolved, source)
+    resolved
 
   private def markInternalLink(element: Xml.Element): Xml.Element =
     if element.isA && !Section.isPermalink(element) then

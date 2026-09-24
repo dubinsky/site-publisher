@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
-import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 
 final class TeiMarkupSpec extends AnyFunSuite:
@@ -145,8 +144,12 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("store and collection harvest optional alias") {
-    assert(StoreIndex(parse("""<store alias="rgada"><title>x</title></store>""")).get.alias.contains("rgada"))
-    assert(StoreIndex(parse("""<collection n="3140"><title>x</title></collection>""")).get.alias.isEmpty)
+    val store: StoreIndex = StoreIndex(parse("""<store alias="rgada"><title>x</title></store>""")).get
+    assert(store.alias.contains("rgada"))
+    assert(!store.isCollection)
+    val collection: StoreIndex = StoreIndex(parse("""<collection n="3140"><title>x</title></collection>""")).get
+    assert(collection.alias.isEmpty)
+    assert(collection.isCollection)
   }
 
   test("collection harvests parts and pageType") {

@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
-import Xml.given
 import org.scalatest.funsuite.AnyFunSuite
 
 final class HtmlIrSpec extends AnyFunSuite:

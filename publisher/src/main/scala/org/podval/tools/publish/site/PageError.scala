@@ -30,6 +30,7 @@ object PageError:
   case object NoDate extends Kind("no date")
   case object Permalink extends Kind("permalink")
   case object SelfLink extends Kind("spurious external link to this site")
+  case object BrokenLink extends Kind("broken external link")
   case object Unresolved extends Kind("unresolved")
   case object NotInStore extends Kind("not in store")
   case object MissingAsset extends Kind("missing asset")
@@ -59,6 +60,7 @@ object PageError:
     NoDate,
     Permalink,
     SelfLink,
+    BrokenLink,
     Unresolved,
     NotInStore,
     MissingAsset,
