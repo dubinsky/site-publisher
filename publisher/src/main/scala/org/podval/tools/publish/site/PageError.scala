@@ -23,6 +23,7 @@ object PageError:
   case object InvalidAsset extends Kind("invalid asset")
   case object AmbiguousTitle extends Kind("ambiguous title")
   case object MalformedXml extends Kind("malformed XML")
+  case object UnknownXml extends Kind("unknown XML")
   case object FileName extends Kind("file name")
   case object Duplicate extends Kind("duplicate")
   case object NoId extends Kind("no id")
@@ -53,6 +54,7 @@ object PageError:
     InvalidAsset,
     AmbiguousTitle,
     MalformedXml,
+    UnknownXml,
     FileName,
     Duplicate,
     NoId,

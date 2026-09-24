@@ -14,12 +14,6 @@ import java.io.File
 final class Pages(site: Site):
   import Pages.{ForMarkup, ForName}
 
-  // TODO from Grok:
-  //- Description: Page lookup is linear (`pages.find`) and `find(..., kind)` ignores `kind` entirely.
-  // Link resolution, directory child listing patterns, duplicate detection, tags, and posts all scan full lists. 
-  // For large vaults this is quadratic overall (each page × each link × all pages).
-  //- Suggestion: Build indexes after scan: by exact path, by file name / title / titleFromPath, optionally by `LinkKind`.
-  // Use them in `get`, `find`, Tags, Posts, DirectoryPage children.
   private var pagesVar: List[Page] = List.empty
 
   def pages: List[Page] = pagesVar
@@ -240,7 +234,6 @@ final class Pages(site: Site):
       )
       .partition(_.isFile)
 
-    // TODO separate assets from markup at the beginning
     var forNames: Map[String, ForName] = files
       .map(file =>
         val (name: String, extension: Option[String]) = Files.nameAndExtension(file.getName)
@@ -260,19 +253,32 @@ final class Pages(site: Site):
     val addDirectory: Boolean = !site.posts.isDirectoryEmptiedOut(path)
 
     val internalIndex: Option[ForMarkup] = getForMarkup(DirectoryPage.fileName)
-
-    // TODO error when internalIndex.isDefined && externalIndex.isDefined
+    // A file beside the directory (`notes.md` next to `notes/`) is the index when
+    // the directory has none. An inner index wins; the beside-file is not a second page.
     val index: Option[ForMarkup] = internalIndex.orElse(externalIndex)
-    // TODO error if index exists but !addDirectory
+    internalIndex.zip(externalIndex).foreach: (internal, external) =>
+      site.error(
+        internal.markup,
+        PageError.Duplicate,
+        s"directory index ${internal.markup} and ${external.markup} both claim this directory"
+      )
+    if !addDirectory then index.foreach: claimed =>
+      site.error(
+        claimed.markup,
+        PageError.FileName,
+        s"index file in a directory that has no page: ${claimed.markup}"
+      )
 
     val sourcePath: Path = Path(path :+ DirectoryPage.fileName)
 
-    val directoryPage: Option[Page] = Option.when(addDirectory):
-      val path: Path = toPath(sourcePath)
-      index match
-        case None => getOrAddDirectory(path)
-        case Some(index) if index.passThrough => addPassThroughIndex(index.markup, path)
-        case Some(index) => addMarkup(index.markup, index.standAloneFrontMatter, path)
+    val directoryPage: Option[Page] =
+      if !addDirectory then None
+      else
+        val published: Path = toPath(sourcePath)
+        index match
+          case None => Some(getOrAddDirectory(published))
+          case Some(found) if found.passThrough => Some(addPassThroughIndex(found.markup, published))
+          case Some(found) => addMarkup(found.markup, found.standAloneFrontMatter, published)
 
     // A store with `xi:include`s lists only those hrefs. Empty hrefs keep the
     // filesystem listing and must not inherit the parent's include set: a parent
@@ -324,8 +330,15 @@ final class Pages(site: Site):
 
   private def forName(paths: List[Path]): ForName =
     val (markup: List[Path], nonMarkup: List[Path]) = paths.partition(_.extension.flatMap(Markup.forExtension).isDefined)
-    // TODO error if markup.length > 1
-    if markup.isEmpty
+    // `Path`'s ordering ignores the extension, so the same stem would tie.
+    val markupSorted: List[Path] = markup.sortBy(_.toString)
+    if markupSorted.length > 1 then
+      site.error(
+        markupSorted.head,
+        PageError.Duplicate,
+        s"multiple markup files for ${markupSorted.head.fileName}: ${markupSorted.mkString(", ")}"
+      )
+    if markupSorted.isEmpty
     then
       ForName(
         markup = None,
@@ -333,14 +346,20 @@ final class Pages(site: Site):
       )
     else
       val (frontMatter, nonFrontMatter) = nonMarkup.partition(path => FrontMatter.isStandAloneExtension(path.extension))
-      // TODO error if frontMatter.length > 1
-      val markupPath: Path = markup.head
-      val sidecar: Option[Path] = frontMatter.headOption
+      val frontMatterSorted: List[Path] = frontMatter.sortBy(_.toString)
+      if frontMatterSorted.length > 1 then
+        site.error(
+          frontMatterSorted.head,
+          PageError.AmbiguousFrontMatter,
+          s"multiple standalone front-matter files for ${markupSorted.head.fileName}: ${frontMatterSorted.mkString(", ")}"
+        )
+      val markupPath: Path = markupSorted.head
+      val sidecar: Option[Path] = frontMatterSorted.headOption
       val passThrough: Boolean = Pages.isAssetPassThrough(site, markupPath, sidecar)
       if passThrough && markupPath.fileName != DirectoryPage.fileName then
         ForName(
           markup = None,
-          assets = markup ++ nonFrontMatter
+          assets = markupPath :: nonFrontMatter
         )
       else
         ForName(
@@ -368,55 +387,67 @@ final class Pages(site: Site):
     sourcePath: Path,
     frontMatterStandAlone: Option[Path],
     path: Path
-  ): Page =
-    val (markup: Markup, parsed: Option[(FrontMatter, Xml.Element)]) =
-      if !sourcePath.extension.contains(XmlMarkup.extension)
-      then
-        // Determine markup by the file extension
-        // Note: we can only get here after forName() verified that the extension is a markup one, so - get:
-        val markup: Markup = sourcePath.extension.flatMap(Markup.forExtension).get
-        (markup, None)
-      else
-        // Parse and disambiguate XML markup by its XML dialect's root elements
-        val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
-          site = site,
-          sourcePath = sourcePath,
-          frontMatterStandAlone = frontMatterStandAlone,
-          message = "Reading to disambiguate XML dialect",
-          firstReading = true,
-        )
-        val markup: Option[Markup] = Markup.forElement(xml.getName.qName)
-        // TODO error if unknown XML dialect
-        // TODO from Grok:
-        //- Description: Unknown XML root element uses `markup.get`, throwing `NoSuchElementException` instead of a `PageError`. A stray or unsupported `.xml` file aborts the whole build with an opaque stack trace rather than a path-scoped diagnostic.
-        //- Suggestion: On `None`, report `PageError.FileKind` (or similar) and skip/add a malformed placeholder page, consistent with `MarkupKind.readAndParse` parse failures.
-        (markup.get, Some((frontMatter, xml)))
-
-    val (page: Page, addIt: Boolean) = get(path.html) match
-      case Some(page) =>
-        (page, false)
-
-      case None =>
-        val page: Page =
-          if path.fileName == DirectoryPage.fileName
-          then DirectoryPage(site, path.html)
-          else SimpleMarkupPage(site, path.html)
-        (page, true)
-
-    page match
-      case page: MarkupPage =>
+  ): Option[Page] =
+    resolveMarkup(sourcePath, frontMatterStandAlone).flatMap: (markup, parsed) =>
+      claimPage(path, sourcePath).map: (markupPage, addIt) =>
         val pageSource: PageSource = PageSource(
-          page = page,
+          page = markupPage,
           markup = markup,
           sourcePath = sourcePath,
           frontMatterStandAlone = frontMatterStandAlone
         )
-        page.setSource(pageSource)
+        markupPage.setSource(pageSource)
         parsed.foreach((frontMatter, xml) => pageSource.cache(frontMatter, xml))
-      case _ => () // TODO error?
+        if addIt then add(markupPage)
+        markupPage
 
-    if addIt then add(page)
-    page
+  // `None` skips the file: unknown dialect, or the parse-failure placeholder
+  // (`MalformedXml` is already recorded). A known root is `(markup, parsed element)`.
+  private def resolveMarkup(
+    sourcePath: Path,
+    frontMatterStandAlone: Option[Path]
+  ): Option[(Markup, Option[(FrontMatter, Xml.Element)])] =
+    if !sourcePath.extension.contains(XmlMarkup.extension) then
+      // forName() only passes markup extensions.
+      val markup: Markup = sourcePath.extension.flatMap(Markup.forExtension).get
+      Some(markup, None)
+    else
+      val (frontMatter, xml: Xml.Element) = XmlMarkup.readAndParse(
+        site = site,
+        sourcePath = sourcePath,
+        frontMatterStandAlone = frontMatterStandAlone,
+        message = "Reading to disambiguate XML dialect",
+        firstReading = true,
+      )
+      Markup.forElement(xml.getName.qName) match
+        case Some(markup) => Some(markup, Some((frontMatter, xml)))
+        case None =>
+          if !Pages.isMalformedXmlPlaceholder(xml) then
+            site.error(
+              sourcePath,
+              PageError.UnknownXml,
+              s"unknown XML root '${xml.getName.qName}'"
+            )
+          None
+
+  // An empty `DirectoryPage` is the placeholder `getOrAddDirectory` created for this
+  // directory. Anything else already occupies the published path.
+  private def claimPage(path: Path, sourcePath: Path): Option[(MarkupPage, Boolean)] =
+    get(path.html) match
+      case Some(directory: DirectoryPage) if directory.source.isEmpty =>
+        Some(directory, false)
+      case Some(existing) =>
+        site.error(
+          sourcePath,
+          PageError.Duplicate,
+          s"$sourcePath collides with ${existing.path}"
+        )
+        None
+      case None =>
+        val created: MarkupPage =
+          if path.fileName == DirectoryPage.fileName then DirectoryPage(site, path.html)
+          else SimpleMarkupPage(site, path.html)
+        Some(created, true)
 
   private def resolveStores(): Unit =
     var hops: Set[Seq[String]] = Set.empty
@@ -729,7 +760,7 @@ final class Pages(site: Site):
     if !isExtension(page.path, path) || path.path.isEmpty then None
     else loop(page, path.path)
 
-  // TODO this should be the same as isPath()?
+  // Source-path segments, so a link to the file still resolves after posts or a permalink move the published path.
   private def isSourcePath(sourcePath: Path, path: Path, isAbsolute: Boolean): Boolean =
     isExtension(sourcePath, path) && (
       if isAbsolute
@@ -741,6 +772,10 @@ final class Pages(site: Site):
     path.extension.fold(true)(pagePath.extension.contains)
 
 object Pages:
+  // `readAndParse` substitutes this element after it has already recorded `MalformedXml`.
+  private def isMalformedXmlPlaceholder(xml: Xml.Element): Boolean =
+    xml.getName.qName == XmlMarkup.name && xml.hasClass(s"malformed-${XmlMarkup.name}")
+
   /** Sidecar `asset: true` and no internal front matter: copy the file, do not process it.
     * A directory `index` so marked stays a `DirectoryPage` (`passThrough`); write copies the file.
     * Internal `---` plus a sidecar stays markup so `AmbiguousFrontMatter` is reported when the file is read.

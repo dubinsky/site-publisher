@@ -68,14 +68,10 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 - **CSS cleanup / modularize / modernize** ([#18](https://github.com/dubinsky/site-publisher/issues/18)); tei.css still
   wants to merge `em` and `hi`.
 
-### Scan / robustness (TODOs that would become Errors-page kinds)
+### Scan / robustness
 
-- Dual internal+external index
-- Index file when the directory is emptied (e.g. `_posts`)
-- Multiple markup files for one name
-- Multiple standalone front-matter files
-- Unknown XML dialect as `PageError` instead of `markup.get` crash
-- Page lookup indexes (path / title / `LinkKind`) — entity lookup is indexed; general `get`/`find` is still linear
+- Page lookup indexes (path / title / `LinkKind`) — entity lookup is indexed; general `get`/`find` is still linear.
+  `Pages.get` still walks the page list (`TODO make a map for quick lookups`).
 
 ### Research only ([#21](https://github.com/dubinsky/site-publisher/issues/21))
 
