@@ -31,7 +31,7 @@ It does not reformat Markdown, AsciiDoc, or HTML.
 
 `./gradlew build` compiles and tests; `./gradlew test` runs tests only.
 
-Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.3.0`
+Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.4.0`
 
 [#gradle-plugin]
 === Gradle plugin
@@ -44,7 +44,7 @@ the Gradle daemon.
 
 ----
 plugins {
-  id 'org.podval.tools.site-publisher' version '0.3.0'
+  id 'org.podval.tools.site-publisher' version '0.4.0'
 }
 site {
   treatErrorsAsWarnings = true
@@ -81,7 +81,7 @@ Gradle up-to-date can skip a run when sources are unchanged.
 The generator still deletes and rewrites the target when the task runs.
 
 The plugin adds the library as a **default** dependency of the `sitePublisher` configuration, at the same version as the
-plugin (`org.podval.tools:org.podval.tools.publisher:0.3.0`).
+plugin (`org.podval.tools:org.podval.tools.publisher:0.4.0`).
 Gradle `defaultDependencies` run only when that configuration is still empty, so a consumer can pick another published
 library version by declaring `sitePublisher` themselves (there is no `site.publisherVersion`).
 Do not add a second coordinate alongside the default — a non-empty configuration replaces the default entirely:

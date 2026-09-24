@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-24
+
 - `categories` are wiki links to authored pages (`[[Books]]`, `[[Books|label]]`, or a bare name).
   The hub keeps its prose and lists the pages that name it, by title.
   A missing hub is an unresolved link and does not abort generation.
