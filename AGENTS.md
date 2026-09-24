@@ -177,8 +177,10 @@ Modify the path in `generate()` temporarily for other sites during development; 
   Page chrome and generated indexes are `page/` (`PageHeader`, `PagedList`, `CollectionIndex`,
   `EntityLists.generate`, `StoreIndexes` / `StoreIndexPage`).
   HTML-shaped leftovers (bare `<aside>` / `<blockquote>`, `<s>`, standalone `p>img`, PDF `<object>`, `<video>`,
-  YouTube/Vimeo `<iframe>`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`.
-  TEI and DocBook do not use that pass yet.
+  YouTube/Vimeo `<iframe>`) go through `HtmlIr.normalize`, the shared tail of `HtmlMarkup.process`
+  (Markdown, AsciiDoc, and HTML).
+  TEI and DocBook emit that IR in their converters and do not run this pass.
+  TEI `<s>` is a sentence, so the pass must not see a TEI tree.
   There is no `feature/` package.
 - Keep existing comments when moving or refactoring (TODOs, ordering constraints, "why" notes).
   Move them with the code they describe.

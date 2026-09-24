@@ -30,10 +30,7 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 
 ### Markup / dialect parity
 
-- **Obsidian `|WIDTH` / `|WIDTHxHEIGHT` on `![alt](src)`** — FlexMark leaves the size in `alt`.
-  Wiki `![[image]]` already gets `width`/`height`.
 - **DocBook**: TODO: implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
-- **`HtmlIr.normalize` for TEI and DocBook** — not run yet (leftovers stay native names until dialect converters).
 - **CSS cleanup / modularize / modernize** ([#18](https://github.com/dubinsky/site-publisher/issues/18)); tei.css still
   wants to merge `em` and `hi`.
 
@@ -48,8 +45,3 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
   Index the last segment to candidates in list order and keep that ancestor walk.
   A source-path suffix stays a scan.
 - `Pages.facsimilePage` still scans for the viewer of a document.
-
-## Not features of the publisher (rollout / docs)
-
-- README “Opinionated” section: “TODO expound.”
-- Narrative TODOs in the design-note intro (dates, 11ty link, Jekyll plugin link) — writing, not product.
