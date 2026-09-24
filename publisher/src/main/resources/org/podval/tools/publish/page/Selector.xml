@@ -4,15 +4,6 @@
     <name n="language" lang="en"/>
     <name n="язык" lang="ru"/>
   </selector>
-<!--  TODO remove! -->
-  <selector>
-    <name n="names" lang="en"/>
-    <name n="имена" lang="ru"/>
-    <plural>
-      <name n="Names" lang="en"/>
-      <name n="Имена" lang="ru"/>
-    </plural>
-  </selector>
   <selector>
     <name n="name" lang="en"/>
     <name n="имя" lang="ru"/>

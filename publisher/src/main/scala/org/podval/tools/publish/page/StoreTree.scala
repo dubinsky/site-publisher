@@ -64,7 +64,8 @@ object StoreTree:
                   case p: EntityListPage if p.path.path.init == prefix => p.spec.id -> p
                 .toMap
               val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
-              Seq(By("names", ordered.map(node)))
+              // No `names` axis: list pages are the catalog's own children. Each list is `By("name")`.
+              ordered.map(node)
             .getOrElse(Seq.empty)
 
   /** Predecessor `By` in `path.stores`, not `by(page)`. A `By` or `Alias` landing is not a page. */

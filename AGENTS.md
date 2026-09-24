@@ -236,6 +236,7 @@ Compiler flags:
   Empty lists omitted.
   Identity Worker prefix on the catalog directory.
   No synthetic `/name.html`.
+  No `names` selector: list pages are direct store children, and each list page is `By("name")` of its members.
 - XML dialects are disambiguated by root element for `.xml` files (TEI vs DocBook).
 - `Site.targetDirectory` is `sourceDirectory / name` unless `target-directory-name` is absolute; Java
   `File(parent, "/abs")` on Unix does *not* ignore the parent.

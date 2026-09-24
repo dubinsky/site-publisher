@@ -5,7 +5,7 @@ import zio.blocks.schema.{Modifier, Schema}
 
 /** TEI `entityLists` catalog specs: kind + role buckets (site-wide members).
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
-  * The catalog page is `By("names")`; each list page is `By("name")`. */
+  * List subpages are direct store children of the catalog; each list page is `By("name")` of its members. */
 object EntityLists:
   final case class Index(
     @Modifier.config(XmlCodec.Element, "title")

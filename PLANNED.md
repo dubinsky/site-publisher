@@ -11,7 +11,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 - **Apparatus** ([#22](https://github.com/dubinsky/site-publisher/issues/22)): use `gap` / `supplied` / `corr` in place
   of some notes (with CSS); use `hand` instead of notes like “написано пером, зачёркнуто карандашом”.
   Gap `@reason` tooltips already exist.
-- **Store-tree `By("names")` / `By("name")` hops** (`/jews`, `/jews/alter-rebbe`) — design-note TODO.
 - **Entity mentions, collector-style** ([#15](https://github.com/dubinsky/site-publisher/issues/15),
   [#9](https://github.com/dubinsky/site-publisher/issues/9)):
   - ids on all entity references, used in mentions

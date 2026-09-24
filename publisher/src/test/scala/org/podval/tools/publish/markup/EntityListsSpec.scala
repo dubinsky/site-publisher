@@ -158,33 +158,33 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(!page.contains("Залман Борухович"), page)
   }
 
-  test("wraps entity lists as By names/name") {
+  test("list pages are direct store children; members are By name") {
     withSite(): (site, _) =>
       val directory: DirectoryPage = site.pages.pages.collect:
         case page: DirectoryPage if page.doc.exists(_.asEntityLists.isDefined) => page
       .head
       val tree = StoreTree.node(directory)
+      assert(StoreTree.by(directory).isEmpty)
       val jews = tree.resolve("/jews")
       assert(jews.last.names.hasName("jews"))
       assert(jews.last.names.hasName("Жиды"))
-      assert(jews.structureNames == Seq("names", "jews"), jews.structureNames)
-      assert(tree.resolve("/names/jews").structureNames == Seq("names", "jews"))
+      assert(jews.structureNames == Seq("jews"), jews.structureNames)
+      intercept[IllegalArgumentException] { tree.resolve("/names/jews") }
       val jewsPage = StoreTree.pageOf(jews.last).get
       val jewsResolved = StoreTree.resolvePage(tree, "/jews").get
       assert(jewsResolved.page.path == jewsPage.path)
-      assert(jewsResolved.hop.map(_.selector) == Selectors.forName("names"))
+      assert(jewsResolved.hop.isEmpty)
       assert(StoreTree.by(jewsResolved.page).map(_.selector) == Selectors.forName("name"))
-      assert(jewsResolved.hop.map(_.selector) != StoreTree.by(jewsResolved.page).map(_.selector))
       assert(jewsPage.isInstanceOf[EntityListPage])
       assert(site.pages.rewriteRequest(Path.fromHref("/jews")).contains(jewsPage.path))
-      assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).contains(jewsPage.path))
+      assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).isEmpty)
       val from: Page = site.pages.pages.head
       assert(site.pages.resolve("/jews", None, from).map(_.page.real).contains(jewsPage))
-      assert(site.pages.resolve("/names/jews", None, from).map(_.page.real).contains(jewsPage))
+      assert(site.pages.resolve("/names/jews", None, from).isEmpty)
       val zalman = tree.resolve("/jews/alter-rebbe")
       assert(zalman.last.names.hasName("alter-rebbe"))
       assert(zalman.last.names.hasName("Залман Борухович"))
-      assert(zalman.structureNames == Seq("names", "jews", "name", "alter-rebbe"), zalman.structureNames)
+      assert(zalman.structureNames == Seq("jews", "name", "alter-rebbe"), zalman.structureNames)
       val zalmanPage = StoreTree.pageOf(zalman.last).get
       val zalmanResolved = StoreTree.resolvePage(tree, "/jews/alter-rebbe").get
       assert(zalmanResolved.hop.map(_.selector) == Selectors.forName("name"))
