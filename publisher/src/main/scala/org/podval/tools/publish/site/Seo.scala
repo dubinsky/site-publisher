@@ -1,11 +1,9 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{DirectoryPage, MarkupPage, Page}
-import org.podval.tools.publish.util.{Date, Json}
+import org.podval.tools.publish.util.Json
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
-import java.time.{Instant, LocalTime, ZoneId}
-import scala.util.Try
 
 object Seo:
   val generatorName: String = "Podval Site Publisher"
@@ -23,11 +21,8 @@ object Seo:
     val desc: String = description(page)
     val url: String = canonical(page)
     val authorName: String = author(page)
-    val published: Option[String] = page.date.map(formatDate(_, site))
-    val modified: Option[String] =
-      page.dateModified.map(formatDate(_, site))
-        .orElse(page.dateModifiedGit.map(formatInstant(_, site)))
-        .orElse(published)
+    val published: Option[String] = page.publishedAt.map(_.toString)
+    val modified: Option[String] = page.updatedAt.map(_.toString)
     val isArticle: Boolean = page.date.isDefined
 
     List(
@@ -114,14 +109,3 @@ object Seo:
 
   private def obj(fields: (String, String)*): String =
     fields.map((key, value) => s"${Json.string(key)}:$value").mkString("{", ",", "}")
-
-  private def zone(site: Site): ZoneId =
-    site.config.timezone.flatMap(tz => Try(ZoneId.of(tz)).toOption).getOrElse(ZoneId.systemDefault)
-
-  private def formatDate(date: Date, site: Site): String = date match
-    case date: Date.OffsetTime => date.value.toString
-    case date: Date.LocalTime => date.value.atZone(zone(site)).toOffsetDateTime.toString
-    case date: Date.Local => date.value.atTime(LocalTime.MIDNIGHT).atZone(zone(site)).toOffsetDateTime.toString
-
-  private def formatInstant(instant: Instant, site: Site): String =
-    instant.atZone(zone(site)).toOffsetDateTime.toString

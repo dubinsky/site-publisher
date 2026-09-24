@@ -4,7 +4,6 @@ import de.undercouch.citeproc.CSL
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItemBuilder}
 import org.podval.xml.{Xml, XmlElement, XmlParser}
-import Xml.given
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import java.io.{File, FileInputStream}
 

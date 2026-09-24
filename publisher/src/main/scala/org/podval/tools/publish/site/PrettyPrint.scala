@@ -3,7 +3,6 @@ package org.podval.tools.publish.site
 import org.podval.tools.publish.markup.{DocBookMarkup, EntityKind, Markup, TeiMarkup, XmlMarkup}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Xml, XmlParser, XmlWriterConfig}
-import Xml.given
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.{CharacterCodingException, CodingErrorAction, StandardCharsets}
@@ -77,7 +76,7 @@ object PrettyPrint:
         else if internalSubset(body) then
           warn(site, file, "doctype internal subset")
           Counts().incConsidered.incInternalSubset
-        else XmlParser.parseXmlDocument[Xml.Element](body) match
+        else XmlParser.parseXmlDocument(body) match
           case Left(error) =>
             warn(site, file, error.toString)
             Counts().incConsidered.incMalformed

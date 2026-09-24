@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{Xml, XmlCodec}
-import Xml.given
 import zio.blocks.schema.{Modifier, Schema}
 
 /** TEI `entityLists` catalog specs: kind + role buckets (site-wide members).

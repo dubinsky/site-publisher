@@ -1,7 +1,6 @@
 package org.podval.tools.publish.markup
 
 import org.podval.xml.{CssClass, HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
-import Xml.given
 
 object Citation:
   object CiteClass extends CssClass("citation")

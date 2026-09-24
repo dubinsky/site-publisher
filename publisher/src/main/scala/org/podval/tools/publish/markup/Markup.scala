@@ -4,7 +4,6 @@ import org.podval.tools.publish.page.FrontMatter
 import org.podval.tools.publish.site.{PageError, PageErrorReporter, Path, Site}
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Xml, XmlWriterConfig, XmlParser}
-import Xml.given
 import java.io.File
 
 abstract class Markup(
@@ -75,7 +74,7 @@ abstract class Markup(
 
     val xmlString: String = xmlContent(content, sourceFile)
 
-    val xml: Xml.Element = XmlParser.parse[Xml.Element](xmlString, isXml = rendersToXml) match
+    val xml: Xml.Element = XmlParser.parse(xmlString, isXml = rendersToXml) match
       case Right(xml) =>
         xml
       case Left(error) =>

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.util
 
 import zio.blocks.schema.yaml.{Yaml, YamlCodec}
-import java.time.{LocalDate, LocalDateTime, OffsetDateTime}
+import java.time.{LocalDate, LocalDateTime, OffsetDateTime, ZoneId}
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 
 sealed trait Date:
@@ -25,6 +25,13 @@ object Date:
   final class OffsetTime(val value: OffsetDateTime) extends Date:
     override def localDate: LocalDate = value.toLocalDate
     override def toString: String = value.toString
+
+  /** RFC 3339 instant in `zone`. An `OffsetTime` keeps the offset it was written with. */
+  def toOffsetDateTime(date: Date, zone: ZoneId): OffsetDateTime = date match
+    case offset: OffsetTime => offset.value
+    case localTime: LocalTime => localTime.value.atZone(zone).toOffsetDateTime
+    case local: Local =>
+      local.value.atTime(java.time.LocalTime.MIDNIGHT).atZone(zone).toOffsetDateTime
 
   def codec: YamlCodec[Date] = new YamlCodec[Date]:
     def encodeValue(date: Date): Yaml = Yaml.Scalar(date.toString)

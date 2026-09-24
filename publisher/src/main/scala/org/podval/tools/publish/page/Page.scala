@@ -8,7 +8,7 @@ import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 import java.io.File
 import java.net.URI
-import java.time.{Instant, LocalDate}
+import java.time.{Instant, LocalDate, OffsetDateTime}
 
 abstract class Page(
   val site: Site,
@@ -111,6 +111,15 @@ abstract class Page(
 
   final def dateModified: Option[Date] = content(_.frontMatter.modifiedTime)
   final def dateModifiedGit: Option[Instant] = sourcePath.map(_.toString).flatMap(site.git.modificationDate)
+
+  /** `date` as an RFC 3339 instant in the site zone. */
+  final def publishedAt: Option[OffsetDateTime] = date.map(Date.toOffsetDateTime(_, site.zone))
+
+  /** Front matter `modified_time`, else the git commit time, else [[publishedAt]]. */
+  final def updatedAt: Option[OffsetDateTime] =
+    dateModified.map(Date.toOffsetDateTime(_, site.zone))
+      .orElse(dateModifiedGit.map(site.toOffsetDateTime))
+      .orElse(publishedAt)
 
   final def title: String =
     entityDisplayName

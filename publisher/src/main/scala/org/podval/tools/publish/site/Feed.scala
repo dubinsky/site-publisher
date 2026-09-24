@@ -1,11 +1,10 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
-import org.podval.tools.publish.util.{Date, Icon}
+import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import org.podval.xml.dsl.{*, given}
-import java.time.{Instant, LocalTime, ZoneId}
-import scala.util.Try
+import java.time.{Instant, OffsetDateTime}
 
 // Note: finished by Grok ;)
 object Feed:
@@ -34,15 +33,6 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
 
   override def xmlContent: Xml.Element =
     val posts: List[Page] = site.posts.posts.take(Feed.maxEntries)
-    
-    // TODO move from here
-    val updated: String =
-      val dates: List[String] = posts.flatMap: page =>
-        page.dateModified.map(formatDate).toSeq ++
-        page.dateModifiedGit.map(formatInstant).toSeq ++
-        page.date.map(formatDate).toSeq
-      dates.maxOption.getOrElse(formatInstant(Instant.now))
-
     val atomNs: String = "http://www.w3.org/2005/Atom"
     val prologue: Seq[Xml.Element] = Seq(
       element("id", absoluteUrl(Feed.path)),
@@ -59,7 +49,7 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
         rel := "alternate",
         typeAttr := "text/html"
       ),
-      element("updated", updated),
+      element("updated", updated(posts)),
       element(
         "author",
         Seq(
@@ -74,12 +64,10 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   
   private def entry(page: Page): Xml.Element =
     val url: String = absoluteUrl(page.publishedPath)
-    val published: String = page.date.map(formatDate).getOrElse(formatInstant(Instant.now))
-    // TODO move out from here
-    val updated: String =
-      page.dateModified.map(formatDate)
-      .orElse(page.dateModifiedGit.map(formatInstant))
-      .getOrElse(published)
+    val publishedAt: OffsetDateTime =
+      page.publishedAt.getOrElse(site.toOffsetDateTime(Instant.now))
+    val published: String = publishedAt.toString
+    val updated: String = page.updatedAt.getOrElse(publishedAt).toString
 
     val title: Option[String] = Some(page.title)
     // Serialized HTML may contain undeclared names (`&nbsp;`); CDATA keeps the
@@ -125,15 +113,11 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
   private def tags(page: Page): List[String] =
     page.asFullMarkupPage.map(_.tags).getOrElse(List.empty)
 
+  // Latest entry `updatedAt`, or now when no entry has one.
+  private def updated(posts: List[Page]): String =
+    val latest: Option[OffsetDateTime] = posts.flatMap(_.updatedAt).reduceLeftOption((left, right) =>
+      if left.toInstant.isBefore(right.toInstant) then right else left
+    )
+    latest.getOrElse(site.toOffsetDateTime(Instant.now)).toString
+
   private def absoluteUrl(path: Path): String = s"${site.uri}$path"
-
-  private def zone: ZoneId =
-    site.config.timezone.flatMap(tz => Try(ZoneId.of(tz)).toOption).getOrElse(ZoneId.systemDefault)
-
-  private def formatDate(date: Date): String = date match
-    case date: Date.OffsetTime => date.value.toString
-    case date: Date.LocalTime => date.value.atZone(zone).toOffsetDateTime.toString
-    case date: Date.Local => date.value.atTime(LocalTime.MIDNIGHT).atZone(zone).toOffsetDateTime.toString
-
-  private def formatInstant(instant: Instant): String =
-    instant.atZone(zone).toOffsetDateTime.toString

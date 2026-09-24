@@ -93,7 +93,6 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
       for
         date: LocalDate <-
           try
-            // TODO record error, do not throw|!
             if fileName.length < 10 then throw DateTimeParseException("Date is too short", fileName, 0)
             Some(LocalDate.parse(fileName.substring(0, 10)))
           catch case e: DateTimeParseException =>

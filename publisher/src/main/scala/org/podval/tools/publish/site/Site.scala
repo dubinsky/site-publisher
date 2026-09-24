@@ -12,6 +12,8 @@ import com.microsoft.playwright.{Browser, Playwright}
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.File
 import java.net.{URI, URISyntaxException}
+import java.time.{Instant, OffsetDateTime, ZoneId}
+import scala.util.Try
 
 final class Site(options: SiteOptions) extends JSLibrary:
   // Site itself is a JavaScript library too
@@ -49,6 +51,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val config: Config = Config.codec.decode(Files.read(configFile)) match
     case Left(error) => throw IllegalArgumentException("Malformed Config", error)
     case Right(result) => result
+
+  /** IANA zone from `timezone`, or the JVM default when it is omitted or invalid. */
+  val zone: ZoneId =
+    config.timezone.flatMap(name => Try(ZoneId.of(name)).toOption).getOrElse(ZoneId.systemDefault)
+
+  def toOffsetDateTime(instant: Instant): OffsetDateTime = instant.atZone(zone).toOffsetDateTime
 
   val languageSpec: Language.Spec = Site.languageSpec(config.lang)
 

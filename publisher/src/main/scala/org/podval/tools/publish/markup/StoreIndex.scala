@@ -2,7 +2,6 @@ package org.podval.tools.publish.markup
 
 import org.podval.metadata.{Language, Name}
 import org.podval.xml.{Xml, XmlAttribute, XmlCodec}
-import Xml.given
 import XmlCodec.given
 import zio.blocks.schema.{Modifier, Schema}
 
@@ -21,8 +20,8 @@ final case class StoreIndex(
   parts: Seq[CollectionPart] = Seq.empty,
   axis: Option[StoreIndex.Axis] = None,
   @Modifier.config(XmlCodec.Include, "") hrefs: Seq[String] = Seq.empty,
-  // StoreIndex.apply overwrites whatever decode read, and the field is not XML.
-  isCollection: Boolean = false
+  // Not XML. apply sets this from the wrapper tag (`collection` or `store`).
+  @Modifier.transient() isCollection: Boolean = false
 ) derives CanEqual:
   def selector: Option[String] = axis.flatMap(_.selector)
 
