@@ -52,6 +52,26 @@ final class SiteOptionsSpec extends AnyFunSuite:
     assert(!off.prettyPrint)
   }
 
+  test("--width=0 and --sentence-per-line=false") {
+    val options: SiteOptions = SiteOptions.forArgs(Array(
+      "/src", "--width=0", "--sentence-per-line=false", "--pretty-print", "--serve"
+    ))
+    assert(options.width == 0)
+    assert(!options.sentencePerLine)
+    assert(options.prettyPrint)
+    assert(options.serve)
+    val defaults: SiteOptions = SiteOptions.forArgs(Array("/src"))
+    assert(defaults.width == 120)
+    assert(defaults.sentencePerLine)
+  }
+
+  test("a bad width is rejected") {
+    val caught: IllegalArgumentException = intercept[IllegalArgumentException] {
+      SiteOptions.forArgs(Array("/src", "--width"))
+    }
+    assert(caught.getMessage.contains("width"))
+  }
+
   test("--pretty-print with --serve is rejected before a site is built") {
     val options: SiteOptions = SiteOptions.forArgs(Array("/src", "--pretty-print", "--serve"))
     val caught: IllegalArgumentException = intercept[IllegalArgumentException] {

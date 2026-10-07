@@ -8,7 +8,8 @@ final class BackLink private(
   val to: Link,
   val from: FullMarkupPage,
   val kind: Option[LinkKind],
-  val context: LinkContext
+  val context: LinkContext,
+  val inTeiHeader: Boolean
 )
 
 object BackLink:
@@ -16,7 +17,8 @@ object BackLink:
     element: Xml.Element, 
     parent: Xml.Element,
     from: FullMarkupPage,
-    ids: Ids
+    ids: Ids,
+    inTeiHeader: Boolean
   ): Option[BackLink] =
     val kind: Option[LinkKind] = LinkKind.of(element)
     if WikiLink.isTranscluded(element) then None
@@ -38,6 +40,7 @@ object BackLink:
             before = before,
             element = element,
             after = tail.tail
-          )
+          ),
+          inTeiHeader = inTeiHeader
         )
 

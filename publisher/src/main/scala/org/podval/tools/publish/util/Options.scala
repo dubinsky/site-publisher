@@ -7,6 +7,8 @@ final class Options(
   private val (optionArgs: List[String], positionalArgs: List[String]) = args.toList.partition(_.startsWith("--"))
 
   def positional(position: Int): String = positionalArgs(position)
+
+  def positionals: List[String] = positionalArgs
   
   private val options: List[(String, String)] = optionArgs.map(_.substring(2)).map: string =>
     val eqIndex = string.indexOf('=')

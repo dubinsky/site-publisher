@@ -5,12 +5,12 @@ object Mermaid extends JSLibrary:
   
   override def isModule: Boolean = true
 
-  override def inlineJs: Some[Js] = Some:
-    val mermaid: String = s"$cdn/mermaid.esm.min.mjs"
-    js"""import mermaid from $mermaid;
-        |mermaid.initialize({ startOnLoad: false });
-        |await mermaid.run({ querySelector: '.language-mermaid', });
-        |""".stripMargin
+  override def inlineJs: Some[String] = Some:
+    val mermaid: String = Js.quote(s"$cdn/mermaid.esm.min.mjs")
+    s"""import mermaid from $mermaid;
+       |mermaid.initialize({ startOnLoad: false });
+       |await mermaid.run({ querySelector: '.language-mermaid', });
+       |""".stripMargin
 
   override def cdn: String = cdn(
     s"${JSLibrary.cloudFlare}mermaid/$version",

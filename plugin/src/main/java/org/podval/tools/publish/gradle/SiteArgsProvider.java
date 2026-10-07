@@ -16,6 +16,9 @@ public abstract class SiteArgsProvider implements CommandLineArgumentProvider {
   @Input public abstract Property<Boolean> getProduction();
   @Input public abstract Property<Boolean> getServe();
   @Input public abstract Property<Boolean> getPrettyPrint();
+  @Input public abstract Property<Boolean> getEmitProseFlags();
+  @Input public abstract Property<Integer> getWidth();
+  @Input public abstract Property<Boolean> getSentencePerLine();
 
   @Override
   public Iterable<String> asArguments() {
@@ -29,6 +32,10 @@ public abstract class SiteArgsProvider implements CommandLineArgumentProvider {
     if (getServe().get()) args.add("--serve");
     // Always present, so SITE_PUBLISHER_PRETTY_PRINT cannot turn generate into a rewrite.
     args.add(getPrettyPrint().get() ? "--pretty-print" : "--pretty-print=false");
+    if (getEmitProseFlags().get()) {
+      args.add("--width=" + getWidth().get());
+      args.add("--sentence-per-line=" + getSentencePerLine().get());
+    }
     return args;
   }
 }

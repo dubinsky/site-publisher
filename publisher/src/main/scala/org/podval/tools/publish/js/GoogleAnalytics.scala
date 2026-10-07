@@ -7,9 +7,10 @@ final class GoogleAnalytics(id: String) extends JSLibrary:
   
   override def imports: List[String] = List(s"js?id=$id")
 
-  override def inlineJs: Some[Js] = Some:
-    js"""window.dataLayer = window.dataLayer || [];
-        |function gtag(){window.dataLayer.push(arguments);}
-        |gtag('js', new Date());
-        |gtag('config', $id);
-        |""".stripMargin
+  override def inlineJs: Some[String] = Some:
+    val quotedId: String = Js.quote(id)
+    s"""window.dataLayer = window.dataLayer || [];
+       |function gtag(){window.dataLayer.push(arguments);}
+       |gtag('js', new Date());
+       |gtag('config', $quotedId);
+       |""".stripMargin

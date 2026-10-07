@@ -112,3 +112,60 @@ final class FrontMatterSpec extends AnyFunSuite:
     )
     assert(frontMatter.asset)
   }
+
+  test("write omits default false and empty lists and keeps an extra key") {
+    val parsed: FrontMatter = FrontMatter.parse(Some(
+      """title: Hello
+        |math: false
+        |tags: []
+        |xxx: true
+        |""".stripMargin
+    )).toOption.get
+    val written: String = parsed.write
+    assert(written.contains("title: Hello"), written)
+    assert(written.contains("xxx:"), written)
+    assert(!written.contains("math:"), written)
+    assert(!written.contains("tags:"), written)
+    assert(!written.contains("asset:"), written)
+    val again: FrontMatter = FrontMatter.parse(Some(written.stripPrefix("---\n").stripSuffix("---\n"))).toOption.get
+    assert(again.equals(parsed))
+  }
+
+  test("write keeps math true") {
+    val written: String = FrontMatter.parse(Some("math: true\n")).toOption.get.write
+    assert(written.contains("math: true"), written)
+  }
+
+  test("a non-date modified_time stays stashed and does not reject the page") {
+    val parsed: FrontMatter = FrontMatter.parse(Some(
+      """title: Hello
+        |modified_time:
+        |  nested: true
+        |xxx: 1
+        |""".stripMargin
+    )).toOption.get
+    assert(parsed.title.contains("Hello"))
+    assert(parsed.modifiedTime.isEmpty)
+    assert(parsed.copy().equals(parsed))
+    val written: String = parsed.write
+    assert(written.contains("modified_time:"), written)
+    assert(written.contains("xxx:"), written)
+    assert(!written.contains("math:"), written)
+  }
+
+  test("modified_time reads a date and copy keeps it") {
+    val parsed: FrontMatter = FrontMatter.parse(Some(
+      "title: Hello\nmodified_time: 2010-01-28T14:24:00.004-05:00\n"
+    )).toOption.get
+    assert(parsed.modifiedTime.map(_.toString).contains("2010-01-28T14:24:00.004-05:00"))
+    assert(parsed.write.contains("modified_time:"))
+    assert(parsed.copy().equals(parsed))
+  }
+
+  test("two parses of the same extras are equal") {
+    val text: String = "title: Hello\nxxx: true\n"
+    val a: FrontMatter = FrontMatter.parse(Some(text)).toOption.get
+    val b: FrontMatter = FrontMatter.parse(Some(text)).toOption.get
+    assert(a.equals(b))
+    assert(a.copy().equals(a))
+  }

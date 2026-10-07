@@ -11,7 +11,7 @@ final class Highlights(languages: Set[String]) extends JSLibrary:
     .sorted
     .map(language => s"languages/$language.min.js")
 
-  override val inlineJs: Some[Js] = Some(js"hljs.highlightAll();")
+  override val inlineJs: Some[String] = Some("hljs.highlightAll();")
 
   override def cdn: String = cdn(
     s"${JSLibrary.cloudFlare}highlight.js/$version",

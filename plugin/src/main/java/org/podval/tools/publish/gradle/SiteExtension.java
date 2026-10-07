@@ -22,4 +22,10 @@ public abstract class SiteExtension {
 
   /** {@code --production}. Default: {@code false}. */
   public abstract Property<Boolean> getProduction();
+
+  /** {@code --width=N} for {@code prettyPrintSite}. Default: {@code 120}. XML ignores it. */
+  public abstract Property<Integer> getPrettyPrintWidth();
+
+  /** {@code --sentence-per-line} for {@code prettyPrintSite}. Default: {@code true}. */
+  public abstract Property<Boolean> getPrettyPrintSentencePerLine();
 }

@@ -11,9 +11,10 @@ object Cytoscape extends JSLibrary:
     s"${JSLibrary.jsDelivr}cytoscape@$version/dist"
   )
 
-  override def inlineJs: Some[Js] = Some:
-    val cytoscape: String = s"$cdn/cytoscape.esm.min.mjs"
-    js"""import cytoscape from $cytoscape;
-        |import { run } from $scriptPath;
-        |run(cytoscape);
-        |""".stripMargin
+  override def inlineJs: Some[String] = Some:
+    val cytoscape: String = Js.quote(s"$cdn/cytoscape.esm.min.mjs")
+    val graph: String = Js.quote(scriptPath)
+    s"""import cytoscape from $cytoscape;
+       |import { run } from $graph;
+       |run(cytoscape);
+       |""".stripMargin

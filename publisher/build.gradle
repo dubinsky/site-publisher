@@ -1,11 +1,18 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
   id 'application'
   id 'scala'
-  id 'maven-publish'
-  id 'signing'
   id 'org.podval.conventions'
   id 'org.podval.conventions.publish'
-  id 'org.podval.tools.scalajs' version '1.0.4'
+  id 'org.podval.tools.scalajs' version '2.2.0'
+}
+
+// Gradle 9.8.1 still defaults Zinc to 1.12.0.
+scala.zincVersion = '1.12.1'
+
+scalaBackend {
+  useArtifactSuffix = false
 }
 
 description = 'Generate, serve and publish websites'
@@ -17,7 +24,7 @@ podvalPublish {
   inceptionYear = '2026'
 }
 
-String zioBlocksVersion = '0.0.51'
+String zioBlocksVersion = '0.0.56'
 String flexMarkVersion = '0.64.8'
 
 dependencies {
@@ -32,12 +39,13 @@ dependencies {
   implementation "com.vladsch.flexmark:flexmark-ext-gfm-strikethrough:$flexMarkVersion"
   implementation "com.vladsch.flexmark:flexmark-ext-gfm-tasklist:$flexMarkVersion"
   implementation "com.vladsch.flexmark:flexmark-ext-tables:$flexMarkVersion"
+  implementation "com.vladsch.flexmark:flexmark-ext-wikilink:$flexMarkVersion"
   implementation 'org.asciidoctor:asciidoctorj:3.0.1'
   implementation 'com.microsoft.playwright:playwright:1.63.0'
   implementation 'org.apache.pdfbox:pdfbox:3.0.8'
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
-  implementation 'org.slf4j:slf4j-api:2.0.19'
-  implementation 'ch.qos.logback:logback-classic:1.6.3'
+  implementation 'org.slf4j:slf4j-api:2.0.20'
+  implementation 'ch.qos.logback:logback-classic:1.6.5'
   implementation 'de.undercouch:citeproc-java:3.5.2'
   implementation 'org.citationstyles:styles:26.8'
   implementation 'org.citationstyles:locales:26.8'
@@ -63,6 +71,32 @@ tasks.withType(JavaExec).configureEach {
   environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', '1'
   environment 'PLAYWRIGHT_BROWSERS_PATH', "${gradle.gradleUserHomeDir}/ms-playwright"
 }
+def prosePrettyPrintRuntime = sourceSets.main.runtimeClasspath
+def prosePrettyPrintJava = javaToolchains.launcherFor {
+  languageVersion = JavaLanguageVersion.of(25)
+}.get().executablePath.asFile.absolutePath
+tasks.register('prosePrettyPrintClasspath') {
+  dependsOn 'classes'
+  inputs.files(prosePrettyPrintRuntime)
+  def cpFile = layout.buildDirectory.file('prose-pretty-print.classpath')
+  def javaFile = layout.buildDirectory.file('prose-pretty-print.java')
+  outputs.files(cpFile, javaFile)
+  doLast {
+    cpFile.get().asFile.setText(prosePrettyPrintRuntime.asPath, 'UTF-8')
+    javaFile.get().asFile.setText(prosePrettyPrintJava + '\n', 'UTF-8')
+  }
+}
+
+tasks.register('prettyPrintProse', JavaExec) {
+  group = 'documentation'
+  description = 'Pretty-print Markdown and AsciiDoc files. Pass paths with --args.'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'org.podval.tools.publish.prose.ProsePrettyPrint'
+  javaLauncher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+
 tasks.withType(Test).configureEach {
   jvmArgs jdkCompatJvmArgs
   environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', '1'

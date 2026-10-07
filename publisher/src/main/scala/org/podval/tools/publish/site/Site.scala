@@ -1,8 +1,9 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.js.{JSLibrary, Js}
+import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
+import org.podval.tools.publish.prose.ProseOptions
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.Xml
@@ -21,9 +22,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
   override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
 
   // In <head> so it runs even when later markup is ill-formed and swallows body scripts.
-  override def headInlineJs: Some[Js] = Some(Site.siteSettingsJs)
+  override def headInlineJs: Some[String] = Some(Site.siteSettingsJs)
   
   // Directories
+  val proseOptions: ProseOptions = ProseOptions(options.width, options.sentencePerLine)
+
   val sourceDirectory: File = File(options.sourceDirectoryPath).getAbsoluteFile
   Files.requireExists(sourceDirectory)
   Files.requireDirectory(sourceDirectory)
@@ -48,8 +51,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
   Files.requireExists(configFile)
   Files.requireFile(configFile)
 
-  val config: Config = Config.codec.decode(Files.read(configFile)) match
-    case Left(error) => throw IllegalArgumentException("Malformed Config", error)
+  val config: Config = Config.decode(Files.read(configFile)) match
+    case Left(error) => throw IllegalArgumentException(s"Malformed Config: ${error.getMessage}", error)
     case Right(result) => result
 
   /** IANA zone from `timezone`, or the JVM default when it is omitted or invalid. */
@@ -108,7 +111,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   log.info(s"source directory: $sourceDirectory")
   log.info(s"target directory: $targetDirectory")
   log.info(s"configuration file: $configFile")
-  log.debug(s"configuration:\n" + Config.codec.encodeToString(config))
+  log.debug(s"configuration:\n" + Config.encodeToString(config))
   log.debug(s"ignore rules:\n" + ignore.rules)
 
   // Google Analytics
@@ -189,6 +192,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
       page <- pages.pages.flatMap(_.asFullMarkupPage)
       content <- page.content
     do
+      // Ids inside teiHeader are absent from the published page: the document-header
+      // table is built again from the raw header and does not keep them.
+      val headerIds: Set[String] = content.xml
+        .gather(element => Option.when(element.isNamed("teiHeader"))(element))
+        .flatMap(_.gather(_.getId))
+        .toSet
       backLinks.addBackLinks(
         content.xml.gatherWithParent(
           gatherElement = (element: Xml.Element, parent: Option[Xml.Element]) =>
@@ -196,7 +205,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
               element,
               parent = parent.get,
               from = page,
-              ids = content.ids
+              ids = content.ids,
+              inTeiHeader = element.getId.exists(headerIds.contains)
             )
         )
       )
@@ -345,7 +355,8 @@ object Site:
     val primary: String = lang.takeWhile(c => c != '-' && c != '_')
     Language.forName(lang).orElse(Language.forName(primary))
 
-  private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
+  private lazy val siteSettingsJs: String =
+    Files.readResource("/org/podval/tools/publish/site/siteSettings.js")
 
   def main(args: Array[String]): Unit =
     val options: SiteOptions = SiteOptions.forArgs(args)

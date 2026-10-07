@@ -11,21 +11,13 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 - **Apparatus** ([#22](https://github.com/dubinsky/site-publisher/issues/22)): use `gap` / `supplied` / `corr` in place
   of some notes (with CSS); use `hand` instead of notes like “написано пером, зачёркнуто карандашом”.
   Gap `@reason` tooltips already exist.
-- **Entity mentions, collector-style** ([#15](https://github.com/dubinsky/site-publisher/issues/15),
-  [#9](https://github.com/dubinsky/site-publisher/issues/9)):
+- **Entity mentions, collector-style**:
   - ids on all entity references, used in mentions
-  - mention links go to the first occurrence in the document, not only the document start
   - mention links show the document title
   - process name tags such as `surname`
   - compact “Имена:” / document-id lists (current grouping is only by collection path on ordinary backlinks)
 - **Facsimile: viewer for individual images** (fragments, alternative scans) — leftover of
   [#17](https://github.com/dubinsky/site-publisher/issues/17).
-
-### Publishing / SEO / analytics
-
-- **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
-  runs.
-  Do not turn `--production` on until the ids are GA4.
 
 ### Markup / dialect parity
 

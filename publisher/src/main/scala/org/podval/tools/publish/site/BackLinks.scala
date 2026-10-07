@@ -61,10 +61,14 @@ final class BackLinks:
     )
 
   private def fromItem(from: FullMarkupPage, links: List[BackLink]): Xml.Element =
+    // First mention that remains on the page. Header-only mentions stay on the document.
+    val summaryLink: Xml.Element = links
+      .find(!_.inTeiHeader)
+      .fold(from.ref())(link => from.ref().setHref(link.context.url))
     li(
       details(
         summary(
-          from.ref(),
+          summaryLink,
           span(className := "backlinks-count", links.length.toString)
         ),
         ul(className := "backlinks-list", links.map(link =>
