@@ -21,12 +21,6 @@ Drawn from GitHub issues, the design note (`dub.podval.org/notes/Publishing/Site
 - **Facsimile: viewer for individual images** (fragments, alternative scans) — leftover of
   [#17](https://github.com/dubinsky/site-publisher/issues/17).
 
-### Publishing / SEO / analytics
-
-- **GA4**: replace leftover Universal Analytics `UA-…` ids on published sites, then pass `--production` so gtag actually
-  runs.
-  Do not turn `--production` on until the ids are GA4.
-
 ### Markup / dialect parity
 
 - **DocBook**: TODO: implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).

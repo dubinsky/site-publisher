@@ -1619,3 +1619,10 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
   <a href="clip.mp4">Open video: clip.mp4</a>
 </video>
 ----
+
+== Further Research
+
+- add publishing and updating a page to X once X API supports Articles
+- Look at https://stephango.com/vault
+- Look at https://squidfunk.github.io/mkdocs-material/
+- Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
