@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   `--sentence-per-line` defaults to true.
   `bin/pretty-print` formats those files without a site.
   File extensions come from the `Markup` instances.
+- cleanup: removed JS interpolator;
+- chore: dependency updates;
 
 ## [0.4.0] - 2026-09-24
 

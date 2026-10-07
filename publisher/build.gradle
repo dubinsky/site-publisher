@@ -23,7 +23,7 @@ podvalPublish {
   inceptionYear = '2026'
 }
 
-String zioBlocksVersion = '0.0.51'
+String zioBlocksVersion = '0.0.56'
 String flexMarkVersion = '0.64.8'
 
 dependencies {
@@ -43,8 +43,8 @@ dependencies {
   implementation 'com.microsoft.playwright:playwright:1.63.0'
   implementation 'org.apache.pdfbox:pdfbox:3.0.8'
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
-  implementation 'org.slf4j:slf4j-api:2.0.19'
-  implementation 'ch.qos.logback:logback-classic:1.6.3'
+  implementation 'org.slf4j:slf4j-api:2.0.20'
+  implementation 'ch.qos.logback:logback-classic:1.6.5'
   implementation 'de.undercouch:citeproc-java:3.5.2'
   implementation 'org.citationstyles:styles:26.8'
   implementation 'org.citationstyles:locales:26.8'

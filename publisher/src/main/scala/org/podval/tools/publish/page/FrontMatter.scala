@@ -45,7 +45,7 @@ final case class FrontMatter(
     )
     .map(_._2)
 
-  // Note: modified_time: Option[Date] = None does not work because of the hard-coded camel case
+  // Note: modified_time: Option[Date] = None does not work because of the hard-coded kebab case
   private var modifiedTimeVar: Option[Date] = None
   def modifiedTime: Option[Date] = modifiedTimeVar
 
