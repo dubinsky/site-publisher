@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.js.{JSLibrary, Js}
+import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.prose.ProseOptions
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
@@ -22,7 +22,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
 
   // In <head> so it runs even when later markup is ill-formed and swallows body scripts.
-  override def headInlineJs: Some[Js] = Some(Site.siteSettingsJs)
+  override def headInlineJs: Some[String] = Some(Site.siteSettingsJs)
   
   // Directories
   val proseOptions: ProseOptions = ProseOptions(options.width, options.sentencePerLine)
@@ -348,7 +348,8 @@ object Site:
     val primary: String = lang.takeWhile(c => c != '-' && c != '_')
     Language.forName(lang).orElse(Language.forName(primary))
 
-  private lazy val siteSettingsJs: Js = Js(Files.readResource("/org/podval/tools/publish/site/siteSettings.js"))
+  private lazy val siteSettingsJs: String =
+    Files.readResource("/org/podval/tools/publish/site/siteSettings.js")
 
   def main(args: Array[String]): Unit =
     val options: SiteOptions = SiteOptions.forArgs(args)

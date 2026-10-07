@@ -15,10 +15,10 @@ abstract class JSLibrary:
 
   def imports: List[String] = List.empty
 
-  def inlineJs: Option[Js] = None
+  def inlineJs: Option[String] = None
 
   /** Inline script in `<head>` (e.g. apply a stored preference before paint). */
-  def headInlineJs: Option[Js] = None
+  def headInlineJs: Option[String] = None
 
   def isModule: Boolean = false
 
@@ -31,8 +31,8 @@ abstract class JSLibrary:
 
     val inlineJs: List[Xml.Element] = this.inlineJs.toList.map: code =>
       if isModule
-      then script(typeAttr := "module").inlineJs(code.value)
-      else script().inlineJs(code.value)
+      then script(typeAttr := "module").inlineJs(code)
+      else script().inlineJs(code)
 
     if inlineBeforeImports
     then inlineJs ++ imports
@@ -41,7 +41,7 @@ abstract class JSLibrary:
   /** Head inline script tags (`headInlineJs`); classic scripts, not `type=module`. */
   final def headScripts: List[Xml.Element] =
     headInlineJs.toList.map: code =>
-      script().inlineJs(code.value)
+      script().inlineJs(code)
 
 object JSLibrary:
   val preferCloudFlare: Boolean = true
