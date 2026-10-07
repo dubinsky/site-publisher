@@ -4,9 +4,14 @@ import org.scalatest.funsuite.AnyFunSuite
 
 final class ConfigSpec extends AnyFunSuite:
   private def decode(yaml: String): Config =
-    Config.codec.decode(yaml) match
+    Config.decode(yaml) match
       case Left(error) => fail(error.getMessage)
       case Right(config) => config
+
+  private def reject(yaml: String): String =
+    Config.decode(yaml) match
+      case Left(error) => error.getMessage
+      case Right(_) => fail("expected an unknown config key")
 
   private val required: String =
     """title: T
@@ -57,6 +62,23 @@ final class ConfigSpec extends AnyFunSuite:
     assert(!graph.enabled)
     assert(graph.includeTransclusions)
     assert(graph.excludePathPrefixes.isEmpty)
+  }
+
+  test("unknown keys are rejected, including nested graph keys") {
+    val message: String = reject(
+      required +
+        """facsimile-url: http://x
+          |graph:
+          |  mystery: days
+          |""".stripMargin
+    )
+    assert(message.contains("facsimile-url"), message)
+    assert(message.contains("graph.mystery"), message)
+  }
+
+  test("camelCase config keys are unknown") {
+    val message: String = reject(required + "namedWindows: true\n")
+    assert(message.contains("namedWindows"), message)
   }
 
   test("graph maps from kebab-case") {

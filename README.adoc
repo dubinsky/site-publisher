@@ -14,6 +14,8 @@ This file is about how to *use* the generator and the *syntax* of each construct
 == Usage
 
 The source directory must contain `_site_config.yml`.
+A key that is not a config field is an error, including a key nested under `social` or `graph`.
+Field names are kebab-case (`named-windows`, `facsimiles-url`).
 Pass that directory as the only positional argument:
 
 ----
@@ -289,6 +291,8 @@ Do not use both.
 
 Obsidian treats internal YAML as https://help.obsidian.md/properties[Properties]; it stores extra keys but does not
 interpret this publisher's fields (`chunk`, `bibliography`, `csl`, …).
+Other keys are kept.
+`modified_time` sets the page modified time when its value is a date; any other value is ignored and the key stays.
 
 Set `title` in front matter only when it differs from the file name.
 Both the file name and the title are used for link resolution.

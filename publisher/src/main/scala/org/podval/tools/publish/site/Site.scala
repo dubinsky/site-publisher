@@ -51,8 +51,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
   Files.requireExists(configFile)
   Files.requireFile(configFile)
 
-  val config: Config = Config.codec.decode(Files.read(configFile)) match
-    case Left(error) => throw IllegalArgumentException("Malformed Config", error)
+  val config: Config = Config.decode(Files.read(configFile)) match
+    case Left(error) => throw IllegalArgumentException(s"Malformed Config: ${error.getMessage}", error)
     case Right(result) => result
 
   /** IANA zone from `timezone`, or the JVM default when it is omitted or invalid. */
@@ -111,7 +111,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
   log.info(s"source directory: $sourceDirectory")
   log.info(s"target directory: $targetDirectory")
   log.info(s"configuration file: $configFile")
-  log.debug(s"configuration:\n" + Config.codec.encodeToString(config))
+  log.debug(s"configuration:\n" + Config.encodeToString(config))
   log.debug(s"ignore rules:\n" + ignore.rules)
 
   // Google Analytics

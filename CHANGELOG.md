@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   File extensions come from the `Markup` instances.
 - cleanup: removed JS interpolator;
 - chore: dependency updates;
+- cleanup: YAML parsing;
 
 ## [0.4.0] - 2026-09-24
 
