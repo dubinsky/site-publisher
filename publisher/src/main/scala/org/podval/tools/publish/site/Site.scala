@@ -192,6 +192,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
       page <- pages.pages.flatMap(_.asFullMarkupPage)
       content <- page.content
     do
+      // Ids inside teiHeader are absent from the published page: the document-header
+      // table is built again from the raw header and does not keep them.
+      val headerIds: Set[String] = content.xml
+        .gather(element => Option.when(element.isNamed("teiHeader"))(element))
+        .flatMap(_.gather(_.getId))
+        .toSet
       backLinks.addBackLinks(
         content.xml.gatherWithParent(
           gatherElement = (element: Xml.Element, parent: Option[Xml.Element]) =>
@@ -199,7 +205,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
               element,
               parent = parent.get,
               from = page,
-              ids = content.ids
+              ids = content.ids,
+              inTeiHeader = element.getId.exists(headerIds.contains)
             )
         )
       )

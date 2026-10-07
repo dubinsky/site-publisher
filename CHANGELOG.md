@@ -7,8 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-- feat: prose formatting:
-  `--pretty-print` and `prettyPrintSite` also reflow Markdown and AsciiDoc.
+- Backlink rows open the first mention in the document text.
+  A mention that exists only in `teiHeader` leaves the row on the document.
+- feat: prose formatting: `--pretty-print` and `prettyPrintSite` also reflow Markdown and AsciiDoc.
   `--width=N` defaults to 120.
   `--width=0` does not wrap.
   `--sentence-per-line` defaults to true.

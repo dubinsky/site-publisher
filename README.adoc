@@ -421,7 +421,11 @@ Members are every matching entity on the site, sorted by file name; the link tex
 / `orgName`.
 The entity page `<h1>` / `<title>` is that first name, not the file name.
 Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the
-source sits under one); the catalog itself is not a backlink source.
+source sits under one).
+The document row opens the first mention in the text.
+A mention that exists only in `teiHeader` leaves that row on the document, because the published page does not keep
+those anchors.
+The catalog itself is not a backlink source.
 
 When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not
 inlined).
