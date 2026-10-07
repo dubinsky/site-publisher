@@ -21,10 +21,18 @@ Pass that directory as the only positional argument:
 ----
 
 `--serve` generates and leaves the HTTP server running (same as IntelliJ `@main def generate()`).
-`--pretty-print` rewrites authored TEI and DocBook XML in place and does not generate a site.
+`--pretty-print` rewrites authored TEI, DocBook, Markdown, and AsciiDoc in place and does not generate a site.
 It skips a file whose bytes would not change.
-It does not reformat Markdown, AsciiDoc, or HTML.
+It does not reformat HTML.
+`--width=N` is the prose column (default 120).
+`--width=0` does not wrap.
+`--sentence-per-line` defaults to true.
+`--sentence-per-line=false` keeps a sentence on the same line and only wraps.
+XML ignores both flags.
 `--pretty-print` together with `--serve` is an error.
+`bin/pretty-print` reflows Markdown and AsciiDoc paths and does not need `_site_config.yml`.
+It uses the extensions declared on those `Markup` instances.
+Fences, tables, headings, front matter, and AsciiDoc attributes are left as written.
 `--log-level` defaults to `INFO`.
 `--treat-errors-as-warnings`, `--include-drafts`, `--production`, and `--target-directory-name` are the other flags.
 `SITE_PUBLISHER_*` environment variables are the same names with hyphens turned into underscores.
@@ -37,7 +45,7 @@ Maven coordinates: `org.podval.tools:org.podval.tools.publisher:0.4.0`
 === Gradle plugin
 
 A site with Gradle applies plugin id `org.podval.tools.site-publisher` (same version as the library).
-The plugin adds a detached `sitePublisher` configuration and two `JavaExec` tasks that run
+The plugin adds a detached `sitePublisher` configuration and three `JavaExec` tasks that run
 `org.podval.tools.publish.site.Site`.
 Do not put the library on `implementation`: Scala version and Playwright stay off the project compile classpath, and off
 the Gradle daemon.
@@ -57,8 +65,8 @@ site {
 
 `./gradlew generateSite` writes the target directory.
 `./gradlew serveSite` is the same with `--serve`.
-`./gradlew prettyPrintSite` passes `--pretty-print` and does not publish `_site`.
-`generateSite` and `serveSite` pass `--pretty-print=false`.
+`./gradlew prettyPrintSite` passes `--pretty-print`, `--width=N`, and `--sentence-per-line` and does not publish `_site`.
+`generateSite` and `serveSite` pass `--pretty-print=false` and do not pass the prose flags.
 Do not make `generateSite` or `prettyPrintSite` a dependency of `build`; Pages CI calls generate explicitly.
 OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables }`.
 
@@ -72,8 +80,10 @@ OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables 
 | `logLevel` | `INFO` | `--log-level` |
 | `includeDrafts` | `false` | `--include-drafts` |
 | `production` | `false` | `--production` |
+| `prettyPrintWidth` | `120` | `--width=N` (`prettyPrintSite` only) |
+| `prettyPrintSentencePerLine` | `true` | `--sentence-per-line` (`prettyPrintSite` only) |
 
-Both tasks set `--enable-native-access=ALL-UNNAMED`, `--sun-misc-unsafe-memory-access=allow`,
+The three tasks set `--enable-native-access=ALL-UNNAMED`, `--sun-misc-unsafe-memory-access=allow`,
 `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`, and `PLAYWRIGHT_BROWSERS_PATH=$GRADLE_USER_HOME/ms-playwright`.
 `generateSite` launches Java 25.
 Its inputs are the source tree minus the target directory and Gradle `build/`; its output is the target directory, so
@@ -116,8 +126,7 @@ Sites using this publisher:
 [#dogfooding]
 === Dogfooding an unreleased publisher
 
-This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those checkouts exist
-(`-PxmlDir=`
+This repo already `includeBuild`s sibling `../xml` and `../../OpenTorah/opentorah.org` when those checkouts exist (`-PxmlDir=`
 / `-PopentorahDir=`).
 
 A site that applies `org.podval.tools.site-publisher` substitutes a local checkout with **two** `includeBuild`s of the
@@ -162,13 +171,11 @@ Without a site-side plugin, generate from this repo: `./gradlew run --args="/pat
 ./gradlew publishAggregationToCentralPortal
 ----
 
-The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), the plugin implementation
-(`org.podval.tools:site-publisher-plugin`),
+The zip includes the library (`org.podval.tools:org.podval.tools.publisher`), the plugin implementation (`org.podval.tools:site-publisher-plugin`),
 and the plugin marker (`org.podval.tools.site-publisher:org.podval.tools.site-publisher.gradle.plugin`).
 Same version.
 
-Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as
-`home`):
+Site-header links are listed in `_site_config.yml` in display order (source path or site path, same resolution as `home`):
 
 ----
 header-pages:
@@ -300,8 +307,8 @@ Useful fields:
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>
 - `asset` — copy the markup file as an asset (no dialect processing, no site chrome).
-  Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …) with
-  `asset: true`.
+  Standalone sidecar only: `name.yml` / `name.yaml` next to `name.html` (or `.md`, `.adoc`, `.xml`, …)
+  with `asset: true`.
   The sidecar is not published.
   Internal `---` `asset: true` is an error (the file stays markup).
   A directory `index` so marked stays a directory page (parent/children) but `write` copies the file (no listing, no
@@ -351,8 +358,7 @@ Link with `+++[[note#^id]]+++`.
 
 Obsidian embeds of **pages** (`+++![[note]]+++`, `+++![[note#heading]]+++`, `+++![[note#^block]]+++`) copy that authored
 region into the host (any markup on the target).
-The copy is a boxed `aside.transclusion` whose header is a link to the source (`Notes Title` or
-`Notes Title § heading`).
+The copy is a boxed `aside.transclusion` whose header is a link to the source (`Notes Title` or `Notes Title § heading`).
 The gear **Settings** checkbox **Seamless transclusions** hides the box and header (`html.transclusion-clean`).
 A missing heading or block is an error (not a silent whole-page embed).
 Footnotes inside a transcluded region are merged and numbered with the host.
@@ -465,7 +471,8 @@ Generate also writes `collection-aliases.json` (segment `from` → collection di
 The Worker is an internal rewrite (not a 301): longest slash-delimited prefix, then `.html` unless the request already
 has an extension (keep `.xml`); inbound `/alias/facsimile/P` becomes `{to}/P/facsimile.html`.
 Entity-lists catalogs are an identity prefix (`/name` → `/name/index.html`).
-Prefix routes (`hostname/rgada*`, `hostname/name*`, …) so assets skip the Worker.
+Prefix routes (`hostname/rgada*`, `hostname/name*`, …)
+so assets skip the Worker.
 Deploy with `.github/actions/deploy-alias-worker`.
 Canonical entity hrefs stay the file path (`/name/{id}.html` when the file lives under `name/`).
 
@@ -502,8 +509,7 @@ The page header (`.store-header`) holds ancestor path lines and this node's sele
 A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
 Расшифровка).
 The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>.
-Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml`
-(`page.Selectors`).
+Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`).
 Documents under a store or collection use the same header.
 A scanned file under that directory that is not named in the includes is an error (translations are not).
 Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up`
@@ -652,10 +658,9 @@ loaded only on that page).
 Click a vertex to open the page (`named-windows` targets apply when that option is on).
 
 Vertices are authored pages with a source file: notes, posts, TEI documents, entities, stores, and entity-list catalogs.
-Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …) are not vertices;
-links to those views count as links to the owning page.
-Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions
-(`kind: transclude`).
+Aliases, chunks, facsimile viewers, PDFs, assets, and synthetics (`/errors`, `/tags`, `/posts`, …)
+are not vertices; links to those views count as links to the owning page.
+Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unless turned off, transclusions (`kind: transclude`).
 `include-transclusions` defaults to `true`; omit it or set it explicitly.
 Unresolved links stay on the Errors page, not as graph nodes.
 
@@ -734,9 +739,9 @@ A placeholder in the body is replaced with that TOC (the first one only) even wi
 controls how deep it goes (default 2).
 
 Markdown:: Kramdown https://kramdown.gettalong.org/converter/html.html#automatic-table-of-contents-generation[`{:toc}`]
-  on a list.
-  The list (seed item included) is replaced.
-  Ordered or unordered:
+           on a list.
+           The list (seed item included) is replaced.
+           Ordered or unordered:
 
 +
 [source,markdown]
@@ -888,8 +893,8 @@ Order and fragment ids stay on the generated series.
 The same marker may appear on more than one note.
 Obsidian inline `^[…]` footnotes are unsupported.
 
-AsciiDoc:: inline note, or a named definition reused with an empty macro:
-  A `footnote:[…]` in a table cell is written at the call site; the published page lists it under the table.
+AsciiDoc:: inline note, or a named definition reused with an empty macro: A `footnote:[…]` in a table cell is written at
+           the call site; the published page lists it under the table.
 +
 [source,asciidoc]
 ----
@@ -898,9 +903,10 @@ and again footnote:fn[Same note.] later footnote:fn[].
 ----
 
 Markdown:: FlexMark: use `[^id]` in the text; define `[^id]:` later.
-  Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]).
-  Obsidian also has inline `^[…]` footnotes; this publisher does not.
-  A `[^id]` in a table cell uses the same `[^id]:` body at the file end; the published page moves it under the table.
+           Obsidian supports that form natively (https://help.obsidian.md/syntax#Footnotes[Help: Footnotes]).
+           Obsidian also has inline `^[…]` footnotes; this publisher does not.
+           A `[^id]` in a table cell uses the same `[^id]:` body at the file end; the published page moves it under the
+           table.
 +
 [source,markdown]
 ----
@@ -932,8 +938,8 @@ A `place="end"` inside another `place="end"` is a nested letter on the parent no
 ----
 
 DocBook:: `<footnote>` at the call site (`xml:id` optional; non-blank `label` is the same marker).
-  Reuse with `<footnoteref linkend="id"/>`.
-  A `<footnote>` inside another footnote's `<para>` is nested the same way if the converter emits an inner stub.
+          Reuse with `<footnoteref linkend="id"/>`.
+          A `<footnote>` inside another footnote's `<para>` is nested the same way if the converter emits an inner stub.
 +
 [source,xml]
 ----
@@ -955,7 +961,7 @@ A glossary is a description list marked as such.
 Term links get hover definitions (print inlines them in parentheses).
 
 AsciiDoc:: `[glossary]` on the description list; term ids from `[[id]]`.
-  Reference a term with `<<id>>`.
+           Reference a term with `<<id>>`.
 +
 [source,asciidoc]
 ----
@@ -966,14 +972,13 @@ See <<posuk>>.
 ----
 
 Markdown:: PHP Extra definition lists (https://michelf.ca/projects/php-markdown/extra/#def-list) via FlexMark
-  https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
-  Mark the list with `{:.glossary}` after it (Kramdown
-  https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL], same family as <<toc>>).
-  Without that marker the list is not a glossary (no term ids, no tooltips).
-  The marker also separates adjacent lists.
+           https://github.com/vsch/flexmark-java/wiki/Definition-List-Extension[Definition List Extension].
+           Mark the list with `{:.glossary}` after it (Kramdown
+           https://kramdown.gettalong.org/syntax.html#inline-attribute-lists[IAL], same family as <<toc>>).
+           Without that marker the list is not a glossary (no term ids, no tooltips).
+           The marker also separates adjacent lists.
 
-Obsidian does not render PHP Extra definition lists natively (https://www.markdownguide.org/tools/obsidian/[Markdown
-Guide: Obsidian]).
+Obsidian does not render PHP Extra definition lists natively (https://www.markdownguide.org/tools/obsidian/[Markdown Guide: Obsidian]).
 Community plugin https://obsidian.md/plugins?id=pandoc-extended-markdown[Pandoc Extended Markdown] renders Pandoc/PHP
 Extra `term` / `: definition` lists.
 `{:.glossary}` is Kramdown IAL, not Obsidian; it shows as a paragraph in the note.
@@ -997,8 +1002,8 @@ A lone `:` after a Markdown term is not a reliable empty definition: FlexMark ca
 Write a real definition line, or omit the term.
 
 TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`.
-  Term id from `xml:id` on the label, else on the item, else the label text with spaces turned into hyphens.
-  Reference a term with `<ref target="#id">` or `<term ref="#id">`.
+      Term id from `xml:id` on the label, else on the item, else the label text with spaces turned into hyphens.
+      Reference a term with `<ref target="#id">` or `<term ref="#id">`.
 +
 [source,xml]
 ----
@@ -1010,9 +1015,9 @@ TEI:: `<list type="gloss">` (or `type="glossary"`) of `<label>` / `<item>`.
 ----
 
 DocBook:: `<glosslist>` (or `<glossary>`) of `<glossentry>` / `<glossterm>` / `<glossdef>`.
-  Term id from `xml:id` on the entry, else the term, else the term text with spaces turned into hyphens.
-  Reference a term with `<link linkend="id">`.
-  `<variablelist>` is a description list, not a glossary.
+          Term id from `xml:id` on the entry, else the term, else the term text with spaces turned into hyphens.
+          Reference a term with `<link linkend="id">`.
+          `<variablelist>` is a description list, not a glossary.
 +
 [source,xml]
 ----
@@ -1061,8 +1066,7 @@ In-text cites become links to `#bibl-{key}` on the matching list entry (first ke
 Unknown keys are highlighted and recorded as a page error.
 
 AsciiDoc:: no `asciidoctor-bibliography` gem.
-  Also `cite:key[]` / `cite:key[p.
-  12]` (standard inline-macro form).
+           Also `cite:key[]` / `cite:key[p. 12]` (standard inline-macro form).
 +
 [source,asciidoc]
 ----
@@ -1073,12 +1077,11 @@ AsciiDoc:: no `asciidoctor-bibliography` gem.
 ----
 
 Markdown:: Pandoc citation syntax (no extra FlexMark extension).
-  `me@host.com` is left as an email.
-  Obsidian does not format `[@key]` natively.
-  Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List] recognizes
-  Pandoc
-  citekeys in the note (sidebar; optional inline). https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations]
-  inserts `[@key]` from a `.bib` file.
+           `me@host.com` is left as an email.
+           Obsidian does not format `[@key]` natively.
+           Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List]
+           recognizes Pandoc citekeys in the note (sidebar; optional inline).
+           https://obsidian.md/plugins?id=obsidian-citation-plugin[Citations] inserts `[@key]` from a `.bib` file.
 +
 [source,markdown]
 ----
@@ -1090,8 +1093,8 @@ See [@knuth79] and [@knuth79, p. 12] and [@knuth79; @lamport94]
 ----
 
 DocBook:: `<citation>key</citation>` (optional locator after a comma).
-  `biblioref` `@linkend` that is not a native entry id is the same.
-  Empty `<bibliography/>` is the list placeholder (otherwise the list is appended).
+          `biblioref` `@linkend` that is not a native entry id is the same.
+          Empty `<bibliography/>` is the list placeholder (otherwise the list is appended).
 +
 [source,xml]
 ----
@@ -1111,8 +1114,8 @@ and
 ----
 
 TEI:: `@cRef` on `ref` / `ptr` is the citeproc key.
-  `@n` is an optional locator.
-  Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list is appended).
+      `@n` is an optional locator.
+      Empty `<div type="bibliography"/>` is the list placeholder (otherwise the list is appended).
 +
 [source,xml]
 ----
@@ -1139,9 +1142,9 @@ See <<knuth79>> and <<lamport94>>.
 ----
 
 TEI:: `ref` / `ptr` `@target` the `xml:id` of a `bibl` / `biblStruct` in `listBibl` (not in `teiHeader`).
-  Empty `ptr` shows `@n` or the id.
-  `cit` with a `quote` is a <<quotes,quote>>, not this.
-  A bare `@target` that matches a `listBibl` id is treated as `#id`.
+      Empty `ptr` shows `@n` or the id.
+      `cit` with a `quote` is a <<quotes,quote>>, not this.
+      A bare `@target` that matches a `listBibl` id is treated as `#id`.
 +
 [source,xml]
 ----
@@ -1156,7 +1159,7 @@ and <ptr target="#lamport94"/>.</p>
 ----
 
 DocBook:: `<bibliography>` with `biblioentry` / `bibliomixed`; cite with `<link linkend="id">` or
-  `<biblioref linkend="id"/>` (empty `biblioref` shows `@xreflabel` or the id).
+          `<biblioref linkend="id"/>` (empty `biblioref` shows `@xreflabel` or the id).
 +
 [source,xml]
 ----
@@ -1174,12 +1177,12 @@ Markdown has no native in-document bibliography list.
 == Code Blocks
 
 Inline code and fenced blocks.
-A language class on `<code>` (`language-scala`, …) loads highlight.js; `language-mermaid` loads Mermaid instead.
+A language class on `<code>` (`language-scala`, …)
+loads highlight.js; `language-mermaid` loads Mermaid instead.
 
 Markdown:: CommonMark inline `` `code` `` and fenced blocks.
-  Obsidian supports both natively, including a language identifier (https://help.obsidian.md/syntax#Code[Help: Code]).
-  Fenced `+++```mermaid+++` diagrams are native in Obsidian too
-  (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
+           Obsidian supports both natively, including a language identifier (https://help.obsidian.md/syntax#Code[Help: Code]).
+           Fenced `+++```mermaid+++` diagrams are native in Obsidian too (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
 +
 [source,markdown]
 ----
@@ -1203,8 +1206,8 @@ xs.map(f)
 ------
 
 TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:lang`).
-  A newline in the content is treated as a block and wrapped in `<pre>`.
-  `<eg>` / `<egXML>` are not converted.
+      A newline in the content is treated as a block and wrapped in `<pre>`.
+      `<eg>` / `<egXML>` are not converted.
 +
 [source,xml]
 ----
@@ -1214,7 +1217,7 @@ TEI:: `<code>` (tagdocs module) with `@lang` for the formal language (not `xml:l
 ----
 
 DocBook:: `<code>` / `<literal>` inline; `<programlisting>` / `<screen>` / `<literallayout>` as a block.
-  `@language` (not `xml:lang`) is the highlight.js tag.
+          `@language` (not `xml:lang`) is the highlight.js tag.
 +
 [source,xml]
 ----
@@ -1239,7 +1242,7 @@ Numbered annotations on lines of *verbatim* (listing, literal, or source), plus 
 Not a general footnote mechanism.
 
 AsciiDoc:: `<1>` (or `<.>` for automatic numbering) at the end of a line; repeat the numbers in a callout list below.
-  Hide a marker in the raw source behind a line comment (`// <1>`, `# <1>`, `<!--1-->`).
+           Hide a marker in the raw source behind a line comment (`// <1>`, `# <1>`, `<!--1-->`).
 +
 [source,asciidoc]
 ------
@@ -1251,7 +1254,7 @@ require 'sinatra' <1>
 ------
 
 DocBook:: `<co>` in a listing; `<calloutlist>` / `<callout arearefs>` below.
-  `@label` on `co` is the marker number.
+          `@label` on `co` is the marker number.
 +
 [source,xml]
 ----
@@ -1278,7 +1281,7 @@ Typed notices (note, tip, warning, …).
 Not listing <<callouts>> and not asides/sidebars.
 
 Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]`; optional title; `+`/`-` to fold).
-  No plugin.
+           No plugin.
 +
 [source,markdown]
 ----
@@ -1289,8 +1292,7 @@ Markdown:: Obsidian core https://help.obsidian.md/callouts[callouts] (`> [!type]
 > Secret.
 ----
 
-AsciiDoc:: `NOTE:` / `TIP:` / `IMPORTANT:` / `CAUTION:` / `WARNING:` (paragraph or `[NOTE]====` block; optional
-           `.Title`).
+AsciiDoc:: `NOTE:` / `TIP:` / `IMPORTANT:` / `CAUTION:` / `WARNING:` (paragraph or `[NOTE]====` block; optional `.Title`).
 +
 [source,asciidoc]
 ----
@@ -1337,7 +1339,7 @@ Auxiliary content.
 ----
 
 Markdown:: no native syntax; Obsidian has none.
-  Write an HTML `+++<aside>+++` block.
+           Write an HTML `+++<aside>+++` block.
 +
 [source,markdown]
 ----
@@ -1372,8 +1374,7 @@ HTML:: `<aside>` (IR adds `class="aside"` if missing); optional title:
 Block quotations.
 Not <<admonitions>> (`> [!tip]`) and not <<asides>>.
 
-AsciiDoc:: `[quote]` (or a `____` block); optional `.Title`; attribution and citation title as
-           `[quote, Author, Source]`.
+AsciiDoc:: `[quote]` (or a `____` block); optional `.Title`; attribution and citation title as `[quote, Author, Source]`.
 +
 [source,asciidoc]
 ----
@@ -1385,8 +1386,8 @@ ____
 ----
 
 Markdown:: a CommonMark blockquote (`>`).
-  No attribution syntax (an em-dash line is still quote body).
-  Obsidian `> [!type]` is an <<admonitions,admonition>>, not a quote.
+           No attribution syntax (an em-dash line is still quote body).
+           Obsidian `> [!type]` is an <<admonitions,admonition>>, not a quote.
 +
 [source,markdown]
 ----
@@ -1394,7 +1395,7 @@ Markdown:: a CommonMark blockquote (`>`).
 ----
 
 DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`.
-  Inline `<quote>` stays `<q>`.
+          Inline `<quote>` stays `<q>`.
 +
 [source,xml]
 ----
@@ -1406,7 +1407,7 @@ DocBook:: `<blockquote>` or `<epigraph>`; optional `title` and `attribution`.
 ----
 
 HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `<footer>` attribution (`cite` kept
-  as-is):
+       as-is):
 +
 [source,html]
 ----
@@ -1418,8 +1419,8 @@ HTML:: `<blockquote>` (IR adds `class="quote"` if missing); optional title and `
 ----
 
 TEI:: `<quote>`; `<cit>` groups a quote with `<bibl>` (attribution).
-  A `<bibl>` directly in `<quote>` is attribution too.
-  `<q>` stays inline.
+      A `<bibl>` directly in `<quote>` is attribution too.
+      `<q>` stays inline.
 +
 [source,xml]
 ----
@@ -1457,7 +1458,7 @@ TEI:: `<del>`.
 ----
 
 DocBook:: `<emphasis role="strikethrough">` (or `line-through`).
-  Default `<emphasis>` is `<em>`; `role="bold"` is `<strong>`.
+          Default `<emphasis>` is `<em>`; `role="bold"` is `<strong>`.
 +
 [source,xml]
 ----
@@ -1481,10 +1482,10 @@ Local `src` values are resolved to a site path (`/pixel.svg`); a missing file is
 Wiki `+++![[image]]+++` also finds a unique file of that name anywhere in the source tree.
 
 Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption.
-  FlexMark does not turn Obsidian `|WIDTH` / `|WIDTHxHEIGHT` in the alt into `img` `width`/`height` (the size stays in
-  `alt`).
-  Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later); `|WIDTH` or `|WIDTHxHEIGHT` on that wiki embed do
-  become `width`/`height`.
+           FlexMark does not turn Obsidian `|WIDTH` / `|WIDTHxHEIGHT` in the alt into `img` `width`/`height` (the size
+           stays in `alt`).
+           Obsidian `+++![[image]]+++` embeds stay `<img>` (resolved later); `|WIDTH` or `|WIDTHxHEIGHT` on that wiki
+           embed do become `width`/`height`.
 +
 [source,markdown]
 ----
@@ -1494,8 +1495,8 @@ Markdown:: a `![alt](src)` on its own line; optional `"title"` is the caption.
 ----
 
 AsciiDoc:: block `image::` (optional `.Title`).
-  Inline `image:src[]` is not a figure.
-  Width and height (`image::file.png[alt, 320, 240]` or `width=320, height=240`) are kept on the `<img>`.
+           Inline `image:src[]` is not a figure.
+           Width and height (`image::file.png[alt, 320, 240]` or `width=320, height=240`) are kept on the `<img>`.
 +
 [source,asciidoc]
 ----
@@ -1504,7 +1505,7 @@ image::pixel.svg[A square]
 ----
 
 TEI:: `<figure>` with `<graphic url>` and optional `<head>` (caption).
-  `<graphic>` becomes `<img>`.
+      `<graphic>` becomes `<img>`.
 +
 [source,xml]
 ----
@@ -1545,7 +1546,7 @@ A PDF file shown on the page.
 Not <<pdf,PDF generation>> of a page.
 
 Markdown:: Obsidian `+++![[file.pdf]]+++`; optional `#page=N` and `&height=H` (pixels if H is digits).
-  Alias `+++![[file.pdf|Title]]+++` is the link label.
+           Alias `+++![[file.pdf|Title]]+++` is the link label.
 +
 [source,markdown]
 ----
@@ -1579,7 +1580,7 @@ Local files use HTML `<video>` (like `<audio>`).
 Local `src` is resolved like images; YouTube/Vimeo `<iframe>` URLs are left alone.
 
 Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`).
-  Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
+           Alias `+++![[file.mp4|Title]]+++` is the fallback link label.
 +
 [source,markdown]
 ----
@@ -1587,7 +1588,7 @@ Markdown:: Obsidian `+++![[file.mp4]]+++` (also `webm`, `ogv`, `m4v`).
 ----
 
 AsciiDoc:: `video::file.mp4[]` (optional `.Title` becomes a figure caption).
-  YouTube/Vimeo: `video::id[youtube]` / `video::id[vimeo]`.
+           YouTube/Vimeo: `video::id[youtube]` / `video::id[vimeo]`.
 +
 [source,asciidoc]
 ----
@@ -1595,7 +1596,7 @@ video::clip.mp4[]
 ----
 
 DocBook:: `<videodata fileref>`.
-  A YouTube/Vimeo URL becomes an iframe.
+          A YouTube/Vimeo URL becomes an iframe.
 +
 [source,xml]
 ----

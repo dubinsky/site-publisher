@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Reflow Markdown and AsciiDoc. Does not start Gradle.
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+classpath="$root/publisher/build/prose-pretty-print.classpath"
+java_file="$root/publisher/build/prose-pretty-print.java"
+if [[ ! -f "$classpath" || ! -f "$java_file" ]]; then
+  echo "missing classpath; run ./gradlew :org.podval.tools.publisher:prosePrettyPrintClasspath" >&2
+  exit 2
+fi
+exec "$(tr -d '\n' < "$java_file")" \
+  --enable-native-access=ALL-UNNAMED \
+  --sun-misc-unsafe-memory-access=allow \
+  -cp "$(cat "$classpath")" \
+  org.podval.tools.publish.prose.ProsePrettyPrint \
+  "$@"

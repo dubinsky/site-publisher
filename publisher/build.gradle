@@ -1,3 +1,5 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
   id 'application'
   id 'scala'
@@ -36,6 +38,7 @@ dependencies {
   implementation "com.vladsch.flexmark:flexmark-ext-gfm-strikethrough:$flexMarkVersion"
   implementation "com.vladsch.flexmark:flexmark-ext-gfm-tasklist:$flexMarkVersion"
   implementation "com.vladsch.flexmark:flexmark-ext-tables:$flexMarkVersion"
+  implementation "com.vladsch.flexmark:flexmark-ext-wikilink:$flexMarkVersion"
   implementation 'org.asciidoctor:asciidoctorj:3.0.1'
   implementation 'com.microsoft.playwright:playwright:1.63.0'
   implementation 'org.apache.pdfbox:pdfbox:3.0.8'
@@ -67,6 +70,32 @@ tasks.withType(JavaExec).configureEach {
   environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', '1'
   environment 'PLAYWRIGHT_BROWSERS_PATH', "${gradle.gradleUserHomeDir}/ms-playwright"
 }
+def prosePrettyPrintRuntime = sourceSets.main.runtimeClasspath
+def prosePrettyPrintJava = javaToolchains.launcherFor {
+  languageVersion = JavaLanguageVersion.of(25)
+}.get().executablePath.asFile.absolutePath
+tasks.register('prosePrettyPrintClasspath') {
+  dependsOn 'classes'
+  inputs.files(prosePrettyPrintRuntime)
+  def cpFile = layout.buildDirectory.file('prose-pretty-print.classpath')
+  def javaFile = layout.buildDirectory.file('prose-pretty-print.java')
+  outputs.files(cpFile, javaFile)
+  doLast {
+    cpFile.get().asFile.setText(prosePrettyPrintRuntime.asPath, 'UTF-8')
+    javaFile.get().asFile.setText(prosePrettyPrintJava + '\n', 'UTF-8')
+  }
+}
+
+tasks.register('prettyPrintProse', JavaExec) {
+  group = 'documentation'
+  description = 'Pretty-print Markdown and AsciiDoc files. Pass paths with --args.'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'org.podval.tools.publish.prose.ProsePrettyPrint'
+  javaLauncher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+
 tasks.withType(Test).configureEach {
   jvmArgs jdkCompatJvmArgs
   environment 'PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS', '1'

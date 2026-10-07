@@ -63,6 +63,10 @@ final class SitePublisherPluginTest {
           assert genArgs.contains('--pretty-print=false')
           assert serveArgs.contains('--pretty-print=false')
           assert prettyArgs.contains('--pretty-print')
+          assert prettyArgs.contains('--width=120')
+          assert prettyArgs.contains('--sentence-per-line=true')
+          assert !genArgs.any { it.startsWith('--width=') || it.startsWith('--sentence-per-line') }
+          assert !serveArgs.any { it.startsWith('--width=') || it.startsWith('--sentence-per-line') }
           assert !prettyArgs.any { it == '--serve' || it.startsWith('--serve=') }
           def buildTask = tasks.named('build').get()
           def buildDeps = buildTask.taskDependencies.getDependencies(buildTask)

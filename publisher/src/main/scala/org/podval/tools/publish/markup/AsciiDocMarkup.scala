@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
+import org.podval.tools.publish.prose.{AsciiDocProse, ProseFormatter}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.podval.xml.XmlNode.convertElements
@@ -9,6 +10,7 @@ import java.io.File
 object AsciiDocMarkup extends Markup(
   name = "AsciiDoc",
   extension = "adoc",
+  additionalExtensions = Set("asciidoc"),
   // Note: by supplying `htmlsyntax=xml` we ensure that Asciidoctor produces well-formed XML;
   // the only markup with `rendersToXml=true` is HTML ;)
   rendersToXml = true,
@@ -25,6 +27,8 @@ object AsciiDocMarkup extends Markup(
   def closeAsciidoctor(): Unit = synchronized:
     asciidoctorVar.foreach(_.close())
     asciidoctorVar = None
+
+  override def proseFormatter: Option[ProseFormatter] = Some(AsciiDocProse)
 
   override def xmlContent(content: String, sourceFile: File): String =
     convert(content, sourceFile, asciidoctor)

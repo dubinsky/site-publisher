@@ -41,6 +41,24 @@ final class PrettyPrintSpec extends AnyFunSuite:
       if at < 0 then None else Some((at, at + "xmlns=".length))
     }.size
 
+  test("markdown and asciidoc are reflowed and an asset sidecar is not") {
+    withSite(Map(
+      "note.md" -> "Hello world. Next sentence.\n",
+      "page.adoc" -> "Hello world. Next sentence.\n",
+      "asset.md" -> "Hello world. Next sentence.\n",
+      "asset.yml" -> "asset: true\n"
+    )): (site, dir) =>
+      site.prettyPrint()
+      val markdown: String = text(dir, "note.md")
+      val adoc: String = text(dir, "page.adoc")
+      assert(markdown.contains("Hello world.\nNext sentence."))
+      assert(adoc.contains("Hello world.\nNext sentence."))
+      assert(text(dir, "asset.md") == "Hello world. Next sentence.\n")
+      site.prettyPrint()
+      assert(text(dir, "note.md") == markdown)
+      assert(text(dir, "page.adoc") == adoc)
+  }
+
   test("a long verse line keeps the words on the l tags") {
     val words: String = "вступившія въ " + "слово " * 20 + "означенна"
     val verse: Xml.Element = Xml.element("p").setChildren(Seq(

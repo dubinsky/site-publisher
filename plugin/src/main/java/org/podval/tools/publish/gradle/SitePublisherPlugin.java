@@ -45,6 +45,8 @@ public final class SitePublisherPlugin implements Plugin<Project> {
     extension.getLogLevel().convention("INFO");
     extension.getIncludeDrafts().convention(false);
     extension.getProduction().convention(false);
+    extension.getPrettyPrintWidth().convention(120);
+    extension.getPrettyPrintSentencePerLine().convention(true);
 
     Configuration classpath = project.getConfigurations().create(CONFIGURATION_NAME, configuration -> {
       configuration.setDescription(
@@ -67,7 +69,7 @@ public final class SitePublisherPlugin implements Plugin<Project> {
     registerSiteExec(project, extension, classpath, java25, SERVE_TASK,
       "Generate the static site and serve it locally", true, false);
     registerSiteExec(project, extension, classpath, java25, PRETTY_PRINT_TASK,
-      "Pretty-print authored TEI and DocBook sources in place", false, true);
+      "Pretty-print authored TEI, DocBook, Markdown, and AsciiDoc sources in place", false, true);
   }
 
   private static void registerSiteExec(
@@ -102,6 +104,9 @@ public final class SitePublisherPlugin implements Plugin<Project> {
       args.getProduction().set(extension.getProduction());
       args.getServe().set(serve);
       args.getPrettyPrint().set(prettyPrint);
+      args.getEmitProseFlags().set(prettyPrint);
+      args.getWidth().set(extension.getPrettyPrintWidth());
+      args.getSentencePerLine().set(extension.getPrettyPrintSentencePerLine());
       task.getArgumentProviders().add(args);
 
       DirectoryProperty sourceDirectory = extension.getSourceDirectory();

@@ -2,10 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+- feat: prose formatting:
+  `--pretty-print` and `prettyPrintSite` also reflow Markdown and AsciiDoc.
+  `--width=N` defaults to 120.
+  `--width=0` does not wrap.
+  `--sentence-per-line` defaults to true.
+  `bin/pretty-print` formats those files without a site.
+  File extensions come from the `Markup` instances.
 
 ## [0.4.0] - 2026-09-24
 
@@ -37,8 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Minima chrome and `MarkupPage` wrap are `Xml.Element` via `org.podval.xml.dsl` (inspired by ZIO Blocks HTML).
   Drop wrap-time `.toHtml` and `zio-blocks-html`.
   Pin xml 0.3.0.
-- Table-cell footnotes are a per-table lowercase letter series (`a`, `b`, …, `z`, `aa`) with the list under that table
-  (`div.table-with-notes`).
+- Table-cell footnotes are a per-table lowercase letter series (`a`, `b`, …, `z`, `aa`) with the list under that table (`div.table-with-notes`).
   Markdown still defines those bodies at file end; the published page moves them.
   AsciiDoc `footnote:[…]` stays at the call site.
   Collector `collection-index` and `document-header` stay in the page arabic series.
@@ -73,8 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Empty Gradle root with sibling `publisher/` (library) and `plugin/` subprojects.
   Maven coordinates unchanged.
-  Dogfood: `pluginManagement { includeBuild }` for the plugin id plus settings-body `includeBuild` of the same
-  directory for the library child.
+  Dogfood: `pluginManagement { includeBuild }` for the plugin id plus settings-body `includeBuild` of the same directory
+  for the library child.
 - Podval Gradle convention plugins.
 - Gradle plugin `org.podval.tools.site-publisher`: `generateSite` / `serveSite` as `JavaExec` on a detached
   `sitePublisher` configuration (Java subproject; publisher stays off the Gradle daemon).

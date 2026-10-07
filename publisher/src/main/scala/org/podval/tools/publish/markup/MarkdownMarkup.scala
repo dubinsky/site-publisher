@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.tools.publish.prose.{MarkdownProse, ProseFormatter}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst, XmlElement}
 import org.podval.xml.XmlNode.convertElements
@@ -12,13 +13,13 @@ import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
-
 import java.io.File
 import scala.annotation.tailrec
 
 object MarkdownMarkup extends Markup(
   name = "Markdown",
   extension = "md",
+  additionalExtensions = Set("markdown"),
   rendersToXml = true,
   xmlWriterConfig = HtmlXmlWriterConfig,
 ):
@@ -33,6 +34,9 @@ object MarkdownMarkup extends Markup(
   private val extensionsParser: List[Parser.ParserExtension] = extensionsCommon ++ List(
     AutolinkExtension.create
   )
+
+  /** Flexmark extensions the HTML parser uses. The prose parser adds wiki links on top. */
+  private[publish] def proseParserExtensions: List[Parser.ParserExtension] = extensionsParser
   private val extensionsRenderer: List[HtmlRenderer.HtmlRendererExtension] = extensionsCommon ++ List(
   )
 
@@ -45,6 +49,8 @@ object MarkdownMarkup extends Markup(
     .builder()
     .extensions(extensionsRenderer.asJava)
     .build
+
+  override def proseFormatter: Option[ProseFormatter] = Some(MarkdownProse)
 
   // Note: FlexMark Parser and Renderer do not throw exceptions on invalid syntax and such.
   private def parseAndRenderMarkdown(content: String): String = renderer.render(parser.parse(content))
