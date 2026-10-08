@@ -1,8 +1,7 @@
-/* Inspired by Jekyll's Minima theme. */
-@import "skin.css";
-@import "initialize.css";
-@import "custom-variables"; /* Hook to override predefined variables. */
-@import "base.css";             /* Defines element resets. */
+/* Site sheets. tei.css stays here: transclusion copies TEI elements into the host page. */
+@import "tokens.css";
+@import "base.css";
+@import "chrome.css";
+@import "prose.css";
 @import "tei.css";
-@import "layout.css";           /* Defines structure and style based on CSS selectors. */
-@import "custom-styles.css";    /* Hook to override existing styles. */
+@import "print.css";

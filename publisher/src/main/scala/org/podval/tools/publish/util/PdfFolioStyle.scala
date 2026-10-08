@@ -5,7 +5,7 @@ import scala.jdk.CollectionConverters.MapHasAsScala
 import java.awt.Color
 
 /** Computed `.folio` used by PdfPageNumbers (`font-family` stack, size, weight,
-  * italic, color). Defaults to body type in layout.css; override `.folio` in CSS.
+  * italic, color). Defaults to body type in print.css; override `.folio` in CSS.
   * Outer-edge position is not taken from CSS. */
 final class PdfFolioStyle(
   val fontFamily: String,

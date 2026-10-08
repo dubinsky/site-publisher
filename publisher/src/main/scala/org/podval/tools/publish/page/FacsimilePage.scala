@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
@@ -27,6 +28,8 @@ final class FacsimilePage(
   override protected def formatIsFacsimile: Boolean = true
 
   override protected def isFacsimileViewer: Boolean = true
+
+  override protected def extraLibraries: List[js.JSLibrary] = List(js.FacsimileCss)
 
   override def prev: Option[Page] = nextFacsimile(document.prev, _.prev)
 

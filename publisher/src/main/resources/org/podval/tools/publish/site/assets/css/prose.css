@@ -1,0 +1,565 @@
+/**
+ * AsciiDoc callouts: circled numbers in verbatim, list of annotations below.
+ * Markers are not selectable so copy-paste from a listing does not include them.
+ */
+.callout {
+    display: inline-block;
+    box-sizing: border-box;
+    min-width: 1.35em;
+    height: 1.35em;
+    padding: 0 0.2em;
+    margin: 0 0.15em;
+    border-radius: 50%;
+    background-color: var(--text-color);
+    color: var(--background-color);
+    font-size: 0.75em;
+    font-weight: bold;
+    font-style: normal;
+    line-height: 1.35em;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+}
+
+pre .callout,
+code .callout {
+    position: relative;
+    top: -0.1em;
+}
+
+.callout-list {
+    margin-top: var(--space-2);
+    margin-left: var(--spacing-unit);
+}
+
+.callout-list > li {
+    margin-bottom: var(--space-1);
+}
+
+/**
+ * Admonitions (AsciiDoc NOTE/TIP/… and Obsidian `> [!type]`).
+ * Type colour is `data-type`; fold is a native `<details>`.
+ */
+.admonition {
+    --admonition-accent: var(--link-base-color);
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--admonition-accent);
+    background-color: color-mix(in oklab, var(--admonition-accent), var(--background-color) 88%);
+}
+
+.admonition[data-type="tip"],
+.admonition[data-type="hint"] {
+    --admonition-accent: var(--admonition-tip);
+}
+
+.admonition[data-type="important"] {
+    --admonition-accent: var(--admonition-important);
+}
+
+.admonition[data-type="warning"],
+.admonition[data-type="caution"],
+.admonition[data-type="attention"] {
+    --admonition-accent: var(--admonition-warning);
+}
+
+.admonition[data-type="danger"],
+.admonition[data-type="error"],
+.admonition[data-type="bug"],
+.admonition[data-type="failure"] {
+    --admonition-accent: var(--admonition-danger);
+}
+
+.admonition-title {
+    margin: 0 0 0.4em;
+    font-weight: 600;
+}
+
+details.admonition > summary.admonition-title {
+    cursor: pointer;
+}
+
+/**
+ * Asides (AsciiDoc sidebar, HTML `<aside>`). Untyped auxiliary panel.
+ */
+.aside {
+    margin: var(--space-4) 0;
+    padding: var(--space-4) 1.25em;
+    border: 1px solid var(--border-color-01);
+    background-color: color-mix(in oklab, var(--brand-color), var(--background-color) 90%);
+    border-radius: 4px;
+}
+
+.aside-title {
+    margin: 0 0 var(--space-2);
+    font-weight: 600;
+    text-align: center;
+}
+
+/**
+ * Page transclusion (`![[note]]` / section / block). Default boxed; Settings
+ * “Seamless transclusions” sets `html.transclusion-clean`.
+ */
+aside.transclusion {
+    margin: var(--space-4) 0;
+    padding: 0 0 0 var(--space-4);
+    border-left: 3px solid var(--border-color-03);
+}
+
+.transclusion-header {
+    margin: 0 0 var(--space-2);
+    font-size: 0.9em;
+}
+
+a.transclusion-source {
+    color: var(--brand-color-dimmed);
+    text-decoration: none;
+}
+
+a.transclusion-source:hover {
+    text-decoration: underline;
+}
+
+html.transclusion-clean aside.transclusion {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+html.transclusion-clean .transclusion-header {
+    display: none;
+}
+
+dt {
+    font-weight: bold;
+    margin-bottom: 0.3125em;
+}
+
+dd {
+    margin-left: 1.125em;
+    margin-bottom: 1.25em;
+}
+
+/* Last item of the list only — not every dd in a per-term grouping div. */
+.glossary-item:last-child,
+.glossary-item:last-child > :last-child {
+    margin-bottom: 0;
+}
+
+dd > p {
+    margin-top: 0;
+    margin-bottom: 0.625em;
+}
+
+dd > p:last-child {
+    margin-bottom: 0;
+}
+
+.glossary-ref, .footnote-ref, .citation-ref, .date-ref, .gap-ref, .hand-ref {
+    position: relative;
+}
+
+.glossary-tip, .footnote-tip, .citation-tip, .date-tip, .gap-tip, .hand-tip {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.25em);
+    z-index: 10;
+    box-sizing: border-box;
+    min-width: 8em;
+    max-width: min(24em, 80vw);
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border-color-01);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    box-shadow: 0 0.15em 0.4em color-mix(in oklab, var(--brand-color), transparent 70%);
+    font-weight: 400;
+    white-space: normal;
+    unicode-bidi: isolate;
+    text-align: start;
+}
+
+.date-tip {
+    max-width: none;
+    padding: 0.3em;
+}
+
+.date-tip table {
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.date-tip th, .date-tip td {
+    padding: 0.15em 0.45em;
+    border: 1px solid var(--border-color-01);
+    white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .glossary-ref:hover > .glossary-tip,
+    .footnote-ref:hover > .footnote-tip,
+    .citation-ref:hover > .citation-tip,
+    .date-ref:hover > .date-tip,
+    .gap-ref:hover > .gap-tip,
+    .hand-ref:hover > .hand-tip {
+        display: block;
+    }
+}
+
+.glossary-ref:focus-within > .glossary-tip,
+.footnote-ref:focus-within > .footnote-tip,
+.citation-ref:focus-within > .citation-tip,
+.date-ref:focus-within > .date-tip,
+.gap-ref:focus-within > .gap-tip,
+.hand-ref:focus-within > .hand-tip {
+    display: block;
+}
+
+.hand-ref .hand-ref > .hand-tip {
+    top: calc(100% + 2.5em);
+}
+
+html.glossary-expand .glossary-tip,
+html.glossary-expand .citation-tip,
+html.glossary-expand .glossary-ref:hover > .glossary-tip,
+html.glossary-expand .glossary-ref:focus-within > .glossary-tip,
+html.glossary-expand .citation-ref:hover > .citation-tip,
+html.glossary-expand .citation-ref:focus-within > .citation-tip {
+    display: inline;
+    position: static;
+    left: auto;
+    top: auto;
+    z-index: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    white-space: inherit;
+}
+
+html.glossary-expand .glossary-tip::before,
+html.glossary-expand .citation-tip::before {
+    content: " (";
+}
+
+html.glossary-expand .glossary-tip::after,
+html.glossary-expand .citation-tip::after {
+    content: ")";
+}
+
+div.footnotes {
+    margin-top: var(--space-6);
+    border-top: 1px solid var(--border-color-01);
+}
+
+div.footnotes.source-footnotes {
+    border-top-style: dotted;
+}
+
+a.footnote-link[data-footnote-series="foot"],
+a.footnote-backlink[data-footnote-series="foot"] {
+    color: var(--text-color);
+}
+
+div.table-with-notes > div.footnotes {
+    margin-top: var(--space-3);
+    font-size: 0.9em;
+}
+
+span.nested-footnotes {
+    font-size: 0.9em;
+}
+
+a.footnote-link, a.footnote-backlink {
+    color: var(--note-color);
+}
+
+.footnote-link {
+    vertical-align: super;
+    font-size: smaller;
+    line-height: 0;
+}
+
+a.footnote-backlink {
+    padding-right: var(--space-1);
+}
+
+.footnote + .footnote {
+    padding-left: var(--space-2);
+}
+
+blockquote {
+    color: var(--brand-color);
+    padding-left: var(--spacing-unit-half);
+    font-size: 1.05rem;
+    font-style: italic;
+    /* Containing block for ::before. A float is painted on the previous printed page. */
+    position: relative;
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+
+    i, em {
+        font-style: normal;
+    }
+}
+
+blockquote::before {
+    content: "\201c";
+    position: absolute;
+    left: var(--spacing-unit-half);
+    top: 0;
+    font-size: 2.75em;
+    font-weight: bold;
+    line-height: .6em;
+    margin-left: -.6em;
+    color: var(--quote-mark);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+}
+
+.quote-title {
+    margin: 0 0 var(--space-2);
+    font-weight: 400;
+}
+
+.quote-attribution {
+    margin-top: var(--space-2);
+    font-size: 0.9375em;
+    text-align: right;
+}
+
+.quote-attribution br {
+    display: none;
+}
+
+.quote-attribution cite {
+    display: block;
+    font-style: normal;
+    color: color-mix(in oklab, currentColor, transparent 40%);
+}
+
+.page-body h1,
+.page-body h2,
+.page-body h3,
+.page-body h4,
+.page-body h5,
+.page-body h6 {
+    margin-top: var(--spacing-unit);
+}
+
+/* Sectanchors + sectlinks: § on hover; heading text is a permalink.
+ * Heading rank is section nesting, not hN vs tei-head. */
+.page-body .section > .heading {
+    position: relative;
+    margin-top: var(--spacing-unit);
+    font-size: var(--step-3);
+}
+
+@media screen and (min-width: 800px) {
+    .page-body .section > .heading {
+        font-size: var(--step-4);
+    }
+}
+
+.page-body .section .section > .heading {
+    font-size: var(--step-2);
+}
+
+.page-body .section .section .section > .heading {
+    font-size: var(--step-1);
+}
+
+.page-body .section .section .section .section > .heading {
+    font-size: var(--step-0);
+}
+
+.page-body a.anchor {
+    position: absolute;
+    z-index: 1;
+    width: 1.5ex;
+    margin-left: -1.5ex;
+    display: block;
+    text-decoration: none;
+    visibility: hidden;
+    font-weight: 400;
+    text-align: center;
+    color: inherit;
+}
+
+.page-body a.anchor::before {
+    content: "\00A7";
+    font-size: 0.85em;
+}
+
+.page-body .section > .heading:hover > a.anchor,
+.page-body .section > .heading:focus-within > a.anchor,
+.page-body a.anchor:focus {
+    visibility: visible;
+}
+
+.page-body a.link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.page-body a.link:hover,
+.page-body a.link:focus {
+    text-decoration: underline;
+}
+
+.task-list {
+    margin-left: 0;
+    padding-left: var(--spacing-unit-two-thirds);
+}
+
+.task-list-item {
+    list-style-type: none;
+
+    &-checkbox {
+        position: relative;
+        margin-right: var(--spacing-unit-third);
+        margin-left: calc(var(--spacing-unit) * -0.5);
+        appearance: none;
+        border: 8px solid var(--border-color-01);
+        vertical-align: text-top;
+        z-index: -1;
+
+        &::after {
+            position: absolute;
+            top: -8px;
+            left: -3px;
+            width: 4px;
+            height: 10px;
+            content: "";
+            border: solid transparent;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        &:checked::after {
+            border-color: var(--border-color-03);
+        }
+    }
+}
+
+.page-tag,
+.page-category {
+    display: inline-block;
+    background: var(--brand-color-very-light);
+    padding: 0 var(--space-2);
+    margin-right: var(--space-2);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-size: 90%;
+
+    &:hover {
+        text-decoration: none;
+        background: var(--brand-color);
+        color: var(--background-color);
+    }
+}
+
+.category-members {
+    margin-top: var(--space-5);
+}
+
+ul.page-list {
+    list-style: none;
+}
+
+.page-list {
+    font-size: var(--step-1);
+
+    & i {
+        font-size: var(--small-font-size);
+        color: var(--brand-color);
+    }
+}
+
+.invalid-wiki-link {
+    background: var(--danger);
+    color: var(--background-color);
+}
+
+.embedded-in {
+    border-top: 1px solid var(--border-color-01);
+
+    > ul {
+        list-style-type: none;
+
+        > li.backlinks-collection > ul {
+            list-style-type: none;
+            margin-left: var(--space-4);
+        }
+    }
+}
+
+.backlinks {
+    border-top: 1px solid var(--border-color-01);
+
+    > ul {
+        list-style-type: none;
+
+        .backlinks-count {
+            float: right;
+        }
+
+        > li.backlinks-collection > ul {
+            list-style-type: none;
+            margin-left: var(--space-4);
+        }
+
+        .backlinks-list li {
+            list-style-type: disc;
+        }
+
+        .backlink {
+            background-color: var(--highlight);
+        }
+    }
+}
+
+ul.toc {
+    list-style: none;
+}
+
+.toc-current {
+    font-weight: bold;
+}
+
+.toc-ancestor > a {
+    font-weight: 600;
+}
+
+.section > tei-head,
+.section > db-title {
+    text-indent: -0.5em;
+}
+
+.csl-bib-body {
+    margin-top: var(--spacing-unit);
+}
+
+.csl-entry {
+    display: block;
+    margin-top: 0.4em;
+    padding-left: 2em;
+    text-indent: -2em;
+}
+
+ul.bibliography, ol.bibliography {
+    padding-left: 1.5em;
+}
+
+.bibliography-item {
+    display: block;
+    margin-top: 0.4em;
+}
+
+.unresolved-citation {
+    color: var(--danger);
+}

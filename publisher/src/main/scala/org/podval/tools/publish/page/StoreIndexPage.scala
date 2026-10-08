@@ -21,8 +21,8 @@ final class StoreIndexPage(
   override def parent: Option[DirectoryPage] = None
 
   override def pageHeader: Option[Xml.Element] = Some(
-    header(className := "post-header",
-      h1(className := "post-title p-name", itemProp := "name headline", title)
+    header(className := "page-header",
+      h1(className := "page-title", title)
     )
   )
 

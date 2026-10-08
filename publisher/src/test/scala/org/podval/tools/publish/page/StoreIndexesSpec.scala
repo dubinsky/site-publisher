@@ -172,7 +172,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       val derzhavinItem: Int = flat.indexOf("книга Державин")
       val rgadaItem: Int = flat.indexOf("архив РГАДА")
       assert(derzhavinItem >= 0 && rgadaItem > derzhavinItem, flat)
-      val body: String = flat.substring(flat.indexOf("post-content"), flat.indexOf("</article>"))
+      val body: String = flat.substring(flat.indexOf("page-body"), flat.indexOf("</article>"))
       val items: Int = "<li>".r.findAllMatchIn(body).size
       val abstracts: Int = "<abstract".r.findAllMatchIn(body).size
       assert(abstracts == items, s"abstracts=$abstracts items=$items $body")
@@ -185,12 +185,12 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(index.toLowerCase.contains("refresh"), index)
       assert(index.contains("/archive-index.html"), index)
       val tree: String = html(target, "archive-collections.html")
-      val nav: String = tree.substring(tree.indexOf("nav-items"))
+      val nav: String = tree.substring(tree.indexOf("site-nav"))
       val namesHref: Int = nav.indexOf("""href="/names.html"""")
       val collectionsHref: Int = nav.indexOf("""href="/archive-collections.html"""")
       val aboutHref: Int = nav.indexOf("""href="/about.html"""")
       assert(namesHref >= 0 && collectionsHref > namesHref && aboutHref > collectionsHref, nav)
-      assert(tree.contains("""class="post-title"""), tree)
+      assert(tree.contains("""class="page-title"""), tree)
       assert(tree.contains("Архивы"), tree)
   }
 

@@ -93,15 +93,17 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
   }
 
   test("media queries use literal breakpoints, not custom properties") {
-    val layout: String = html("assets/css/layout.css")
+    val chrome: String = html("assets/css/chrome.css")
+    val prose: String = html("assets/css/prose.css")
     val base: String = html("assets/css/base.css")
-    assert(layout.contains("max-width: 600px"), layout)
-    assert(layout.contains("min-width: 800px"), layout)
-    assert(!layout.contains("max-width: var(--on-"), layout)
-    assert(!layout.contains("min-width: var(--on-"), layout)
+    assert(chrome.contains("max-width: 600px"), chrome)
+    assert(prose.contains("min-width: 800px"), prose)
+    assert(!chrome.contains("max-width: var(--on-"), chrome)
+    assert(!chrome.contains("min-width: var(--on-"), chrome)
     assert(!base.contains("max-width: var(--on-"), base)
-    assert(layout.contains("html.wide .page-content > .wrapper"), layout)
-    assert(layout.contains("--content-width: 1800px"), layout)
+    assert(chrome.contains("html.wide .page-content > .wrapper"), chrome)
+    assert(chrome.contains("--content-width: 1800px"), chrome)
+    assert(!html("assets/css/style.css").contains("custom-variables"), html("assets/css/style.css"))
   }
 
   test("header pages come from site config in listed order") {
@@ -380,7 +382,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
 
   test("TEI sample: endnote, table, glossary, code, and quote") {
     val page: String = html("tei-sample.html")
-    assert(page.contains("""class="post-title p-name""""), page)
+    assert(page.contains("""class="page-title""""), page)
     assert(page.contains("TEI Sample"), page)
     assert(page.contains("TEI endnote body"), page)
     assert(page.contains("""class="footnote-ref""""), page)
@@ -549,7 +551,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""name="twitter:card""""), page)
     assert(page.contains("""content="summary""""), page)
     assert(page.contains(""""@type":"WebSite""""), page)
-    assert(page.contains("""itemtype="http://schema.org/WebSite""""), page)
+    assert(!page.contains("itemtype="), page)
   }
 
   test("post SEO: titled with site, article type, BlogPosting") {
@@ -560,7 +562,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(page.contains("""property="article:published_time""""), page)
     assert(page.contains("2026-08-01"), page)
     assert(page.contains(""""@type":"BlogPosting""""), page)
-    assert(page.contains("""itemtype="http://schema.org/BlogPosting""""), page)
+    assert(!page.contains("itemtype="), page)
     assert(page.contains("""href="http://fixture.test/2026/08/01/hello.html""""), page)
   }
 
@@ -568,7 +570,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val page: String = html("notes.html")
     assert(page.contains("<title>notes | Site Publisher Fixture</title>"), page)
     assert(page.contains(""""@type":"WebPage""""), page)
-    assert(page.contains("""itemtype="http://schema.org/WebPage""""), page)
+    assert(!page.contains("itemtype="), page)
   }
 
   test("root store gets collections tree and flat index") {
@@ -595,7 +597,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(listing.contains("store-name"), listing)
     assert(listing.contains("Stores Fixture"), listing)
     assert(!htmlOpen(listing).contains("""class="wide""""), htmlOpen(listing))
-    val postContent: String = listing.substring(listing.indexOf("post-content"))
+    val postContent: String = listing.substring(listing.indexOf("page-body"))
     assert(!postContent.contains("Stores Fixture"), postContent)
     assert(!postContent.contains("store-name"), postContent)
     assert(!postContent.contains("store-by"), postContent)
@@ -643,7 +645,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!doc.contains("<tei-head>document"), doc)
     assert(doc.contains("doc body"), doc)
     assert(!htmlOpen(doc).contains("""class="wide""""), htmlOpen(doc))
-    val postContent: String = doc.substring(doc.indexOf("post-content"))
+    val postContent: String = doc.substring(doc.indexOf("page-body"))
     assert(!postContent.contains("store-header"), postContent)
   }
 
@@ -656,7 +658,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(host.contains("Alpha body"), host)
     assert(host.contains("transclusion-source"), host)
     assert(!host.contains("a.transclusion-link"), host)
-    val css: String = html("assets/css/base.css")
+    val css: String = html("assets/css/prose.css")
     assert(css.contains("html.transclusion-clean"), css)
     val notes: String = html("notes.html")
     assert(notes.contains("""data="/sample.pdf""""), notes)

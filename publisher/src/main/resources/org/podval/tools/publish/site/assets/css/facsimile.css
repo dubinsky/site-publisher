@@ -1,0 +1,97 @@
+/* Facsimile viewer: fill the window under the header; photos scroll in the pane.
+ * Not collector 1060×1586 `resize: both` — the browser window is the pane.
+ * Linked only on the viewer page. Transclusion does not use this column. */
+html.facsimile {
+    height: 100dvh;
+}
+
+html.facsimile body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+html.facsimile .page-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-2) 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html.facsimile .page-content > .wrapper {
+    --content-width: 1100px;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+html.facsimile article.page {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+html.facsimile .page-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html.facsimile .site-footer {
+    display: none;
+}
+
+.facsimile-scroller {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    align-items: center;
+}
+
+html.facsimile .facsimile-scroller {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.facsimile-scroller img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-color-01);
+    scroll-margin-top: var(--space-3);
+}
+
+.facsimile-scroller figure {
+    margin: 0;
+    max-width: 100%;
+    scroll-margin-top: var(--space-3);
+}
+
+@media print {
+    html.facsimile,
+    html.facsimile body {
+        height: auto;
+        overflow: visible;
+    }
+
+    html.facsimile .page-content,
+    html.facsimile .page-content > .wrapper,
+    html.facsimile article.page,
+    html.facsimile .page-body,
+    html.facsimile .facsimile-scroller {
+        display: block;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        flex: none;
+    }
+}

@@ -212,7 +212,7 @@ final class EntitySpec extends AnyFunSuite:
       assert(doc.contains("Расшифровка"), doc)
       assert(doc.contains("""href="/people/alter-rebbe.html""""), doc)
       assert(doc.contains("""href="/people/ab.html""""), doc)
-      val post: String = doc.substring(doc.indexOf("post-content"))
+      val post: String = doc.substring(doc.indexOf("page-body"))
       assert(!post.contains("teiHeader"), post)
       assert(post.contains("hello"), post)
       val index: String = html(target, "col/index.html")
@@ -241,7 +241,7 @@ final class EntitySpec extends AnyFunSuite:
     )): (_, target) =>
       val doc: String = html(target, "col/004.html")
       val headerAt: Int = doc.indexOf("document-header")
-      val postAt: Int = doc.indexOf("post-content")
+      val postAt: Int = doc.indexOf("page-body")
       assert(headerAt >= 0 && postAt > headerAt, doc)
       val header: String = doc.substring(headerAt, postAt)
       val post: String = doc.substring(postAt)
@@ -276,7 +276,7 @@ final class EntitySpec extends AnyFunSuite:
       assert(page.titleFromPath == "alter-rebbe")
       val htmlPage: String = html(target, "people/alter-rebbe.html")
       assert(htmlPage.contains("Залман Борухович | Entity Fixture"), htmlPage)
-      assert(htmlPage.contains("""class="post-title p-name""""), htmlPage)
+      assert(htmlPage.contains("""class="page-title""""), htmlPage)
       assert(!htmlPage.contains(">alter-rebbe<"), htmlPage)
   }
 

@@ -136,6 +136,7 @@ final class FacsimileSpec extends AnyFunSuite:
     withSite(): (_, target) =>
       val viewer: String = html(target, "col/000/facsimile.html")
       assert(viewer.contains("""class="facsimile""""), viewer)
+      assert(viewer.contains("""href="/assets/css/facsimile.css""""), viewer)
       assert(viewer.contains("""class="facsimile-scroller""""), viewer)
       assert(!viewer.contains("facsimileWrapper"), viewer)
       assert(!viewer.contains("facsimileViewer"), viewer)
@@ -152,6 +153,7 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""target="facsimile""""), transcription)
       assert(transcription.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), transcription)
       assert(!transcription.contains("tei-class="), transcription)
+      assert(!transcription.contains("/assets/css/facsimile.css"), transcription)
       assert(transcription.contains("""title="Facsimile""""), transcription)
   }
 

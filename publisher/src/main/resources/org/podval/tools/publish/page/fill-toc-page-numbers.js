@@ -1,7 +1,7 @@
 /**
  * TOC dotted leaders and page numbers.
  *
- * Print styling for .toc-leader / .toc-page-number is in layout.css (@media print).
+ * Print styling for .toc-leader / .toc-page-number is in print.css (@media print).
  * Page numbers are not estimated here: Playwright prints a PDF, Java reads named
  * destinations, then applyTocPageNumbers writes those values. Placeholders keep
  * the 2.5em page-number column so the second print paginates the same way.

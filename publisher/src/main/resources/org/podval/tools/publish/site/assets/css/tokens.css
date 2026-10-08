@@ -1,0 +1,82 @@
+@import "https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Serif+Hebrew:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap";
+
+:root {
+    --base-font-family: "Noto Serif", "Noto Serif Hebrew", "DejaVu Serif", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
+        "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
+    --code-font-family: "Roboto Mono", "DejaVu Sans Mono", "Menlo", "Inconsolata", "Consolas",
+        "Ubuntu Mono", "Liberation Mono", "Courier New", monospace;
+
+    --base-font-size: 16px;
+    --base-font-weight: 400;
+    --small-font-size: calc(var(--base-font-size) * 0.875);
+    --base-line-height: 1.5;
+
+    --step-0: 1rem;
+    --step-1: 1.125rem;
+    --step-2: 1.25rem;
+    --step-3: 1.5rem;
+    --step-4: 2rem;
+    --step-5: 2.5rem;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+
+    /* Names kept so older rules and overrides still resolve. */
+    --spacing-unit: var(--space-6);
+    --spacing-unit-half: var(--space-4);
+    --spacing-unit-third: var(--space-2);
+    --spacing-unit-two-thirds: var(--space-4);
+
+    --content-width: 800px;
+    --header-height: 3.5rem;
+
+    /* Breakpoints are literals in @media (600px, 800px). var() is not valid there. */
+
+    --brand-color: #818181;
+    --brand-color-light: color-mix(in oklab, var(--brand-color), white 40%);
+    --brand-color-very-light: color-mix(in oklab, var(--brand-color), white 80%);
+    --brand-color-dimmed: color-mix(in oklab, var(--brand-color), black 11%);
+    --brand-color-dark: color-mix(in oklab, var(--brand-color), black 25%);
+
+    --site-title-color: var(--brand-color-dark);
+    --heading-color: #111111;
+    --text-color: var(--brand-color-dark);
+    --background-color: #fdfdfd;
+    --code-background-color: #EEEEFFFF;
+
+    --link-base-color: #1e69d8;
+    --link-visited-color: color-mix(in oklab, var(--link-base-color), black 15%);
+    --link-hover-color: var(--text-color);
+
+    --border-color-01: var(--brand-color-light);
+    --border-color-02: color-mix(in oklab, var(--brand-color), white 35%);
+    --border-color-03: var(--brand-color-dark);
+
+    --table-text-align: left;
+    --table-text-color: color-mix(in oklab, var(--heading-color), white 18%);
+    /* Collector Minima: #f0f0f0 head, #f7f7f7 even rows, #dedede / #c9c9c9 head border. */
+    --table-zebra-color: #f7f7f7;
+    --table-header-bg-color: #f0f0f0;
+    --table-header-border: #dedede;
+    --table-header-border-bottom: #c9c9c9;
+    --table-border-color: #e8e8e8;
+
+    --ok: #0f9d58;
+    --important: #7c4dff;
+    --warning: #e65100;
+    --danger: #c62828;
+    --note-color: var(--danger);
+    --highlight: #cdca32;
+    --quote-mark: #7a2518;
+    --add-color: #ffcdcd;
+    --editorial-color: #aaffaa;
+
+    --admonition-tip: var(--ok);
+    --admonition-important: var(--important);
+    --admonition-warning: var(--warning);
+    --admonition-danger: var(--danger);
+}

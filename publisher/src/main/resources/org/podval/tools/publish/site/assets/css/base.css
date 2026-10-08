@@ -1,11 +1,11 @@
 /* language support */
 /* render Arabic, Persian, Ottoman, Hebrew and Yiddish as rtl */
-[lang = "ar"], [lang = "ota"], [lang = "fa"], [lang = "he"], [lang = "yi"], [lang *="-Arab-AR"]{
+[lang="ar"], [lang="ota"], [lang="fa"], [lang="he"], [lang="yi"], [lang*="-Arab-AR"] {
     direction: rtl;
     text-align: right;
 }
 /* render Latin and some other scripts as ltr */
-[lang = "en"], [lang = "fr"], [lang = "de"], [lang = "it"], [lang = "ru"], [lang = "pl"], [lang *="ar-Latn-"], [lang *="ota-Latn-"] {
+[lang="en"], [lang="fr"], [lang="de"], [lang="it"], [lang="ru"], [lang="pl"], [lang*="ar-Latn-"], [lang*="ota-Latn-"] {
     direction: ltr;
     text-align: left;
 }
@@ -14,26 +14,17 @@ html {
     font-size: var(--base-font-size);
 }
 
-/**
- * Reset some basic elements
- */
 body, h1, h2, h3, h4, h5, h6, p, tei-p, blockquote, pre, hr, dl, dd, ol, ul, figure {
     margin: 0;
     padding: 0;
 }
 
-/**
- * Basic styling
- */
 body {
     font: var(--base-font-weight) var(--base-font-size) var(--base-font-family);
     line-height: var(--base-line-height);
     color: var(--text-color);
     background-color: var(--background-color);
     -webkit-text-size-adjust: 100%;
-    -webkit-font-feature-settings: "kern" 1;
-    -moz-font-feature-settings: "kern" 1;
-    -o-font-feature-settings: "kern" 1;
     font-feature-settings: "kern" 1;
     font-kerning: normal;
     display: flex;
@@ -42,9 +33,6 @@ body {
     overflow-wrap: break-word;
 }
 
-/**
- * Set `margin-bottom` to maintain vertical rhythm
- */
 h1, h2, h3, h4, h5, h6, p, blockquote, ul, ol, dl, figure, div.footnotes {
     margin-bottom: var(--spacing-unit-half);
 }
@@ -54,25 +42,15 @@ hr {
     margin-bottom: var(--spacing-unit);
 }
 
-
-/**
- * `main` element
- */
 main {
-    display: block; /* Default value of `display` of `main` element is 'inline' in IE 11. */
+    display: block;
 }
 
-/**
- * Images
- */
 img {
     max-width: 100%;
     vertical-align: middle;
 }
 
-/**
- * Figures
- */
 figure > img {
     display: block;
     vertical-align: top;
@@ -84,7 +62,7 @@ figcaption {
 
 figure.figure {
     display: block;
-    margin: 1em 0;
+    margin: var(--space-4) 0;
 }
 
 figure.figure > img {
@@ -98,453 +76,25 @@ figure.figure > img {
     text-align: center;
 }
 
-/**
- * PDF embeds (`object` plus a sibling download link).
- */
-.pdf-embed {
-    margin: 1em 0;
-}
-
-.pdf-embed > object {
-    display: block;
-    width: 100%;
-    height: var(--pdf-embed-height, 80vh);
-    border: 1px solid var(--border-color-01);
-}
-
-.pdf-embed-link {
-    margin-top: 0.4em;
-}
-
-/**
- * Video (local file and YouTube/Vimeo iframe).
- */
-video.video {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    margin: 1em 0;
-}
-
-iframe.video-embed {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    max-width: 100%;
-    margin: 1em 0;
-    border: 0;
-}
-
 figure:not(.figure) { /* leftover TEI figure without IR class */
     display: inline-block;
 }
 
-figure > tei-head {
-    display: block;
-    margin: 1.5em auto 1.5em auto;
-    padding: .5em 1.5em 1.5em 1.5em;
-    border: 1px solid black;
-    border-radius: 15px;
-    width: 85%;
-    position: relative;
-    background: white;
-    /* reset text-indent for note with <l> ancestors. */
-    text-indent: 0;
-    font-family: Georgia, serif;
-    font-size: 85%;
-    text-align: justify;
-    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-/*Paragraph*/
 p, tei-p {
     display: block;
-    margin-top: 1em;
-    margin-bottom: 1em;
-    /*text-align: justify;*/
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-4);
 }
 
-/* Verse documents (`p`/`l`): live TEI `p` is not a HTML paragraph with 1em margins. */
-tei-p:has(> l) {
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-*[rendition~="#center"] tei-p {
-    text-align: center;
-}
-
-
-/**
- * Lists
- */
 ul, ol {
     margin-left: var(--spacing-unit);
 }
 
-li {
-    > ul,
-    > ol {
-        margin-bottom: 0;
-    }
-}
-
-/**
- * AsciiDoc callouts: circled numbers in verbatim, list of annotations below.
- * Markers are not selectable so copy-paste from a listing does not include them.
- */
-.callout {
-    display: inline-block;
-    box-sizing: border-box;
-    min-width: 1.35em;
-    height: 1.35em;
-    padding: 0 0.2em;
-    margin: 0 0.15em;
-    border-radius: 50%;
-    background-color: var(--text-color);
-    color: var(--background-color);
-    font-size: 0.75em;
-    font-weight: bold;
-    font-style: normal;
-    line-height: 1.35em;
-    text-align: center;
-    vertical-align: middle;
-    user-select: none;
-}
-
-pre .callout,
-code .callout {
-    position: relative;
-    top: -0.1em;
-}
-
-.callout-list {
-    margin-top: 0.5em;
-    margin-left: var(--spacing-unit);
-}
-
-.callout-list > li {
-    margin-bottom: 0.25em;
-}
-
-/**
- * Admonitions (AsciiDoc NOTE/TIP/… and Obsidian `> [!type]`).
- * Type colour is `data-type`; fold is a native `<details>`.
- */
-.admonition {
-    --admonition-accent: var(--link-base-color);
-    margin: 1em 0;
-    padding: 0.75em 1em;
-    border-left: 4px solid var(--admonition-accent);
-    background-color: color-mix(in oklab, var(--admonition-accent), var(--background-color) 88%);
-}
-
-.admonition[data-type="tip"],
-.admonition[data-type="hint"] {
-    --admonition-accent: #0f9d58;
-}
-
-.admonition[data-type="important"] {
-    --admonition-accent: #7c4dff;
-}
-
-.admonition[data-type="warning"],
-.admonition[data-type="caution"],
-.admonition[data-type="attention"] {
-    --admonition-accent: #e65100;
-}
-
-.admonition[data-type="danger"],
-.admonition[data-type="error"],
-.admonition[data-type="bug"],
-.admonition[data-type="failure"] {
-    --admonition-accent: #c62828;
-}
-
-.admonition-title {
-    margin: 0 0 0.4em;
-    font-weight: 600;
-}
-
-details.admonition > summary.admonition-title {
-    cursor: pointer;
-}
-
-@media print {
-    details.admonition > :not(summary) {
-        display: block !important;
-    }
-}
-
-/**
- * Asides (AsciiDoc sidebar, HTML `<aside>`). Untyped auxiliary panel.
- */
-.aside {
-    margin: 1em 0;
-    padding: 1em 1.25em;
-    border: 1px solid var(--border-color-01);
-    background-color: color-mix(in oklab, var(--brand-color), var(--background-color) 90%);
-    border-radius: 4px;
-}
-
-.aside-title {
-    margin: 0 0 0.5em;
-    font-weight: 600;
-    text-align: center;
-}
-
-/**
- * Page transclusion (`![[note]]` / section / block). Default boxed; Settings
- * “Seamless transclusions” sets `html.transclusion-clean`.
- */
-aside.transclusion {
-    margin: 1em 0;
-    padding: 0 0 0 1em;
-    border-left: 3px solid var(--border-color-03);
-}
-
-.transclusion-header {
-    margin: 0 0 0.5em;
-    font-size: 0.9em;
-}
-
-a.transclusion-source {
-    color: var(--brand-color-dimmed);
-    text-decoration: none;
-}
-
-a.transclusion-source:hover {
-    text-decoration: underline;
-}
-
-html.transclusion-clean aside.transclusion {
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-html.transclusion-clean .transclusion-header {
-    display: none;
-}
-
-/**
- * Definition lists (including glossary).
- * Styled like Asciidoctor default stylesheet so dt/dd read as glossary entries
- * rather than unstyled browser HTML.
- */
-dt {
-    font-weight: bold;
-    margin-bottom: 0.3125em;
-}
-
-dd {
-    margin-left: 1.125em;
-    margin-bottom: 1.25em;
-}
-
-/* Last item of the list only — not every dd in a per-term grouping div. */
-.glossary-item:last-child,
-.glossary-item:last-child > :last-child {
+li > ul,
+li > ol {
     margin-bottom: 0;
 }
 
-/* Leftover real paragraphs in a definition (list continuations). */
-dd > p {
-    margin-top: 0;
-    margin-bottom: 0.625em;
-}
-
-dd > p:last-child {
-    margin-bottom: 0;
-}
-
-.glossary-ref, .footnote-ref, .citation-ref, .date-ref, .gap-ref, .hand-ref {
-    position: relative;
-}
-
-.glossary-tip, .footnote-tip, .citation-tip, .date-tip, .gap-tip, .hand-tip {
-    display: none;
-    position: absolute;
-    left: 0;
-    top: calc(100% + 0.25em);
-    z-index: 10;
-    box-sizing: border-box;
-    min-width: 8em;
-    max-width: min(24em, 80vw);
-    padding: 0.4em 0.6em;
-    border: 1px solid var(--border-color-01);
-    background-color: var(--background-color);
-    color: var(--text-color);
-    box-shadow: 0 0.15em 0.4em color-mix(in oklab, var(--brand-color), transparent 70%);
-    font-weight: 400;
-    white-space: normal;
-    unicode-bidi: isolate;
-    text-align: start;
-}
-
-.date-tip {
-    max-width: none;
-    padding: 0.3em;
-}
-
-.date-tip table {
-    margin: 0;
-    border-collapse: collapse;
-    font-size: 0.9em;
-}
-
-.date-tip th, .date-tip td {
-    padding: 0.15em 0.45em;
-    border: 1px solid var(--border-color-01);
-    white-space: nowrap;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .glossary-ref:hover > .glossary-tip,
-    .footnote-ref:hover > .footnote-tip,
-    .citation-ref:hover > .citation-tip,
-    .date-ref:hover > .date-tip,
-    .gap-ref:hover > .gap-tip,
-    .hand-ref:hover > .hand-tip {
-        display: block;
-    }
-}
-
-.glossary-ref:focus-within > .glossary-tip,
-.footnote-ref:focus-within > .footnote-tip,
-.citation-ref:focus-within > .citation-tip,
-.date-ref:focus-within > .date-tip,
-.gap-ref:focus-within > .gap-tip,
-.hand-ref:focus-within > .hand-tip {
-    display: block;
-}
-
-.hand-ref .hand-ref > .hand-tip {
-    top: calc(100% + 2.5em);
-}
-
-html.glossary-expand .glossary-tip,
-html.glossary-expand .citation-tip,
-html.glossary-expand .glossary-ref:hover > .glossary-tip,
-html.glossary-expand .glossary-ref:focus-within > .glossary-tip,
-html.glossary-expand .citation-ref:hover > .citation-tip,
-html.glossary-expand .citation-ref:focus-within > .citation-tip {
-    display: inline;
-    position: static;
-    left: auto;
-    top: auto;
-    z-index: auto;
-    min-width: 0;
-    max-width: none;
-    padding: 0;
-    border: none;
-    background: none;
-    box-shadow: none;
-    white-space: inherit;
-}
-
-html.glossary-expand .glossary-tip::before,
-html.glossary-expand .citation-tip::before {
-    content: " (";
-}
-
-html.glossary-expand .glossary-tip::after,
-html.glossary-expand .citation-tip::after {
-    content: ")";
-}
-
-@media print {
-    .footnote-tip,
-    .date-tip,
-    .gap-tip,
-    .hand-tip {
-        display: none !important;
-    }
-    /* Always inline in PDF/print; the header toggle is screen-only. */
-    .glossary-tip,
-    .citation-tip {
-        display: inline;
-        position: static;
-        left: auto;
-        top: auto;
-        z-index: auto;
-        min-width: 0;
-        max-width: none;
-        padding: 0;
-        border: none;
-        background: none;
-        box-shadow: none;
-        white-space: inherit;
-    }
-    .glossary-tip::before,
-    .citation-tip::before {
-        content: " (";
-    }
-    .glossary-tip::after,
-    .citation-tip::after {
-        content: ")";
-    }
-}
-
-/*Lists*/
-ul, ol, list, listBibl {
-    display: block;
-}
-
-item, listBibl > bibl {
-    display: list-item;
-    margin-left: 1em;
-    /*text-align: -webkit-match-parent;*/
-}
-
-li { > ul, > ol { margin-bottom: 0; }}
-item { > list, > listBibl { margin-bottom: 0; }}
-
-/*TEI*/
-/*Match only lists that are descendants of text. Otherwise they show up in the header.*/
-/*LMD: since I have an HTML/TEI mix, and TEI text element may not be present, I disabled it...*/
-list, list[type=simple], list[type=ordered], listBibl {
-    list-style-type: none;
-}
-
-list[type=bulleted] { list-style-type: disc; }
-
-list[type=ordered] {
-    counter-reset: items 0;
-}
-list[type=ordered] > item:before {
-    counter-increment: items 1;
-    content: counter(items, decimal) ". ";
-}
-list[type=ordered] > /*tei|*/item {
-    margin-left: 0;
-}
-item > list[type=ordered] {
-    margin-left: 1em;
-}
-list[type="gloss"] { list-style-type: none; }
-list[type="gloss"] > label {
-    display: block;
-    margin-top: 0.25em;
-    margin-bottom: 0.25em;
-    font-weight: bold;
-}
-list[type="gloss"] > item {
-    margin-left: 2em;
-}
-listBibl {
-    margin-left: .5em;
-    margin-top: .5em;
-}
-listBibl > /*tei|*/bibl {
-    margin-left: .5em;
-}
-
-/**
- * Links
- */
 a {
     color: var(--link-base-color);
     text-decoration: none;
@@ -558,145 +108,57 @@ a {
         text-decoration: underline var(--brand-color);
         text-underline-offset: 3px;
     }
-
-    .social-media-list &:hover {
-        text-decoration: none;
-
-        .username {
-            text-decoration: underline;
-        }
-    }
 }
 
-/*Names with no references*/
+/* Names with no references */
 a:not([href]) {
     color: var(--brand-color-light);
 }
 
-/*Page links - TODO collector-specific?*/
 a[missing="true"][empty="true"] {
-    color: orange;
+    color: var(--warning);
 }
+
 a[missing="true"]:not([empty="true"]) {
-    color: red;
+    color: var(--danger);
 }
 
-/*Footnotes*/
-div.footnotes {
-    margin-top: 2em;
-    border-top: 1px solid var(--border-color-01);
-}
-div.footnotes.source-footnotes {
-    border-top-style: dotted;
-}
-a.footnote-link[data-footnote-series="foot"],
-a.footnote-backlink[data-footnote-series="foot"] {
-    color: var(--text-color);
-}
-div.table-with-notes > div.footnotes {
-    margin-top: 0.75em;
-    font-size: 0.9em;
-}
-@media print {
-    div.footnotes.table-footnotes {
-        break-before: avoid;
-    }
-}
-span.nested-footnotes {
-    font-size: 0.9em;
-}
-a.footnote-link, a.footnote-backlink {
-    color: red;
-}
-.footnote-link {
-    vertical-align: super;
-    font-size: smaller;
-    line-height: 0; // do not let superscript alter line spacing
-}
-a.footnote-backlink {
-    padding-right: 0.25em;
-}
-.footnote + .footnote {
-    padding-left: 0.5em;
-}
-/*.footnote {*/
-/*  display: inline-block;*/
-/*  padding: 0 1em;*/
-/*  margin-right: 1em;*/
-/*}*/
-
-
-/**
- * Blockquotes
- */
-blockquote {
-    color: var(--brand-color);
-    /* LMD styling block quotes like Asciidoctor; see below. border-left: 4px solid var(--border-color-01);*/
-    padding-left: var(--spacing-unit-half);
-    font-size: 1.05rem;
-    font-style: italic;
-    /* Containing block for ::before. A float is painted on the previous printed page. */
-    position: relative;
-
-    > :last-child {
-        margin-bottom: 0;
-    }
-
-    i, em {
-        font-style: normal;
-    }
+.pdf-embed {
+    margin: var(--space-4) 0;
 }
 
-/* LMD styling block quotes like Asciidoctor. */
-blockquote::before {
-    content:"\201c";
-    position: absolute;
-    left: var(--spacing-unit-half);
-    top: 0;
-    font-size:2.75em;
-    font-weight:bold;
-    line-height:.6em;
-    margin-left:-.6em;
-    color:#7a2518;
-    text-shadow:0 1px 2px rgba(0,0,0,.1)
-}
-
-.quote-title {
-    margin: 0 0 0.5em;
-    font-weight: 400;
-}
-
-.quote-attribution {
-    margin-top: 0.5em;
-    font-size: 0.9375em;
-    text-align: right;
-}
-
-.quote-attribution br {
-    display: none;
-}
-
-.quote-attribution cite {
+.pdf-embed > object {
     display: block;
-    font-style: normal;
-    color: color-mix(in oklab, currentColor, transparent 40%);
+    width: 100%;
+    height: var(--pdf-embed-height, 80vh);
+    border: 1px solid var(--border-color-01);
 }
 
-/**
- * Code formatting
- */
+.pdf-embed-link {
+    margin-top: 0.4em;
+}
+
+video.video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: var(--space-4) 0;
+}
+
+iframe.video-embed {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    margin: var(--space-4) 0;
+    border: 0;
+}
 
 pre {
-    /* TODO I do not think I want this: padding: 8px 12px;*/
-    /*background: var(--code-background-color);*/
-    /*background-color: var(--code-background-color);*/
-
-    /*font-family: var(--code-font-family);*/
     border: 1px solid var(--brand-color-light);
     border-radius: 3px;
-
-    margin-block: 5px;
-    font-size: 15px;
+    margin-block: var(--space-1);
+    font-size: 0.9375rem;
     line-height: 1.4;
     color: var(--heading-color);
     overflow-x: auto;
@@ -705,37 +167,26 @@ pre {
 pre code {
     display: block;
     overflow-x: auto;
-    padding: 1em;
+    padding: var(--space-4);
 }
 
 code {
     font-family: var(--code-font-family);
     background-color: var(--code-background-color);
-    /*padding: 3px 5px;*/
-    /*border: 1px solid var(--brand-color-light);*/
-    /*border-radius: 3px;*/
 }
 
-/* LMD I do not have this; Jekyll's Rouge wrapped ... */
 div.highlight, figure.highlight {
     margin-bottom: var(--spacing-unit-half);
 }
 
 .hljs {
     background-color: var(--code-background-color);
-    /*TODO foreground to override Highlight's?*/
 }
 
-/* Counter-act Highlights.js styling ;) */
 pre code.hljs {
-    /* TODO there is some spurious padding/margins around pre > code vertically; display: block; seems to contribute */
-    /*display: inline flow-root;*/
-    padding: 1em;
+    padding: var(--space-4);
 }
 
-/**
- * Wrapper
- */
 .wrapper {
     max-width: var(--content-width);
     margin: 0 auto;
@@ -747,22 +198,12 @@ pre code.hljs {
     }
 }
 
-.wrapper::after {
-    content: "";
-    display: table;
-    clear: both;
-}
-
-/**
- * Icons
- */
-
-.orange {
-    color: #f66a0a;
-}
-
 .grey {
-    color: #828282;
+    color: var(--brand-color);
+}
+
+.icon-span {
+    padding-right: 0.3em;
 }
 
 .svg-icon {
@@ -774,49 +215,35 @@ pre code.hljs {
     overflow: visible;
 }
 
-/**
- * Tables
- */
 table {
     margin-bottom: var(--spacing-unit);
-    /* LMD: follow Asciidoctor - do not stretch the tables! width: 100%;*/
     text-align: var(--table-text-align);
     color: var(--table-text-color);
     border-collapse: collapse;
     border: 1px solid var(--table-border-color);
-    tr {
-        &:nth-child(even) {
-            background-color: var(--table-zebra-color);
-        }
+
+    tr:nth-child(even) {
+        background-color: var(--table-zebra-color);
     }
+
     th, td {
         padding: var(--spacing-unit-third) var(--spacing-unit-half);
     }
+
     th {
         background-color: var(--table-header-bg-color);
         border: 1px solid var(--table-header-border);
         border-bottom-color: var(--table-header-border-bottom);
     }
+
     td {
         border: 1px solid var(--table-border-color);
-        /*vertical-align: text-top;*/
     }
-    tei-head {
-        text-align: center;
-    }
-    /*header*/
-    th,                         /* HTML */
-    tr.row[role=label] td.cell, /* TEI */
-    thead td.entry              /* DocBook */
-    {
+
+    th,
+    tr.row[role=label] td.cell,
+    thead td.entry {
         font-weight: bold;
-
-        /*background-color: lighten($grey-color-light, 3%);*/
-        /*border: 1px solid darken($grey-color-light, 4%);*/
-        /*border-bottom-color: darken($grey-color-light, 12%);*/
-
-        /* Keep header visible */
-        /*position: -webkit-sticky;*/
         position: sticky;
         top: 0;
     }
@@ -825,80 +252,18 @@ table {
         display: block;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        -ms-overflow-style: -ms-autohiding-scrollbar;
     }
 }
 
 table[rendition="borderless"] {
     border: none;
-    tr.row {
-        /*background-color: $background-color;*/
-        td.cell { border: none; }
+
+    tr.row td.cell {
+        border: none;
     }
-}
-
-
-.section > tei-head,
-.section > db-title {
-    text-indent: -0.5em;
-}
-
-listBibl > tei-head {
-    font-size: 120%;
-    font-weight: bold;
-}
-
-/* TEI title */
-TEI tei-title {
-    display: inline;
-}
-TEI tei-title[level=a] {
-    quotes: "\201c" "\201d" "\2018" "\2019" "\201c" "\201d" "\2018" "\2019" "\201c" "\201d" "\2018" "\2019" "\201c" "\201d";
-}
-TEI tei-title[level=a]:before {
-    content: open-quote;
-}
-TEI tei-title[level=a]:after {
-    content: close-quote;
-}
-TEI tei-title[level=a][next]:after {
-    content: "" !important;
-}
-TEI tei-title[level=a][prev]:before {
-    content: "" !important;
-}
-tei-title[level=m] {
-    font-style: italic;
 }
 
 tei-head,
 db-title {
     display: block;
-}
-
-.csl-bib-body {
-    margin-top: var(--spacing-unit);
-}
-
-.csl-entry {
-    display: block;
-    margin-top: 0.4em;
-    padding-left: 2em;
-    text-indent: -2em;
-}
-
-ul.bibliography, ol.bibliography {
-    padding-left: 1.5em;
-}
-
-listBibl.bibliography, .bibliography-item {
-    display: block;
-}
-
-.bibliography-item {
-    margin-top: 0.4em;
-}
-
-.unresolved-citation {
-    color: var(--brand-color, #c00);
 }

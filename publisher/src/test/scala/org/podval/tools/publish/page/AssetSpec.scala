@@ -49,7 +49,7 @@ final class AssetSpec extends AnyFunSuite:
       "raw.yml" -> "asset: true\n"
     )): (_, target) =>
       assert(Files.read(File(target, "raw.html")) == source)
-      assert(!html(target, "raw.html").contains("post h-entry"))
+      assert(!html(target, "raw.html").contains("""<article class="page">"""))
       assert(!File(target, "raw.yml").exists)
       assert(!File(target, "raw.yaml").exists)
   }
@@ -89,7 +89,7 @@ final class AssetSpec extends AnyFunSuite:
           |""".stripMargin
     )): (_, target) =>
       val page: String = html(target, "page.html")
-      assert(page.contains("post h-entry"), page)
+      assert(page.contains("""<article class="page">"""), page)
       assert(page.contains("Kept as markup."), page)
       val errors: String = html(target, "errors.html")
       assert(errors.contains("invalid asset"), errors)
@@ -108,12 +108,12 @@ final class AssetSpec extends AnyFunSuite:
       "child.md" -> "Child page.\n"
     )): (site, target) =>
       assert(Files.read(File(target, "index.html")) == source)
-      assert(!html(target, "index.html").contains("post h-entry"))
+      assert(!html(target, "index.html").contains("""<article class="page">"""))
       assert(!html(target, "index.html").contains("directory"))
       assert(!File(target, "index.yml").exists)
       val child: String = html(target, "child.html")
       assert(child.contains("Child page."), child)
-      assert(child.contains("post h-entry"), child)
+      assert(child.contains("""<article class="page">"""), child)
       val home: Page = site.pages.pages.find(_.path == Path("index").html).get
       assert(home.isDirectory)
       val errors: String = html(target, "errors.html")
@@ -129,7 +129,7 @@ final class AssetSpec extends AnyFunSuite:
       "dir/leaf.md" -> "Leaf.\n"
     )): (site, target) =>
       assert(Files.read(File(target, "dir/index.html")) == source)
-      assert(!html(target, "dir/index.html").contains("post h-entry"))
+      assert(!html(target, "dir/index.html").contains("""<article class="page">"""))
       val leaf: String = html(target, "dir/leaf.html")
       assert(leaf.contains("Leaf."), leaf)
       val directory: Page = site.pages.pages.find(_.path == Path("dir", "index").html).get
@@ -150,7 +150,7 @@ final class AssetSpec extends AnyFunSuite:
       "both.yml" -> "asset: true\n"
     )): (_, target) =>
       val page: String = html(target, "both.html")
-      assert(page.contains("post h-entry"), page)
+      assert(page.contains("""<article class="page">"""), page)
       val errors: String = html(target, "errors.html")
       assert(errors.contains("ambiguous frontmatter"), errors)
   }
@@ -163,7 +163,7 @@ final class AssetSpec extends AnyFunSuite:
     )): (_, target) =>
       val page: String = html(target, "titled.html")
       assert(page.contains("Sidecar Title"), page)
-      assert(page.contains("post h-entry"), page)
+      assert(page.contains("""<article class="page">"""), page)
       assert(!File(target, "titled.yml").exists)
       assert(!File(target, "titled.md").exists)
   }

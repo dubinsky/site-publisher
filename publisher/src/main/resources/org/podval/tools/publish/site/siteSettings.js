@@ -23,12 +23,29 @@
     });
 
     var settings = document.querySelector(".site-settings");
-    if (!settings) return;
+    var header = document.querySelector(".site-header");
+    var navToggle = document.querySelector(".nav-toggle");
+
+    function setNavOpen(open) {
+      if (!header || !navToggle) return;
+      header.classList.toggle("nav-open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    if (navToggle) {
+      navToggle.addEventListener("click", function () {
+        setNavOpen(!header.classList.contains("nav-open"));
+      });
+    }
+
     document.addEventListener("click", function (e) {
-      if (!settings.contains(e.target)) settings.removeAttribute("open");
+      if (settings && !settings.contains(e.target)) settings.removeAttribute("open");
+      if (header && navToggle && !header.contains(e.target)) setNavOpen(false);
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") settings.removeAttribute("open");
+      if (e.key !== "Escape") return;
+      if (settings) settings.removeAttribute("open");
+      setNavOpen(false);
     });
   }
 

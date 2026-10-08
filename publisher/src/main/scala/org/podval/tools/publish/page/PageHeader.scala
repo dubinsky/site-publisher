@@ -16,38 +16,36 @@ object PageHeader:
     page.store.isDefined || page.isInstanceOf[EntityListPage] || collectorAncestors(page).nonEmpty
 
   def pageHeader(page: MarkupPage): Xml.Element =
-    header(className := "post-header",
-      postPath(page),
-      h1(className := "post-title p-name", itemProp := "name headline", page.title),
+    header(className := "page-header",
+      pagePath(page),
+      h1(className := "page-title", page.title),
       Option.when(!page.hasSyntheticContent)(articleMeta(page))
     )
 
-  private def postPath(page: Page): Xml.Element =
+  private def pagePath(page: Page): Xml.Element =
     def parents(page: Page): Seq[Page] = page.parent match
       case None => Seq.empty
       case Some(parent) => parents(parent) :+ parent
 
     val pathFull: Seq[Page] = parents(page)
     val path: Seq[Page] = if pathFull.isEmpty then pathFull else pathFull.tail
-    span(className := "post-path", path.map(page => span("/", page.ref(withIcon = false))))
+    span(className := "page-path", path.map(page => span("/", page.ref(withIcon = false))))
 
   private def articleMeta(page: MarkupPage): Xml.Element =
-    div(className := "post-meta",
+    div(className := "page-meta",
       join(
         join(
           join(
             join(
-              timeHtml(Option.when(page.dateModified.nonEmpty)("Published:"), page.date, "dt-published", "datePublished"),
+              timeHtml(Option.when(page.dateModified.nonEmpty)("Published:"), page.date, "page-published"),
               "•",
-              timeHtml(Some("Updated:"), page.dateModified, "dt-modified", "dateModified")
+              timeHtml(Some("Updated:"), page.dateModified, "page-modified")
             ),
             "•",
             page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
               Seq(
-                span(className := "post-authors",
-                  span(className := "post-author", itemProp := "author", itemScope := true, itemType := "http://schema.org/Person",
-                    span(className := "p-author h-card", itemProp := "name", author)
-                  )
+                span(className := "page-authors",
+                  span(className := "page-author", author)
                 )
               )
           ),
@@ -64,10 +62,10 @@ object PageHeader:
     then left ++ Seq(span(className := "bullet-divider", text)) ++ right
     else left ++ right
 
-  private def timeHtml(label: Option[String], date: Option[Date], cls: String, itemprop: String): Seq[Xml.Element] =
+  private def timeHtml(label: Option[String], date: Option[Date], cls: String): Seq[Xml.Element] =
     date.fold(Seq.empty): date =>
       label.fold(Seq.empty)(label => Seq(span(className := "meta-label", label))) ++
-        Seq(time(className := cls, datetime := date.toString, itemProp := itemprop, date.toShortString))
+        Seq(time(className := cls, datetime := date.toString, date.toShortString))
 
   def collectorPageHeader(page: MarkupPage): Xml.Element =
     collectorHeaderXml(page)

@@ -1,0 +1,190 @@
+/**
+ * Folio (PDF margin page numbers). Not painted by Chromium; a probe `span.folio`
+ * is measured after print and PdfPageNumbers stamps from that computed style
+ * (family, weight, italic, size, color). Defaults to body type via the variables.
+ * Position (outer edge, below the text block) is not CSS.
+ * `font-family` must be loadable as TrueType: a Google Fonts family, a font on
+ * the machine, or Times/Helvetica/Courier. WOFF2-only webfonts are skipped
+ * (Chromium print embeds those as Type3, which PDFBox cannot encode into).
+ */
+.folio {
+    font-family: var(--base-font-family);
+    font-weight: var(--base-font-weight);
+    font-size: var(--small-font-size);
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+}
+
+@media print {
+    .site-header,
+    .site-footer,
+    .page-path,
+    nav.pagination {
+        display: none;
+    }
+
+    .footnote-tip,
+    .date-tip,
+    .gap-tip,
+    .hand-tip {
+        display: none !important;
+    }
+
+    /* Always inline in PDF/print; the header toggle is screen-only. */
+    .glossary-tip,
+    .citation-tip {
+        display: inline;
+        position: static;
+        left: auto;
+        top: auto;
+        z-index: auto;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border: none;
+        background: none;
+        box-shadow: none;
+        white-space: inherit;
+    }
+
+    .glossary-tip::before,
+    .citation-tip::before {
+        content: " (";
+    }
+
+    .glossary-tip::after,
+    .citation-tip::after {
+        content: ")";
+    }
+
+    details.admonition > :not(summary) {
+        display: block !important;
+    }
+
+    div.footnotes.table-footnotes {
+        break-before: avoid;
+    }
+
+    .page-body a.anchor {
+        display: none !important;
+    }
+
+    .page-body a.link {
+        text-decoration: none;
+    }
+
+    /*
+     * Markup wraps the body in a bare <div> (see HtmlMarkup.xmlContent), so structure is:
+     *   .page-body > div > .toc | .section | ...
+     * Page break for top-level sections (parent is not a section). Nested sections stay continuous.
+     */
+    .page-body div.toc,
+    .page-body :not(.section) > .section {
+        break-before: page;
+        page-break-before: always;
+    }
+
+    /* If the first body child is already a section (no TOC), avoid a blank page. */
+    .page-body > .section:first-child,
+    .page-body > div > .section:first-child {
+        break-before: auto;
+        page-break-before: auto;
+    }
+
+    .section > .heading {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    pre, blockquote, table, img, figure {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .pdf-embed object,
+    video.video,
+    iframe.video-embed {
+        display: none !important;
+    }
+
+    /* Contain the decorative quote; clip top/bottom so it cannot paint on the previous page.
+     * rem, not em: em on ::before is the 2.75em quote font. Zero the inner p's
+     * margin-top so padding does not break collapse and leave the mark above the line. */
+    blockquote {
+        padding-top: 0.9rem;
+        clip-path: inset(0 -2em 0 -2em);
+    }
+
+    blockquote::before {
+        top: 0.9rem;
+    }
+
+    blockquote > p:first-child {
+        margin-top: 0;
+    }
+
+    /*
+     * TOC dotted leaders + page numbers. Leaders and page numbers are injected by
+     * fill-toc-page-numbers.js. Nested list margins are cancelled so the page-number
+     * column stays aligned; titles alone are indented.
+     */
+    ul.toc > li.toc-section,
+    ul.toc > li.toc-section-selected {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    ul.toc > li.toc-section > a,
+    ul.toc > li.toc-section-selected > a {
+        flex: 0 1 auto;
+        order: 1;
+        min-width: 0;
+    }
+
+    ul.toc > li.toc-section > .toc-leader,
+    ul.toc > li.toc-section-selected > .toc-leader {
+        flex: 1 1 auto;
+        order: 2;
+        border-bottom: 1px dotted color-mix(in oklab, var(--text-color), transparent 55%);
+        margin: 0 0.4em;
+        min-width: 1em;
+        height: 0.65em;
+    }
+
+    ul.toc > li.toc-section > .toc-page-number,
+    ul.toc > li.toc-section-selected > .toc-page-number {
+        flex: 0 0 2.5em;
+        order: 3;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    ul.toc > li.toc-section > ul.toc,
+    ul.toc > li.toc-section-selected > ul.toc {
+        flex: 1 0 100%;
+        order: 4;
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 1.5em;
+    }
+
+    ul.toc ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 3em;
+    }
+
+    ul.toc ul.toc ul.toc ul.toc > li.toc-section > a,
+    ul.toc ul.toc ul.toc ul.toc > li.toc-section-selected > a {
+        padding-left: 4.5em;
+    }
+}

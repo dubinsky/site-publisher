@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- CSS is split into tokens, base, chrome, prose, TEI, and print.
+  The facsimile column is a separate sheet on the viewer page.
+  TEI styles stay on every page because transclusion copies those elements into the host.
+  Page chrome is `article.page` / `page-header` / `page-body`.
+  Microformats and schema.org microdata are gone; JSON-LD stays.
+  The header is a flex bar with grouped links and a menu button.
 - fix: MathJax delimiter;
 - TEI `correspAction type="received"` supplies the addressee.
   `persName role="addressee"` still does when no action is `received`.

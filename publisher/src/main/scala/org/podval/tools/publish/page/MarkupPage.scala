@@ -140,7 +140,6 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     html(langAttr := lang,
       head(
         meta(charset := "utf-8"),
-        meta(httpEquiv := "X-UA-Compatible", contentAttr := "IE=edge"),
         meta(name := "viewport", contentAttr := "width=device-width, initial-scale=1"),
         Seo.head(this),
         site.favicon,
@@ -158,12 +157,11 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         site.siteHeader(this),
         main(className := "page-content", aria("label") := "Content",
           div(className := "wrapper",
-            article(className := "post h-entry", itemScope := true, itemType := s"http://schema.org/${Seo.schemaType(this)}",
+            article(className := "page",
               pageHeader,
-              div(className := "post-content e-content", itemProp := "articleBody",
+              div(className := "page-body",
                 articleBody ++ site.categories.html(this).toSeq
-              ),
-              a(className := "u-url", href := path.toString, hidden := true)
+              )
             ),
             site.backLinks.html(this),
             site.transclusions.html(this)

@@ -127,7 +127,7 @@ final class CategorySpec extends AnyFunSuite:
       )
     )): (_, target) =>
       val books: String = html(target, "Books.html")
-      val members: String = between(books, "category-members", "u-url")
+      val members: String = between(books, "category-members", "</article>")
       assert(books.contains("Shelf notes."), books)
       assert(books.contains("Still here."), books)
       assert(!books.contains("Books.base"), books)
@@ -146,24 +146,24 @@ final class CategorySpec extends AnyFunSuite:
       assert(members.indexOf("Fragment") < members.indexOf("Zed"), members)
       assert(members.split("page-ref").length - 1 == 5, members)
 
-      val movies: String = between(html(target, "Movies.html"), "category-members", "u-url")
+      val movies: String = between(html(target, "Movies.html"), "category-members", "</article>")
       assert(movies.contains("Blade"), movies)
       assert(movies.contains("Both"), movies)
       assert(!movies.contains("Amy"), movies)
       assert(movies.indexOf("Blade") < movies.indexOf("Both"), movies)
 
       val amy: String = html(target, "Amy.html")
-      val amyHeader: String = between(amy, "post-meta", "post-content")
+      val amyHeader: String = between(amy, "page-meta", "page-body")
       assert(amyHeader.split("page-category").length - 1 == 1, amyHeader)
       assert(amyHeader.contains("href=\"/Books.html\""), amyHeader)
       assert(amyHeader.contains("page-tag"), amyHeader)
       assert(amyHeader.contains("to-read"), amyHeader)
 
-      val alias: String = between(html(target, "Alias.html"), "post-meta", "post-content")
+      val alias: String = between(html(target, "Alias.html"), "page-meta", "page-body")
       assert(alias.contains("href=\"/Books.html\""), alias)
       assert(!alias.contains("library"), alias)
 
-      val both: String = between(html(target, "Both.html"), "post-header", "post-content")
+      val both: String = between(html(target, "Both.html"), "page-header", "page-body")
       assert(both.indexOf("href=\"/Books.html\"") < both.indexOf("href=\"/Movies.html\""), both)
 
       assert(books.contains("class=\"backlinks\""), books)
