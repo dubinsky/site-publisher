@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The footer drops its heading, lines the description up with the other columns, and shows the feed as an icon.
 - fix: do not break up AsciiDoc macros when pretty-printing
 
 ## [0.5.0] - 2026-10-08

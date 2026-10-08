@@ -15,9 +15,11 @@ object Feed:
   def icon: Icon = Icon.rss
 
   def feedFooter: Xml.Element = a(
+    className := "footer-feed",
     href := Feed.path.toString,
-    icon.html,
-    span(className := "rss-feed", "RSS feed")
+    titleAttr := "RSS feed",
+    aria("label") := "RSS feed",
+    icon.html
   )
 
   // jekyll-feed `{% feed_meta %}`: autodiscovery `<link>` in `<head>`.

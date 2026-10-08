@@ -342,7 +342,6 @@ final class Site(options: SiteOptions) extends JSLibrary:
   def siteFooter: Xml.Element =
     footer(className := "site-footer",
       div(className := "wrapper",
-        h2(className := "footer-heading", config.title),
         div(className := "footer-col-wrapper",
           div(className := "footer-col",
             ul(className := "contact-list",
@@ -365,8 +364,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
             )
           ),
           div(className := "footer-col",
-            p(config.description),
-            p(Feed.feedFooter)
+            div(className := "footer-description", config.description),
+            Feed.feedFooter
           )
         )
       )
