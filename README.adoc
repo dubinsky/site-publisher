@@ -14,7 +14,7 @@ This file is about how to *use* the generator and the *syntax* of each construct
 == Usage
 
 The source directory must contain `_site_config.yml`.
-A key that is not a config field is an error, including a key nested under `social` or `graph`.
+A key that is not a config field is an error, including a key nested under `social`, `graph`, or `license`.
 Field names are kebab-case (`named-windows`, `facsimiles-url`).
 Pass that directory as the only positional argument:
 
@@ -216,6 +216,43 @@ Other sites should leave it off.
 named-windows: true
 ----
 
+[#footer]
+=== Footer
+
+`license` is one record.
+`name` is required.
+`link`, `holder`, and `holder-link` are optional.
+A blank field is an error, and `holder-link` requires `holder`.
+An omitted `license` key leaves out the head link and the footer line.
+A scalar `license` or a top-level `license-link` is rejected.
+
+----
+license:
+  name: CC BY 4.0
+  link: http://creativecommons.org/licenses/by/4.0/
+  holder: the Open Torah Project
+  holder-link: http://www.opentorah.org/
+----
+
+`description` stays plain text because it is also the Atom subtitle and the SEO fallback.
+
+chumashquestions.org replaces the scalar keys:
+
+----
+license: CC by-nc-nd
+license-link: http://creativecommons.org/licenses/by-nc-nd/4.0/
+----
+
+with:
+
+----
+license:
+  name: CC by-nc-nd
+  link: http://creativecommons.org/licenses/by-nc-nd/4.0/
+----
+
+Commit that file with the plugin pin only after the release that contains this record is on Maven Central.
+Until then, leave the nested keys uncommitted so a local generate can use them while CI still resolves 0.5.0.
 
 [#summary]
 == Summary
@@ -788,7 +825,7 @@ Redirects are followed.
 A status of 400 or higher, or a timeout or connection failure, is a broken link.
 The error text includes the status or the failure message.
 
-Footer social links, the license link, and facsimile JPEGs are not checked.
+Footer social links, the license link, the holder link, and facsimile JPEGs are not checked.
 Generation still finishes.
 The Errors page is the report, as for unresolved links.
 Timeouts are 5 seconds to connect and 10 seconds per request.

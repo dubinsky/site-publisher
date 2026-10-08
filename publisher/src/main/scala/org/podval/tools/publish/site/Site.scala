@@ -118,7 +118,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
   val googleAnalytics: Option[String] = if !options.production then None else config.googleAnalytics
 
   lazy val license: Option[Xml.Element] = config.license.map: license =>
-    link(rel := "license", titleAttr := license, config.licenseLink.map(licenseLink => href := licenseLink))
+    link(
+      rel := "license",
+      titleAttr := license.name.trim,
+      license.link.map(url => href := url.trim)
+    )
 
   lazy val favicon: Option[Xml.Element] =
     for
@@ -339,6 +343,19 @@ final class Site(options: SiteOptions) extends JSLibrary:
   private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =
     Option.when(items.nonEmpty)(div(className := s"nav-group $cls", items))
 
+  private def footerLicense(license: Config.License): Xml.Element =
+    div(
+      className := "footer-license",
+      license.holder.map(holder =>
+        license.holderLink match
+          case Some(url) => a(href := url.trim, holder.trim)
+          case None => span(holder.trim)
+      ),
+      license.link match
+        case Some(url) => a(rel := "license", href := url.trim, license.name.trim)
+        case None => span(license.name.trim)
+    )
+
   def siteFooter: Xml.Element =
     footer(className := "site-footer",
       div(className := "wrapper",
@@ -365,6 +382,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
           ),
           div(className := "footer-col",
             div(className := "footer-description", config.description),
+            config.license.map(footerLicense),
             Feed.feedFooter
           )
         )

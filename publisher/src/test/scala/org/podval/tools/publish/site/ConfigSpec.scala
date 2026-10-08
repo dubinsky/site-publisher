@@ -95,3 +95,72 @@ final class ConfigSpec extends AnyFunSuite:
     assert(!graph.includeTransclusions)
     assert(graph.excludePathPrefixes == List("days"))
   }
+
+  test("omitted license is none") {
+    assert(decode(required).license.isEmpty)
+  }
+
+  test("license maps from kebab-case") {
+    val license: Config.License = decode(
+      required +
+        """license:
+          |  name: CC BY 4.0
+          |  link: http://creativecommons.org/licenses/by/4.0/
+          |  holder: the Open Torah Project
+          |  holder-link: http://www.opentorah.org/
+          |""".stripMargin
+    ).license.get
+    assert(license.name == "CC BY 4.0")
+    assert(license.link.contains("http://creativecommons.org/licenses/by/4.0/"))
+    assert(license.holder.contains("the Open Torah Project"))
+    assert(license.holderLink.contains("http://www.opentorah.org/"))
+  }
+
+  test("unknown license keys are rejected") {
+    val message: String = reject(
+      required +
+        """license:
+          |  name: CC
+          |  mark: copyleft
+          |""".stripMargin
+    )
+    assert(message.contains("license.mark"), message)
+  }
+
+  test("license-link is an unknown key") {
+    val message: String = reject(required + "license-link: http://creativecommons.org/licenses/by-nc-nd/4.0/\n")
+    assert(message.contains("license-link"), message)
+  }
+
+  test("scalar license is rejected") {
+    assert(Config.decode(required + "license: CC by-nc-nd\n").isLeft)
+  }
+
+  test("holder-link without holder is rejected") {
+    val message: String = reject(
+      required +
+        """license:
+          |  name: CC BY 4.0
+          |  holder-link: http://www.opentorah.org/
+          |""".stripMargin
+    )
+    assert(message == "license.holder-link requires license.holder", message)
+  }
+
+  test("blank license fields are rejected") {
+    assert(Config.decode(required + "license:\n  name: \"  \"\n").isLeft)
+    assert(Config.decode(required + "license:\n  name: CC\n  link: \" \"\n").isLeft)
+    assert(Config.decode(required + "license:\n  name: CC\n  holder: \"\"\n").isLeft)
+    assert(Config.decode(
+      required +
+        """license:
+          |  name: CC
+          |  holder: Holder
+          |  holder-link: " "
+          |""".stripMargin
+    ).isLeft)
+  }
+
+  test("empty license mapping is rejected") {
+    assert(Config.decode(required + "license: {}\n").isLeft)
+  }

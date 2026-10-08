@@ -15,8 +15,7 @@ final class Config(
   val timezone: Option[String] = None,
   val lang: Option[String] = None,
   val favicon: Option[String] = None,
-  val license: Option[String] = None,
-  val licenseLink: Option[String] = None,
+  val license: Option[Config.License] = None,
   val googleAnalytics: Option[String] = None,
   val paginatePosts: Option[Int] = None,
   val headerPages: List[String] = List.empty,
@@ -42,6 +41,13 @@ object Config:
     val excludePathPrefixes: List[String] = List.empty
   )
 
+  final class License(
+    val name: String,
+    val link: Option[String] = None,
+    val holder: Option[String] = None,
+    val holderLink: Option[String] = None
+  )
+
   private val schema: Schema[Config] = Schema.derived
 
   private val codec: YamlCodec[Config] = schema
@@ -50,12 +56,26 @@ object Config:
 
   def encodeToString(config: Config): String = codec.encodeToString(config)
 
-  /** Decode `_site_config.yml`. An unknown key, including under `social` or `graph`, is an error. */
+  /** Decode `_site_config.yml`. An unknown key, including under `social`, `graph`, or `license`, is an error. */
   def decode(input: String): Either[Throwable, Config] =
     try
       val yaml: Yaml = YamlReader.read(input)
       val unknown: List[String] = SchemaUtil.unknownKeys(yaml, schema)
       if unknown.nonEmpty then Left(IllegalArgumentException(s"Unknown config keys: ${unknown.mkString(", ")}"))
-      else Right(codec.decodeValue(yaml))
+      else
+        val config: Config = codec.decodeValue(yaml)
+        licenseError(config) match
+          case Some(message) => Left(IllegalArgumentException(message))
+          case None => Right(config)
     catch
       case error: Throwable if NonFatal(error) => Left(error)
+
+  // Trim is checked here and applied at render. The YAML text is left as written.
+  private def licenseError(config: Config): Option[String] = config.license.flatMap: license =>
+    if license.name.trim.isEmpty then Some("license.name is blank")
+    else if license.link.exists(_.trim.isEmpty) then Some("license.link is blank")
+    else if license.holder.exists(_.trim.isEmpty) then Some("license.holder is blank")
+    else if license.holderLink.exists(_.trim.isEmpty) then Some("license.holder-link is blank")
+    else if license.holderLink.isDefined && license.holder.isEmpty then
+      Some("license.holder-link requires license.holder")
+    else None

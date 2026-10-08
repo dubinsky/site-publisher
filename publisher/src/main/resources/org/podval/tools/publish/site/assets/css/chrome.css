@@ -243,9 +243,17 @@
 
 .footer-col > :first-child,
 .footer-description,
+.footer-license,
 .footer-feed {
     margin: 0;
     padding: 0;
+}
+
+.footer-license {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.5em;
 }
 
 .footer-feed {
