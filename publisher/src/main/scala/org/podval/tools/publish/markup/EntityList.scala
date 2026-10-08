@@ -7,8 +7,10 @@ final case class EntityList(
   kind: EntityKind,
   @Modifier.rename("n") id: String,
   role: Option[String] = None,
-  @Modifier.config(XmlCodec.Element, "title")
+  @Modifier.config(XmlCodec.Element, "head")
+  @Modifier.alias("title")
   @Modifier.alias("tei-title")
+  @Modifier.alias("tei-head")
   title: String
 ) derives CanEqual
 

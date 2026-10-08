@@ -35,10 +35,20 @@ object DocumentHeader:
     child(xml, "text").flatMap: text =>
       text.get(XmlAttribute.XmlLang).orElse(text.get(XmlAttribute.Lang)).map(_.trim).filter(_.nonEmpty)
 
+  /** `correspAction/@type="received"`, otherwise `persName/@role="addressee"`. */
   private def addresseeOf(profileDesc: Xml.Element): Option[Xml.Element] =
-    profileDesc.gather(el =>
-      Option.when(el.isNamed("persName") && el.get(XmlAttribute.Role).contains("addressee"))(el)
-    ).headOption
+    val actions: Seq[Xml.Element] =
+      profileDesc.gather(el => Option.when(el.isNamed("correspAction"))(el)).toSeq
+    def persNames(action: Xml.Element): Seq[Xml.Element] =
+      action.gather(el => Option.when(el.isNamed("persName"))(el)).toSeq
+    val received: Option[Xml.Element] =
+      actions.find(isReceived).flatMap(action => persNames(action).headOption)
+    val byRole: Option[Xml.Element] =
+      actions.flatMap(persNames).find(_.get(XmlAttribute.Role).contains("addressee"))
+    received.orElse(byRole)
+
+  private def isReceived(action: Xml.Element): Boolean =
+    action.get(XmlAttribute.Type).exists(_.trim.equalsIgnoreCase("received"))
 
   private def children(element: Xml.Element, name: String): Seq[Xml.Element] =
     element.childElements.filter(_.isNamed(name)).toSeq

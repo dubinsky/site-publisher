@@ -230,8 +230,8 @@ object TeiMarkup extends Markup(
         reportedHands
       )
 
-  /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
-    * then harvest, number, and append the list. */
+  /** Convert `note place="end"` and `place="foot"` in an already-assembled fragment tree
+    * (one id sequence), then harvest, number, and append the lists. */
   private[publish] def finishFootnotes(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val converted: Xml.Element = DialectWalk.rewrite(xml): (element, _) =>
@@ -508,14 +508,21 @@ object TeiMarkup extends Markup(
       Some(Seq(wrapped))
 
   // Footnotes in TEI:
-  // <note place="end" n="3">Footnote body</note>
+  // <note place="end" n="3">Encoder endnote</note>
+  // <note place="foot">Source footnote</note>
   // `@n` is only the visible marker. Series order and fragment ids ignore it.
+  // The two places are separate series.
   private def convertFootnote(element: Xml.Element, correlationIds: IdGenerator): Option[Xml.Nodes] =
-    val isFootnote: Boolean = element.isNamed("note") && element.get("place").contains("end")
-    if !isFootnote then None else Some:
+    val series: Option[FootnoteSeries] =
+      if !element.isNamed("note") then None
+      else element.get("place") match
+        case Some("end") => Some(FootnoteSeries.End)
+        case Some("foot") => Some(FootnoteSeries.Foot)
+        case _ => None
+    series.map: which =>
       val correlationId: String = correlationIds.generate()
       val marker: Option[String] = element.get("n")
       Seq(
-        Footnote.link(correlationId, marker),
-        Footnote.body(correlationId, element.getChildren, marker)
+        Footnote.link(correlationId, marker, which),
+        Footnote.body(correlationId, element.getChildren, marker, which)
       )

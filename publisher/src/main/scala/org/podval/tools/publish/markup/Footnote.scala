@@ -9,6 +9,11 @@ enum FootnoteScope derives CanEqual:
   case Table(index: Int)
   case Nested(parentId: String)
 
+/** `place="end"` and `place="foot"` number and list separately. */
+enum FootnoteSeries derives CanEqual:
+  case End
+  case Foot
+
 // Details of the footnote internal representation.
 object Footnote:
   private object CorrelationId extends XmlAttribute("footnote-correlation-id")
@@ -23,6 +28,10 @@ object Footnote:
 
   // Authored marker (TEI `@n`, DocBook `label`). Not a correlation id and not a series position.
   private object Marker extends XmlAttribute("footnote-label")
+
+  private object SeriesAttr extends XmlAttribute("data-footnote-series")
+
+  private val FootSeries: String = "foot"
 
   private val alphabet: String = "abcdefghijklmnopqrstuvwxyz"
 
@@ -49,7 +58,7 @@ object Footnote:
     nodes: Xml.Nodes,
     parentBodyId: Option[String] = None
   ): Footnote =
-    Footnote(correlationId, number, nodes, scope, parentBodyId, footnote.authoredMarker)
+    Footnote(correlationId, number, nodes, scope, parentBodyId, footnote.authoredMarker, footnote.series)
 
   def letterLabel(index0: Int): String =
     val q: Int = index0 / 26
@@ -59,26 +68,45 @@ object Footnote:
 
   // Note: footnote link will end up as an <a>, but the stub is not -
   // to avoid it being assigned an id and getting resolved ;)
-  def link(correlationId: String, marker: Option[String] = None): Xml.Element = putMarker(
-    Xml
-      .element(XmlElement.Span)
-      .add(LinkClass)
-      .set(CorrelationId, correlationId),
+  def link(
+    correlationId: String,
+    marker: Option[String] = None,
+    series: FootnoteSeries = FootnoteSeries.End
+  ): Xml.Element = putMarker(
+    markSeries(
+      Xml
+        .element(XmlElement.Span)
+        .add(LinkClass)
+        .set(CorrelationId, correlationId),
+      series
+    ),
     marker
   )
 
   def body(
     correlationId: String,
     content: Xml.Nodes,
-    marker: Option[String] = None
+    marker: Option[String] = None,
+    series: FootnoteSeries = FootnoteSeries.End
   ): Xml.Element = putMarker(
-    Xml
-      .element(XmlElement.Span)
-      .add(BodyClass)
-      .set(CorrelationId, correlationId)
-      .setChildren(content),
+    markSeries(
+      Xml
+        .element(XmlElement.Span)
+        .add(BodyClass)
+        .set(CorrelationId, correlationId)
+        .setChildren(content),
+      series
+    ),
     marker
   )
+
+  private def markSeries(element: Xml.Element, series: FootnoteSeries): Xml.Element =
+    series match
+      case FootnoteSeries.End => element
+      case FootnoteSeries.Foot => element.set(SeriesAttr, FootSeries)
+
+  private def readSeries(element: Xml.Element): FootnoteSeries =
+    if element.get(SeriesAttr).contains(FootSeries) then FootnoteSeries.Foot else FootnoteSeries.End
 
   private def putMarker(element: Xml.Element, marker: Option[String]): Xml.Element =
     marker.map(_.trim).filter(_.nonEmpty).fold(element)(element.set(Marker, _))
@@ -131,7 +159,8 @@ object Footnote:
             correlationId = correlationId,
             number = numbers.get(correlationId).fold(0)(_ + 1),
             nodes = stripInnerBodies(element.getChildren),
-            marker = readMarker(element)
+            marker = readMarker(element),
+            series = readSeries(element)
           )
       )
       .toMap
@@ -205,12 +234,7 @@ object Footnote:
           .sortBy(_.number)
     val toAdd: Seq[Footnote] = treeDocs ++ leftoverDocs
     if toAdd.isEmpty then wrapped
-    else
-      val footnotesDiv: Xml.Element = Xml
-        .element(XmlElement.Div)
-        .addClass("footnotes")
-        .setChildren(toAdd.map(emitBody(_, footnotes)))
-      wrapped.setChildren(wrapped.getChildren :+ footnotesDiv)
+    else wrapped.setChildren(wrapped.getChildren ++ seriesDivs(toAdd, footnotes, table = false))
 
   def resolveLink(
     element: Xml.Element,
@@ -430,29 +454,26 @@ object Footnote:
       if kinds.get(id).contains(Kind.Table) then loc.map(id -> _) else None
     val tables: Seq[Xml.Element] = uniqueEq(tableOccs.map(_._2))
     val documentEmitted: Seq[(String, Footnote)] =
-      documentIds.zipWithIndex.flatMap: (id, index) =>
-        combined.get(id).map: footnote =>
-          id -> remapped(footnote, id, index + 1, FootnoteScope.Document, footnote.nodes)
+      numberBySeries(documentIds, combined): (id, footnote, n) =>
+        remapped(footnote, id, n, FootnoteScope.Document, footnote.nodes)
     val tableEmitted: Seq[(String, Footnote)] =
       tables.zipWithIndex.flatMap: (table, index) =>
         val k: Int = index + 1
         val ids: Seq[String] = tableOccs.filter((_, t) => t eq table).map(_._1).distinct
-        ids.zipWithIndex.flatMap: (id, n) =>
-          combined.get(id).map: footnote =>
-            id -> remapped(footnote, id, n + 1, FootnoteScope.Table(k), footnote.nodes)
+        numberBySeries(ids, combined): (id, footnote, n) =>
+          remapped(footnote, id, n, FootnoteScope.Table(k), footnote.nodes)
     val parents: Map[String, Footnote] = (documentEmitted ++ tableEmitted).toMap
     val nestedEmitted: Seq[(String, Footnote)] =
       parents.toSeq.flatMap: (parentId, parent) =>
-        nestedIdsFor(parentId, kinds, combined).zipWithIndex.flatMap: (id, n) =>
-          combined.get(id).map: footnote =>
-            id -> remapped(
-              footnote,
-              id,
-              n + 1,
-              FootnoteScope.Nested(parentId),
-              footnote.nodes,
-              Some(parent.bodyId)
-            )
+        numberBySeries(nestedIdsFor(parentId, kinds, combined), combined): (id, footnote, n) =>
+          remapped(
+            footnote,
+            id,
+            n,
+            FootnoteScope.Nested(parentId),
+            footnote.nodes,
+            Some(parent.bodyId)
+          )
     (documentEmitted ++ tableEmitted ++ nestedEmitted).toMap
 
   private def nestedIdsFor(
@@ -491,15 +512,11 @@ object Footnote:
         if ids.isEmpty then withChildren
         else
           val notes: Seq[Footnote] = ids.flatMap(footnotes.get)
-          val list: Xml.Element = Xml
-            .element(XmlElement.Div)
-            .addClass("footnotes")
-            .addClass("table-footnotes")
-            .setChildren(notes.map(emitBody(_, footnotes)))
+          val lists: Seq[Xml.Element] = seriesDivs(notes, footnotes, table = true)
           Xml
             .element(XmlElement.Div)
             .addClass("table-with-notes")
-            .setChildren(Seq(withChildren: Xml.Node, list: Xml.Node))
+            .setChildren(withChildren +: lists)
 
   private def emitBody(footnote: Footnote, footnotes: Map[String, Footnote]): Xml.Element =
     footnote.body(nestedChildren(footnote, footnotes))
@@ -536,6 +553,33 @@ object Footnote:
   private def isDocumentScope(footnote: Footnote): Boolean =
     footnote.scope == FootnoteScope.Document
 
+  /** Source footnotes, then encoder endnotes. Each series keeps the order it arrived in. */
+  private def seriesDivs(
+    notes: Seq[Footnote],
+    footnotes: Map[String, Footnote],
+    table: Boolean
+  ): Seq[Xml.Element] =
+    Seq(FootnoteSeries.Foot, FootnoteSeries.End).flatMap: series =>
+      val ofSeries: Seq[Footnote] = notes.filter(_.series == series)
+      if ofSeries.isEmpty then Seq.empty
+      else
+        val base: Xml.Element = Xml.element(XmlElement.Div).addClass("footnotes")
+        val classed: Xml.Element =
+          val withTable: Xml.Element = if table then base.addClass("table-footnotes") else base
+          if series == FootnoteSeries.Foot then withTable.addClass("source-footnotes") else withTable
+        Seq(classed.setChildren(ofSeries.map(emitBody(_, footnotes))))
+
+  /** Number each series from 1, in `ids` order. */
+  private def numberBySeries(
+    ids: Seq[String],
+    combined: Map[String, Footnote]
+  )(
+    make: (String, Footnote, Int) => Footnote
+  ): Seq[(String, Footnote)] =
+    Seq(FootnoteSeries.End, FootnoteSeries.Foot).flatMap: series =>
+      ids.filter(id => combined.get(id).exists(_.series == series)).zipWithIndex.flatMap: (id, index) =>
+        combined.get(id).map(footnote => id -> make(id, footnote, index + 1))
+
   private def stripInnerBodies(nodes: Xml.Nodes): Xml.Nodes =
     nodes.flatMapNodes: node =>
       node.asElement match
@@ -568,7 +612,8 @@ final class Footnote(
   val nodes: Xml.Nodes,
   val scope: FootnoteScope = FootnoteScope.Document,
   parentBodyId: Option[String] = None,
-  marker: Option[String] = None
+  marker: Option[String] = None,
+  val series: FootnoteSeries = FootnoteSeries.End
 ):
   // Blank is absent. `remapped` copies this so chunks and transclusion keep it.
   private val authoredMarker: Option[String] = marker.map(_.trim).filter(_.nonEmpty)
@@ -581,15 +626,27 @@ final class Footnote(
 
   private def markerText: String = authoredMarker.getOrElse(seriesLabel)
 
+  private def seriesStem: String = series match
+    case FootnoteSeries.End => "_footnote"
+    case FootnoteSeries.Foot => "_source_fn"
+
+  private def seriesTable: String = series match
+    case FootnoteSeries.End => "fn"
+    case FootnoteSeries.Foot => "sfn"
+
+  private def seriesNested: String = series match
+    case FootnoteSeries.End => "n"
+    case FootnoteSeries.Foot => "sn"
+
   private def linkId: String = scope match
-    case FootnoteScope.Document => s"_footnote_src_$number"
-    case FootnoteScope.Table(k) => s"_table_${k}_fn_src_$seriesLabel"
-    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_src_$seriesLabel"
+    case FootnoteScope.Document => s"${seriesStem}_src_$number"
+    case FootnoteScope.Table(k) => s"_table_${k}_${seriesTable}_src_$seriesLabel"
+    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_${seriesNested}_src_$seriesLabel"
 
   private[markup] def bodyId: String = scope match
-    case FootnoteScope.Document => s"_footnote_$number"
-    case FootnoteScope.Table(k) => s"_table_${k}_fn_$seriesLabel"
-    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_n_$seriesLabel"
+    case FootnoteScope.Document => s"${seriesStem}_$number"
+    case FootnoteScope.Table(k) => s"_table_${k}_${seriesTable}_$seriesLabel"
+    case FootnoteScope.Nested(_) => s"${parentBodyId.getOrElse("")}_${seriesNested}_$seriesLabel"
 
   private def scopeName: Option[String] = scope match
     case FootnoteScope.Document => None
@@ -603,7 +660,8 @@ final class Footnote(
       .setHref(s"#$bodyId")
       .setText(markerText)
     val withScope: Xml.Element = scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
-    if withId then withScope.setId(linkId) else withScope
+    val marked: Xml.Element = Footnote.markSeries(withScope, series)
+    if withId then marked.setId(linkId) else marked
 
   def body(nested: Seq[Footnote] = Seq.empty): Xml.Element =
     val kids: Xml.Nodes =
@@ -620,10 +678,14 @@ final class Footnote(
       .add(Footnote.BodyClass)
       .setId(bodyId)
       .setChildren(kids)
-    scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
+    val withScope: Xml.Element = scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
+    Footnote.markSeries(withScope, series)
 
-  private def backLink: Xml.Element = Xml
-    .element(XmlElement.A)
-    .add(Footnote.BackLinkClass)
-    .setHref(s"#$linkId")
-    .setText(markerText)
+  private def backLink: Xml.Element = Footnote.markSeries(
+    Xml
+      .element(XmlElement.A)
+      .add(Footnote.BackLinkClass)
+      .setHref(s"#$linkId")
+      .setText(markerText),
+    series
+  )

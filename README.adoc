@@ -416,7 +416,8 @@ Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
 - `@n` is the list id (`/name/{n}.html` when the catalog has two or more non-empty lists);
 - `@role` present: entities of that kind whose root `@role` matches, anywhere in the site; omitted: entities of that
   kind with no role;
-- `<title>` on the list is the list page title; a direct child `<title>` of `entityLists` is the catalog page title.
+- `<head>` on the list is the list page title (`<title>` is still accepted); a direct child `<title>` of `entityLists`
+  is the catalog page title.
 
 Empty lists are omitted.
 Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName`
@@ -442,9 +443,9 @@ There is no synthetic `/name.html` dump.
 ----
 <entityLists>
   <title>Имена</title>
-  <listPerson n="jews" role="jew"><title>Жиды (они же Евреи)</title></listPerson>
-  <listPerson n="unknown"><title>Неизвестно кто</title></listPerson>
-  <listPlace n="places"><title>Места</title></listPlace>
+  <listPerson n="jews" role="jew"><head>Жиды (они же Евреи)</head></listPerson>
+  <listPerson n="unknown"><head>Неизвестно кто</head></listPerson>
+  <listPlace n="places"><head>Места</head></listPlace>
 </entityLists>
 ----
 
@@ -518,6 +519,8 @@ The page header (`.store-header`) holds ancestor path lines and this node's sele
 `abstract`/`body` and the `by/@selector` label.
 A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
 Расшифровка).
+The Кому cell is the first `persName` in a `correspAction` with `type="received"`.
+When no action has that type, it is the `persName` with `role="addressee"`.
 An endnote in `teiHeader` is not an article footnote.
 A `note` in `abstract`, in the `date`, or in the addressee `persName` is a footnote on that header cell, and on the same
 cell of the collection index.
@@ -944,9 +947,13 @@ A footnote inside another footnote is one level of letters `a`, `b` at the end o
 There is no nested hover tip: the outer tooltip shows inner letter markers, not a nested list.
 Markdown and AsciiDoc get nested notes only if the processor emits an inner stub.
 TEI `note place="end"` inside another `place="end"` does.
+`place="foot"` nests the same way.
+A note of either place inside the other is a nested letter of its own series.
 
-TEI still converts only `place="end"`.
-`place="foot"` and unplaced `note` are unchanged.
+TEI converts `note place="foot"` and `note place="end"`.
+`place="foot"` is the source-footnote series (`div.footnotes.source-footnotes`), listed before the endnotes.
+`place="end"` is the encoder endnote series.
+An unplaced `note` is unchanged.
 `@n`, when non-blank, is the marker at the call site and in the list.
 Order and fragment ids stay on the generated series.
 The same marker may appear on more than one note.

@@ -586,6 +586,13 @@ div.footnotes {
     margin-top: 2em;
     border-top: 1px solid var(--border-color-01);
 }
+div.footnotes.source-footnotes {
+    border-top-style: dotted;
+}
+a.footnote-link[data-footnote-series="foot"],
+a.footnote-backlink[data-footnote-series="foot"] {
+    color: var(--text-color);
+}
 div.table-with-notes > div.footnotes {
     margin-top: 0.75em;
     font-size: 0.9em;

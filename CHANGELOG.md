@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- TEI `correspAction type="received"` supplies the addressee.
+  `persName role="addressee"` still does when no action is `received`.
+- TEI `note place="foot"` is a source-footnote series, separate from `place="end"`.
+- A TEI entity-list heading may be `head` or `title`.
+  It is written as `head`.
 - An endnote in `teiHeader` is not an article footnote.
   A `note` on the header date, abstract, or addressee is a footnote on that header cell.
 - Pin xml 0.5.0.

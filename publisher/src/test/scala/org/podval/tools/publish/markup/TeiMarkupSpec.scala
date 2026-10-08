@@ -305,6 +305,45 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(index.lists.head.kind == EntityKind.Person)
   }
 
+  test("entity list head is the list title and renders as tei-head") {
+    val (xml, _) = processResult(
+      """<entityLists>
+        |  <listPerson n="jews" role="jew"><head>Жиды</head></listPerson>
+        |</entityLists>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(el.isNamed("tei-head") && el.getText.contains("Жиды"))(el)).nonEmpty, dumped)
+    val index = EntityLists.harvest(parse(
+      """<entityLists xmlns="http://www.tei-c.org/ns/1.0">
+        |  <listPerson n="jews"><head>Жиды</head></listPerson>
+        |</entityLists>""".stripMargin
+    )).get
+    assert(index.lists.head.title == "Жиды")
+  }
+
+  test("correspAction type received is the addressee") {
+    val header = DocumentHeader.harvest(parse(
+      """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>
+        |<profileDesc><correspDesc>
+        |  <correspAction type="sent"><persName>Writer</persName></correspAction>
+        |  <correspAction type="Received"><persName>Recipient</persName></correspAction>
+        |</correspDesc></profileDesc></teiHeader>
+        |<text><body/></text></TEI>""".stripMargin
+    )).get
+    assert(header.addressee.exists(_.getText == "Recipient"))
+  }
+
+  test("addressee role is used when no action is received") {
+    val header = DocumentHeader.harvest(parse(
+      """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>
+        |<profileDesc><correspDesc>
+        |  <correspAction type="sent"><persName role="addressee">Fallback</persName></correspAction>
+        |</correspDesc></profileDesc></teiHeader>
+        |<text><body/></text></TEI>""".stripMargin
+    )).get
+    assert(header.addressee.exists(_.getText == "Fallback"))
+  }
+
   test("entity name with ref becomes a; without ref stays") {
     val xml: Xml.Element = process(
       """<p>See <persName ref="alter-rebbe">the Rebbe</persName>
@@ -518,6 +557,58 @@ final class TeiMarkupSpec extends AnyFunSuite:
       Option.when(el.isNamed("note"))(el)
     )
     assert(leftover.exists(_.getText.contains("term")), dumped)
+  }
+
+  test("place=foot is a source series separate from place=end") {
+    val xml: Xml.Element = process(
+      """<p>A<note place="foot">source</note> B<note place="end">encoder</note>
+        |C<note place="foot" n="*">star</note> D<note>plain</note>.</p>""".stripMargin
+    )
+    assert(Footnote.linkIds(xml).size == 3, render(xml))
+    val finished: Xml.Element = Footnote.finish(xml, PageErrorReporter.Silent)
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_source_fn_1""""), dumped)
+    assert(dumped.contains("""id="_source_fn_2""""), dumped)
+    assert(dumped.contains("""id="_footnote_1""""), dumped)
+    assert(!dumped.contains("""id="_footnote_2""""), dumped)
+    assert(!dumped.contains("""id="_source_fn_3""""), dumped)
+    assert(dumped.contains("source-footnotes"), dumped)
+    assert(dumped.contains("""data-footnote-series="foot""""), dumped)
+    assert(dumped.indexOf("source-footnotes") < dumped.indexOf("""id="_footnote_1""""), dumped)
+    val links: Seq[String] = finished.gather(el =>
+      Option.when(el.hasClass("footnote-link"))(el.getText.trim)
+    )
+    assert(links == Seq("1", "1", "*"), dumped)
+    val leftover: Seq[Xml.Element] = finished.gather(el =>
+      Option.when(el.isNamed("note"))(el)
+    )
+    assert(leftover.exists(_.getText.contains("plain")), dumped)
+  }
+
+  test("place=foot in a table is a table-local source letter") {
+    val finished: Xml.Element = Footnote.finish(
+      process("""<table><row><cell>x<note place="foot">cell</note></cell></row></table>"""),
+      PageErrorReporter.Silent,
+      localTables = true
+    )
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_table_1_sfn_a""""), dumped)
+    assert(dumped.contains("source-footnotes"), dumped)
+    assert(dumped.contains("table-footnotes"), dumped)
+    assert(!dumped.contains("""id="_source_fn_1""""), dumped)
+    assert(!dumped.contains("""id="_footnote_1""""), dumped)
+  }
+
+  test("place=end inside place=foot is a nested endnote letter") {
+    val finished: Xml.Element = Footnote.finish(
+      process("""<p>See<note place="foot">Outer<note place="end">Inner.</note></note>.</p>"""),
+      PageErrorReporter.Silent
+    )
+    val dumped: String = render(finished)
+    assert(dumped.contains("""id="_source_fn_1""""), dumped)
+    assert(dumped.contains("""id="_source_fn_1_n_a""""), dumped)
+    assert(!dumped.contains("""id="_footnote_1""""), dumped)
+    assert(dumped.contains("Inner."), dumped)
   }
 
   test("row/cell become tr/td and cols becomes colspan") {

@@ -20,3 +20,14 @@ final class EntityCodecSpec extends AnyFunSuite:
     assert(encoded.childElements.map(_.getName.qName) ==
       Seq("title", "listPerson", "listPlace"))
   }
+
+  test("list head decodes as the list title and encodes as title") {
+    val xml: String =
+      """<entityLists xmlns="http://www.tei-c.org/ns/1.0">
+        |  <listPerson n="jews" role="jew"><head>Жиды</head></listPerson>
+        |</entityLists>""".stripMargin
+    val index: EntityLists.Index = EntityLists.harvest(parse(xml)).get
+    assert(index.lists.map(_.title) == Seq("Жиды"))
+    val encoded: Xml.Element = EntityLists.Index.codec.encode(index)
+    assert(encoded.childElements.flatMap(_.childElements).map(_.getName.qName) == Seq("head"))
+  }
