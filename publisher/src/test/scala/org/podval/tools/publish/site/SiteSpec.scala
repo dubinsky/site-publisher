@@ -143,6 +143,12 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(prose.contains("font-style: italic"), prose)
   }
 
+  test("in-page jumps clear the sticky header") {
+    val base: String = html("assets/css/base.css")
+    assert(base.contains("scroll-padding-top: calc(var(--header-height) + 6px + 0.75rem)"), base)
+    assert(!base.contains("scroll-margin-top"), base)
+  }
+
   test("media queries use literal breakpoints, not custom properties") {
     val chrome: String = html("assets/css/chrome.css")
     val prose: String = html("assets/css/prose.css")
