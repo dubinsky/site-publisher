@@ -1,6 +1,8 @@
 @import "https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Serif+Hebrew:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap";
 
 :root {
+    color-scheme: light;
+
     --base-font-family: "Noto Serif", "Noto Serif Hebrew", "DejaVu Serif", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
         "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
     --code-font-family: "Roboto Mono", "DejaVu Sans Mono", "Menlo", "Inconsolata", "Consolas",
@@ -79,4 +81,55 @@
     --admonition-important: var(--important);
     --admonition-warning: var(--warning);
     --admonition-danger: var(--danger);
+
+    --pencil-color: #6e6e6e;
+
+    --graph-node-color: var(--link-base-color);
+    --graph-label-color: #2a2a2a;
+    --graph-edge-color: #c8c8c8;
+}
+
+/* Screen only: print and PDF keep the :root palette (folio color is read in print media). */
+@media screen {
+    html.color-scheme-dark {
+        color-scheme: dark;
+
+        --heading-color: #f3f1ee;
+        --text-color: #d4d1cb;
+        --site-title-color: var(--heading-color);
+        --background-color: #161616;
+        /* Same ground as highlight.js styles/dark.min.css, whose token colors assume it. */
+        --code-background-color: #303030;
+
+        --brand-color-very-light: color-mix(in oklab, var(--brand-color), var(--background-color) 78%);
+        --brand-color-dimmed: color-mix(in oklab, var(--brand-color), white 40%);
+
+        /* #1e69d8 on this ground is 3.5:1. This is the same blue, lightened to clear 4.5:1. */
+        --link-base-color: #5b93e6;
+        --link-visited-color: color-mix(in oklab, var(--link-base-color), white 18%);
+
+        --border-color-01: color-mix(in oklab, var(--background-color), white 18%);
+        --border-color-02: color-mix(in oklab, var(--background-color), white 28%);
+        --border-color-03: color-mix(in oklab, var(--brand-color), white 12%);
+
+        --table-text-color: var(--text-color);
+        --table-zebra-color: color-mix(in oklab, var(--background-color), white 6%);
+        --table-header-bg-color: color-mix(in oklab, var(--background-color), white 10%);
+        --table-header-border: color-mix(in oklab, var(--background-color), white 16%);
+        --table-header-border-bottom: color-mix(in oklab, var(--background-color), white 24%);
+        --table-border-color: color-mix(in oklab, var(--background-color), white 14%);
+
+        --ok: color-mix(in oklab, #0f9d58, white 28%);
+        --important: color-mix(in oklab, #7c4dff, white 32%);
+        --warning: color-mix(in oklab, #e65100, white 28%);
+        --danger: color-mix(in oklab, #c62828, white 42%);
+        --highlight: color-mix(in oklab, #cdca32, var(--background-color) 62%);
+        --quote-mark: color-mix(in oklab, #7a2518, white 48%);
+        --add-color: color-mix(in oklab, #ffcdcd, var(--background-color) 72%);
+        --editorial-color: color-mix(in oklab, #aaffaa, var(--background-color) 72%);
+        --pencil-color: color-mix(in oklab, #6e6e6e, white 40%);
+
+        --graph-label-color: var(--text-color);
+        --graph-edge-color: color-mix(in oklab, var(--brand-color), white 28%);
+    }
 }

@@ -13,6 +13,10 @@ abstract class JSLibrary:
 
   def stylesheet: Option[String] = None
 
+  /** Stylesheet links. The default is one link from [[stylesheet]]. */
+  def styleLinks: List[Xml.Element] =
+    stylesheet.toList.map(path => link(rel := "stylesheet", href := s"$cdn$path"))
+
   def imports: List[String] = List.empty
 
   def inlineJs: Option[String] = None

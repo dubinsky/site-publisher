@@ -53,6 +53,27 @@ export function run(cytoscape) {
     });
     var elements = nodes.concat(displayEdges(data.edges));
     var n = nodes.length;
+    function cssColor(name) {
+      var probe = document.createElement("span");
+      probe.style.color = "var(" + name + ")";
+      document.body.appendChild(probe);
+      var value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    }
+
+    function paintGraph(cy) {
+      cy.style()
+        .selector("node")
+        .style({
+          color: cssColor("--graph-label-color"),
+          "background-color": cssColor("--graph-node-color")
+        })
+        .selector("edge")
+        .style({ "line-color": cssColor("--graph-edge-color") })
+        .update();
+    }
+
     var cy = cytoscape({
       container: container,
       elements: elements,
@@ -66,8 +87,8 @@ export function run(cytoscape) {
             "font-size": 10,
             "text-valign": "bottom",
             "text-margin-y": 4,
-            color: "#2a2a2a",
-            "background-color": "#1e69d8",
+            color: cssColor("--graph-label-color"),
+            "background-color": cssColor("--graph-node-color"),
             width: 16,
             height: 16
           }
@@ -76,7 +97,7 @@ export function run(cytoscape) {
           selector: "edge",
           style: {
             width: 1.5,
-            "line-color": "#c8c8c8",
+            "line-color": cssColor("--graph-edge-color"),
             "curve-style": "haystack",
             "haystack-radius": 0.6
           }
@@ -133,6 +154,9 @@ export function run(cytoscape) {
 
     if (search) search.addEventListener("input", applyFilters);
     if (orphans) orphans.addEventListener("change", applyFilters);
+    document.documentElement.addEventListener("site-color-scheme", function () {
+      paintGraph(cy);
+    });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "/" && search && document.activeElement !== search) {

@@ -290,6 +290,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
             Icon.gear.html
           ),
           div(className := "site-settings-menu", role := "group", aria("label") := "Settings",
+            colorSchemeSetting,
             label(className := "site-settings-item",
               input(
                 `type` := "checkbox",
@@ -309,6 +310,30 @@ final class Site(options: SiteOptions) extends JSLibrary:
           )
         )
       )
+    )
+
+  private def colorSchemeSetting: Xml.Element =
+    div(
+      className := "site-settings-choice",
+      role := "radiogroup",
+      aria("labelledby") := "setting-color-scheme-label",
+      span(id := "setting-color-scheme-label", className := "site-settings-choice-label", "Color scheme"),
+      div(
+        className := "site-settings-radios",
+        colorChoice("system", "System", selected = true),
+        colorChoice("light", "Light", selected = false),
+        colorChoice("dark", "Dark", selected = false)
+      )
+    )
+
+  private def colorChoice(value: String, text: String, selected: Boolean): Xml.Element =
+    label(
+      input(
+        `type` := "radio",
+        attr("name") := "color-scheme",
+        attr("value") := value
+      ).when(selected)(attr("checked") := "checked"),
+      text
     )
 
   private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =

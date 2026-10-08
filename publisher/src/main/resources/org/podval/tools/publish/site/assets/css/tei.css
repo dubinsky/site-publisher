@@ -178,7 +178,7 @@ bibl[rendition~="#block"] {
 }
 
 [data-medium="pencil"] {
-    box-shadow: inset 0 -1px 0 #6e6e6e;
+    box-shadow: inset 0 -1px 0 var(--pencil-color);
 }
 
 [data-medium="ink"] {
@@ -194,7 +194,7 @@ bibl[rendition~="#block"] {
 }
 
 [data-hand-tip] [data-medium="pencil"] {
-    background-image: linear-gradient(#6e6e6e, #6e6e6e);
+    background-image: linear-gradient(var(--pencil-color), var(--pencil-color));
 }
 
 [data-hand-tip] [data-medium="ink"] {

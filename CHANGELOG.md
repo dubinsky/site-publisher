@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The gear menu sets the color scheme: System, Light, or Dark.
+  Nothing saved, and System, follow the operating system.
+  Light and Dark stay as chosen.
+  The choice is stored in the browser and applied before paint.
+  Dark overrides the CSS tokens.
+  Print and PDF stay on the light palette.
+  Highlight.js, Mermaid, and the page graph follow the resolved scheme.
 - CSS is split into tokens, base, chrome, prose, TEI, and print.
   The facsimile column is a separate sheet on the viewer page.
   TEI styles stay on every page because transclusion copies those elements into the host.

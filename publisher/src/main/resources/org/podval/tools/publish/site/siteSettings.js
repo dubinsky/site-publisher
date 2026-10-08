@@ -1,15 +1,55 @@
 (function () {
   var html = document.documentElement;
   var keys = ["glossary-expand", "transclusion-clean"];
+  var schemeKey = "color-scheme";
+
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+  }
+
+  function preference() {
+    var value = storageGet(schemeKey);
+    return value === "light" || value === "dark" ? value : "system";
+  }
+
+  function resolvedDark() {
+    var chosen = preference();
+    return chosen === "dark" ||
+      (chosen === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  function applyHighlight(dark) {
+    document.querySelectorAll("link[data-hljs-theme]").forEach(function (link) {
+      var isDark = link.getAttribute("data-hljs-theme") === "dark";
+      link.media = isDark === dark ? "all" : "not all";
+    });
+  }
+
+  function applyScheme(notify) {
+    var dark = resolvedDark();
+    html.classList.toggle("color-scheme-dark", dark);
+    applyHighlight(dark);
+    if (notify) html.dispatchEvent(new Event("site-color-scheme"));
+  }
+
   try {
     keys.forEach(function (k) {
-      if (localStorage.getItem(k) === "1") html.classList.add(k);
+      if (storageGet(k) === "1") html.classList.add(k);
     });
   } catch (e) {}
+  applyScheme(false);
+
+  var schemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  schemeQuery.addEventListener("change", function () {
+    if (preference() === "system") applyScheme(true);
+  });
 
   function apply(name, on) {
     html.classList.toggle(name, on);
-    try { localStorage.setItem(name, on ? "1" : "0"); } catch (e) {}
+    storageSet(name, on ? "1" : "0");
   }
 
   function init() {
@@ -19,6 +59,16 @@
       box.checked = html.classList.contains(name);
       box.addEventListener("change", function () {
         apply(name, box.checked);
+      });
+    });
+
+    var chosen = preference();
+    document.querySelectorAll('input[name="color-scheme"]').forEach(function (radio) {
+      radio.checked = radio.value === chosen;
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        storageSet(schemeKey, radio.value);
+        applyScheme(true);
       });
     });
 

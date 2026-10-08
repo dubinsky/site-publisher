@@ -236,6 +236,7 @@ It:
 - supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
 - can emit an interactive <<graph>> of pages;
+- has reader <<settings>> for color scheme, glossary, and transclusions;
 - checks <<external-links>> when `check-links` is set;
 
 Supported markup constructs:
@@ -744,6 +745,23 @@ A large TEI archive should leave the graph off, or exclude `archive` to keep onl
 
 Add `graph` to `header-pages` if you want a header link (there is no automatic icon).
 Pipeline notes belong in the Site Publisher design note, not here.
+
+[#settings]
+== Settings
+
+The gear menu on each page stores choices in the browser.
+
+**Color scheme** is System, Light, or Dark.
+Nothing saved, and System, follow the operating system.
+Light and Dark stay as chosen.
+Print and PDF stay on the light palette.
+When the scheme resolves to dark, code blocks use the highlight.js dark theme and Mermaid uses its dark theme.
+The page graph uses the same colors.
+
+**Show glossary definitions in the text** inlines glossary and citation definitions.
+
+**Seamless transclusions** hides the box and header around a transcluded region.
+See <<page-names>>.
 
 [#external-links]
 == External links

@@ -148,9 +148,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         Feed.feedMeta(site),
         pagerPrev.map(p => link(rel := "prev", href := p.path.toString)),
         pagerNext.map(p => link(rel := "next", href := p.path.toString)),
-        libraries.flatMap(library => library.stylesheet.map(ref =>
-          link(rel := "stylesheet", href := s"${library.cdn}$ref")
-        )),
+        libraries.flatMap(_.styleLinks),
         libraries.flatMap(_.headScripts)
       ),
       body(

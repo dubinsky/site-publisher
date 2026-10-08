@@ -1,9 +1,26 @@
 package org.podval.tools.publish.js
 
+import org.podval.xml.Xml
+import org.podval.xml.dsl.{*, given}
+
 final class Highlights(languages: Set[String]) extends JSLibrary:
   val version: String = "11.11.1"
 
-  override val stylesheet: Some[String] = Some("/styles/default.min.css")
+  /** Light theme until the head script enables `dark` when the resolved scheme is dark. */
+  override def styleLinks: List[Xml.Element] =
+    List(
+      link(
+        rel := "stylesheet",
+        href := s"$cdn/styles/default.min.css",
+        attr("data-hljs-theme") := "light"
+      ),
+      link(
+        rel := "stylesheet",
+        href := s"$cdn/styles/dark.min.css",
+        attr("data-hljs-theme") := "dark",
+        attr("media") := "not all"
+      )
+    )
 
   override def imports: List[String] = List("highlight.min.js") ++ languages
     .flatMap(Highlights.languageFile)
