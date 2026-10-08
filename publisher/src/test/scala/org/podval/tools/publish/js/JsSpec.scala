@@ -3,6 +3,12 @@ package org.podval.tools.publish.js
 import org.scalatest.funsuite.AnyFunSuite
 
 final class JsSpec extends AnyFunSuite:
+  test("MathJax adds single-dollar inline delimiters") {
+    val config: String = MathJax.inlineJs.get
+    assert(config.contains("[['$', '$']]"), config)
+    assert(!config.contains("$$"), config)
+  }
+
   test("quote wraps the value in double quotes") {
     assert(Js.quote("G-XXXX") == "\"G-XXXX\"")
     assert(Js.quote("https://cdn.example/x.mjs") == "\"https://cdn.example/x.mjs\"")

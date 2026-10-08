@@ -9,7 +9,7 @@ object MathJax extends JSLibrary:
   override def imports: List[String] = List(s"tex-mml-chtml.js")
 
   override val inlineJs: Some[String] =
-    Some("MathJax = { tex: { inlineMath: {'[+]': [['$$', '$$']]} } };")
+    Some("MathJax = { tex: { inlineMath: {'[+]': [['$', '$']]} } };")
 
   override def cdn: String = cdn(
     s"${JSLibrary.cloudFlare}mathjax/$version",
