@@ -118,3 +118,36 @@ final class AsciiDocProseSpec extends AnyFunSuite:
     assert(structure(note) == structure(noted))
     assert(format(format(macros)) == macroOut)
   }
+
+  test("hebrew role text is kept when the span is broken") {
+    val word = "[.hebrew]#בְּהַצְלָחָה#\n"
+    val splitWord: String = format("[.hebrew]#בְּהַצְלָ\nחָה#\n")
+    assert(splitWord == word)
+    val splitPoint: String = format("[.hebrew]#בְּהַצ\nְלָחָה#\n")
+    assert(splitPoint == word)
+    val splitThree: String = format("[.hebrew]#בְּהַ\nצְלָ\nחָה#\n")
+    assert(splitThree == word)
+    assert(format(word) == word)
+    val list: String = format("* See [.hebrew]#בְּהַצ\n  ְלָחָה#\n")
+    assert(list.contains("[.hebrew]#בְּהַצְלָחָה#"))
+    val sameLine: String = format("Good luck! [.hebrew]#בְּהַצְלָחָה#\n")
+    assert(sameLine.contains("[.hebrew]#בְּהַצְלָחָה#"))
+    val nextLine: String = format("Good luck!\n[.hebrew]#בְּהַצְלָחָה#\n")
+    assert(nextLine.contains("[.hebrew]#בְּהַצְלָחָה#"))
+    val unclosed: String = format("[.hebrew]#בְּהַצְלָחָה\n")
+    assert(unclosed.contains("בְּהַצְלָחָה"))
+    assert(unclosed.contains("[.hebrew]"))
+    val dotted: String = format("Word [.hebrew]#בְּהַצְלָחָה#.\n")
+    assert(dotted.contains("[.hebrew]#בְּהַצְלָחָה#"))
+    val english: String = format("See [.hebrew]#two\nwords# today. Next.\n")
+    assert(english.contains("[.hebrew]#two words#"))
+    val spaced: String = "[.hebrew]#בְּשׁוֹגֵג בְּמֵזִיד#\n"
+    assert(format(spaced) == spaced)
+    val narrow: String = AsciiDocProse.format(
+      "See [.hebrew]#בְּשׁוֹגֵג בְּמֵזִיד# today.\n",
+      ProseOptions(width = 12, sentencePerLine = false)
+    ) match
+      case Right(text) => text
+      case Left(failure) => fail(failure.reason)
+    assert(narrow.contains("בְּשׁוֹגֵג בְּמֵזִיד"))
+  }

@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- fix: do not break up AsciiDoc macros when pretty-printing
+
 ## [0.5.0] - 2026-10-08
 
 - The gear menu sets the color scheme: System, Light, or Dark.

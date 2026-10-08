@@ -89,13 +89,54 @@ object AsciiDocProse extends ProseFormatter:
         val tableRow: Boolean = fileLines.exists(_.trim.startsWith("|")) || parsed.exists(_.trim.startsWith("|"))
         if fileLines.exists(hardBreakLine.matches) || tableRow then None
         else
-          val joined: String = parsed.mkString(" ")
+          val joined: String = joinParsed(parsed)
           val tokens = AsciiDocScanner.tokens(joined)
           val laid: String = ProseLayout.layout(
             tokens, options, contentColumn, contPrefix(node, contentColumn), AsciiDocLeadIn.matches
           )
           val text: String = if end > start && body.charAt(end - 1) == '\n' then laid + "\n" else laid
           Some(Edit(start, end, text))
+
+  private def joinParsed(lines: List[String]): String = lines match
+    case Nil => ""
+    case head :: tail =>
+      tail.foldLeft(head): (acc, line) =>
+        acc + joinSeparator(acc, line) + line
+
+  /** A newline inside an open `#` span is not a space when both sides are Hebrew.
+    * The span was broken through a word. A real space between words stays a space,
+    * and a `#` span is one atom, so wrapping does not turn that space into a newline.
+    */
+  private def joinSeparator(left: String, right: String): String =
+    if hebrewSplit(left, right) then "" else " "
+
+  private def hebrewSplit(left: String, right: String): Boolean =
+    insideHash(left) && lastCode(left).exists(hebrewChar) && firstCode(right).exists(hebrewChar)
+
+  private def lastCode(text: String): Option[Int] =
+    if text.isEmpty then None else Some(text.codePointBefore(text.length))
+
+  private def firstCode(text: String): Option[Int] =
+    if text.isEmpty then None else Some(text.codePointAt(0))
+
+  private def hebrewChar(codePoint: Int): Boolean =
+    (codePoint >= 0x05d0 && codePoint <= 0x05ea) ||
+      (codePoint >= 0x0591 && codePoint <= 0x05c7 && Character.getType(codePoint) == Character.NON_SPACING_MARK)
+
+  /** `closer` is `#` or `##` while that span is open. `\#` is literal. */
+  private def insideHash(text: String): Boolean =
+    def rec(rest: String, closer: String): Boolean =
+      if rest.isEmpty then closer.nonEmpty
+      else if rest.startsWith("\\") && rest.length > 1 then
+        val size: Int = 1 + Character.charCount(rest.codePointAt(1))
+        rec(rest.substring(size), closer)
+      else if closer.isEmpty && rest.startsWith("##") then rec(rest.substring(2), "##")
+      else if closer.isEmpty && rest.startsWith("#") then rec(rest.substring(1), "#")
+      else if closer.nonEmpty && rest.startsWith(closer) then rec(rest.substring(closer.length), "")
+      else
+        val size: Int = Character.charCount(rest.codePointAt(0))
+        rec(rest.substring(size), closer)
+    rec(text, "")
 
   private def hardbreaks(node: StructuralNode): Boolean =
     node.hasAttribute("hardbreaks-option") || node.hasAttribute("options") &&

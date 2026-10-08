@@ -105,9 +105,12 @@ object AsciiDocScanner:
       val close: Int = rest.indexOf(mark, mark.length)
       if close < 0 then None
       else
-        val inner: String = rest.substring(mark.length, close)
-        val produced: List[Token] = ProseLayout.withGlue(tokens(inner), mark, mark)
-        Some((close + mark.length, produced))
+        val end: Int = close + mark.length
+        // A # span stays one atom so a space inside it is not a wrap point.
+        val produced: List[Token] =
+          if mark == "#" || mark == "##" then List(Token.Atom(rest.substring(0, end)))
+          else ProseLayout.withGlue(tokens(rest.substring(mark.length, close)), mark, mark)
+        Some((end, produced))
 
   /** Body including the closing `]`, and how many characters of `rest` that is. `\]` stays literal. */
   private def takeBracket(rest: String): Option[(String, Int)] =
