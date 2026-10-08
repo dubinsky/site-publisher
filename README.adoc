@@ -1700,7 +1700,3 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
 </video>
 ----
 
-== Further Research
-
-- Look at https://stephango.com/vault
-- implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
