@@ -31,32 +31,31 @@ object ProseLayout:
         column += columns(text)
         lineEmpty = false
 
-    def go(rest: List[Token], sentenceJustEnded: Boolean): Unit =
+    def go(rest: List[Token], hold: Hold): Unit =
       rest match
         case Nil => ()
         case Token.Hard(marker) :: tail =>
           appendText(marker)
           if tail.nonEmpty then newline()
-          go(tail, false)
+          go(tail, Hold.No)
         case Token.Spaces(text) :: tail =>
           val following: String = remainder(tail)
-          val sentenceBreak: Boolean = options.sentencePerLine && sentenceJustEnded
+          val sentenceBreak: Boolean = options.sentencePerLine && breakBefore(hold, tail)
           val nextWidth: Int = tail.headOption.fold(0)(tokenColumns)
           val widthBreak: Boolean =
             options.width > 0 && tail.nonEmpty && column + columns(text) + nextWidth > options.width
           val wantBreak: Boolean = (sentenceBreak || widthBreak) && !lineEmpty
           if wantBreak && !leadIn(following) then
             newline()
-            go(tail, false)
+            go(tail, if sentenceBreak then Hold.No else holdAfterSpace(hold, tail))
           else
             appendText(text)
-            go(tail, false)
+            go(tail, holdAfterSpace(hold, tail))
         case head :: tail =>
           appendText(visible(head))
-          val ended: Boolean = options.sentencePerLine && sentenceEnd(head)
-          go(tail, ended)
+          go(tail, holdAfterWord(hold, head, tail, options.sentencePerLine))
 
-    go(tokens, false)
+    go(tokens, Hold.No)
     out.result()
 
   def visible(token: Token): String = token match
@@ -101,20 +100,130 @@ object ProseLayout:
       case _ => true
     segment.map(visible).mkString
 
-  private val abbreviations: Set[String] = Set("e.g.", "i.e.", "etc.", "vs.", "dr.")
+  /**
+   * A sentence-ending break waiting to be placed.
+   * `Inside` is a parenthetical label, such as `(2)` or `(see above)`, that stays on the sentence.
+   * `Closed` is that label just finished: the next space breaks only when a sentence follows.
+   */
+  private enum Hold derives CanEqual:
+    case No
+    case Break
+    case Inside(depth: Int)
+    case Closed
+
+  private val abbreviations: Set[String] = Set(
+    "e.g.", "i.e.", "etc.", "vs.", "dr.",
+    "mr.", "mrs.", "ms.", "miss.", "prof.", "sr.", "jr.", "st.", "mt.", "rev."
+  )
+  private val romanNumeral = """(?i)M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})""".r
   private val closers: Set[Int] = Set(
     '"'.toInt, '\u201d'.toInt, '\u2019'.toInt, '\''.toInt, ')'.toInt, '\u00bb'.toInt
   )
 
-  private def sentenceEnd(token: Token): Boolean = token match
-    case Token.Word(text, left, right) => endsSentence(left + text + right)
+  private def breakBefore(hold: Hold, tail: List[Token]): Boolean = hold match
+    case Hold.Break => !attachedLabel(tail)
+    case Hold.Closed => !attachedLabel(tail) && followingStartsSentence(tail)
+    case Hold.Inside(_) | Hold.No => false
+
+  private def holdAfterSpace(hold: Hold, tail: List[Token]): Hold = hold match
+    case Hold.Break if attachedLabel(tail) => Hold.Break
+    case Hold.Closed if attachedLabel(tail) => Hold.Break
+    case Hold.Break | Hold.Closed => Hold.No
+    case other => other
+
+  private def holdAfterWord(hold: Hold, token: Token, tail: List[Token], sentencePerLine: Boolean): Hold =
+    val ended: Boolean = sentencePerLine && sentenceEnd(token, tail)
+    hold match
+      case Hold.Inside(depth) => afterLabel(depth, token, ended)
+      case Hold.Break if labelOpener(token) => afterLabel(0, token, ended)
+      case _ => if ended then Hold.Break else Hold.No
+
+  private def afterLabel(depth: Int, token: Token, ended: Boolean): Hold =
+    val depthNow: Int = advanceLabel(depth, visible(token))
+    if depthNow > 0 then Hold.Inside(depthNow)
+    else if ended then Hold.Break
+    else Hold.Closed
+
+  private def advanceLabel(depth: Int, text: String): Int =
+    text.foldLeft(depth): (current, ch) =>
+      ch match
+        case '(' | '[' => current + 1
+        case ')' | ']' => math.max(current - 1, 0)
+        case _ => current
+
+  private def labelOpener(token: Token): Boolean =
+    val text: String = visible(token).dropWhile(isSpaceChar)
+    text.startsWith("(") || text.startsWith("[")
+
+  /** A following `(2)`, `[12]`, `(ii)`, or `(see above)` belongs to the sentence that just ended. */
+  private def attachedLabel(rest: List[Token]): Boolean =
+    val text: String = remainder(rest).dropWhile(isSpaceChar)
+    (text.startsWith("(") || text.startsWith("[")) && !startsSentence(labelInterior(text))
+
+  private def labelInterior(text: String): String =
+    def rec(rest: String, depth: Int): String =
+      if rest.isEmpty || depth == 0 then ""
+      else
+        val ch: Char = rest.head
+        ch match
+          case ')' | ']' if depth == 1 => ""
+          case ')' | ']' => ch.toString + rec(rest.tail, depth - 1)
+          case '(' | '[' => ch.toString + rec(rest.tail, depth + 1)
+          case _ => ch.toString + rec(rest.tail, depth)
+    rec(text.dropWhile(isSpaceChar).drop(1), 1)
+
+  private def startsSentence(interior: String): Boolean =
+    val body: String = interior.dropWhile(_.isWhitespace)
+    if body.isEmpty || body.head.isDigit || isRoman(body) then false
+    else body.head.isUpper
+
+  private def isRoman(text: String): Boolean =
+    text.nonEmpty && text.forall(_.isLetter) && romanNumeral.matches(text)
+
+  private def followingStartsSentence(tail: List[Token]): Boolean =
+    nextWord(tail).exists: word =>
+      val bare: String = word.dropWhile(isQuoteOrMarkup)
+      bare.headOption.exists(ch => ch.isUpper || ch.isDigit) ||
+        ((bare.startsWith("(") || bare.startsWith("[")) && startsSentence(labelInterior(bare)))
+
+  private def sentenceEnd(token: Token, tail: List[Token]): Boolean = token match
+    case Token.Word(text, left, right) => endsSentence(left + text + right, nextWord(tail))
     case _ => false
 
-  private def endsSentence(visibleText: String): Boolean =
+  private def nextWord(tail: List[Token]): Option[String] =
+    val rest: List[Token] = tail.dropWhile:
+      case Token.Spaces(_) => true
+      case _ => false
+    rest match
+      case Token.Word(text, left, right) :: _ => Some(left + text + right)
+      case Token.Atom(text) :: _ => Some(text)
+      case _ => None
+
+  private def endsSentence(visibleText: String, next: Option[String]): Boolean =
     val core: String = stripClosers(visibleText)
     if core.isEmpty then false
-    else if abbreviations.contains(core.toLowerCase) then false
+    else if abbreviations.contains(core.toLowerCase) || isDottedAbbreviation(core) || isInitial(core, next) then false
     else core.endsWith("...") || core.endsWith("\u2026") || core.endsWith(".") || core.endsWith("?") || core.endsWith("!")
+
+  /** Pieces of one or two letters: `U.S.`, `Ph.D.`, `a.m.`. A following capital stays on the line. */
+  private def isDottedAbbreviation(core: String): Boolean =
+    val parts: Array[String] = core.split("\\.", -1)
+    parts.length >= 3 && parts.last.isEmpty && parts.dropRight(1).forall: part =>
+      part.nonEmpty && part.length <= 2 && part.forall(_.isLetter)
+
+  /**
+   * A single letter plus a period is an initial (`Jonas E. Smith`).
+   * `I.` before a capital is the pronoun closing a sentence (`you and I. Did`).
+   * `Albert I. Jones` still splits.
+   */
+  private def isInitial(core: String, next: Option[String]): Boolean =
+    core.length == 2 && core.last == '.' && core.head.isLetter &&
+      !(core == "I." && next.exists(word => word.dropWhile(isQuoteOrMarkup).headOption.exists(_.isUpper)))
+
+  private def isQuoteOrMarkup(ch: Char): Boolean =
+    ch == '"' || ch == '\'' || ch == '\u201c' || ch == '\u2018' || ch == '*' || ch == '_' || ch == '~'
+
+  private def isSpaceChar(ch: Char): Boolean = ch == ' ' || ch == '\t'
 
   /** Optional leading `(`, then a trailing run of closers. */
   private def stripClosers(text: String): String =

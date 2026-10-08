@@ -9,6 +9,8 @@ final class ProseLayoutSpec extends AnyFunSuite:
   private val wrapped = ProseOptions(width = 120, sentencePerLine = false)
   private def noLead(text: String): Boolean = false
 
+  private def lay(text: String): String = ProseLayout.layout(words(text), sentences, 0, "", noLead)
+
   private def words(text: String): List[Token] =
     text.split(" ").toList.flatMap: word =>
       if word.isEmpty then Nil else List(Word(word), Spaces(" "))
@@ -32,10 +34,42 @@ final class ProseLayoutSpec extends AnyFunSuite:
     assert(laid.contains("See e.g. this."))
     assert(laid.contains("See Dr. Who."))
     assert(laid.contains("See e.g.) this."))
-    assert(laid.contains("See Mr.\nSmith."))
+    assert(laid.contains("See Mr. Smith."))
+    assert(!laid.contains("See Mr.\n"))
     assert(laid.contains("Version 0.2.0 stays."))
     assert(laid.contains("Value 3.14 stays."))
     assert(laid.contains("Price 3.14.\nNext."))
+  }
+
+  test("titles, initials, and dotted abbreviations stay in the sentence") {
+    val text: String = "Thanks to Mrs. Blank for her services. My name is Jonas E. Smith. " +
+      "J. R. R. Tolkien wrote it. I live in the U.S. How about you? At 5 a.m. Mr. Smith went to the bank."
+    assert(lay(text) == List(
+      "Thanks to Mrs. Blank for her services.",
+      "My name is Jonas E. Smith.",
+      "J. R. R. Tolkien wrote it.",
+      "I live in the U.S. How about you?",
+      "At 5 a.m. Mr. Smith went to the bank."
+    ).mkString("\n"))
+  }
+
+  test("a parenthetical label stays on the sentence") {
+    assert(lay("Why not? (2)") == "Why not? (2)")
+    assert(lay("Why not? (2) Because it does.") == "Why not? (2)\nBecause it does.")
+    assert(lay("Why not? (see above) Because it does.") == "Why not? (see above)\nBecause it does.")
+    assert(lay("Why not? [12] (iii) Because.") == "Why not? [12] (iii)\nBecause.")
+    assert(lay("Done. (See the note.) Next.") == "Done.\n(See the note.)\nNext.")
+    assert(lay("Done. (see above) the rest stays.") == "Done. (see above) the rest stays.")
+    val once: String = lay("Why not? (2) Because it does.")
+    assert(lay(once.replace("\n", " ")) == once)
+  }
+
+  test("a one-word sentence stays on its own line") {
+    assert(lay("Who? Why?") == "Who?\nWhy?")
+  }
+
+  test("I. before a capital ends the sentence") {
+    assert(lay("We make a good team, you and I. Did you?") == "We make a good team, you and I.\nDid you?")
   }
 
   test("closers stay on the sentence") {

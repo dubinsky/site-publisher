@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- do not break a prose sentence on a title, an initial, a dotted abbreviation, or a following parenthetical label
 - The footer drops its heading, lines the description up with the other columns, and shows the feed as an icon.
 - Breaking config: scalar `license` and top-level `license-link` are gone.
   `license` is a nested record (`name`, `link`, `holder`, `holder-link`).

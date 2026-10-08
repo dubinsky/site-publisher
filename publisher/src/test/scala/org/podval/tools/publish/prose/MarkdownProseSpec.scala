@@ -21,6 +21,16 @@ final class MarkdownProseSpec extends AnyFunSuite:
     assert(preorder("Hello world. Next sentence.\n") == preorder(once))
   }
 
+  test("titles and parenthetical labels stay with the sentence") {
+    assert(format("Thanks to Mrs. Blank for her services.\n") == "Thanks to Mrs. Blank for her services.\n")
+    assert(format("Why not? (2)\n") == "Why not? (2)\n")
+    val labeled: String = format("Why not? (see above) Because it does.\n")
+    assert(labeled == "Why not? (see above)\nBecause it does.\n")
+    assert(format(labeled) == labeled)
+    assert(format("Who? Why?\n") == "Who?\nWhy?\n")
+    assert(format("Why not? (2) *Because* it does.\n") == "Why not? (2)\n*Because* it does.\n")
+  }
+
   test("sentence-per-line false only wraps") {
     val source: String = "Hello world. Next sentence.\n"
     assert(format(source, ProseOptions(width = 80, sentencePerLine = false)) == "Hello world. Next sentence.\n")
