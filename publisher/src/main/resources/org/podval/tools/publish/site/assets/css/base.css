@@ -37,6 +37,12 @@ h1, h2, h3, h4, h5, h6, p, blockquote, ul, ol, dl, figure, div.footnotes {
     margin-bottom: var(--spacing-unit-half);
 }
 
+/* The sticky header is --header-height plus a 5px top border and a 1px bottom border. */
+h1, h2, h3, h4, h5, h6,
+.section {
+    scroll-margin-top: calc(var(--header-height) + 6px + 0.75rem);
+}
+
 hr {
     margin-top: var(--spacing-unit);
     margin-bottom: var(--spacing-unit);

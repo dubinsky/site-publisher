@@ -212,26 +212,38 @@ object PageHeader:
     result
 
   private def documentHeaderTable(page: MarkupPage): Option[Xml.Element] =
-    val header: Option[DocumentHeader] = page.doc.flatMap(_.documentHeader)
-    Option.when(header.exists(!_.isEmpty) && isCollectionDocument(page)):
-      val meta: DocumentHeader = header.get
-      Xml.element(XmlElement.Table).addClass("document-header").setChildren(Seq(
+    page.doc.flatMap(_.documentHeader).filter(meta => !meta.isEmpty && isCollectionDocument(page)).flatMap: meta =>
+      val rows: Seq[Xml.Element] = Seq(
         headerRow(page, "Описание", meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
         headerRow(page, "Дата", dateCell(meta.date)),
         headerRow(page, "Кто", joinedInner(meta.authors)),
         headerRow(page, "Кому", meta.addressee.toSeq.map(el => el: Xml.Node)),
         headerRow(page, "Расшифровка", joinedInner(meta.transcribers))
-      ))
+      ).flatten
+      Option.when(rows.nonEmpty)(
+        Xml.element(XmlElement.Table).addClass("document-header").setChildren(rows)
+      )
 
   private[page] def isCollectionDocument(page: Page): Boolean =
     page.store.isEmpty &&
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
-  private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Xml.Element =
-    Xml.element(XmlElement.Tr).setChildren(Seq(
-      Xml.element(XmlElement.Td).addClass("heading").setText(heading),
-      Xml.element(XmlElement.Td).addClass("value").setChildren(convertedNodes(page, nodes))
-    ))
+  /** A line whose converted value has no text is omitted. `?` and other authored text stay. */
+  private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Option[Xml.Element] =
+    val value: Xml.Nodes = convertedNodes(page, nodes)
+    Option.when(hasVisibleContent(value))(
+      Xml.element(XmlElement.Tr).setChildren(Seq(
+        Xml.element(XmlElement.Td).addClass("heading").setText(heading),
+        Xml.element(XmlElement.Td).addClass("value").setChildren(value)
+      ))
+    )
+
+  private def hasVisibleContent(nodes: Xml.Nodes): Boolean =
+    nodes.exists(hasVisibleNode)
+
+  private def hasVisibleNode(node: Xml.Node): Boolean =
+    node.asText.exists(_.trim.nonEmpty) ||
+      node.asElement.exists(_.getChildren.exists(hasVisibleNode))
 
   private[page] def dateCell(date: Option[Xml.Element]): Xml.Nodes =
     date.fold(Seq.empty[Xml.Node]): el =>

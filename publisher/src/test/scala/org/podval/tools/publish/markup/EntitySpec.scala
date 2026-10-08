@@ -222,6 +222,36 @@ final class EntitySpec extends AnyFunSuite:
       assert(!index.contains("<tei-head>"), index)
   }
 
+  test("document header omits a line whose value is empty") {
+    withSite(Map(
+      "col.xml" ->
+        """<collection n="1"><title>C</title></collection>""".stripMargin,
+      "col/005.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><author>Writer</author></titleStmt></fileDesc>
+          |    <profileDesc>
+          |      <correspDesc><correspAction>
+          |        <persName role="addressee">?</persName>
+          |      </correspAction></correspDesc>
+          |    </profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val doc: String = html(target, "col/005.html")
+      val headerAt: Int = doc.indexOf("document-header")
+      val header: String = doc.substring(headerAt, doc.indexOf("</table>", headerAt))
+      assert(header.contains("Кто"), header)
+      assert(header.contains("Writer"), header)
+      assert(header.contains("Кому"), header)
+      assert(header.contains(">?</"), header)
+      assert(!header.contains("Описание"), header)
+      assert(!header.contains("Дата"), header)
+      assert(!header.contains("Расшифровка"), header)
+  }
+
   test("header endnotes render on the document-header cells and are not orphans") {
     withSite(Map(
       "col.xml" ->

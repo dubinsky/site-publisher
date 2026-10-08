@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A document-header line is omitted when its value has no text.
+- A generated table of contents is a sticky rail beside the text when the window is at least 1100px wide.
+  On a narrower window it stays at the top.
+  An in-page jump lands below the site header.
 - Source footnote numbers stay the text color and roman.
   Encoder footnote numbers are italic and violet.
   Danger red stays for a missing name, an unresolved citation, and a deletion.

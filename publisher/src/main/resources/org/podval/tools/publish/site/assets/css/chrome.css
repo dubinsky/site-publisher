@@ -409,6 +409,45 @@ html.wide .page-content > .wrapper {
     margin-bottom: var(--spacing-unit);
 }
 
+/* Prose pages that already have a TOC. Not collection indexes (`html.wide` is the table width). */
+@media screen and (min-width: 1100px) {
+    .page-content > .wrapper:has(.toc) {
+        max-width: 68rem;
+    }
+
+    article.page:has(.toc) {
+        display: grid;
+        grid-template-columns: 14rem minmax(0, 1fr);
+        column-gap: 2.5rem;
+        align-items: start;
+    }
+
+    article.page:has(.toc) > .page-header {
+        grid-column: 2;
+    }
+
+    article.page:has(.toc) > .page-body,
+    article.page:has(.toc) > .page-body > :has(> .toc) {
+        display: contents;
+    }
+
+    article.page:has(.toc) > .page-body > :has(> .toc) > .toc {
+        grid-column: 1;
+        /* `1 / -1` stops at the explicit grid. These rows are implicit, so span past them. */
+        grid-row: 1 / span 999;
+        position: sticky;
+        top: calc(var(--header-height) + 6px + 0.75rem);
+        max-height: calc(100dvh - var(--header-height) - 6px - 1.5rem);
+        overflow: auto;
+        align-self: start;
+    }
+
+    article.page:has(.toc) > .page-body > :has(> .toc) > :not(.toc),
+    article.page:has(.toc) > .page-body > :not(:has(> .toc)) {
+        grid-column: 2;
+    }
+}
+
 .post-list-heading {
     font-size: var(--step-3);
 }

@@ -557,6 +557,7 @@ The page header (`.store-header`) holds ancestor path lines and this node's sele
 `abstract`/`body` and the `by/@selector` label.
 A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
 Расшифровка).
+A line is omitted when its value has no text.
 The Кому cell is the first `persName` in a `correspAction` with `type="received"`.
 When no action has that type, it is the `persName` with `role="addressee"`.
 An endnote in `teiHeader` is not an article footnote.
@@ -895,7 +896,10 @@ Chunked TOC shows ancestors plus the current subtree; sibling branches are title
 [#toc]
 == Table of contents
 
-A page with `chunk: true` or `toc-depth` gets a generated TOC at the top if none is marked in the body.
+A page with `chunk: true` or `toc-depth` gets a generated TOC if none is marked in the body.
+When the window is at least 1100px wide, that TOC is a sticky rail beside the title and the text.
+On a narrower window it stays at the top of the text.
+A click lands with the heading below the site header.
 A placeholder in the body is replaced with that TOC (the first one only) even without those keys; `toc-depth` still
 controls how deep it goes (default 2).
 
