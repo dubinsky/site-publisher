@@ -1,8 +1,9 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.site.PageErrorReporter
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
+import scala.collection.mutable
 
 final class TeiMarkupSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
@@ -13,6 +14,28 @@ final class TeiMarkupSpec extends AnyFunSuite:
 
   private def process(input: String): Xml.Element =
     processResult(input)._1
+
+  private final class Reporter extends PageErrorReporter:
+    var errors: Seq[(PageError.Kind, String)] = Seq.empty
+    override def error(
+      kind: PageError.Kind,
+      message: String,
+      cause: Option[Throwable] = None
+    ): Unit =
+      errors = errors :+ (kind -> message)
+
+  private def processReporting(input: String): (Xml.Element, Reporter) =
+    val reporter: Reporter = Reporter()
+    (TeiMarkup.process(parse(input), reporter)._1, reporter)
+
+  private def withHands(body: String): String =
+    s"""<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>
+       |<profileDesc>
+       |<handNote xml:id="pencilHand" medium="pencil">записано карандашом</handNote>
+       |<handNote xml:id="inkHand" medium="ink">записано чернилами</handNote>
+       |<handNote xml:id="pencilStrike" medium="pencil">зачёркнуто карандашом</handNote>
+       |</profileDesc></teiHeader>
+       |<text><body>$body</body></text></TEI>""".stripMargin
 
   private def render(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element).replaceAll("\\s+", " ").replace("= ", "=")
@@ -735,4 +758,148 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(render(once) == dumped, dumped)
     val refs: Seq[Xml.Element] = twice.gather(el => Option.when(TeiGap.tip.isRef(el))(el)).toSeq
     assert(refs.size == 1, dumped)
+  }
+
+  test("hand with a pencil note gets a medium mark and a hover tip") {
+    val (xml, reporter) = processReporting(withHands(
+      """<fw type="pageNum" place="right" hand="#pencilHand">6</fw>"""
+    ))
+    val dumped: String = render(xml)
+    assert(reporter.errors.isEmpty, reporter.errors)
+    val refs: Seq[Xml.Element] = xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+    val fw: Xml.Element = refs.head.childElements.head
+    val tip: Xml.Element = refs.head.childElements.drop(1).head
+    assert(fw.isNamed("fw"), dumped)
+    assert(fw.getText.trim == "6", dumped)
+    assert(fw.get("type").contains("pageNum"), dumped)
+    assert(fw.get("place").contains("right"), dumped)
+    assert(fw.get("hand").contains("#pencilHand"), dumped)
+    assert(fw.get("data-medium").contains("pencil"), dumped)
+    assert(fw.get("data-hand-tip").contains("true"), dumped)
+    assert(tip.getText == "записано карандашом", dumped)
+    assert(tip.childElements.isEmpty, dumped)
+    assert(dumped.contains("""class="hand-ref""""), dumped)
+    assert(dumped.contains("""class="hand-tip""""), dumped)
+    assert(!dumped.contains("""tei-class="hand-tip""""), dumped)
+    assert(!dumped.contains("aria-describedby"), dumped)
+  }
+
+  test("nested ink writing and a pencil strike nest hand tips") {
+    val xml: Xml.Element = process(withHands(
+      """<fw type="pageNum" place="right" hand="#inkHand"><del rend="overstrike" hand="#pencilStrike">word</del></fw>"""
+    ))
+    val dumped: String = render(xml)
+    val refs: Seq[Xml.Element] = xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 2, dumped)
+    val fw: Xml.Element = refs.head.childElements.head
+    assert(fw.isNamed("fw"), dumped)
+    assert(fw.get("data-medium").contains("ink"), dumped)
+    assert(fw.get("data-hand-tip").contains("true"), dumped)
+    assert(fw.get("hand").contains("#inkHand"), dumped)
+    val inner: Xml.Element = fw.childElements.head
+    assert(TeiHand.tip.isRef(inner), dumped)
+    val del: Xml.Element = inner.childElements.head
+    assert(del.isNamed("del"), dumped)
+    assert(del.get("rend").contains("overstrike"), dumped)
+    assert(del.get("hand").contains("#pencilStrike"), dumped)
+    assert(del.get("data-medium").contains("pencil"), dumped)
+    assert(del.get("data-hand-tip").contains("true"), dumped)
+    val tips: Seq[Xml.Element] = xml.gather(el => Option.when(el.has(TeiHand.tip.TipClass))(el)).toSeq
+    assert(tips.map(_.getText) == Seq("зачёркнуто карандашом", "записано чернилами"), dumped)
+    assert(dumped.contains("""class="hand-tip""""), dumped)
+    assert(!dumped.contains("""tei-class="hand-tip""""), dumped)
+  }
+
+  test("hand tip wrap is not repeated on a second convert") {
+    val hands: Map[String, TeiHand.Hand] = TeiHand.collect(parse(
+      """<handNote xml:id="pencilHand" medium="pencil">записано карандашом</handNote>"""
+    ))
+    val once: Xml.Element = TeiHand.convert(
+      parse("""<fw type="pageNum" hand="#pencilHand">6</fw>"""),
+      hands,
+      PageErrorReporter.Silent,
+      mutable.Set.empty
+    )
+    val twice: Xml.Element = TeiHand.convert(once, hands, PageErrorReporter.Silent, mutable.Set.empty)
+    val reentered: Xml.Element = DialectWalk.transform(once)(el =>
+      TeiHand.convert(el, hands, PageErrorReporter.Silent, mutable.Set.empty)
+    )
+    val dumped: String = render(reentered)
+    assert(render(once) == render(twice), dumped)
+    assert(render(once) == dumped, dumped)
+    val refs: Seq[Xml.Element] = reentered.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+  }
+
+  test("unresolved @hand is not wrapped and is reported once") {
+    val (xml, reporter) = processReporting(
+      """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>
+        |<profileDesc><handNote xml:id="pencilHand" medium="pencil">записано карандашом</handNote></profileDesc>
+        |</teiHeader><text><body>
+        |<fw hand="#missing">1</fw> <fw hand="#missing">2</fw>
+        |<fw hand="#other">3</fw> <fw hand="#other">4</fw>
+        |</body></text></TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-hand-tip"), dumped)
+    assert(!dumped.contains("data-medium"), dumped)
+    assert(dumped.contains("""hand="#missing""""), dumped)
+    assert(dumped.contains("""hand="#other""""), dumped)
+    assert(reporter.errors.map((kind, message) => (kind.id, message)) == Seq(
+      "unresolved-hand" -> "#missing",
+      "unresolved-hand" -> "#other"
+    ), reporter.errors)
+    assert(PageError.UnresolvedHand.id == "unresolved-hand")
+    assert(PageError.all.contains(PageError.UnresolvedHand))
+  }
+
+  test("ill-formed @hand is not wrapped and is reported") {
+    val (xml, reporter) = processReporting(
+      """<TEI><text><body>
+        |<fw hand="pencilHand">1</fw> <fw hand="pencilHand">2</fw>
+        |<fw hand="#a #b">3</fw> <fw hand="#a #b">4</fw>
+        |</body></text></TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-hand-tip"), dumped)
+    assert(dumped.contains("""hand="pencilHand""""), dumped)
+    assert(dumped.contains("""hand="#a #b""""), dumped)
+    assert(reporter.errors.map((kind, message) => (kind.id, message)) == Seq(
+      "unresolved-hand" -> "pencilHand",
+      "unresolved-hand" -> "#a #b"
+    ), reporter.errors)
+  }
+
+  test("blank @hand is unchanged") {
+    val (xml, reporter) = processReporting(
+      """<TEI><text><body><fw hand="">1</fw><fw hand="  ">2</fw><fw>3</fw></body></text></TEI>"""
+    )
+    val dumped: String = render(xml)
+    assert(reporter.errors.isEmpty, reporter.errors)
+    assert(xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-hand-tip"), dumped)
+  }
+
+  test("empty hand text sets data-medium without a tip; empty note does nothing") {
+    val (xml, reporter) = processReporting(
+      """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc><profileDesc>
+        |<handNote xml:id="pencilOnly" medium="pencil"></handNote>
+        |<handNote xml:id="blank"></handNote>
+        |<handNote xml:id="spaces" medium="  ">   </handNote>
+        |</profileDesc></teiHeader><text><body>
+        |<fw hand="#pencilOnly">1</fw><fw hand="#blank">2</fw><fw hand="#spaces">3</fw>
+        |</body></text></TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(reporter.errors.isEmpty, reporter.errors)
+    assert(xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-hand-tip"), dumped)
+    val fws: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("fw"))(el)).toSeq
+    assert(fws.size == 3, dumped)
+    assert(fws.head.get("data-medium").contains("pencil"), dumped)
+    assert(fws.head.get("hand").contains("#pencilOnly"), dumped)
+    assert(fws.drop(1).forall(_.get("data-medium").isEmpty), dumped)
   }

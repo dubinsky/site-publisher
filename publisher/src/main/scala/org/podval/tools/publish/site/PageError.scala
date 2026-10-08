@@ -38,6 +38,7 @@ object PageError:
   case object UnknownCitation extends Kind("unknown citation")
   case object InvalidDate extends Kind("invalid date")
   case object NoRef extends Kind("name without @ref")
+  case object UnresolvedHand extends Kind("unresolved hand")
   case object Unclear extends Kind("unclear")
   case object MisnamedEntity extends Kind("misnamed entity")
   case object UnresolvedTransclusion extends Kind("unresolved transclusion")
@@ -69,6 +70,7 @@ object PageError:
     UnknownCitation,
     InvalidDate,
     NoRef,
+    UnresolvedHand,
     Unclear,
     MisnamedEntity,
     UnresolvedTransclusion,

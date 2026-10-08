@@ -257,6 +257,7 @@ Supported markup constructs:
 - <<video>>;
 - <<tei-dates>>;
 - <<tei-gap>>;
+- <<tei-hand>>;
 
 [#opinionated]
 == Opinionated
@@ -585,6 +586,21 @@ A TEI `<gap reason="…">` with a non-empty `@reason` gets a hover tip with that
 An empty element with a non-empty `@reason` shows one `[…]` mark.
 `@content` is not consulted.
 Missing or blank `@reason` leaves the element as-is.
+
+[#tei-hand]
+== TEI `hand`
+
+`@hand="#id"` points at a `handNote` in the same document.
+`@medium` on that note is `pencil` or `ink`.
+The note text is the hover tip.
+A pointer that is not a single `#id` of a `handNote` in the document is an error (`/errors.html#unresolved-hand`), and
+the element is left unwrapped.
+
+[source,xml]
+----
+<handNote xml:id="pencilHand" medium="pencil">записано карандашом</handNote>
+<fw type="pageNum" place="right" hand="#pencilHand">6</fw>
+----
 
 [#facsimiles]
 == Facsimiles

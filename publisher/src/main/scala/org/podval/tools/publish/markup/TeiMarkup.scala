@@ -5,6 +5,7 @@ import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
 import org.podval.xml.XmlNode.flatMapNodes
 import java.io.File
+import scala.collection.mutable
 
 object TeiMarkup extends Markup(
   name = "TEI",
@@ -60,11 +61,23 @@ object TeiMarkup extends Markup(
     val body: Xml.Element = DialectWalk.transform(stripped)(convertStoreChrome)
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
+    // Header is still on this tree; collection documents drop it later.
+    val hands: Map[String, TeiHand.Hand] = TeiHand.collect(body)
+    val reportedHands: mutable.Set[String] = mutable.Set.empty
     // One walk: rename this element, finish its children, then build IR.
     // `Emit` inserts the IR nodes without visiting them, so `class` stays `class`.
     val withIr: Xml.Element = body.rewrite(
       (element, parent) =>
-        walk(element, parent, footnoteCorrelationIds, headerBiblIds, biblIds, errorReporter),
+        walk(
+          element,
+          parent,
+          footnoteCorrelationIds,
+          headerBiblIds,
+          biblIds,
+          hands,
+          reportedHands,
+          errorReporter
+        ),
       stopAtCode = false
     )
     (markHeadedDivs(withIr), title)
@@ -78,13 +91,24 @@ object TeiMarkup extends Markup(
     footnoteCorrelationIds: IdGenerator,
     headerBiblIds: Set[String],
     biblIds: Set[String],
+    hands: Map[String, TeiHand.Hand],
+    reportedHands: mutable.Set[String],
     errorReporter: PageErrorReporter
   ): Xml.Rewrite =
     val converted: Xml.Element = convertSpecial(tei2Html.convert(element), errorReporter)
     val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
       node.asElement match
         case Some(child) =>
-          walk(child, Some(converted), footnoteCorrelationIds, headerBiblIds, biblIds, errorReporter) match
+          walk(
+            child,
+            Some(converted),
+            footnoteCorrelationIds,
+            headerBiblIds,
+            biblIds,
+            hands,
+            reportedHands,
+            errorReporter
+          ) match
             case Xml.Rewrite.Keep(result) => Seq(result)
             case Xml.Rewrite.Emit(nodes) => nodes
             case Xml.Rewrite.Replace(nodes) => nodes
@@ -105,7 +129,8 @@ object TeiMarkup extends Markup(
           convertFigure,
           convertPb,
           el => TeiDate.convert(el, errorReporter),
-          TeiGap.convert
+          TeiGap.convert,
+          el => TeiHand.convert(el, hands, errorReporter, reportedHands)
         )
         val result: Xml.Element = steps.foldLeft(ready)((el, step) => step(el))
         // Children are already finished. A `pre` wrapper is emitted as-is;
@@ -182,13 +207,20 @@ object TeiMarkup extends Markup(
         stripped
 
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`).
-    * Date and gap tips are a second walk: the first re-enters the tip span and would
+    * Date, gap, and hand tips are a second walk: the first re-enters the tip span and would
     * rename `class` to `tei-class`. */
   private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
+    val hands: Map[String, TeiHand.Hand] = TeiHand.collect(xml)
+    val reportedHands: mutable.Set[String] = mutable.Set.empty
     val converted: Xml.Element = DialectWalk.transform(xml): element =>
       convertSpecial(tei2Html.convert(element), errorReporter)
     DialectWalk.transform(converted): element =>
-      TeiGap.convert(TeiDate.convert(element, errorReporter))
+      TeiHand.convert(
+        TeiGap.convert(TeiDate.convert(element, errorReporter)),
+        hands,
+        errorReporter,
+        reportedHands
+      )
 
   /** Convert `note place="end"` in an already-assembled fragment tree (one id sequence),
     * then harvest, number, and append the list. */

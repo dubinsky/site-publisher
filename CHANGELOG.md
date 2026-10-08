@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- TEI `@hand="#id"` copies that `handNote` text into a hover tip and `@medium` (`pencil` or `ink`) onto `data-medium`.
+  An unresolved pointer is one page error (`/errors.html#unresolved-hand`) and the element stays unwrapped.
 - An empty TEI `gap` with a non-empty `@reason` shows one `[…]` mark.
   The lost and illegible bracket rules are gone, so they do not append a second mark.
 - Backlink rows open the first mention in the document text.

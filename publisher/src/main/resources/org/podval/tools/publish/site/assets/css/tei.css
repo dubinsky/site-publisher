@@ -116,6 +116,30 @@ date[when]:empty:before {
 del[rend='overstrike'] {
   text-decoration: red line-through;
 }
+[data-hand-tip] {
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, currentColor, transparent 45%);
+}
+[data-medium="pencil"] {
+  box-shadow: inset 0 -1px 0 #6e6e6e;
+}
+[data-medium="ink"] {
+  box-shadow: inset 0 -1px 0 currentColor;
+}
+/* A larger inset offset is a thicker band on the same bottom edge, not a second line.
+   The descendant paints after the ancestor, so that band would cover the outer 1px. */
+[data-hand-tip] [data-hand-tip] {
+  box-shadow: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  background-position: 0 calc(100% - 3px);
+}
+[data-hand-tip] [data-medium="pencil"] {
+  background-image: linear-gradient(#6e6e6e, #6e6e6e);
+}
+[data-hand-tip] [data-medium="ink"] {
+  background-image: linear-gradient(currentColor, currentColor);
+}
 /* e */
 /* TODO merge em and hi!*/
 emph {
