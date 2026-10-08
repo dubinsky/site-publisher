@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-08
+
 - Every in-page jump lands below the site header.
   A footnote and the mark it points at clear it the same way a section does.
 - A collection column title stays in its row, and sticks just under the site header when the page scrolls.
