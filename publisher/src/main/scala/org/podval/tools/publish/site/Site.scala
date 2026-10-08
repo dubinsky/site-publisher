@@ -354,7 +354,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     div(
       className := "site-settings-choice",
       role := "radiogroup",
-      attr("data-apparatus") := kind,
+      // Not `data-apparatus`: that attribute is the prose mark, and those rules would wrap this group.
+      attr("data-apparatus-kind") := kind,
       aria("labelledby") := s"setting-$setting-label",
       span(id := s"setting-$setting-label", className := "site-settings-choice-label", groupLabel),
       div(

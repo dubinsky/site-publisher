@@ -210,7 +210,7 @@
     outline-offset: 2px;
 }
 
-.site-settings-choice[data-apparatus="see"] .site-settings-radios label:first-child {
+.site-settings-choice[data-apparatus-kind="see"] .site-settings-radios label:first-child {
     font-size: var(--small-font-size);
 }
 
