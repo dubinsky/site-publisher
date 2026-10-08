@@ -563,3 +563,57 @@ ul.bibliography, ol.bibliography {
 .unresolved-citation {
     color: var(--danger);
 }
+
+/* No mode class is distinct, so print and an empty localStorage stay marked. */
+[data-apparatus="add"]::before {
+    content: "[";
+}
+
+[data-apparatus="add"]::after {
+    content: "]";
+}
+
+[data-apparatus="see"] {
+    font-size: var(--small-font-size);
+}
+
+[data-apparatus="see"]::before {
+    content: "<";
+}
+
+[data-apparatus="see"]::after {
+    content: ">";
+}
+
+[data-apparatus="del"]::before {
+    content: "(";
+}
+
+[data-apparatus="del"]::after {
+    content: ")";
+}
+
+html.apparatus-add-plain [data-apparatus="add"]::before,
+html.apparatus-add-plain [data-apparatus="add"]::after,
+html.apparatus-add-hidden [data-apparatus="add"]::before,
+html.apparatus-add-hidden [data-apparatus="add"]::after,
+html.apparatus-see-plain [data-apparatus="see"]::before,
+html.apparatus-see-plain [data-apparatus="see"]::after,
+html.apparatus-see-hidden [data-apparatus="see"]::before,
+html.apparatus-see-hidden [data-apparatus="see"]::after,
+html.apparatus-del-plain [data-apparatus="del"]::before,
+html.apparatus-del-plain [data-apparatus="del"]::after,
+html.apparatus-del-hidden [data-apparatus="del"]::before,
+html.apparatus-del-hidden [data-apparatus="del"]::after {
+    content: none;
+}
+
+html.apparatus-see-plain [data-apparatus="see"] {
+    font-size: inherit;
+}
+
+html.apparatus-add-hidden [data-apparatus="add"],
+html.apparatus-see-hidden [data-apparatus="see"],
+html.apparatus-del-hidden [data-apparatus="del"] {
+    display: none;
+}

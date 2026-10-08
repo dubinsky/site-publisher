@@ -89,6 +89,9 @@ object AsciiDocMarkup extends Markup(
 
       val classes: Seq[String] = result.getClasses
       if classes.nonEmpty then result = result.setClasses(classes.filterNot(spuriousClasses.contains))
+      if result.isElement(XmlElement.Span) then
+        val roles: Seq[String] = result.getClasses.filter(apparatusRoles.contains)
+        if roles.size == 1 then result = result.set("data-apparatus", roles.head)
 
       var children: Xml.Nodes = result.getChildren
       children = children.convertElements(convertBibliographyWrapper)
@@ -128,6 +131,8 @@ object AsciiDocMarkup extends Markup(
 
   // Distill the soup of meaningless `div`s that Asciidoctor emits;
   // see, for example, https://tiffnix.com/soupault#html-de-uglifier-plugin.
+
+  private val apparatusRoles: Set[String] = Set("add", "see", "del")
 
   private val spuriousClasses: Set[String] = Set(
     "bare", "tableblock", "halign-left", "valign-top", "frame-all", "grid-all", "fit-content", "stretch"

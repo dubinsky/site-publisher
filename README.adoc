@@ -273,7 +273,7 @@ It:
 - supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
 - can emit an interactive <<graph>> of pages;
-- has reader <<settings>> for color scheme, glossary, and transclusions;
+- has reader <<settings>> for color scheme, glossary, transclusions, and <<apparatus>>;
 - checks <<external-links>> when `check-links` is set;
 
 Supported markup constructs:
@@ -799,6 +799,47 @@ The page graph uses the same colors.
 
 **Seamless transclusions** hides the box and header around a transcluded region.
 See <<page-names>>.
+
+[#apparatus]
+== Apparatus
+
+AsciiDoc roles mark additions, sources, and deletions.
+Each kind is independent and stored in the browser gear menu.
+
+[source,asciidoc]
+----
+[.add]#added words#
+[.see]#a source#
+[.del]#removed words#
+----
+
+**Distinct** is the default: additions in brackets, sources in angle brackets at the small size, deletions in
+parentheses.
+**Plain** shows the words with no chrome.
+**Hidden** sets `display: none`.
+The words stay in the HTML.
+
+The page stays distinct unless `_site_config.yml` opts in:
+
+[source,yaml]
+----
+apparatus: true
+----
+
+The default is false.
+When it is false there is no menu, and a mode stored in the browser is not applied.
+
+Nesting two kinds needs the inner span unconstrained:
+
+[source,asciidoc]
+----
+[.add]#before [.see]##inner## after#
+----
+
+A `#` with spaces on both sides stays inside the span.
+A `#` against the previous word closes it.
+`\#` does not escape a hash.
+Use `##`, `pass:[#]`, or `+++#+++` for a literal hash.
 
 [#external-links]
 == External links

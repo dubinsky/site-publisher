@@ -171,6 +171,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     ).when(isCollectionIndex)(className := "wide")
      .when(isFacsimileViewer)(className := "facsimile")
      .when(site.config.namedWindows)(attr("data-window-name") := NamedWindows.of(this))
+     .when(site.config.apparatus)(attr("data-apparatus-enabled") := "true")
 
   private def isCollectionIndex: Boolean =
     doc.exists(_.wide)

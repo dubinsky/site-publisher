@@ -207,3 +207,62 @@ final class AsciiDocSpec extends AnyFunSuite:
     ).toSeq
     assert(codes.exists(_.hasClass("language-scala")), dumped)
   }
+
+  test("[.add]#When# is a span with data-apparatus") {
+    val xml: Xml.Element = process("[.add]#When#\n")
+    val dumped: String = render(xml)
+    val spans: Seq[Xml.Element] = xml.gather(element =>
+      Option.when(element.isElement(XmlElement.Span) && element.hasClass("add"))(element)
+    ).toSeq
+    assert(spans.size == 1, dumped)
+    assert(spans.head.get("data-apparatus").contains("add"), dumped)
+    val rendered: String = HtmlXmlWriterConfig.render(spans.head)
+    assert(
+      rendered.contains("""<span class="add" data-apparatus="add">""") ||
+      rendered.contains("""<span data-apparatus="add" class="add">"""),
+      rendered
+    )
+  }
+
+  test("a bare highlight stays mark and is not apparatus") {
+    val xml: Xml.Element = process("A #highlight# here.\n")
+    val dumped: String = render(xml)
+    assert(dumped.contains("<mark>"), dumped)
+    assert(!dumped.contains("data-apparatus"), dumped)
+    val marks: Seq[Xml.Element] = xml.gather(element =>
+      Option.when(element.isElement(XmlElement.Mark))(element)
+    ).toSeq
+    assert(marks.exists(_.getText.contains("highlight")), dumped)
+  }
+
+  test("nested add and see spans are both apparatus") {
+    val xml: Xml.Element = process("[.add]#before [.see]##inner## after#\n")
+    val dumped: String = render(xml)
+    val adds: Seq[Xml.Element] = xml.gather(element =>
+      Option.when(element.isElement(XmlElement.Span) && element.get("data-apparatus").contains("add"))(element)
+    ).toSeq
+    assert(adds.size == 1, dumped)
+    val inner: Seq[Xml.Element] = adds.head.gather(element =>
+      Option.when(element.isElement(XmlElement.Span) && element.get("data-apparatus").contains("see"))(element)
+    ).toSeq
+    assert(inner.size == 1, dumped)
+    assert(inner.head.getText.contains("inner"), dumped)
+  }
+
+  test("a block role is not apparatus") {
+    val xml: Xml.Element = process(
+      """[.add]
+        |whole paragraph
+        |""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(!dumped.contains("data-apparatus"), dumped)
+    assert(dumped.contains("whole paragraph"), dumped)
+  }
+
+  test("[.add.see]#both# does not get data-apparatus") {
+    val xml: Xml.Element = process("[.add.see]#both#\n")
+    val dumped: String = render(xml)
+    assert(!dumped.contains("data-apparatus"), dumped)
+    assert(dumped.contains("both"), dumped)
+  }

@@ -310,7 +310,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
                 attr("data-setting") := "transclusion-clean"
               ),
               "Seamless transclusions"
-            )
+            ),
+            Option.when(config.apparatus)(Seq(
+              apparatusSetting("add", "Additions"),
+              apparatusSetting("see", "Sources"),
+              apparatusSetting("del", "Deletions")
+            ))
           )
         )
       )
@@ -338,6 +343,27 @@ final class Site(options: SiteOptions) extends JSLibrary:
         attr("value") := value
       ).when(selected)(attr("checked") := "checked"),
       text
+    )
+
+  private def apparatusSetting(kind: String, groupLabel: String): Xml.Element =
+    val setting: String = s"apparatus-$kind"
+    div(
+      className := "site-settings-choice",
+      role := "radiogroup",
+      aria("labelledby") := s"setting-$setting-label",
+      span(id := s"setting-$setting-label", className := "site-settings-choice-label", groupLabel),
+      div(
+        className := "site-settings-radios",
+        Seq("distinct", "plain", "hidden").map: value =>
+          label(
+            input(
+              `type` := "radio",
+              attr("name") := setting,
+              attr("value") := value
+            ).when(value == "distinct")(attr("checked") := "checked"),
+            value.capitalize
+          )
+      )
     )
 
   private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =

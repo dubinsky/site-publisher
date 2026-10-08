@@ -1,6 +1,7 @@
 (function () {
   var html = document.documentElement;
   var keys = ["glossary-expand", "transclusion-clean"];
+  var apparatusNames = ["apparatus-add", "apparatus-see", "apparatus-del"];
   var schemeKey = "color-scheme";
 
   function storageGet(key) {
@@ -40,6 +41,11 @@
       if (storageGet(k) === "1") html.classList.add(k);
     });
   } catch (e) {}
+  if (html.getAttribute("data-apparatus-enabled") === "true") {
+    apparatusNames.forEach(function (name) {
+      applyApparatus(name, storageGet(name));
+    });
+  }
   applyScheme(false);
 
   var schemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -50,6 +56,15 @@
   function apply(name, on) {
     html.classList.toggle(name, on);
     storageSet(name, on ? "1" : "0");
+  }
+
+  function applyApparatus(name, value) {
+    html.classList.toggle(name + "-plain", value === "plain");
+    html.classList.toggle(name + "-hidden", value === "hidden");
+  }
+
+  function apparatusMode(value) {
+    return value === "plain" || value === "hidden" ? value : "distinct";
   }
 
   function init() {
@@ -71,6 +86,22 @@
         applyScheme(true);
       });
     });
+
+    if (html.getAttribute("data-apparatus-enabled") === "true") {
+      apparatusNames.forEach(function (name) {
+        var radios = document.querySelectorAll('input[name="' + name + '"]');
+        if (!radios.length) return;
+        var mode = apparatusMode(storageGet(name));
+        radios.forEach(function (radio) {
+          radio.checked = radio.value === mode;
+          radio.addEventListener("change", function () {
+            if (!radio.checked) return;
+            storageSet(name, radio.value);
+            applyApparatus(name, radio.value);
+          });
+        });
+      });
+    }
 
     var settings = document.querySelector(".site-settings");
     var header = document.querySelector(".site-header");

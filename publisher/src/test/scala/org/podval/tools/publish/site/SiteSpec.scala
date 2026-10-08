@@ -108,6 +108,24 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(graph.contains("site-color-scheme"), graph)
   }
 
+  test("apparatus settings are on the page when the site opts in") {
+    val home: String = html("index.html")
+    assert(htmlOpen(home).contains("""data-apparatus-enabled="true""""), htmlOpen(home))
+    assert(home.contains("""name="apparatus-add" value="distinct" checked="checked""""), home)
+    assert(home.contains("""name="apparatus-add" value="plain""""), home)
+    assert(home.contains("""name="apparatus-add" value="hidden""""), home)
+    assert(home.contains("""name="apparatus-see" value="distinct" checked="checked""""), home)
+    assert(home.contains("""name="apparatus-see" value="plain""""), home)
+    assert(home.contains("""name="apparatus-see" value="hidden""""), home)
+    assert(home.contains("""name="apparatus-del" value="distinct" checked="checked""""), home)
+    assert(home.contains("""name="apparatus-del" value="plain""""), home)
+    assert(home.contains("""name="apparatus-del" value="hidden""""), home)
+    val head: String = home.substring(0, home.indexOf("</head>"))
+    assert(head.contains("data-apparatus-enabled"), head)
+    assert(head.contains("apparatus-add"), head)
+    assert(html("assets/css/prose.css").contains("html.apparatus-add-hidden"))
+  }
+
   test("media queries use literal breakpoints, not custom properties") {
     val chrome: String = html("assets/css/chrome.css")
     val prose: String = html("assets/css/prose.css")
