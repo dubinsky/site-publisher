@@ -219,6 +219,47 @@ final class EntitySpec extends AnyFunSuite:
       assert(!index.contains("<tei-head>"), index)
   }
 
+  test("header endnotes render on the document-header cells and are not orphans") {
+    withSite(Map(
+      "col.xml" ->
+        """<collection n="1"><title>C</title></collection>""".stripMargin,
+      "col/004.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><author>Writer</author></titleStmt></fileDesc>
+          |    <profileDesc>
+          |      <abstract><p>About <note place="end">abstract remark</note> it.</p></abstract>
+          |      <creation><date when="1798-10-07">7 октября 1798<note place="end">dated from 034</note></date></creation>
+          |      <correspDesc><correspAction>
+          |        <persName role="addressee">Гамалее<note place="end">the governor</note></persName>
+          |      </correspAction></correspDesc>
+          |    </profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body><p>body <note place="end">body remark</note></p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val doc: String = html(target, "col/004.html")
+      val headerAt: Int = doc.indexOf("document-header")
+      val postAt: Int = doc.indexOf("post-content")
+      assert(headerAt >= 0 && postAt > headerAt, doc)
+      val header: String = doc.substring(headerAt, postAt)
+      val post: String = doc.substring(postAt)
+      assert(header.contains("1798-10-07"), doc)
+      assert(header.contains("dated from 034"), doc)
+      assert(header.contains("abstract remark"), doc)
+      assert(header.contains("the governor"), doc)
+      assert(post.contains("body remark"), doc)
+      assert(!post.contains("dated from 034"), doc)
+      assert(!post.contains("abstract remark"), doc)
+      assert(!post.contains("the governor"), doc)
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("dated from 034"), index)
+      assert(index.contains("the governor"), index)
+      val errors: String = html(target, "errors.html")
+      assert(!errors.contains("orphan footnote"), errors)
+  }
+
   test("wiki link still finds an entity by file name") {
     withSite(): (site, target) =>
       val home: Page = pageNamed(site, "Home")

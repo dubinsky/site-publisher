@@ -518,6 +518,9 @@ The page header (`.store-header`) holds ancestor path lines and this node's sele
 `abstract`/`body` and the `by/@selector` label.
 A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
 Расшифровка).
+An endnote in `teiHeader` is not an article footnote.
+A `note` in `abstract`, in the `date`, or in the addressee `persName` is a footnote on that header cell, and on the same
+cell of the collection index.
 The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>.
 Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`).
 Documents under a store or collection use the same header.
@@ -576,6 +579,7 @@ This disagrees with the TEI Guidelines: the attributes are not rewritten to Greg
 numbers are read, and it still describes the prose.
 
 The collection index and document-header Дата cell show `@when` as the visible text when `@when` is present.
+A `note` inside that `date` stays in the cell.
 Otherwise the cell shows the element's own text, still inside `<date>`, so the tip can attach.
 In-text dates always keep their text.
 A `<date>` with none of `@when`, `@from`, `@to`, `@notBefore`, and `@notAfter` is unchanged.

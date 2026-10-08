@@ -62,6 +62,7 @@ object TeiMarkup extends Markup(
     val headerBiblIds: Set[String] = headerListBiblEntryIds(body)
     val biblIds: Set[String] = listBiblIds(body, headerBiblIds)
     // Header is still on this tree; collection documents drop it later.
+    // Endnotes inside it stay notes: the document-header table renders the ones on its cells.
     val hands: Map[String, TeiHand.Hand] = TeiHand.collect(body)
     val reportedHands: mutable.Set[String] = mutable.Set.empty
     // One walk: rename this element, finish its children, then build IR.
@@ -71,6 +72,7 @@ object TeiMarkup extends Markup(
         walk(
           element,
           parent,
+          inHeader = false,
           footnoteCorrelationIds,
           headerBiblIds,
           biblIds,
@@ -88,6 +90,7 @@ object TeiMarkup extends Markup(
   private def walk(
     element: Xml.Element,
     parent: Option[Xml.Element],
+    inHeader: Boolean,
     footnoteCorrelationIds: IdGenerator,
     headerBiblIds: Set[String],
     biblIds: Set[String],
@@ -96,12 +99,15 @@ object TeiMarkup extends Markup(
     errorReporter: PageErrorReporter
   ): Xml.Rewrite =
     val converted: Xml.Element = convertSpecial(tei2Html.convert(element), errorReporter)
+    // `teiHeader` endnotes are rendered later, on the document-header cells, not as article footnotes.
+    val headerHere: Boolean = inHeader || element.isNamed("teiHeader")
     val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
       node.asElement match
         case Some(child) =>
           walk(
             child,
             Some(converted),
+            headerHere,
             footnoteCorrelationIds,
             headerBiblIds,
             biblIds,
@@ -115,7 +121,9 @@ object TeiMarkup extends Markup(
         case None =>
           Seq(node)
     val ready: Xml.Element = converted.setChildren(children)
-    convertFootnote(ready, footnoteCorrelationIds) match
+    val asFootnote: Option[Xml.Nodes] =
+      if headerHere then None else convertFootnote(ready, footnoteCorrelationIds)
+    asFootnote match
       case Some(nodes) =>
         Xml.Rewrite.Emit(nodes)
       case None =>

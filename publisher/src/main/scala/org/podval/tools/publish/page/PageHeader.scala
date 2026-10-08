@@ -215,8 +215,9 @@ object PageHeader:
     date.fold(Seq.empty[Xml.Node]): el =>
       def present(name: String): Option[String] =
         el.get(name).map(_.trim).filter(_.nonEmpty)
+      val notes: Xml.Nodes = el.childElements.filter(_.isNamed("note")).toSeq
       present("when") match
-        case Some(when) => Seq(el.setChildren(Seq(Xml.text(when))))
+        case Some(when) => Seq(el.setChildren(Seq(Xml.text(when)) ++ notes))
         case None if Seq("from", "to", "notBefore", "notAfter").exists(name => present(name).isDefined) =>
           Seq(el)
         case None => el.getChildren

@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- An endnote in `teiHeader` is not an article footnote.
+  A `note` on the header date, abstract, or addressee is a footnote on that header cell.
 - Pin xml 0.5.0.
 - A TEI titlo (`abbr[rend~="titlo"]`) is an overline.
   `abbr` and `expan` cling in the authored TEI writer.
