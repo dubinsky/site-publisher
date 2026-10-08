@@ -554,13 +554,26 @@ table.document-header {
 .collection-scroll {
     max-width: 100%;
     margin-top: var(--space-2);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
-/* Beat the 800px `table { display: block }`, which shrinks percentage columns to the viewport. */
+/* 56rem table plus 2rem wrapper padding on each side. overflow-x: auto is a scrollport,
+   so the column titles stick inside the table, one site-header lower than their row. */
+@media screen and (max-width: 960px) {
+    .collection-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table.collection-index th {
+        top: 0;
+    }
+}
+
+/* Beat the 800px `table { display: block; overflow-x: auto }`, which shrinks percentage
+   columns and becomes the sticky scrollport. */
 table.collection-index {
     display: table;
+    overflow: visible;
     width: 100%;
     min-width: 56rem;
     margin-top: 0;

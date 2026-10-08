@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Every in-page jump lands below the site header.
   A footnote and the mark it points at clear it the same way a section does.
+- A collection column title stays in its row, and sticks just under the site header when the page scrolls.
+  The title bar covers a date or a name scrolling under it.
 - The gear menu no longer wraps Additions, Deletions, and Sources in the apparatus marks.
 - A document-header line is omitted when its value has no text.
 - A generated table of contents is a sticky rail beside the text when the window is at least 1100px wide.

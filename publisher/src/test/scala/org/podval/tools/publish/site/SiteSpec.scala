@@ -143,10 +143,21 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(prose.contains("font-style: italic"), prose)
   }
 
+  test("collection column titles stick to the page") {
+    val chrome: String = html("assets/css/chrome.css")
+    val start: Int = chrome.indexOf(".collection-scroll {")
+    val block: String = chrome.substring(start, chrome.indexOf("}", start))
+    assert(!block.contains("overflow"), block)
+    assert(chrome.contains("max-width: 960px"), chrome)
+    assert(chrome.contains("overflow: visible"), chrome)
+  }
+
   test("in-page jumps clear the sticky header") {
     val base: String = html("assets/css/base.css")
-    assert(base.contains("scroll-padding-top: calc(var(--header-height) + 6px + 0.75rem)"), base)
-    assert(!base.contains("scroll-margin-top"), base)
+    assert(base.contains("scroll-margin-top: calc(var(--header-height) + 6px + 0.75rem)"), base)
+    assert(base.contains("top: calc(var(--header-height) + 6px)"), base)
+    assert(base.contains("z-index: 1"), base)
+    assert(!base.contains("scroll-padding-top"), base)
   }
 
   test("media queries use literal breakpoints, not custom properties") {

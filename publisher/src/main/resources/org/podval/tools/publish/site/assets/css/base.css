@@ -12,9 +12,13 @@
 
 html {
     font-size: var(--base-font-size);
-    /* The sticky header is --header-height plus a 5px top border and a 1px bottom border.
-       One offset for every in-page jump: a heading, a footnote, the mark it points at. */
-    scroll-padding-top: calc(var(--header-height) + 6px + 0.75rem);
+}
+
+/* The sticky header is --header-height plus a 5px top border and a 1px bottom border.
+   The offset stays on each fragment. scroll-padding on the page also lowers sticky
+   table headers and the TOC rail. */
+[id] {
+    scroll-margin-top: calc(var(--header-height) + 6px + 0.75rem);
 }
 
 body, h1, h2, h3, h4, h5, h6, p, tei-p, blockquote, pre, hr, dl, dd, ol, ul, figure {
@@ -248,6 +252,9 @@ table {
     thead td.entry {
         font-weight: bold;
         position: sticky;
+        /* Above a positioned mark in a body cell (a date, a name). Below the site header. */
+        z-index: 1;
+        background-color: var(--table-header-bg-color);
         /* Clear the sticky site header: its min-height plus the 5px top and 1px bottom borders. */
         top: calc(var(--header-height) + 6px);
     }

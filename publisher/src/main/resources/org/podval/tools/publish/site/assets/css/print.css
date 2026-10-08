@@ -29,6 +29,7 @@
     thead td.entry {
         position: static;
         top: auto;
+        z-index: auto;
     }
 
     .collection-scroll {
