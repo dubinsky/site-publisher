@@ -1630,3 +1630,6 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
 - Look at https://stephango.com/vault
 - Look at https://squidfunk.github.io/mkdocs-material/
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
+- implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
+- CSS cleanup / modularize / modernize; tei.css still
+wants to merge `em` and `hi`.
