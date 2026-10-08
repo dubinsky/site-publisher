@@ -582,8 +582,9 @@ A `<date>` with none of `@when`, `@from`, `@to`, `@notBefore`, and `@notAfter` i
 == TEI `gap`
 
 A TEI `<gap reason="…">` with a non-empty `@reason` gets a hover tip with that text (same family as dates).
+An empty element with a non-empty `@reason` shows one `[…]` mark.
+`@content` is not consulted.
 Missing or blank `@reason` leaves the element as-is.
-Existing `tei.css` rules for `gap` (`lost` / `illegible` brackets) still apply.
 
 [#facsimiles]
 == Facsimiles
@@ -1631,5 +1632,4 @@ HTML:: `<video src>` (IR adds `class="video"` and `controls`); a YouTube/Vimeo `
 - Look at https://squidfunk.github.io/mkdocs-material/
 - Look at https://github.com/KaTeX/KaTeX[KaTeX] as a MathJax alternative...
 - implement some DocBook styling parameters (using dot-named frontmatter fields a.b.c :).
-- CSS cleanup / modularize / modernize; tei.css still
-wants to merge `em` and `hi`.
+- CSS cleanup / modularize / modernize; tei.css still wants to merge `em` and `hi`.

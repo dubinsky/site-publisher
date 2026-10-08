@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- An empty TEI `gap` with a non-empty `@reason` shows one `[…]` mark.
+  The lost and illegible bracket rules are gone, so they do not append a second mark.
 - Backlink rows open the first mention in the document text.
   A mention that exists only in `teiHeader` leaves the row on the document.
 - feat: prose formatting: `--pretty-print` and `prettyPrintSite` also reflow Markdown and AsciiDoc.

@@ -151,14 +151,8 @@ fw[type='pageNum'] {
 gap {
   color: red;
 }
-gap[reason='lost']:before {
-  content:'[';
-}
-gap[reason='lost']:after {
-  content: attr(content) ']';
-}
-gap[reason='illegible']:after {
-  content: attr(content);
+gap[reason]:not([reason=""]):empty:before {
+  content: "[…]";
 }
 gi {
   font-family: Courier,monospace;
