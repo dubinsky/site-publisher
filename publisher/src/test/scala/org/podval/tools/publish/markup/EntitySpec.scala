@@ -173,8 +173,11 @@ final class EntitySpec extends AnyFunSuite:
       val index: String = html(target, "col/index.html")
       assert(index.contains("""href="/people/alter-rebbe.html""""), index)
       val doc: String = html(target, "col/001.html")
-      assert(doc.contains("""href="/people/alter-rebbe.html""""), doc)
-      assert(doc.contains("<l>документ 001</l>"), doc)
+      assert(doc.contains("""class="store-path""""), doc)
+      assert(doc.contains("""href="/col/index.html""""), doc)
+      assert(!doc.contains("""href="/people/alter-rebbe.html""""), doc)
+      assert(doc.contains("""class="store-current""""), doc)
+      assert(doc.contains("документ 001"), doc)
       assert(!doc.contains("<tei-head>документ"), doc)
   }
 

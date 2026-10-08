@@ -36,8 +36,10 @@ object CollectionIndex:
     ).map(el => el: Xml.Node)
     val table: Xml.Element =
       Xml.element(XmlElement.Table).addClass("collection-index").setChildren(header +: body)
+    val scroll: Xml.Element =
+      Xml.element(XmlElement.Div).addClass("collection-scroll").setChildren(Seq(table))
     TeiMarkup.finishFootnotes(
-      Xml.element(XmlElement.Div).setChildren(table +: missingNotes(store, originals)),
+      Xml.element(XmlElement.Div).setChildren(scroll +: missingNotes(store, originals)),
       page.source.getOrElse(PageErrorReporter.Silent)
     )
 

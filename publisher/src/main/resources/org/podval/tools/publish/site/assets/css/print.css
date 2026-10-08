@@ -19,8 +19,25 @@
     .site-header,
     .site-footer,
     .page-path,
+    .store-path,
     nav.pagination {
         display: none;
+    }
+
+    th,
+    tr.row[role=label] td.cell,
+    thead td.entry {
+        position: static;
+        top: auto;
+    }
+
+    .collection-scroll {
+        overflow: visible;
+    }
+
+    table.collection-index {
+        min-width: 0;
+        width: 100%;
     }
 
     .footnote-tip,

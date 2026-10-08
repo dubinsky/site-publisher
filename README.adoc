@@ -818,6 +818,9 @@ parentheses.
 **Plain** shows the words with no chrome.
 **Hidden** sets `display: none`.
 The words stay in the HTML.
+The gear lists Additions, then Deletions, then Sources.
+Distinct is labeled `[Distinct]`, `(Distinct)`, and `<Distinct>`.
+The Sources label stays at the small size.
 
 The page stays distinct unless `_site_config.yml` opts in:
 

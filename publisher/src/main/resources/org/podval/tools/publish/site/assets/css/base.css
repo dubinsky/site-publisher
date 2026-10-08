@@ -245,7 +245,8 @@ table {
     thead td.entry {
         font-weight: bold;
         position: sticky;
-        top: 0;
+        /* Clear the sticky site header: its min-height plus the 5px top and 1px bottom borders. */
+        top: calc(var(--header-height) + 6px);
     }
 
     @media screen and (max-width: 800px) {

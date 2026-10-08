@@ -81,7 +81,7 @@ final class FooterSpec extends AnyFunSuite:
       val description: Int = html.indexOf("footer-description")
       val license: Int = html.indexOf("footer-license")
       val feed: Int = html.indexOf("footer-feed")
-      assert(description < license && license < feed, html)
+      assert(description < feed && feed < license, html)
       val head: String = HtmlXmlWriterConfig.render(site.license.get)
       assert(head.contains("""<link"""), head)
       assert(head.contains("""rel="license""""), head)
@@ -108,7 +108,7 @@ final class FooterSpec extends AnyFunSuite:
       val description: Int = html.indexOf("footer-description")
       val license: Int = html.indexOf("footer-license")
       val feed: Int = html.indexOf("footer-feed")
-      assert(description < license && license < feed, html)
+      assert(description < feed && feed < license, html)
       assert(site.license.nonEmpty)
     }
   }
@@ -126,7 +126,7 @@ final class FooterSpec extends AnyFunSuite:
       val description: Int = html.indexOf("footer-description")
       val license: Int = html.indexOf("footer-license")
       val feed: Int = html.indexOf("footer-feed")
-      assert(description < license && license < feed, html)
+      assert(description < feed && feed < license, html)
       val head: String = HtmlXmlWriterConfig.render(site.license.get)
       assert(head.contains("""<link"""), head)
       assert(head.contains("""rel="license""""), head)

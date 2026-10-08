@@ -294,28 +294,32 @@ final class Site(options: SiteOptions) extends JSLibrary:
             Icon.gear.html
           ),
           div(className := "site-settings-menu", role := "group", aria("label") := "Settings",
-            colorSchemeSetting,
-            label(className := "site-settings-item",
-              input(
-                `type` := "checkbox",
-                id := "setting-glossary-expand",
-                attr("data-setting") := "glossary-expand"
+            div(className := "site-settings-section", colorSchemeSetting),
+            div(className := "site-settings-section",
+              label(className := "site-settings-item",
+                input(
+                  `type` := "checkbox",
+                  id := "setting-glossary-expand",
+                  attr("data-setting") := "glossary-expand"
+                ),
+                "Show glossary definitions in the text"
               ),
-              "Show glossary definitions in the text"
+              label(className := "site-settings-item",
+                input(
+                  `type` := "checkbox",
+                  id := "setting-transclusion-clean",
+                  attr("data-setting") := "transclusion-clean"
+                ),
+                "Seamless transclusions"
+              )
             ),
-            label(className := "site-settings-item",
-              input(
-                `type` := "checkbox",
-                id := "setting-transclusion-clean",
-                attr("data-setting") := "transclusion-clean"
-              ),
-              "Seamless transclusions"
-            ),
-            Option.when(config.apparatus)(Seq(
-              apparatusSetting("add", "Additions"),
-              apparatusSetting("see", "Sources"),
-              apparatusSetting("del", "Deletions")
-            ))
+            Option.when(config.apparatus)(
+              div(className := "site-settings-section",
+                apparatusSetting("add", "Additions"),
+                apparatusSetting("del", "Deletions"),
+                apparatusSetting("see", "Sources")
+              )
+            )
           )
         )
       )
@@ -350,6 +354,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
     div(
       className := "site-settings-choice",
       role := "radiogroup",
+      attr("data-apparatus") := kind,
       aria("labelledby") := s"setting-$setting-label",
       span(id := s"setting-$setting-label", className := "site-settings-choice-label", groupLabel),
       div(
@@ -361,10 +366,19 @@ final class Site(options: SiteOptions) extends JSLibrary:
               attr("name") := setting,
               attr("value") := value
             ).when(value == "distinct")(attr("checked") := "checked"),
-            value.capitalize
+            apparatusLabel(kind, value)
           )
       )
     )
+
+  /** Distinct shows the marks the text uses. Additions `[ ]`, deletions `( )`, sources `< >`. */
+  private def apparatusLabel(kind: String, value: String): String =
+    if value != "distinct" then value.capitalize
+    else kind match
+      case "add" => "[Distinct]"
+      case "del" => "(Distinct)"
+      case "see" => "<Distinct>"
+      case _ => "Distinct"
 
   private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =
     Option.when(items.nonEmpty)(div(className := s"nav-group $cls", items))
@@ -407,9 +421,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
             )
           ),
           div(className := "footer-col",
-            div(className := "footer-description", config.description),
-            config.license.map(footerLicense),
-            Feed.feedFooter
+            div(className := "footer-about",
+              div(className := "footer-description", config.description),
+              Feed.feedFooter,
+              config.license.map(footerLicense)
+            )
           )
         )
       )

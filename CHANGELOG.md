@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The gear menu groups color scheme, reading, and apparatus.
+  A rule sits only between groups.
+  Apparatus order is Additions, Deletions, then Sources.
+  Distinct is labeled with the marks: `[Distinct]`, `(Distinct)`, `<Distinct>`.
+- The feed icon sits at the end of the description.
+  The license is the line under that.
+- The site header stays on screen.
+  Collection column titles clear it.
+- An archive path is one line of short names.
+  The current node keeps its long title.
+  A document axis does not add a trailing label.
+- A collection index scrolls sideways on a narrow screen instead of squeezing its columns.
+  Part titles are section dividers.
+- A name in the text uses the text color and a light underline, and the link color on hover.
 - do not break a prose sentence on a title, an initial, a dotted abbreviation, or a following parenthetical label
 - The footer drops its heading, lines the description up with the other columns, and shows the feed as an icon.
 - Breaking config: scalar `license` and top-level `license-link` are gone.

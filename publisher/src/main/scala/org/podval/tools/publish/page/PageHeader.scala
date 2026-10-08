@@ -70,21 +70,23 @@ object PageHeader:
   def collectorPageHeader(page: MarkupPage): Xml.Element =
     collectorHeaderXml(page)
 
-  /** Live collector: ancestor `<l>` lines, then this node's `<l>`, then abstract/body,
-    * then this store's `by` selector label (the listing itself stays in the body). */
+  /** Ancestors are one short path. This node's `<l>` keeps the long title.
+    * A `document` axis label is omitted; other `by` labels stay. The listing is in the body. */
   private def collectorHeaderXml(page: MarkupPage): Xml.Element =
-    val ancestors: Seq[Xml.Element] = collectorAncestors(page).map(ancestorLine)
     val head: Xml.Element = currentHead(page)
     val index: Option[StoreContent] = page.store
     val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       resolvedFragment(page, bodyEl).getChildren
-    val byLabel: Xml.Nodes = StoreTree.by(page).map(_.selector).toSeq.map: selector =>
-      Xml.element("l").addClass("store-by").setText(s"${selectorDisplayName(selector, page.site.languageSpec)}:")
+    val byLabel: Xml.Nodes =
+      StoreTree.by(page).filterNot(_.selector.names.hasName("document")).toSeq.map: by =>
+        Xml.element("l").addClass("store-by").setText(
+          s"${selectorDisplayName(by.selector, page.site.languageSpec)}:"
+        )
     val table: Xml.Nodes = documentHeaderTable(page).toSeq
     TeiMarkup.finishFootnotes(
       Xml.element("header").addClass("store-header").setChildren(
-        ancestors.map(el => el: Xml.Node) ++
+        ancestorPath(collectorAncestors(page)).toSeq ++
           Seq(head: Xml.Node) ++
           table ++
           description ++
@@ -102,18 +104,40 @@ object PageHeader:
         if parent.store.isDefined then rest :+ parent else rest
     loop(page.parent)
 
-  private def ancestorLine(page: Page): Xml.Element =
-    val name: Xml.Element =
-      NamedWindows.setXmlTarget(
-        Xml.element(XmlElement.A).setHref(page.publishedPath.toString).setText(pageDisplayName(page)),
-        page
-      )
-    headingLine(
-      selector = selectorName(page),
-      name = Seq(name),
-      title = storeTitleInner(page),
-      spec = page.site.languageSpec
+  /** One wrapping line. A nameless store whose file name is a selector uses that selector's plural
+    * (`archive` → Архивы), so the raw id is not the crumb. */
+  private def ancestorPath(pages: Seq[Page]): Option[Xml.Element] =
+    pages match
+      case Seq() => None
+      case head +: tail =>
+        val crumbs: Seq[Xml.Node] =
+          ancestorCrumb(head) +: tail.flatMap(page => Seq(pathSep, ancestorCrumb(page)))
+        Some(nav(className := "store-path", aria("label") := "Path", crumbs))
+
+  private def pathSep: Xml.Element =
+    Xml.element(XmlElement.Span).addClass("store-path-sep").set("aria-hidden", "true").setText("/")
+
+  private def ancestorCrumb(page: Page): Xml.Element =
+    NamedWindows.setXmlTarget(
+      Xml.element(XmlElement.A).setHref(page.publishedPath.toString).setText(crumbLabel(page)),
+      page
     )
+
+  private def crumbLabel(page: Page): String =
+    val spec: Language.Spec = page.site.languageSpec
+    val short: String = pageDisplayName(page)
+    val selectorId: Option[String] = selectorName(page)
+    val selectorWord: Option[String] = selectorId.map(selectorDisplayName(_, spec))
+    val redundant: Boolean = selectorId.exists: id =>
+      Selectors.forName(id).exists: sel =>
+        sel.names.hasName(short) || sel.plural.exists(_.hasName(short))
+    val bareFile: Boolean =
+      page.store.exists(_.names.isEmpty) && Selectors.forName(short).isDefined
+    if selectorWord.isEmpty && bareFile then
+      StoreTree.by(page).flatMap(_.selector.plural).map(_.toLanguageString(using spec)).getOrElse(short)
+    else
+      val parts: Seq[String] = selectorWord.toSeq ++ Option.unless(redundant)(short).toSeq
+      if parts.nonEmpty then parts.mkString(" ") else short
 
   private def currentHead(page: MarkupPage): Xml.Element =
     val nameFromTree: Option[Xml.Element] = page.store.flatMap: _ =>
@@ -125,7 +149,7 @@ object PageHeader:
       name = name,
       title = storeTitleInner(page),
       spec = page.site.languageSpec
-    )
+    ).addClass("store-current")
 
   private def headingLine(
     selector: Option[String],

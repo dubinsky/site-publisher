@@ -360,3 +360,47 @@ org > orgName, org > a.orgName {
     display: block;
     font-size: var(--step-3);
 }
+
+/* Running text. Tables and entity titles override this below. */
+.page-body,
+.store-header {
+    a.persName:not([missing]):is(:link, :visited),
+    a.placeName:not([missing]):is(:link, :visited),
+    a.orgName:not([missing]):is(:link, :visited) {
+        color: var(--text-color);
+        text-decoration-line: underline;
+        text-decoration-color: color-mix(in oklab, currentColor, transparent 45%);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+    }
+
+    a.persName:not([missing]):is(:hover, :focus-visible),
+    a.placeName:not([missing]):is(:hover, :focus-visible),
+    a.orgName:not([missing]):is(:hover, :focus-visible) {
+        color: var(--link-base-color);
+    }
+
+    table :is(a.persName, a.placeName, a.orgName):not([missing]):is(:link, :visited) {
+        color: var(--link-base-color);
+        text-decoration: none;
+    }
+
+    table :is(a.persName, a.placeName, a.orgName):not([missing]):visited {
+        color: var(--link-visited-color);
+    }
+
+    table :is(a.persName, a.placeName, a.orgName):not([missing]):is(:hover, :focus-visible) {
+        color: var(--link-hover-color);
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+    }
+}
+
+.page-body :is(person, place, org) > a:is(.persName, .placeName, .orgName):not([missing]):is(:link, :visited) {
+    color: inherit;
+    text-decoration: none;
+}
+
+.page-body :is(person, place, org) > a:is(.persName, .placeName, .orgName):not([missing]):is(:hover, :focus-visible) {
+    color: var(--link-base-color);
+}
