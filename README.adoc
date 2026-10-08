@@ -1051,7 +1051,10 @@ A note of either place inside the other is a nested letter of its own series.
 
 TEI converts `note place="foot"` and `note place="end"`.
 `place="foot"` is the source-footnote series (`div.footnotes.source-footnotes`), listed before the endnotes.
+A source marker is the text color and roman.
 `place="end"` is the encoder endnote series.
+An encoder marker is italic, in the violet note color.
+Danger red stays for a missing name, an unresolved citation, and a deletion.
 An unplaced `note` is unchanged.
 `@n`, when non-blank, is the marker at the call site and in the list.
 Order and fragment ids stay on the generated series.

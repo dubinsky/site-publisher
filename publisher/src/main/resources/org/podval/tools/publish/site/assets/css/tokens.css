@@ -71,7 +71,9 @@
     --important: #7c4dff;
     --warning: #e65100;
     --danger: #c62828;
-    --note-color: var(--danger);
+    /* Encoder footnote markers. Source markers use the text color. Danger stays for missing names and deletions. */
+    --note-editorial: var(--important);
+    --note-color: var(--note-editorial);
     --highlight: #cdca32;
     --quote-mark: #7a2518;
     --add-color: #ffcdcd;

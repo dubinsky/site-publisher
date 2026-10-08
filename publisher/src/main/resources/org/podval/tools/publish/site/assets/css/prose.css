@@ -262,6 +262,7 @@ div.footnotes.source-footnotes {
 a.footnote-link[data-footnote-series="foot"],
 a.footnote-backlink[data-footnote-series="foot"] {
     color: var(--text-color);
+    font-style: normal;
 }
 
 div.table-with-notes > div.footnotes {
@@ -274,7 +275,8 @@ span.nested-footnotes {
 }
 
 a.footnote-link, a.footnote-backlink {
-    color: var(--note-color);
+    color: var(--note-editorial);
+    font-style: italic;
 }
 
 .footnote-link {

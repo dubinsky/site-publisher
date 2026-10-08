@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Source footnote numbers stay the text color and roman.
+  Encoder footnote numbers are italic and violet.
+  Danger red stays for a missing name, an unresolved citation, and a deletion.
 - The gear menu groups color scheme, reading, and apparatus.
   A rule sits only between groups.
   Apparatus order is Additions, Deletions, then Sources.

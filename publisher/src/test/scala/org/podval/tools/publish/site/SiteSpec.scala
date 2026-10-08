@@ -103,6 +103,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(tokens.contains("@media screen"), tokens)
     assert(tokens.contains("#1e69d8"), tokens)
     assert(tokens.contains("#5b93e6"), tokens)
+    assert(tokens.contains("--note-editorial: var(--important)"), tokens)
+    assert(!tokens.contains("--note-color: var(--danger)"), tokens)
     val graph: String = html("assets/js/graph.js")
     assert(graph.contains("--graph-label-color"), graph)
     assert(graph.contains("site-color-scheme"), graph)
@@ -131,7 +133,10 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val head: String = home.substring(0, home.indexOf("</head>"))
     assert(head.contains("data-apparatus-enabled"), head)
     assert(head.contains("apparatus-add"), head)
-    assert(html("assets/css/prose.css").contains("html.apparatus-add-hidden"))
+    val prose: String = html("assets/css/prose.css")
+    assert(prose.contains("html.apparatus-add-hidden"), prose)
+    assert(prose.contains("--note-editorial"), prose)
+    assert(prose.contains("font-style: italic"), prose)
   }
 
   test("media queries use literal breakpoints, not custom properties") {
