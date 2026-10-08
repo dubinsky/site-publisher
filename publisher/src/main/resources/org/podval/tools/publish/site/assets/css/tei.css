@@ -106,6 +106,9 @@ choice orig + reg:after,
 choice reg + orig:after {
   content: ")";
 }
+abbr[rend~="titlo"] {
+  text-decoration: overline;
+}
 corr {
   background-color: #aaffaa;
 }

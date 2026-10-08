@@ -15,7 +15,7 @@ object TeiXmlWriterConfig extends XmlWriterConfig(
   nest = Set("p", "head", "salute", "dateline"),
   break = Set("lb"),
   cling = Set(
-    "note", "lb", "sic", "corr",
+    "note", "lb", "sic", "corr", "abbr", "expan",
     "persName", "placeName", "orgName",
     "hi", "fw", "date", "ref", "ptr",
     "del", "emph", "unclear", "seg", "gap", "supplied", "add", "pb"

@@ -258,6 +258,7 @@ Supported markup constructs:
 - <<tei-dates>>;
 - <<tei-gap>>;
 - <<tei-hand>>;
+- <<tei-choice>>;
 
 [#opinionated]
 == Opinionated
@@ -601,6 +602,35 @@ the element is left unwrapped.
 <handNote xml:id="pencilHand" medium="pencil">записано карандашом</handNote>
 <fw type="pageNum" place="right" hand="#pencilHand">6</fw>
 ----
+
+[#tei-choice]
+== TEI `choice`
+
+Author an abbreviation as `abbr` then `expan`:
+
+[source,xml]
+----
+<choice><abbr>Wilen<hi rend="superscript">ch</hi></abbr><expan>Wilenskich</expan></choice>
+----
+
+The published tags are the same.
+The existing CSS draws ` (` before the second child and `)` after it, so the line reads Wilen with `ch` superscript,
+then ` (Wilenskich)`.
+The publisher does not reorder.
+Reverse order would show the expansion as the main text.
+
+A titlo:
+
+[source,xml]
+----
+<choice><abbr rend="titlo">мца</abbr><expan>месяца</expan></choice>
+----
+
+The overline is `abbr[rend~="titlo"]`.
+A titlo with no expansion is `abbr rend="titlo"` and no `choice`, so there are no empty parentheses.
+
+An abbreviation in the source is not `supplied` and not `corr`.
+`supplied` stays an editor addition in brackets, and `corr` stays a correction inside `choice` with `sic`.
 
 [#facsimiles]
 == Facsimiles
