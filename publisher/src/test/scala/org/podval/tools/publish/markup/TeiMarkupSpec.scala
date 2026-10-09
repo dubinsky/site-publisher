@@ -321,6 +321,19 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(index.lists.head.title == "Жиды")
   }
 
+  test("editor role translator is harvested apart from transcriber") {
+    val header = DocumentHeader.harvest(parse(
+      """<TEI><teiHeader><fileDesc><titleStmt>
+        |  <editor role="transcriber"><persName>Reader</persName></editor>
+        |  <editor role="translator"><persName>Переводчик</persName></editor>
+        |</titleStmt></fileDesc></teiHeader>
+        |<text><body/></text></TEI>""".stripMargin
+    )).get
+    assert(header.transcribers.map(_.getText) == Seq("Reader"))
+    assert(header.translators.map(_.getText) == Seq("Переводчик"))
+    assert(!header.isEmpty)
+  }
+
   test("correspAction type received is the addressee") {
     val header = DocumentHeader.harvest(parse(
       """<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>

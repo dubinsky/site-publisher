@@ -191,6 +191,7 @@ final class EntitySpec extends AnyFunSuite:
           |    <fileDesc><titleStmt>
           |      <author><persName ref="alter-rebbe">the Rebbe</persName></author>
           |      <editor role="transcriber"><persName ref="ab">A</persName></editor>
+          |      <editor role="translator"><persName>Переводчик</persName></editor>
           |    </titleStmt></fileDesc>
           |    <profileDesc>
           |      <abstract>A description of <persName ref="alter-rebbe">him</persName>.</abstract>
@@ -213,6 +214,8 @@ final class EntitySpec extends AnyFunSuite:
       assert(doc.contains("Кто"), doc)
       assert(doc.contains("Кому"), doc)
       assert(doc.contains("Расшифровка"), doc)
+      assert(doc.contains("Перевод"), doc)
+      assert(doc.contains("Переводчик"), doc)
       assert(doc.contains("""href="/people/alter-rebbe.html""""), doc)
       assert(doc.contains("""href="/people/ab.html""""), doc)
       val post: String = doc.substring(doc.indexOf("page-body"))
@@ -220,6 +223,7 @@ final class EntitySpec extends AnyFunSuite:
       assert(post.contains("hello"), post)
       val index: String = html(target, "col/index.html")
       assert(!index.contains("<tei-head>"), index)
+      assert(!index.contains("Переводчик"), index)
   }
 
   test("document header omits a line whose value is empty") {

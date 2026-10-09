@@ -218,7 +218,8 @@ object PageHeader:
         headerRow(page, "Дата", dateCell(meta.date)),
         headerRow(page, "Кто", joinedInner(meta.authors)),
         headerRow(page, "Кому", meta.addressee.toSeq.map(el => el: Xml.Node)),
-        headerRow(page, "Расшифровка", joinedInner(meta.transcribers))
+        headerRow(page, "Расшифровка", joinedInner(meta.transcribers)),
+        headerRow(page, "Перевод", joinedInner(meta.translators))
       ).flatten
       Option.when(rows.nonEmpty)(
         Xml.element(XmlElement.Table).addClass("document-header").setChildren(rows)

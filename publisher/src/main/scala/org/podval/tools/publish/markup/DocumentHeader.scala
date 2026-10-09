@@ -9,11 +9,13 @@ final class DocumentHeader(
   val authors: Seq[Xml.Element],
   val addressee: Option[Xml.Element],
   val transcribers: Seq[Xml.Element],
+  val translators: Seq[Xml.Element],
   val lang: Option[String],
   val pbs: Seq[Pb]
 ):
   def isEmpty: Boolean =
-    description.isEmpty && date.isEmpty && authors.isEmpty && addressee.isEmpty && transcribers.isEmpty
+    description.isEmpty && date.isEmpty && authors.isEmpty && addressee.isEmpty &&
+      transcribers.isEmpty && translators.isEmpty
 
 object DocumentHeader:
   def harvest(xml: Xml.Element): Option[DocumentHeader] =
@@ -26,7 +28,8 @@ object DocumentHeader:
         date = profileDesc.flatMap(child(_, "creation")).flatMap(child(_, "date")),
         authors = titleStmt.toSeq.flatMap(children(_, "author")),
         addressee = profileDesc.flatMap(addresseeOf),
-        transcribers = titleStmt.toSeq.flatMap(children(_, "editor")).filter(_.get(XmlAttribute.Role).contains("transcriber")),
+        transcribers = editors(titleStmt, "transcriber"),
+        translators = editors(titleStmt, "translator"),
         lang = textLang(xml),
         pbs = Pb.harvest(xml)
       )
@@ -49,6 +52,9 @@ object DocumentHeader:
 
   private def isReceived(action: Xml.Element): Boolean =
     action.get(XmlAttribute.Type).exists(_.trim.equalsIgnoreCase("received"))
+
+  private def editors(titleStmt: Option[Xml.Element], role: String): Seq[Xml.Element] =
+    titleStmt.toSeq.flatMap(children(_, "editor")).filter(_.get(XmlAttribute.Role).contains(role))
 
   private def children(element: Xml.Element, name: String): Seq[Xml.Element] =
     element.childElements.filter(_.isNamed(name)).toSeq
