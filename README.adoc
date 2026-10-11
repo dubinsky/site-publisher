@@ -659,8 +659,19 @@ Author an abbreviation as `abbr` then `expan`:
 The published tags are the same.
 The existing CSS draws `` (`` before the second child and `)` after it, so the line reads Wilen with `ch` superscript,
 then `` (Wilenskich)``.
+The expansion is italic.
+The parentheses stay roman.
+`supplied` stays in square brackets, and `corr` keeps the editorial background.
 The publisher does not reorder.
 Reverse order would show the expansion as the main text.
+
+**Show abbreviation expansions in the text** is on unless the reader turns it off.
+Off, the expansion is hidden, a dotted underline marks an abbreviation that has no titlo, and the expansion is a hover
+tip.
+A titlo stays the overline.
+Print and PDF always show the expansion.
+The checkbox is on every page.
+It is not the apparatus menu below.
 
 A titlo:
 
@@ -795,6 +806,9 @@ The page graph uses the same colors.
 
 **Show glossary definitions in the text** inlines glossary and citation definitions.
 
+**Show abbreviation expansions in the text** is on unless turned off.
+See <<tei-choice>>.
+
 **Seamless transclusions** hides the box and header around a transcluded region.
 See <<page-names>>.
 
@@ -811,14 +825,21 @@ Each kind is independent and stored in the browser gear menu.
 [.del]#removed words#
 ----
 
-**Distinct** is the default: additions in brackets, sources in angle brackets at the small size, deletions in
-parentheses.
+**Distinct** is the default: additions in brackets, sources in angle brackets at the small size, deletions struck
+through.
 **Plain** shows the words with no chrome.
 **Hidden** sets `display: none`.
 The words stay in the HTML.
 The gear lists Additions, then Deletions, then Sources.
-Distinct is labeled `[Distinct]`, `(Distinct)`, and `<Distinct>`.
+Distinct is labeled `[Distinct]`, a struck-through Distinct, and `<Distinct>`.
 The Sources label stays at the small size.
+
+`[.add]` is words the editor added, the same kind of words as a TEI `supplied`.
+A TEI `add` is a scribal insertion and is not this role.
+`[.del]` is words the editor takes out of the reading text.
+A TEI `del` is the scribe's own strikeout and is not this role.
+`[.see]` is a source.
+The role names and the TEI names both stay.
 
 The page stays distinct unless `_site_config.yml` opts in:
 

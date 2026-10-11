@@ -307,6 +307,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
               label(className := "site-settings-item",
                 input(
                   `type` := "checkbox",
+                  id := "setting-abbr-expand",
+                  attr("data-setting") := "abbr-expand",
+                  attr("checked") := "checked"
+                ),
+                "Show abbreviation expansions in the text"
+              ),
+              label(className := "site-settings-item",
+                input(
+                  `type` := "checkbox",
                   id := "setting-transclusion-clean",
                   attr("data-setting") := "transclusion-clean"
                 ),
@@ -372,12 +381,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
       )
     )
 
-  /** Distinct shows the marks the text uses. Additions `[ ]`, deletions `( )`, sources `< >`. */
+  /** Distinct shows the marks the text uses. Additions `[ ]`, deletions struck through, sources `< >`. */
   private def apparatusLabel(kind: String, value: String): String =
     if value != "distinct" then value.capitalize
     else kind match
       case "add" => "[Distinct]"
-      case "del" => "(Distinct)"
+      case "del" => "Distinct"
       case "see" => "<Distinct>"
       case _ => "Distinct"
 

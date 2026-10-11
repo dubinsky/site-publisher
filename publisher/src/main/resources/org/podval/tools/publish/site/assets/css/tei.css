@@ -90,6 +90,67 @@ choice reg + orig:after {
     content: ")";
 }
 
+/* The expansion is the editor's words. The parentheses stay roman, so a parenthesis
+   written in the document is not the same mark. */
+choice > expan {
+    font-style: italic;
+}
+
+choice abbr + expan:before,
+choice abbr + expan:after,
+choice expan + abbr:before,
+choice expan + abbr:after {
+    font-style: normal;
+}
+
+/* Off: the abbreviation stays, with a cue, and the expansion is a tip.
+   No class is the default, so a browser with no script still shows the expansion. */
+html.abbr-expand-off choice {
+    position: relative;
+}
+
+html.abbr-expand-off choice > abbr:not([rend~="titlo"]) {
+    text-decoration: underline dotted;
+    text-underline-offset: 0.18em;
+}
+
+html.abbr-expand-off choice > expan {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.25em);
+    z-index: 10;
+    box-sizing: border-box;
+    min-width: 8em;
+    max-width: min(24em, 80vw);
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border-color-01);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    box-shadow: 0 0.15em 0.4em color-mix(in oklab, var(--brand-color), transparent 70%);
+    font-style: normal;
+    font-weight: 400;
+    white-space: normal;
+    text-align: start;
+}
+
+html.abbr-expand-off choice > expan:before,
+html.abbr-expand-off choice > expan:after,
+html.abbr-expand-off choice > abbr:before,
+html.abbr-expand-off choice > abbr:after {
+    content: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    html.abbr-expand-off choice:hover > expan {
+        display: block;
+    }
+}
+
+html.abbr-expand-off choice:focus-within > expan {
+    display: block;
+}
+
 abbr[rend~="titlo"] {
     text-decoration: overline;
 }

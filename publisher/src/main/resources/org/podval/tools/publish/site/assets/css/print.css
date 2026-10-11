@@ -65,6 +65,39 @@
         white-space: inherit;
     }
 
+    /* A stored "hide expansions" choice is screen-only. Print keeps the italic reading. */
+    html.abbr-expand-off choice > expan {
+        display: inline;
+        position: static;
+        left: auto;
+        top: auto;
+        z-index: auto;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border: none;
+        background: none;
+        box-shadow: none;
+        font-style: italic;
+        white-space: inherit;
+    }
+
+    html.abbr-expand-off choice abbr + expan:before,
+    html.abbr-expand-off choice expan + abbr:before {
+        content: " (";
+        font-style: normal;
+    }
+
+    html.abbr-expand-off choice abbr + expan:after,
+    html.abbr-expand-off choice expan + abbr:after {
+        content: ")";
+        font-style: normal;
+    }
+
+    html.abbr-expand-off choice > abbr:not([rend~="titlo"]) {
+        text-decoration: none;
+    }
+
     .glossary-tip::before,
     .citation-tip::before {
         content: " (";

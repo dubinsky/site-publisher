@@ -7,7 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-- feat: TEI document translator
+- A TEI abbreviation expansion is italic inside roman parentheses.
+  The gear can hide it.
+  The abbreviation then keeps a dotted underline, or its titlo, and the expansion is a hover tip.
+  Print always shows the expansion.
+- An AsciiDoc deletion is struck through.
+  Parentheses stay the abbreviation mark.
+- feat: TEI document's translator
 
 ## [0.6.0] - 2026-10-08
 

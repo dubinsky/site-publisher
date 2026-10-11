@@ -1,6 +1,8 @@
 (function () {
   var html = document.documentElement;
   var keys = ["glossary-expand", "transclusion-clean"];
+  /* Checked unless the browser stored "0". The off state is a class, so no script still expands. */
+  var defaultOn = ["abbr-expand"];
   var apparatusNames = ["apparatus-add", "apparatus-see", "apparatus-del"];
   var schemeKey = "color-scheme";
 
@@ -36,9 +38,16 @@
     if (notify) html.dispatchEvent(new Event("site-color-scheme"));
   }
 
+  function isDefaultOn(name) {
+    return defaultOn.indexOf(name) !== -1;
+  }
+
   try {
     keys.forEach(function (k) {
       if (storageGet(k) === "1") html.classList.add(k);
+    });
+    defaultOn.forEach(function (k) {
+      if (storageGet(k) === "0") html.classList.add(k + "-off");
     });
   } catch (e) {}
   if (html.getAttribute("data-apparatus-enabled") === "true") {
@@ -54,7 +63,8 @@
   });
 
   function apply(name, on) {
-    html.classList.toggle(name, on);
+    if (isDefaultOn(name)) html.classList.toggle(name + "-off", !on);
+    else html.classList.toggle(name, on);
     storageSet(name, on ? "1" : "0");
   }
 
@@ -71,7 +81,7 @@
     document.querySelectorAll("[data-setting]").forEach(function (box) {
       var name = box.getAttribute("data-setting");
       if (!name) return;
-      box.checked = html.classList.contains(name);
+      box.checked = isDefaultOn(name) ? storageGet(name) !== "0" : html.classList.contains(name);
       box.addEventListener("change", function () {
         apply(name, box.checked);
       });
