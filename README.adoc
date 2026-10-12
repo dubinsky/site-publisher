@@ -543,7 +543,10 @@ The row shows the date text when that text is not empty.
 One value and no text shows that raw attribute.
 Both ends in the same year and no text show the two raw values with an en dash between them.
 Different years show the text, an em dash, and both raw ends, or the two raw ends when there is no text.
-An unparsable value, a schematron conflict, or an inverted range shows the text only, which may be empty.
+An unparsable value or a schematron conflict shows the text only, which may be empty.
+An inverted range, the end year before the start year, uses that same different-years label: the text, an em dash, and
+both raw ends when the text is not empty, otherwise the two raw ends joined by an en dash.
+It is listed under undated.
 A span of one year is listed under each year.
 A longer span is listed under the start year only.
 A document with no creation date, or a date with no temporal attribute, is listed under «Без даты» when site `lang` is
