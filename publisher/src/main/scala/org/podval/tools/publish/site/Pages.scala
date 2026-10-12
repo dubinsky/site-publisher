@@ -6,7 +6,7 @@ import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMar
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
-  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree}
+  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree, YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -179,7 +179,11 @@ final class Pages(site: Site):
 
   private def aliasTargetDirectory(page: Page): Option[Seq[String]] =
     aliasDirectory(page).orElse:
-      Option.when(page.isInstanceOf[StoreIndexPage])(page.path.withoutHtml.path)
+      Option.when(isLeafIndex(page))(page.path.withoutHtml.path)
+
+  private def isLeafIndex(page: Page): Boolean =
+    page.isInstanceOf[StoreIndexPage] ||
+      page.isInstanceOf[YearIndexPage]
 
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)
@@ -535,6 +539,17 @@ final class Pages(site: Site):
       case Seq(tree) =>
         installLeafAlias(StoreIndexes.collectionsAlias, tree)
       case _ =>
+    val yearPages: Seq[YearIndexPage] = roots.flatMap: root =>
+      val docs = StoreIndexes.documentsUnder(root, pages)
+      if docs.isEmpty then None
+      else
+        val yearPage = YearIndexPage(site, root, docs)
+        add(yearPage)
+        Some(yearPage)
+    if roots.length == 1 then
+      yearPages match
+        case Seq(yearPage) => installLeafAlias(StoreIndexes.yearsAlias, yearPage)
+        case _ => ()
 
   private def installLeafAlias(name: String, target: Page): Unit =
     installPrefixAlias(name, target, "store index alias")

@@ -10,7 +10,9 @@ import org.podval.xml.dsl.{*, given}
 object StoreIndexes:
   val collectionsSuffix: String = "collections"
   val indexSuffix: String = "index"
+  val yearsSuffix: String = "years"
   val collectionsAlias: String = "collections"
+  val yearsAlias: String = "years"
 
   def isRootStore(page: Page): Boolean =
     page.store.exists(!_.isCollection) &&
@@ -107,6 +109,13 @@ object StoreIndexes:
     val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName(_, langPage.site.languageSpec)).getOrElse("")
     val name: String = PageHeader.pageDisplayName(node)
     s"$sel $name".trim
+
+  def documentsUnder(root: Page, pages: Seq[Page]): Seq[Page] =
+    pages.filter: page =>
+      page.isInstanceOf[FullMarkupPage] &&
+        page.doc.exists(_.documentHeader.isDefined) &&
+        !CollectionIndex.isTranslation(page) &&
+        PageHeader.collectorAncestors(page).exists(_.path == root.path)
 
   def collectionsUnder(root: Page): Seq[Page] =
     def walk(page: Page): Seq[Page] =

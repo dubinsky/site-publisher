@@ -536,6 +536,27 @@ includes it).
 Point `header-pages` at `{name}-collections` and `home` at `/{name}-index.html` when those should be chrome / the
 landing page.
 
+The same root gets `{name}-years.html` when at least one original TEI document has that store as an ancestor.
+Documents are grouped by the year on `profileDesc/creation/date`.
+That year is the number written on the attribute, not a conversion to another calendar.
+The row date is the element's text, or the raw attribute when the element has no text.
+A document with no creation date, or a date with no temporal attribute, is listed under «Без даты» when site `lang` is
+Russian and under Undated otherwise.
+The section is omitted when every listed document has a year.
+A file named `{base}-{xx}` is not a row.
+The title is «Годы» when site `lang` is Russian and Years otherwise.
+The page is not added to `header-pages`.
+When exactly one such root has original documents, `/years` rewrites to that page (no Refresh file; Worker table
+includes it).
+Do not author `years.md` or `years.adoc` in that case.
+The alias is installed after the scan: `installPrefixAlias` looks up `years.html` and reports a duplicate when that file
+is the authored page.
+This is not the `claimPage` collision an authored `graph.md` meets.
+Two root stores each get a year file and do not install `/years`, so `years.md` stays an ordinary page.
+A root with no original documents does not get a year page or `/years`.
+Do not name a collection `@alias="years"` when `/years` is installed.
+That name collides in `installPrefixAlias`, the same way `@alias="graph"` is reserved.
+
 A TEI `store` or `collection` file beside a directory (`dir.xml` next to `dir/`) is that directory's index.
 A `collection` index sets `class="wide"` on `<html>` so the content `.wrapper` is 1800px; header and footer stay the
 default width.
@@ -774,6 +795,8 @@ Edges come from existing backlinks (`kind: link`, including TEI `@ref`) and, unl
 Unresolved links stay on the Errors page, not as graph nodes.
 
 Do not name a collection `@alias="graph"`: that path is reserved for the graph page.
+Do not name a collection `@alias="years"` when `/years` is installed: that name is reserved through `installPrefixAlias`,
+the same way `@alias="graph"` is reserved for the graph page.
 
 ----
 graph:

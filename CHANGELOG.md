@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The generator writes `{root}-years.html` for each root TEI store that has original documents,
+  and `/years` when there is exactly one such root.
+  The row date is the source-calendar label and is not a calendar conversion.
 - `TeiDate.filingYears` buckets a date by the years written on its attributes and does not convert calendars.
 - A TEI abbreviation expansion is italic inside roman parentheses.
   The gear can hide it.

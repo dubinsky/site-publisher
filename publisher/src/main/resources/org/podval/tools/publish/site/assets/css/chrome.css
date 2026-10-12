@@ -489,6 +489,20 @@ html.wide .page-content > .wrapper {
     margin-left: var(--space-4);
 }
 
+.year-index ul {
+    list-style-type: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.year-index .date {
+    margin-inline-end: var(--space-4);
+}
+
+.year-index .description {
+    color: var(--brand-color-dimmed);
+}
+
 .store-name {
     font-style: italic;
 }
