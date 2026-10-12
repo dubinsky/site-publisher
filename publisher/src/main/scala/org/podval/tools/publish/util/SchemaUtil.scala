@@ -16,7 +16,7 @@ object SchemaUtil:
   /**
    * Keys the YAML codec will not bind.
    * Record field names are kebab-case, the same spelling `YamlCodecDeriver` hardcodes.
-   * A nested record (`social`, `graph`) is walked.
+   * A nested record (`social`, `graph`, `search`) is walked.
    * A value with the wrong shape is left to the codec.
    */
   def unknownKeys(yaml: Yaml, schema: Schema[?]): List[String] =

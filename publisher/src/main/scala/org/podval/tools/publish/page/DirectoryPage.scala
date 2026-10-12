@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.site.{Path, SearchPage, Site}
 import org.podval.tools.publish.util.{Files, Icon}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -83,6 +83,7 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     .filterNot(_.isInstanceOf[FacsimilePage])
     .filterNot(_.isInstanceOf[StoreIndexPage])
     .filterNot(_.isInstanceOf[YearIndexPage])
+    .filterNot(_.isInstanceOf[SearchPage])
 
   private def directories: List[Page] =
     filesystemChildren.filter(_.isDirectory).sortBy(_.title)

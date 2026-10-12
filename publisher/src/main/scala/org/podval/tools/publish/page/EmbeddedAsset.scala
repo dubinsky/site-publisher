@@ -16,4 +16,4 @@ object EmbeddedAsset:
   private val resourcesList: List[Path] =
     List("tokens", "base", "chrome", "prose", "tei", "print", "style", "graph", "facsimile")
       .map(Path("assets", "css", _).withExtension("css")) ++
-    List(Path("assets", "js", "graph").withExtension("js"))
+    List("graph", "search").map(name => Path("assets", "js", name).withExtension("js"))

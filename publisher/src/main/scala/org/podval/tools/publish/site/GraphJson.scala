@@ -41,9 +41,7 @@ object GraphJson:
       !excluded(page)
 
   private def excluded(page: FullMarkupPage): Boolean =
-    page.sourcePath.exists: source =>
-      page.site.config.graph.excludePathPrefixes.exists: prefix =>
-        source.path.startsWith(Path.fromHref(prefix).path)
+    page.sourcePath.exists(source => Path.excludedBy(page.site.config.graph.excludePathPrefixes, source))
 
   private def idOf(page: FullMarkupPage): String = page.publishedPath.toString
 

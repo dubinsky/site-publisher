@@ -60,6 +60,10 @@ object Path:
   given Ordering[Path] = (left: Path, right: Path) =>
     Ordering.Implicits.seqOrdering[Seq, String].compare(left.path, right.path)
 
+  /** Source-path prefix test shared by the graph and search. `archive` matches `archive/…`, not a published alias. */
+  def excludedBy(prefixes: Seq[String], source: Path): Boolean =
+    prefixes.exists(prefix => source.path.startsWith(Path.fromHref(prefix).path))
+
   val root: Path = new Path(Seq.empty, None)
 
   def apply(path: String*) = new Path(path, None)

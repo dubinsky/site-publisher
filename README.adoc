@@ -806,6 +806,8 @@ Unresolved links stay on the Errors page, not as graph nodes.
 Do not name a collection `@alias="graph"`: that path is reserved for the graph page.
 Do not name a collection `@alias="years"` when `/years` is installed: that name is reserved through `installPrefixAlias`,
 the same way `@alias="graph"` is reserved for the graph page.
+Do not name a collection `@alias="search"` when search is enabled: that name is reserved through `installPrefixAlias`,
+the same way `@alias="graph"` and `@alias="years"` are.
 
 ----
 graph:
@@ -823,6 +825,45 @@ A large TEI archive should leave the graph off, or exclude `archive` to keep onl
 
 Add `graph` to `header-pages` if you want a header link (there is no automatic icon).
 Pipeline notes belong in the Site Publisher design note, not here.
+
+[#search]
+== Search
+
+Off by default.
+Omitted `search` does not write `/search.html` or `/search.json`, and pages do not get a header form.
+When `_site_config.yml` has `search.enabled: true`, generate writes `/search.json` and `/search.html`, and `/search`
+rewrites to that page (no Refresh file; the Worker table includes it).
+Every page then has a header form, immediately after the site title, that submits to `/search`.
+That form does not load `search.js` or `search.json`.
+Only `/search.html` loads the script.
+
+The index is the diplomatic transcription: the spelling of the source, including `ѣ`, without stemming or modernized
+spelling.
+A `sic` reading is indexed.
+A `corr` reading is not.
+Notes, name pages, and a collection's title and abstract are included.
+Collection tables, non-collection stores, and entity-list catalogs are not.
+An empty query shows no hits.
+Year, archive, and language filters combine with the query.
+A record with no language stays visible when a language is selected.
+A record with no year or no archive is hidden when that filter is selected.
+
+Do not author `search.md` or `search.adoc` when search is enabled.
+`SearchPage` is added before the scan, so that file collides in `claimPage`, not in `installPrefixAlias`.
+When search is off, `search.md` is an ordinary page.
+Do not name a collection `@alias="search"` when search is enabled.
+That name is reserved through `installPrefixAlias`, the same way `@alias="graph"` is reserved for the graph page and
+`@alias="years"` is reserved when `/years` is installed.
+
+`exclude-path-prefixes` use the same source-path test as the graph.
+A document excluded there is still listed on the year page.
+There is no 4 MB limit.
+
+----
+search:
+  enabled: false
+  exclude-path-prefixes: []
+----
 
 [#settings]
 == Settings

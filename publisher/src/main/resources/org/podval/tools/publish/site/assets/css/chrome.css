@@ -30,6 +30,16 @@
     }
 }
 
+.header-search {
+    flex: 0 1 11rem;
+    min-width: 0;
+}
+
+.header-search input {
+    width: 100%;
+    min-width: 0;
+}
+
 .nav-toggle {
     display: none;
     align-items: center;

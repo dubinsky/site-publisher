@@ -93,6 +93,50 @@ final class ConfigSpec extends AnyFunSuite:
     assert(message.contains("namedWindows"), message)
   }
 
+  test("search defaults to off") {
+    val search: Config.Search = decode(required).search
+    assert(!search.enabled)
+    assert(search.excludePathPrefixes.isEmpty)
+  }
+
+  test("search maps from kebab-case") {
+    val search: Config.Search = decode(
+      required +
+        """search:
+          |  enabled: true
+          |  exclude-path-prefixes:
+          |    - archive/skip
+          |""".stripMargin
+    ).search
+    assert(search.enabled)
+    assert(search.excludePathPrefixes == List("archive/skip"))
+  }
+
+  test("unknown search keys are rejected") {
+    val message: String = reject(
+      required +
+        """search:
+          |  mystery: days
+          |""".stripMargin
+    )
+    assert(message.contains("search.mystery"), message)
+  }
+
+  test("search camelCase keys are unknown") {
+    val message: String = reject(
+      required +
+        """search:
+          |  excludePathPrefixes:
+          |    - days
+          |""".stripMargin
+    )
+    assert(message.contains("excludePathPrefixes"), message)
+  }
+
+  test("scalar search is rejected") {
+    assert(Config.decode(required + "search: true\n").isLeft)
+  }
+
   test("graph maps from kebab-case") {
     val graph: Config.Graph = decode(
       required +

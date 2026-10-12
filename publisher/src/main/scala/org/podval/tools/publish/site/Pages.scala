@@ -73,6 +73,9 @@ final class Pages(site: Site):
     if site.config.graph.enabled then
       add(GraphPage(site))
       add(GraphJson(site))
+    if site.config.search.enabled then
+      add(SearchPage(site))
+      add(SearchJson(site))
 
     // Scan the directories and add all source pages
     scan(Seq.empty, site.sourceDirectory, None, None)
@@ -87,6 +90,7 @@ final class Pages(site: Site):
 
     resolveStores()
     addStoreIndexes()
+    installSearchAlias()
     installHome()
     headerPagesVar = resolveHeaderPages()
 
@@ -183,7 +187,8 @@ final class Pages(site: Site):
 
   private def isLeafIndex(page: Page): Boolean =
     page.isInstanceOf[StoreIndexPage] ||
-      page.isInstanceOf[YearIndexPage]
+      page.isInstanceOf[YearIndexPage] ||
+      page.isInstanceOf[SearchPage]
 
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)
@@ -550,6 +555,10 @@ final class Pages(site: Site):
       yearPages match
         case Seq(yearPage) => installLeafAlias(StoreIndexes.yearsAlias, yearPage)
         case _ => ()
+
+  private def installSearchAlias(): Unit =
+    if site.config.search.enabled then
+      get(Path("search").html).foreach(page => installLeafAlias("search", page))
 
   private def installLeafAlias(name: String, target: Page): Unit =
     installPrefixAlias(name, target, "store index alias")

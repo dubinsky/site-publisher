@@ -7,8 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-- The generator writes `{root}-years.html` for each root TEI store that has original documents,
-  and `/years` when there is exactly one such root.
+- Opt-in search is off unless `search.enabled` is set.
+  It writes `/search.json` over the diplomatic text and puts a search form in the header.
+  Dates are not converted between calendars, and there is no 4 MB size limit.
+- The generator writes `{root}-years.html` for each root TEI store that has original documents, and `/years` when there
+  is exactly one such root.
   The row date is the source-calendar label and is not a calendar conversion.
 - `TeiDate.filingYears` buckets a date by the years written on its attributes and does not convert calendars.
 - A TEI abbreviation expansion is italic inside roman parentheses.

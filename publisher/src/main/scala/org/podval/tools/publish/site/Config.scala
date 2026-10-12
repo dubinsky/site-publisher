@@ -26,7 +26,8 @@ final class Config(
   val apparatus: Boolean = false,
   val teiDefaultCalendar: Option[String] = None,
   val social: Config.Social = Config.Social(),
-  val graph: Config.Graph = Config.Graph()
+  val graph: Config.Graph = Config.Graph(),
+  val search: Config.Search = Config.Search()
 )
 
 object Config:
@@ -39,6 +40,11 @@ object Config:
   final class Graph(
     val enabled: Boolean = false,
     val includeTransclusions: Boolean = true,
+    val excludePathPrefixes: List[String] = List.empty
+  )
+
+  final class Search(
+    val enabled: Boolean = false,
     val excludePathPrefixes: List[String] = List.empty
   )
 
@@ -57,7 +63,7 @@ object Config:
 
   def encodeToString(config: Config): String = codec.encodeToString(config)
 
-  /** Decode `_site_config.yml`. An unknown key, including under `social`, `graph`, or `license`, is an error. */
+  /** Decode `_site_config.yml`. An unknown key, including under `social`, `graph`, `search`, or `license`, is an error. */
   def decode(input: String): Either[Throwable, Config] =
     try
       val yaml: Yaml = YamlReader.read(input)

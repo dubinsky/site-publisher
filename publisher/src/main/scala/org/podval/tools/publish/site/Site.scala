@@ -274,6 +274,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
           NamedWindows.hierarchyTarget(config).map(name => target := name),
           config.title
         ),
+        Option.when(config.search.enabled)(headerSearch),
         Xml.element("button")
           .addClass("nav-toggle")
           .set("type", "button")
@@ -331,6 +332,21 @@ final class Site(options: SiteOptions) extends JSLibrary:
             )
           )
         )
+      )
+    )
+
+  private def headerSearch: Xml.Element =
+    val accessible: String = if languageSpec == Language.Russian.toSpec then "Поиск" else "Search"
+    element(
+      "form",
+      className := "header-search",
+      attr("action") := "/search",
+      attr("method") := "get",
+      role := "search",
+      input(
+        `type` := "search",
+        attr("name") := "q",
+        aria("label") := accessible
       )
     )
 
