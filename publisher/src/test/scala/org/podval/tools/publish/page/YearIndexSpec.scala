@@ -111,13 +111,22 @@ final class YearIndexSpec extends AnyFunSuite:
     assert(file.isFile, s"missing $relative under $target")
     Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
 
-  private def section(page: String, id: String): String =
+  private def detailsById(page: String, id: String): String =
     val marker: String = s"""id="$id""""
-    val start: Int = page.indexOf(marker)
-    assert(start >= 0, s"missing #$id")
-    val close: Int = page.indexOf("</section>", start)
-    assert(close >= 0, s"unclosed #$id")
-    page.substring(start, close)
+    val at: Int = page.indexOf(marker)
+    assert(at >= 0, s"missing #$id")
+    val open: Int = page.lastIndexOf("<details", at)
+    assert(open >= 0, s"#$id is not on a details element")
+    val startTag: String = "<details"
+    val endTag: String = "</details>"
+    def closeAt(from: Int, depth: Int): Int =
+      val nextOpen: Int = page.indexOf(startTag, from)
+      val nextClose: Int = page.indexOf(endTag, from)
+      assert(nextClose >= 0, s"unclosed #$id")
+      if nextOpen >= 0 && nextOpen < nextClose then closeAt(nextOpen + startTag.length, depth + 1)
+      else if depth == 1 then nextClose + endTag.length
+      else closeAt(nextClose + endTag.length, depth - 1)
+    page.substring(open, closeAt(open + startTag.length, 1))
 
   test("writes archive-years.html with source-calendar rows and no hover") {
     withSite(tree(docs)): (site, target) =>
@@ -128,8 +137,10 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(!year.contains("""class="collection-index""""), year)
       assert(year.contains("""<title>Годы | Year Fixture</title>"""), year)
       assert(year.contains("""<h1 class="page-title">Годы</h1>"""), year)
-      assert(year.contains("""<h2>1798</h2>"""), year)
-      assert(year.contains("""<h2>Без даты</h2>"""), year)
+      assert(year.contains("1798 · 3"), year)
+      assert(year.contains("Без даты · 2"), year)
+      assert(!year.contains("<h2>"), year)
+      assert(!year.contains("open=\"open\""), year)
       assert("""<span class="date">\s*20 декабря 1798\s*</span>""".r.findFirstIn(year).isDefined, year)
       assert(year.contains("Показания Шнеура Залмана"), year)
       assert(!year.contains("<persName"), year)
@@ -141,11 +152,11 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(!year.contains("Calendar"), year)
       assert(!year.contains("Jewish"), year)
 
-      val y1798: String = section(year, "y1798")
-      val y1799: String = section(year, "y1799")
-      val y1790: String = section(year, "y1790")
-      val y1800: String = section(year, "y1800")
-      val undated: String = section(year, "undated")
+      val y1798: String = detailsById(year, "y1798")
+      val y1799: String = detailsById(year, "y1799")
+      val y1790: String = detailsById(year, "y1790")
+      val y1800: String = detailsById(year, "y1800")
+      val undated: String = detailsById(year, "undated")
       assert(y1798.contains("/archive/rgada/282.html"), y1798)
       assert(!y1799.contains("/archive/rgada/282.html"), y1799)
       assert(y1800.contains("/archive/rgada/400.html"), y1800)
@@ -159,6 +170,16 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(undated.contains("/archive/rgada/000.html"), undated)
       assert(undated.contains("/archive/rgada/002.html"), undated)
       assert(undated.contains("около 1800"), undated)
+      assert(undated.contains("РГАДА · 2"), undated)
+      assert(y1798.contains("август · 1"), y1798)
+      assert(y1798.contains("декабрь · 2"), y1798)
+      val decemberMonth: String = detailsById(y1798, "y1798-m12")
+      assert(decemberMonth.contains("/archive/rgada/282.html"), decemberMonth)
+      assert(decemberMonth.contains("/archive/rgada/283.html"), decemberMonth)
+      assert(!decemberMonth.contains("/archive/rgada/900.html"), decemberMonth)
+      assert(y1799.contains("январь · 1"), y1799)
+      assert(y1790.contains("без месяца · 1"), y1790)
+      assert(!y1790.contains("январь"), y1790)
       val beforeUndated: String = year.substring(0, year.indexOf("""id="undated""""))
       assert(!beforeUndated.contains("/archive/rgada/000.html"), beforeUndated)
       assert(!beforeUndated.contains("/archive/rgada/002.html"), beforeUndated)
@@ -169,7 +190,7 @@ final class YearIndexSpec extends AnyFunSuite:
       val decemberStart: Int = y1798.indexOf("/archive/rgada/283.html")
       val december: Int = y1798.indexOf("/archive/rgada/282.html")
       assert(august >= 0 && decemberStart > august && december > decemberStart, y1798)
-      val y1791: String = section(year, "y1791")
+      val y1791: String = detailsById(year, "y1791")
       assert(y1791.contains("/archive/rgada/500.html"), y1791)
       assert(!y1791.contains("description"), y1791)
       assert(year.contains("/archive/rgada/001.html"), year)
@@ -235,8 +256,11 @@ final class YearIndexSpec extends AnyFunSuite:
       val year: String = html(target, "archive-years.html")
       assert(year.contains("""<title>Years | Year Fixture</title>"""), year)
       assert(year.contains("""<h1 class="page-title">Years</h1>"""), year)
-      assert(year.contains("""<h2>Undated</h2>"""), year)
+      assert(year.contains("Undated · 2"), year)
+      assert(year.contains("No month · 1"), year)
+      assert(year.contains("December · 2"), year)
       assert(!year.contains("Без даты"), year)
+      assert(!year.contains("без месяца"), year)
       assert(!year.contains(">Годы<"), year)
   }
 
@@ -254,6 +278,64 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(index.contains("/about.html"), index)
       assert(!index.contains("archive-years.html"), index)
       assert(!index.contains("Годы"), index)
+  }
+
+  test("a repeated day is a heading and a month range is listed twice") {
+    withSite(tree(Map(
+      "a1.xml" -> tei("Один", """<date when="1798-10-01">1 октября 1798</date>"""),
+      "a2.xml" -> tei("Два", """<date when="1798-10-01">1 октября 1798</date>"""),
+      "a3.xml" -> tei("Три", """<date when="1798-10-01">1 октября 1798</date>"""),
+      "b.xml" -> tei("Или", """<date notBefore="1798-10-01" notAfter="1798-10-02">1 или 2 октября</date>"""),
+      "c.xml" -> tei("Второй", """<date when="1798-10-02">2 октября 1798</date>"""),
+      "span.xml" -> tei("Месяцы", """<date notBefore="1800-11" notAfter="1800-12">ноябрь или декабрь</date>""")
+    ))): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      val october: String = detailsById(year, "y1798-m10")
+      assert(october.contains("октябрь · 5"), october)
+      assert(october.contains("1 октября · 3"), october)
+      assert(!october.contains("2 октября ·"), october)
+      val heading: Int = october.indexOf("1 октября · 3")
+      val first: Int = october.indexOf("/archive/rgada/a1.html")
+      val range: Int = october.indexOf("/archive/rgada/b.html")
+      val second: Int = october.indexOf("/archive/rgada/c.html")
+      assert(heading >= 0 && heading < first && first < range && range < second, october)
+      val november: String = detailsById(year, "y1800-m11")
+      val december: String = detailsById(year, "y1800-m12")
+      assert(november.contains("/archive/rgada/span.html"), november)
+      assert(december.contains("/archive/rgada/span.html"), december)
+      assert(november.contains("ноябрь · 1"), november)
+      assert(december.contains("декабрь · 1"), december)
+  }
+
+  test("undated documents are grouped by archive in store order") {
+    val files: Map[String, String] = tree(Map(
+      "1.xml" -> tei("Ргада", "")
+    )) ++ Map(
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/rgada.xml"/>
+          |    <xi:include href="archive/niab.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/niab.xml" ->
+        """<collection n="1">
+          |  <name lang="ru" n="НИАБ"/>
+          |  <title>Дело</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/niab/2.xml" -> tei("Ниаб", "")
+    )
+    withSite(files): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      val undated: String = detailsById(year, "undated")
+      assert(undated.contains("Без даты · 2"), undated)
+      val rgada: Int = undated.indexOf("РГАДА · 1")
+      val niab: Int = undated.indexOf("НИАБ · 1")
+      assert(rgada >= 0 && niab > rgada, undated)
+      assert(detailsById(undated, "undated-rgada").contains("/archive/rgada/1.html"))
+      assert(detailsById(undated, "undated-niab").contains("/archive/niab/2.html"))
   }
 
   test("omits the undated section when every document has a creation year") {

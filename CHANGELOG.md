@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The year index is a closed outline: a year line with a count, then a month line with a count.
+  A day line appears when three or more documents share that exact day.
+  Undated documents are grouped by archive.
+  A same-year range that crosses months is listed under each of those months.
 - The `/search` alias rewrites `/search` and `/search.html` to the search page, and leaves `/search.json` as the index
   file.
 - Opt-in search is off unless `search.enabled` is set.

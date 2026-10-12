@@ -103,7 +103,7 @@ object SearchJson:
   private def whenOf(page: FullMarkupPage, kind: String): (String, Seq[Int]) = kind match
     case "document" =>
       val filing: TeiDate.Filing = page.doc.flatMap(_.documentHeader).flatMap(_.date).fold(
-        TeiDate.Filing(Seq.empty, "", _ => (0, 0))
+        TeiDate.emptyFiling
       )(TeiDate.filingYears)
       (filing.label, filing.years)
     case "note" =>

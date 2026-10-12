@@ -108,7 +108,8 @@
         content: ")";
     }
 
-    details.admonition > :not(summary) {
+    details.admonition > :not(summary),
+    .year-index details > :not(summary) {
         display: block !important;
     }
 

@@ -539,6 +539,19 @@ landing page.
 The same root gets `{name}-years.html` when at least one original TEI document has that store as an ancestor.
 Documents are grouped by the year on `profileDesc/creation/date`.
 That year is the number written on the attribute, not a conversion to another calendar.
+The page is a closed outline.
+Each year is a collapsed line with the number of documents.
+Opening a year shows its months the same way.
+The month name follows the site `lang`.
+A month with no documents is omitted.
+A date with no month is a line after that year's months: «без месяца» when `lang` is Russian, and "No month" otherwise.
+Opening a month lists the rows.
+When three or more documents share one exact day (`@when` with a day), that day is a line above those rows.
+In Russian the line is the day, the month in the genitive, and the count.
+In other languages it is the month name, the day, and the count.
+A same-year range with a month on both ends is listed under each month from the first through the last.
+A range inside one month is listed once, in that month.
+It joins a day line only when both ends are that same day.
 The row shows the date text when that text is not empty.
 One value and no text shows that raw attribute.
 Both ends in the same year and no text show the two raw values with an en dash between them.
@@ -551,6 +564,9 @@ A span of one year is listed under each year.
 A longer span is listed under the start year only.
 A document with no creation date, or a date with no temporal attribute, is listed under «Без даты» when site `lang` is
 Russian and under Undated otherwise.
+That line is closed and shows the count.
+Inside it, documents are grouped by the archive directly under the root store, each archive a closed line with a count,
+in the store's include order.
 The section is omitted when every listed document has a year.
 A file named `{base}-{xx}` is not a row.
 The title is «Годы» when site `lang` is Russian and Years otherwise.

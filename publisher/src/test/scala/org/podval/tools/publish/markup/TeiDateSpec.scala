@@ -393,6 +393,15 @@ final class TeiDateSpec extends AnyFunSuite:
     assert(filed.years == Seq(1800))
     assert(filed.label == enRange("1800-11", "1800-12"))
     assert(filed.sortIn(1800) == (11, 0))
+    assert(filed.slotsIn(1800) == Seq(TeiDate.Slot(11, 0, false), TeiDate.Slot(12, 0, false)))
+  }
+
+  test("an exact day groups and a same-month day range does not") {
+    val exact: TeiDate.Filing = file("""<date when="1800-11-15"/>""")
+    assert(exact.slotsIn(1800) == Seq(TeiDate.Slot(11, 15, true)))
+    val range: TeiDate.Filing = file("""<date notBefore="1800-11-15" notAfter="1800-11-16"/>""")
+    assert(range.slotsIn(1800) == Seq(TeiDate.Slot(11, 15, false)))
+    assert(range.sortIn(1800) == (11, 15))
   }
 
   test("adjacent years file both and sort each bound") {

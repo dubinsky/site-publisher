@@ -241,11 +241,19 @@ object TeiDate:
       try Right(parts.map(_.toInt))
       catch case _: NumberFormatException => Left("Not a date")
 
+  /** One place a date occupies in a year. Month `0` means the date names no month.
+    * `groupsDay` is true only for one exact day, so a range does not join that day's line. */
+  final case class Slot(month: Int, day: Int, groupsDay: Boolean) derives CanEqual
+
   final case class Filing(
     years: Seq[Int],
     label: String,
-    sortIn: Int => (Int, Int)
-  )
+    slotsIn: Int => Seq[Slot]
+  ):
+    def sortIn(year: Int): (Int, Int) =
+      slotsIn(year).headOption.fold((0, 0))(slot => (slot.month, slot.day))
+
+  def emptyFiling: Filing = undated("")
 
   def filingYears(date: Xml.Element): Filing =
     val values: Map[String, String] = temporalValues(date)
@@ -256,20 +264,20 @@ object TeiDate:
       case None => endsFiling(values, prose)
 
   private def undated(label: String): Filing =
-    Filing(Seq.empty, label, _ => (0, 0))
+    Filing(Seq.empty, label, _ => Seq(Slot(0, 0, false)))
 
   private def whenFiling(raw: String, prose: String): Filing =
     parseValue("when", raw) match
       case Left(_) => undated(prose)
-      case Right(numbers) => oneYear(numbers, raw, prose)
+      case Right(numbers) => oneYear(numbers, raw, prose, groupsDay = numbers.length == 3)
 
   private def endsFiling(values: Map[String, String], prose: String): Filing =
     val startName: String = if values.contains("from") then "from" else "notBefore"
     val endName: String = if values.contains("to") then "to" else "notAfter"
     (bound(values, startName), bound(values, endName)) match
       case (Some(Left(_)), _) | (_, Some(Left(_))) => undated(prose)
-      case (Some(Right((raw, numbers))), None) => oneYear(numbers, raw, prose)
-      case (None, Some(Right((raw, numbers)))) => oneYear(numbers, raw, prose)
+      case (Some(Right((raw, numbers))), None) => oneYear(numbers, raw, prose, groupsDay = false)
+      case (None, Some(Right((raw, numbers)))) => oneYear(numbers, raw, prose, groupsDay = false)
       case (Some(Right(start)), Some(Right(end))) => bothEnds(start, end, prose)
       case _ => undated(prose)
 
@@ -279,8 +287,12 @@ object TeiDate:
   ): Option[Either[String, (String, Seq[Int])]] =
     values.get(name).map(raw => parseValue(name, raw).map(numbers => raw -> numbers))
 
-  private def oneYear(numbers: Seq[Int], raw: String, prose: String): Filing =
-    Filing(Seq(numbers.head), if prose.nonEmpty then prose else raw, _ => monthDay(numbers))
+  private def oneYear(numbers: Seq[Int], raw: String, prose: String, groupsDay: Boolean): Filing =
+    Filing(
+      Seq(numbers.head),
+      if prose.nonEmpty then prose else raw,
+      _ => Seq(slotOf(numbers, groupsDay))
+    )
 
   private def bothEnds(
     start: (String, Seq[Int]),
@@ -297,20 +309,37 @@ object TeiDate:
         if prose.nonEmpty then prose else rangeLabel(aRaw, bRaw)
       else if prose.nonEmpty then s"$prose \u2014 ${rangeLabel(aRaw, bRaw)}"
       else rangeLabel(aRaw, bRaw)
+    val slots: Int => Seq[Slot] =
+      if b == a then _ => sameYearSlots(aNumbers, bNumbers)
+      else if b == a + 1 then year => Seq(slotOf(if year == b then bNumbers else aNumbers, groupsDay = false))
+      else _ => Seq(slotOf(aNumbers, groupsDay = false))
     if b < a then undated(label)
-    else if b == a + 1 then
-      Filing(
-        Seq(a, b),
-        label,
-        year => monthDay(if year == b then bNumbers else aNumbers)
-      )
-    else Filing(Seq(a), label, _ => monthDay(aNumbers))
+    else if b == a + 1 then Filing(Seq(a, b), label, slots)
+    else Filing(Seq(a), label, slots)
 
   private def rangeLabel(aRaw: String, bRaw: String): String =
     s"$aRaw \u2013 $bRaw"
 
-  private def monthDay(numbers: Seq[Int]): (Int, Int) =
+  private def slotOf(numbers: Seq[Int], groupsDay: Boolean): Slot =
     numbers.drop(1) match
-      case Seq(month, day) => (month, day)
-      case Seq(month) => (month, 0)
-      case _ => (0, 0)
+      case Seq(month, day) => Slot(month, day, groupsDay)
+      case Seq(month) => Slot(month, 0, false)
+      case _ => Slot(0, 0, false)
+
+  /** Both ends name a month: one slot per month from the first through the last.
+    * The first slot keeps the old sort position. A range joins a day line only when both ends are that day. */
+  private def sameYearSlots(start: Seq[Int], end: Seq[Int]): Seq[Slot] =
+    (start.lift(1), end.lift(1)) match
+      case (Some(fromMonth), Some(toMonth)) if toMonth >= fromMonth =>
+        val startDay: Int = start.lift(2).getOrElse(0)
+        val endDay: Int = end.lift(2).getOrElse(0)
+        val sameDay: Boolean =
+          fromMonth == toMonth && start.length >= 3 && end.length >= 3 && startDay == endDay
+        (fromMonth to toMonth).toSeq.map: month =>
+          val day: Int =
+            if month == fromMonth then startDay
+            else if month == toMonth then endDay
+            else 0
+          Slot(month, day, sameDay && month == fromMonth)
+      case _ =>
+        Seq(slotOf(start, groupsDay = false))

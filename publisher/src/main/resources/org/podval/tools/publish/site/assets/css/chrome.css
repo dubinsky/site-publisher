@@ -505,6 +505,25 @@ html.wide .page-content > .wrapper {
     padding-left: 0;
 }
 
+.year-index summary {
+    cursor: pointer;
+}
+
+.year-index > details > summary {
+    font-weight: 600;
+}
+
+.year-index details details {
+    margin-inline-start: var(--space-4);
+    margin-top: var(--space-2);
+}
+
+.year-index .day-heading {
+    margin-bottom: 0;
+    margin-top: var(--space-3);
+    font-weight: 600;
+}
+
 .year-index .date {
     margin-inline-end: var(--space-4);
 }
