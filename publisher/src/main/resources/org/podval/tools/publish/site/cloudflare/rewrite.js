@@ -49,6 +49,9 @@ export function rewritePath(pathname, aliases) {
   const segs = originalFacsimile(inboundFacsimile(remainder));
   if (segs.length === 0) {
     const index = best.index ?? { path: best.to, extension: "html" };
+    const indexExtension = index.extension ?? null;
+    // `/search` is the page. `/search.json` is the index file, not that page.
+    if (parsed.extension != null && parsed.extension !== indexExtension) return null;
     const extension = index.extension ?? "html";
     const base = "/" + (index.path ?? []).join("/");
     return extension ? `${base}.${extension}` : base;

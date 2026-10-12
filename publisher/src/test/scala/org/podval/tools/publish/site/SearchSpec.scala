@@ -224,4 +224,9 @@ final class SearchSpec extends AnyFunSuite:
       assert(!json.contains("\"/book/"), json)
 
       assert(site.pages.rewriteRequest(Path.fromHref("/search")).map(_.toString).contains("/search.html"))
+      assert(site.pages.rewriteRequest(Path.fromHref("/search.html")).map(_.toString).contains("/search.html"))
+      assert(site.pages.rewriteRequest(Path.fromHref("/search.json")).isEmpty)
+      val aliases: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
+      assert(CollectionAliases.rewrite(Path.fromHref("/search"), aliases).map(_.toString).contains("/search.html"))
+      assert(CollectionAliases.rewrite(Path.fromHref("/search.json"), aliases).isEmpty)
   }

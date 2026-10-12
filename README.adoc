@@ -833,6 +833,8 @@ Off by default.
 Omitted `search` does not write `/search.html` or `/search.json`, and pages do not get a header form.
 When `_site_config.yml` has `search.enabled: true`, generate writes `/search.json` and `/search.html`, and `/search`
 rewrites to that page (no Refresh file; the Worker table includes it).
+The alias does not rewrite `/search.json`.
+That file is the index `search.js` fetches.
 Every page then has a header form, immediately after the site title, that submits to `/search`.
 That form does not load `search.js` or `search.json`.
 Only `/search.html` loads the script.

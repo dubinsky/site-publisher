@@ -27,11 +27,13 @@ object CollectionAliases:
     table
       .filter(e => segments.startsWith(e.from))
       .maxByOption(_.from.length)
-      .map: e =>
+      .flatMap: e =>
         val remainder: Seq[String] = segments.drop(e.from.length)
         val segs: Seq[String] = originalFacsimile(Facsimile.inboundRemainder(remainder).getOrElse(remainder))
-        if segs.isEmpty then e.index
-        else Path(e.to ++ segs, request.extension.orElse(Some(HtmlMarkup.extension)))
+        // Same rule as `Pages.findViaAlias`: `/search` is the page; `/search.json` is the index file.
+        if segs.isEmpty then
+          Option.when(request.extension.isEmpty || request.extension == e.index.extension)(e.index)
+        else Some(Path(e.to ++ segs, request.extension.orElse(Some(HtmlMarkup.extension))))
 
   def json(table: Seq[Entry]): String =
     val body: String = table.map: e =>

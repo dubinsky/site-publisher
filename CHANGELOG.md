@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The `/search` alias rewrites `/search` and `/search.html` to the search page, and leaves `/search.json` as the index
+  file.
 - Opt-in search is off unless `search.enabled` is set.
   It writes `/search.json` over the diplomatic text and puts a search form in the header.
   Dates are not converted between calendars, and there is no 4 MB size limit.

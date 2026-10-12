@@ -620,6 +620,7 @@ final class Pages(site: Site):
 
   // `/short/child` is `child` under the page that permalink/alias `short` names, when that
   // page is a directory or a TEI `store`/`collection`. Exact `/short` is the target itself.
+  // A different extension on that stem (`/search.json` next to the `/search` page) is another file.
   // Does not recurse through `find` (the expanded path still starts with the alias prefix).
   private def findViaAlias(path: Path): Option[Page] =
     val segments: Seq[String] = path.path
@@ -629,9 +630,13 @@ final class Pages(site: Site):
         .flatMap: prefixLen =>
           aliasByPrefix.get(segments.take(prefixLen)).flatMap: alias =>
             val remainder: Seq[String] = segments.drop(prefixLen)
-            if remainder.isEmpty then Some(alias.real)
+            if remainder.isEmpty then Option.when(namesAliasedPage(path, alias.real))(alias.real)
             else findUnderAliased(alias.real, remainder, path.extension)
         .headOption
+
+  // Extensionless `/search` and `/search.html` name the page. `/search.json` does not.
+  private def namesAliasedPage(request: Path, real: Page): Boolean =
+    request.extension.isEmpty || request.extension == real.path.extension
 
   private def aliasDirectory(page: Page): Option[Seq[String]] =
     if page.doc.exists(_.asEntityLists.isDefined) then
