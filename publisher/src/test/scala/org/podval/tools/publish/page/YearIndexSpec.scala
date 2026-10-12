@@ -240,6 +240,22 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(!year.contains(">Годы<"), year)
   }
 
+  test("root listing does not link the year page") {
+    withSite(tree(docs)): (_, target) =>
+      val index: String = html(target, "index.html")
+      assert(index.contains("Home."), index)
+      assert(index.contains("""class="page-list""""), index)
+      assert(!index.contains("archive-years.html"), index)
+      assert(!index.contains("Годы"), index)
+
+    withSite(tree(docs) - "index.md"): (_, target) =>
+      val index: String = html(target, "index.html")
+      assert(index.contains("""class="page-list""""), index)
+      assert(index.contains("/about.html"), index)
+      assert(!index.contains("archive-years.html"), index)
+      assert(!index.contains("Годы"), index)
+  }
+
   test("omits the undated section when every document has a creation year") {
     withSite(tree(Map(
       "282.xml" -> tei("Только год", """<date when="1798-12-20">20 декабря 1798</date>""")

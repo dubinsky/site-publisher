@@ -539,7 +539,13 @@ landing page.
 The same root gets `{name}-years.html` when at least one original TEI document has that store as an ancestor.
 Documents are grouped by the year on `profileDesc/creation/date`.
 That year is the number written on the attribute, not a conversion to another calendar.
-The row date is the element's text, or the raw attribute when the element has no text.
+The row shows the date text when that text is not empty.
+One value and no text shows that raw attribute.
+Both ends in the same year and no text show the two raw values with an en dash between them.
+Different years show the text, an em dash, and both raw ends, or the two raw ends when there is no text.
+An unparsable value, a schematron conflict, or an inverted range shows the text only, which may be empty.
+A span of one year is listed under each year.
+A longer span is listed under the start year only.
 A document with no creation date, or a date with no temporal attribute, is listed under «Без даты» when site `lang` is
 Russian and under Undated otherwise.
 The section is omitted when every listed document has a year.
