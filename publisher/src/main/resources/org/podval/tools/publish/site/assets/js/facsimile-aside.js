@@ -10,7 +10,6 @@
   var pin = null;
   var pinnedAt = 0;
   var queued = false;
-  var generation = 0;
   var loadingUrl = "";
   var failedUrl = "";
   var prefetchedUrl = "";
@@ -60,12 +59,6 @@
     return null;
   }
 
-  function indexOf(list, anchor) {
-    var i;
-    for (i = 0; i < list.length; i++) if (list[i] === anchor) return i;
-    return -1;
-  }
-
   function mark(anchor) {
     var current = pageBody ? pageBody.querySelectorAll("a.pb[aria-current]") : [];
     var i;
@@ -92,7 +85,7 @@
 
   function prefetchNext(list, anchor) {
     if (!paneDisplayed()) return;
-    var index = indexOf(list, anchor);
+    var index = list.indexOf(anchor);
     var next = index >= 0 ? list[index + 1] : null;
     var url = next ? next.getAttribute("data-facsimile-src") : "";
     if (!url || url === prefetchedUrl) return;
@@ -109,31 +102,36 @@
     var alt = anchor.getAttribute("data-facsimile-alt") || "";
     var list = candidates();
     if (img.getAttribute("src") === url) {
-      failedUrl = "";
-      loadingUrl = "";
+      /* An in-flight Image for another URL then sees loadingUrl !== url. */
+      loadingUrl = url;
+      clearStatus();
       img.alt = alt;
       mark(anchor);
       prefetchNext(list, anchor);
       return;
     }
-    if (url === failedUrl || url === loadingUrl) return;
+    if (url === failedUrl) {
+      showStatus();
+      mark(anchor);
+      return;
+    }
+    if (url === loadingUrl) return;
     loadingUrl = url;
-    var token = ++generation;
     var pending = new Image();
     pending.decoding = "async";
     pending.onload = function () {
-      if (token !== generation) return;
+      if (loadingUrl !== url) return;
       loadingUrl = "";
       if (!paneDisplayed()) return;
       img.src = url;
       img.alt = alt;
-      failedUrl = "";
+      if (failedUrl === url) failedUrl = "";
       mark(anchor);
       clearStatus();
       prefetchNext(candidates(), anchor);
     };
     pending.onerror = function () {
-      if (token !== generation) return;
+      if (loadingUrl !== url) return;
       loadingUrl = "";
       failedUrl = url;
       showStatus();
@@ -147,7 +145,7 @@
     var list = candidates();
     if (!list.length) return;
     var anchor = null;
-    if (pin && indexOf(list, pin) >= 0) anchor = pin;
+    if (pin && list.indexOf(pin) >= 0) anchor = pin;
     else pin = null;
     if (!anchor) anchor = walked(list);
     show(anchor);
