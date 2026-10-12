@@ -18,4 +18,4 @@ object EmbeddedAsset:
       "tokens", "base", "chrome", "prose", "tei", "print", "style", "graph", "facsimile", "facsimile-aside"
     )
       .map(Path("assets", "css", _).withExtension("css")) ++
-    List("graph", "search").map(name => Path("assets", "js", name).withExtension("js"))
+    List("graph", "search", "facsimile-aside").map(name => Path("assets", "js", name).withExtension("js"))

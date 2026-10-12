@@ -161,7 +161,16 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), transcription)
       assert(!transcription.contains("tei-class="), transcription)
       assert(!transcription.contains("/assets/css/facsimile.css"), transcription)
-      assert(!transcription.contains("/assets/js/facsimile-aside.js"), transcription)
+      assert(transcription.contains("""src="/assets/js/facsimile-aside.js""""), transcription)
+      val scriptAt: Int = transcription.indexOf("""src="/assets/js/facsimile-aside.js"""")
+      assert(scriptAt > transcription.indexOf("</main>"), transcription)
+      assert(!transcription.substring(0, transcription.indexOf("</head>")).contains("facsimile-aside.js"), transcription)
+      val scriptTag: String = transcription.substring(
+        transcription.lastIndexOf("<script", scriptAt),
+        transcription.indexOf(">", scriptAt) + 1
+      )
+      assert(!scriptTag.contains("module"), scriptTag)
+      assert(!html(target, "index.html").contains("/assets/js/facsimile-aside.js"))
       assert(transcription.contains("""title="Facsimile""""), transcription)
       assert(openTag(transcription, "<html").contains("""class="facsimile-aside""""), transcription)
       val mainStart: Int = transcription.indexOf("""<main class="page-content"""")
@@ -215,6 +224,7 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(index.contains("""href="/col/000.html#p000-1""""), index)
       assert(!index.contains("/facsimile.html"), index)
       assert(!index.contains("data-facsimile-src"), index)
+      assert(!index.contains("/assets/js/facsimile-aside.js"), index)
       assert(!index.contains("fa-images"), index)
       assert(!index.contains("""target="facsimile""""), index)
   }
@@ -254,8 +264,10 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(!openTag(translation, "<html").contains("facsimile-aside"), translation)
       assert(!translation.contains("""<aside class="facsimile-aside""""), translation)
       assert(!translation.contains("data-facsimile-src"), translation)
+      assert(!translation.contains("/assets/js/facsimile-aside.js"), translation)
       val original: String = html(target, "col/001.html")
       assert(original.contains("""href="/col/001/facsimile.html""""), original)
+      assert(original.contains("""src="/assets/js/facsimile-aside.js""""), original)
   }
 
   test("no facsimiles-url means no viewer and pb has no href") {
@@ -395,6 +407,7 @@ final class FacsimileSpec extends AnyFunSuite:
       val host: String = html(target, "host.html")
       assert(!openTag(host, "<html").contains("facsimile-aside"), host)
       assert(!host.contains("""<aside class="facsimile-aside""""), host)
+      assert(!host.contains("/assets/js/facsimile-aside.js"), host)
       assert(!host.contains("data-facsimile-src"), host)
       val copied: String = openTag(host, """class="pb"""")
       assert(copied.contains("/col/000/facsimile.html#"), copied)

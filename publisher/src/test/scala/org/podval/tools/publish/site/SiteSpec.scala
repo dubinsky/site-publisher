@@ -240,6 +240,15 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val hideAt: Int = printCss.indexOf("aside.facsimile-aside")
     assert(hideAt >= 0, printCss)
     assert(printCss.substring(hideAt, hideAt + 80).contains("display: none"), printCss)
+    val script: String = html("assets/js/facsimile-aside.js")
+    assert(script.contains("1312"), script)
+    assert(script.contains("data-facsimile-src"), script)
+    assert(script.contains("aside.transclusion"), script)
+    assert(script.contains("preventDefault"), script)
+    assert(script.contains("getComputedStyle"), script)
+    assert(script.contains("requestAnimationFrame"), script)
+    assert(script.contains("replaceState"), script)
+    assert(!script.contains("scrollIntoView"), script)
   }
 
   test("header pages come from site config in listed order") {

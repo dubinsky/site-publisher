@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- On a wide window the transcription shows the current scan to the right of the text.
+  The text column stays the same width.
+  The gear item "Show the facsimile beside the text" hides it.
+  It is on unless the reader turns it off.
+  A page-break icon selects that scan while the pane is open.
+  It opens the viewer when the pane is closed.
+  The header facsimile icon always opens the viewer.
+  Print and PDF do not include the pane.
 - The year index is a closed outline: a year line with a count, then a month line with a count.
   A day line appears when three or more documents share that exact day.
   Undated documents are grouped by archive.
