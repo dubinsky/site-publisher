@@ -13,6 +13,7 @@
   var loadingUrl = "";
   var failedUrl = "";
   var prefetchedUrl = "";
+  var pendingImage = null;
 
   function paneDisplayed() {
     return getComputedStyle(aside).display !== "none";
@@ -111,15 +112,20 @@
       return;
     }
     if (url === failedUrl) {
+      loadingUrl = "";
       showStatus();
       mark(anchor);
       return;
     }
     if (url === loadingUrl) return;
     loadingUrl = url;
-    var pending = new Image();
-    pending.decoding = "async";
-    pending.onload = function () {
+    if (pendingImage) {
+      pendingImage.onload = null;
+      pendingImage.onerror = null;
+    }
+    pendingImage = new Image();
+    pendingImage.decoding = "async";
+    pendingImage.onload = function () {
       if (loadingUrl !== url) return;
       loadingUrl = "";
       if (!paneDisplayed()) return;
@@ -130,14 +136,14 @@
       clearStatus();
       prefetchNext(candidates(), anchor);
     };
-    pending.onerror = function () {
+    pendingImage.onerror = function () {
       if (loadingUrl !== url) return;
       loadingUrl = "";
       failedUrl = url;
       showStatus();
       prefetchNext(candidates(), anchor);
     };
-    pending.src = url;
+    pendingImage.src = url;
   }
 
   function sync() {
