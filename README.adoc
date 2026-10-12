@@ -751,11 +751,23 @@ Missing `pb@missing` pages are omitted from the scroller.
 In the transcription, `<pb n="000-1"/>` is an images icon (`a.pb`, `id="p000-1"`) linking to the viewer fragment,
 `target="facsimile"` (`facsimileViewer` when `named-windows` is on).
 The site-header format icon does the same without a fragment.
+
+On a wide window the transcription shows the current scan to the right of the text.
+The text column stays the same width.
+The gear item "Show the facsimile beside the text" hides it.
+It is on unless the reader turns it off.
+A page-break icon selects that scan while the pane is open.
+It opens the viewer when the pane is closed.
+The header facsimile icon always opens the viewer.
+Print and PDF do not include the pane.
+
 Collection **Страницы** is page numbers on the transcription `#p{n}` only.
 Each photo in the viewer links back to that `pb` in the transcription (`target="text"` / `textViewer`).
 `{base}-{xx}` translations share the original's viewer.
 
-Omitted `facsimiles-url`: no viewer pages; `pb` keeps its id (collection **Страницы** still works) and has no href.
+No new `_site_config.yml` key.
+Omitted `facsimiles-url` still means no viewer and no pane; `pb` keeps its id (collection **Страницы** still works) and
+has no href.
 
 [#blog-posts]
 == Blog Posts
