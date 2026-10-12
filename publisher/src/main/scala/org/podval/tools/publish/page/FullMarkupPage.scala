@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
 import org.podval.xml.Xml
 
@@ -12,6 +13,9 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
   final override def pageHeader: Option[Xml.Element] = Option.when(source.isDefined)(PageHeader.of(this))
   final def chunks: Seq[ChunkedMarkupPage] = content.map(_.toc.chunks(this)).getOrElse(Seq.empty)
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(this)
+
+  override protected def facsimileAside: Option[Xml.Element] =
+    Option.when(Facsimile.needed(this))(Facsimile.aside(this))
 
   final def aliases: Seq[Alias] =
     (postPath.toSeq ++ permalinkAlias.toSeq ++ frontMatter.aliases).map(Alias(site, this, _))

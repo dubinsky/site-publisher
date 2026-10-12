@@ -2,7 +2,7 @@
   var html = document.documentElement;
   var keys = ["glossary-expand", "transclusion-clean"];
   /* Checked unless the browser stored "0". The off state is a class, so no script still expands. */
-  var defaultOn = ["abbr-expand"];
+  var defaultOn = ["abbr-expand", "facsimile-aside"];
   var apparatusNames = ["apparatus-add", "apparatus-see", "apparatus-del"];
   var schemeKey = "color-scheme";
 

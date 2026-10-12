@@ -24,6 +24,10 @@
         display: none;
     }
 
+    aside.facsimile-aside {
+        display: none !important;
+    }
+
     th,
     tr.row[role=label] td.cell,
     thead td.entry {

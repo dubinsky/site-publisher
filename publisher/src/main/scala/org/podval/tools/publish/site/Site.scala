@@ -321,6 +321,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   attr("data-setting") := "transclusion-clean"
                 ),
                 "Seamless transclusions"
+              ),
+              label(className := "site-settings-item",
+                input(
+                  `type` := "checkbox",
+                  id := "setting-facsimile-aside",
+                  attr("data-setting") := "facsimile-aside",
+                  attr("checked") := "checked"
+                ),
+                "Show the facsimile beside the text"
               )
             ),
             Option.when(config.apparatus)(

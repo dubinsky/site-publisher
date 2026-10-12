@@ -260,7 +260,7 @@ final class PageContent private(
     )
 
     if !skipCopy then
-      result = Facsimile.resolveLink(result, source.page)
+      result = Facsimile.resolveLink(result, source.page, isChunked)
 
     val isRef: Boolean = tips.exists(_.isRef(result))
     result.setChildren(result.getChildren.map(child =>

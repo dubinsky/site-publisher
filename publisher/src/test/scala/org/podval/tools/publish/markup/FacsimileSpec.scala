@@ -106,6 +106,13 @@ final class FacsimileSpec extends AnyFunSuite:
     assert(file.isFile, s"missing $relative under $target")
     Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
 
+  private def openTag(page: String, marker: String): String =
+    val start: Int = page.indexOf(marker)
+    assert(start >= 0, page)
+    val end: Int = page.indexOf(">", start)
+    assert(end >= 0, page)
+    page.substring(start, end + 1)
+
   private def pageNamed(site: Site, name: String): Page =
     site.pages.pages.find(page => page.title == name || page.titleFromPath == name).get
 
@@ -154,7 +161,52 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), transcription)
       assert(!transcription.contains("tei-class="), transcription)
       assert(!transcription.contains("/assets/css/facsimile.css"), transcription)
+      assert(!transcription.contains("/assets/js/facsimile-aside.js"), transcription)
       assert(transcription.contains("""title="Facsimile""""), transcription)
+      assert(openTag(transcription, "<html").contains("""class="facsimile-aside""""), transcription)
+      val mainStart: Int = transcription.indexOf("""<main class="page-content"""")
+      val mainEnd: Int = transcription.indexOf("</main>", mainStart)
+      val main: String = transcription.substring(mainStart, mainEnd)
+      val asideAt: Int = main.indexOf("""<aside class="facsimile-aside"""")
+      assert(asideAt > main.indexOf("""<div class="wrapper""""), main)
+      val asideTag: String = openTag(main, """<aside class="facsimile-aside"""")
+      assert(asideTag.contains("""aria-label="Facsimile""""), asideTag)
+      assert(main.indexOf("""<aside class="facsimile-aside"""", asideAt + 1) < 0, main)
+      val afterAside: String = main.substring(main.indexOf("</aside>") + "</aside>".length)
+      assert(!afterAside.contains("</div>"), afterAside)
+      val noscriptAt: Int = transcription.indexOf("<noscript>")
+      val beforeNoscript: String = transcription.substring(0, noscriptAt)
+      val noscript: String = transcription.substring(noscriptAt, transcription.indexOf("</noscript>"))
+      val imgTag: String = openTag(beforeNoscript, """<img class="facsimile-aside-img"""")
+      assert(imgTag.contains("""decoding="async""""), imgTag)
+      assert(imgTag.contains("""alt="facsimile for page 000""""), imgTag)
+      assert(imgTag.contains("""data-facsimile-src="https://facsimiles.test/col/000-1.jpg""""), imgTag)
+      assert(imgTag.contains("""data-facsimile-current="p000-1""""), imgTag)
+      assert(!imgTag.contains(" src="), imgTag)
+      assert(!imgTag.startsWith("<img src="), imgTag)
+      assert(transcription.indexOf("""class="facsimile-aside-img"""") ==
+        transcription.lastIndexOf("""class="facsimile-aside-img""""), transcription)
+      assert(transcription.contains("""class="facsimile-aside-status""""), transcription)
+      assert(noscript.contains("""<picture"""), noscript)
+      assert(noscript.contains("""media="screen and (min-width: 1312px)""""), noscript)
+      assert(noscript.contains("""srcset="https://facsimiles.test/col/000-1.jpg""""), noscript)
+      assert(!noscript.contains("000-2.jpg"), noscript)
+      assert(!noscript.contains("src="), noscript)
+      assert(noscript.contains("""alt="facsimile for page 000""""), noscript)
+      assert(noscript.contains("""decoding="async""""), noscript)
+      val second: String = openTag(transcription, """id="p000-2"""")
+      assert(second.contains("""data-facsimile-src="https://facsimiles.test/col/000-2.jpg""""), second)
+      assert(second.contains("""data-facsimile-alt="facsimile for page 000об""""), second)
+      assert(!transcription.contains(""" src="https://facsimiles.test/col/000-1.jpg""""), transcription)
+      assert(!transcription.contains(""" src="https://facsimiles.test/col/000-2.jpg""""), transcription)
+      val firstAnchor: String = openTag(transcription, """id="p000-1"""")
+      assert(firstAnchor.contains("""data-facsimile-src="https://facsimiles.test/col/000-1.jpg""""), firstAnchor)
+      assert(firstAnchor.contains("""data-facsimile-alt="facsimile for page 000""""), firstAnchor)
+      val viewerOpen: String = openTag(viewer, "<html")
+      assert(viewerOpen.contains("""class="facsimile""""), viewerOpen)
+      assert(!viewerOpen.contains("facsimile-aside"), viewerOpen)
+      assert(!viewer.contains("""<aside class="facsimile-aside""""), viewer)
+      assert(!viewer.contains("/assets/js/facsimile-aside.js"), viewer)
   }
 
   test("collection Страницы numbers go to the transcription") {
@@ -162,6 +214,7 @@ final class FacsimileSpec extends AnyFunSuite:
       val index: String = html(target, "col/index.html")
       assert(index.contains("""href="/col/000.html#p000-1""""), index)
       assert(!index.contains("/facsimile.html"), index)
+      assert(!index.contains("data-facsimile-src"), index)
       assert(!index.contains("fa-images"), index)
       assert(!index.contains("""target="facsimile""""), index)
   }
@@ -175,6 +228,14 @@ final class FacsimileSpec extends AnyFunSuite:
       val transcription: String = html(target, "col/002.html")
       assert(transcription.contains("""id="p002-2""""), transcription)
       assert(transcription.contains("""id="p003-1""""), transcription)
+      val missing: String = openTag(transcription, """id="p002-2"""")
+      assert(missing.contains("""href="/col/002/facsimile.html#p002-2""""), missing)
+      assert(!missing.contains("data-facsimile-src"), missing)
+      val emptyMissing: String = openTag(transcription, """id="p003-1"""")
+      assert(emptyMissing.contains("""href="/col/002/facsimile.html#p003-1""""), emptyMissing)
+      assert(!emptyMissing.contains("data-facsimile-src"), emptyMissing)
+      val present: String = openTag(transcription, """id="p002-1"""")
+      assert(present.contains("""data-facsimile-src="https://facsimiles.test/col/002-1.jpg""""), present)
   }
 
   test("translation shares the original viewer") {
@@ -190,6 +251,9 @@ final class FacsimileSpec extends AnyFunSuite:
       )
       val translation: String = html(target, "col/001-ru.html")
       assert(translation.contains("""href="/col/001/facsimile.html#p001-1""""), translation)
+      assert(!openTag(translation, "<html").contains("facsimile-aside"), translation)
+      assert(!translation.contains("""<aside class="facsimile-aside""""), translation)
+      assert(!translation.contains("data-facsimile-src"), translation)
       val original: String = html(target, "col/001.html")
       assert(original.contains("""href="/col/001/facsimile.html""""), original)
   }
@@ -210,6 +274,9 @@ final class FacsimileSpec extends AnyFunSuite:
       val transcription: String = html(target, "col/000.html")
       assert(transcription.contains("""id="p000-1""""), transcription)
       assert(!transcription.contains("/facsimile.html"), transcription)
+      assert(!openTag(transcription, "<html").contains("facsimile-aside"), transcription)
+      assert(!transcription.contains("""<aside class="facsimile-aside""""), transcription)
+      assert(!transcription.contains("/assets/js/facsimile-aside.js"), transcription)
   }
 
   test("pb@facs is the image src") {
@@ -217,6 +284,9 @@ final class FacsimileSpec extends AnyFunSuite:
       val viewer: String = html(target, "col/003/facsimile.html")
       assert(viewer.contains("""src="https://example.test/custom.jpg""""), viewer)
       assert(!viewer.contains("003-1.jpg"), viewer)
+      val transcription: String = html(target, "col/003.html")
+      val anchor: String = openTag(transcription, """id="p003-1"""")
+      assert(anchor.contains("""data-facsimile-src="https://example.test/custom.jpg""""), anchor)
   }
 
   test("inbound collector facsimile URL rewrites to the viewer") {
@@ -263,6 +333,9 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""data-window-name="textViewer""""), transcription)
       assert(transcription.contains("""target="facsimileViewer""""), transcription)
       assert(transcription.contains("""target="apparatusViewer""""), transcription)
+      val anchor: String = openTag(transcription, """id="p000-1"""")
+      assert(anchor.contains("""target="facsimileViewer""""), anchor)
+      assert(anchor.contains("""data-facsimile-src="https://facsimiles.test/col/000-1.jpg""""), anchor)
       val viewer: String = html(target, "col/000/facsimile.html")
       assert(viewer.contains("""data-window-name="facsimileViewer""""), viewer)
       assert(viewer.contains("""target="textViewer""""), viewer)
@@ -271,4 +344,59 @@ final class FacsimileSpec extends AnyFunSuite:
       val index: String = html(target, "col/index.html")
       assert(index.contains("""data-window-name="hierarchyViewer""""), index)
       assert(index.contains("""target="textViewer""""), index)
+  }
+
+  test("chunked transcription keeps the aside on the full page only") {
+    withSite(Map(
+      "col/010.xml" ->
+        """---
+          |chunk: true
+          |---
+          |<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt>
+          |      <author><persName ref="ab">A</persName></author>
+          |    </titleStmt></fileDesc>
+          |    <profileDesc><abstract>Chunked</abstract></profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body>
+          |    <div><head>Alpha</head><pb n="010-1"/><p>one</p></div>
+          |    <div><head>Beta</head><pb n="010-2"/><p>two</p></div>
+          |  </body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (site, target) =>
+      val full: String = html(target, "col/010.html")
+      assert(full.contains("""<aside class="facsimile-aside""""), full)
+      assert(openTag(full, """id="p010-1"""").contains("data-facsimile-src"), full)
+      val chunk: String = html(target, "col/010/Alpha.html")
+      assert(!openTag(chunk, "<html").contains("facsimile-aside"), chunk)
+      assert(!chunk.contains("""<aside class="facsimile-aside""""), chunk)
+      assert(!chunk.contains("data-facsimile-src"), chunk)
+      assert(!chunk.contains("/assets/js/facsimile-aside.js"), chunk)
+      val anchor: String = openTag(chunk, """id="p010-1"""")
+      assert(anchor.contains("""href="/col/010/facsimile.html#p010-1""""), anchor)
+      assert(anchor.contains("""target="facsimile""""), anchor)
+      assert(File(target, "col/010/facsimile.html").isFile)
+      val viewers: Seq[FacsimilePage] = site.pages.pages.collect:
+        case viewer: FacsimilePage if viewer.document.titleFromPath == "010" => viewer
+      assert(viewers.length == 1, viewers)
+  }
+
+  test("transcluded transcription does not grow a facsimile aside") {
+    withSite(Map(
+      "host.md" ->
+        """---
+          |title: Host
+          |---
+          |![[col/000]]
+          |""".stripMargin
+    )): (_, target) =>
+      val host: String = html(target, "host.html")
+      assert(!openTag(host, "<html").contains("facsimile-aside"), host)
+      assert(!host.contains("""<aside class="facsimile-aside""""), host)
+      assert(!host.contains("data-facsimile-src"), host)
+      val copied: String = openTag(host, """class="pb"""")
+      assert(copied.contains("/col/000/facsimile.html#"), copied)
+      assert(copied.contains("""target="facsimile""""), copied)
   }

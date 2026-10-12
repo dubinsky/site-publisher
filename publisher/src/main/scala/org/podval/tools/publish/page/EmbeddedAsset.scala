@@ -14,6 +14,8 @@ object EmbeddedAsset:
   // Note: it is not worth it writing JAR walker to "discover" a handful of resources ;)
   private val resourcesBase: String = "/org/podval/tools/publish/site"
   private val resourcesList: List[Path] =
-    List("tokens", "base", "chrome", "prose", "tei", "print", "style", "graph", "facsimile")
+    List(
+      "tokens", "base", "chrome", "prose", "tei", "print", "style", "graph", "facsimile", "facsimile-aside"
+    )
       .map(Path("assets", "css", _).withExtension("css")) ++
     List("graph", "search").map(name => Path("assets", "js", name).withExtension("js"))

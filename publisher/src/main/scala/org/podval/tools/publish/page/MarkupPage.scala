@@ -57,6 +57,9 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   protected def formatIsFacsimile: Boolean = false
   protected def isFacsimileViewer: Boolean = false
 
+  /** Owning full transcription only. Chunks and the viewer stay without a pane. */
+  protected def facsimileAside: Option[Xml.Element] = None
+
   final def formatLinks: Seq[Xml.Element] = formatSourcePage.toSeq.flatMap: page =>
     val onePage: Option[Xml.Element] =
       if formatIsFacsimile then
@@ -127,6 +130,13 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     val languagesToHighlight: Set[String] = languages - "mermaid"
 
     val articleBody: Seq[Xml.Element] = Seq(markupContent, syntheticContent).flatten
+    val companion: Option[Xml.Element] = facsimileAside
+    // `className :=` replaces, so wide and facsimile share one string with the aside.
+    val htmlClass: String = Seq(
+      Option.when(isCollectionIndex)("wide"),
+      Option.when(isFacsimileViewer)("facsimile"),
+      Option.when(companion.isDefined)("facsimile-aside")
+    ).flatten.mkString(" ")
 
     val libraries: List[js.JSLibrary] =
       List(
@@ -164,12 +174,12 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
             site.backLinks.html(this),
             site.transclusions.html(this)
           ),
+          companion
         ),
         site.siteFooter,
         libraries.flatMap(_.scripts)
       )
-    ).when(isCollectionIndex)(className := "wide")
-     .when(isFacsimileViewer)(className := "facsimile")
+    ).when(htmlClass.nonEmpty)(className := htmlClass)
      .when(site.config.namedWindows)(attr("data-window-name") := NamedWindows.of(this))
      .when(site.config.apparatus)(attr("data-apparatus-enabled") := "true")
 

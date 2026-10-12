@@ -50,44 +50,82 @@ object Facsimile:
           CollectionIndex.baseName(sibling) == base
       .headOption.getOrElse(page)
 
-  def resolveLink(element: Xml.Element, page: Page): Xml.Element =
+  def imageFor(document: FullMarkupPage, pb: Pb): (String, String) =
+    val base: String = document.site.config.facsimilesUrl.map(_.trim).filter(_.nonEmpty).get
+    val sourceDir: Seq[String] = document.sourcePath.map(_.path.init).getOrElse(Seq.empty)
+    val pageType: PageType =
+      document.parent.flatMap(_.store).map(_.pageType).getOrElse(PageType.Manuscript)
+    val url: String = imageUrl(base, sourceDir, pb.n, pb.facs)
+    val alt: String = s"facsimile for page ${pageType.displayName(pb.n)}"
+    (url, alt)
+
+  def resolveLink(element: Xml.Element, page: Page, isChunked: Boolean): Xml.Element =
     if !Pb.is(element) then element
     else page.site.pages.facsimilePage(page) match
       case None => element
       case Some(viewer) =>
         element.getId.filter(_.nonEmpty).fold(element): id =>
-          val linked: Xml.Element =
-            element.setHref(s"${viewer.publishedPath}#$id")
-          NamedWindows.targetAttr(viewer).fold(
+          val linked: Xml.Element = element.setHref(s"${viewer.publishedPath}#$id")
+          val targeted: Xml.Element = NamedWindows.targetAttr(viewer).fold(
             linked.set(XmlAttribute.Target, facsimileTarget)
           )(name => linked.set(XmlAttribute.Target, name))
+          // Chunk anchors keep today's href. The companion is the unchunked page only.
+          if isChunked then targeted else scanAttrs(targeted, page, id)
+
+  /** Primary `img` has no `src`: `display: none` would not cancel that fetch. */
+  def aside(document: FullMarkupPage): Xml.Element =
+    val pb: Pb = present(document).head
+    val (url, alt) = imageFor(document, pb)
+    val img: Xml.Element = Xml.element(XmlElement.Img)
+      .addClass("facsimile-aside-img")
+      .set(XmlAttribute.Alt, alt)
+      .set("decoding", "async")
+      .set("data-facsimile-src", url)
+      .set("data-facsimile-current", Pb.pageId(pb.n))
+    val status: Xml.Element = Xml.element(XmlElement.P)
+      .addClass("facsimile-aside-status")
+      .set(XmlAttribute.Hidden, "hidden")
+    val fallback: Xml.Element = Xml.element(XmlElement.Img)
+      .set(XmlAttribute.Alt, alt)
+      .set("decoding", "async")
+    val source: Xml.Element = Xml.element(XmlElement.Source)
+      .set("media", "screen and (min-width: 1312px)")
+      .set("srcset", url)
+    val picture: Xml.Element = Xml.element("picture").setChildren(Seq(source, fallback: Xml.Node))
+    val noscript: Xml.Element = Xml.element("noscript").setChildren(Seq(picture: Xml.Node))
+    val frame: Xml.Element = Xml.element(XmlElement.Div)
+      .addClass("facsimile-aside-frame")
+      .setChildren(Seq(img, status, noscript: Xml.Node))
+    Xml.element(XmlElement.Aside)
+      .addClass("facsimile-aside")
+      .set("aria-label", "Facsimile")
+      .setChildren(Seq(frame))
 
   def scroller(viewer: FacsimilePage): Xml.Element =
     val document: FullMarkupPage = viewer.document
-    val pageType: PageType =
-      document.parent.flatMap(_.store).map(_.pageType).getOrElse(PageType.Manuscript)
-    val base: String = document.site.config.facsimilesUrl.map(_.trim).filter(_.nonEmpty).get
-    val sourceDir: Seq[String] = document.sourcePath.map(_.path.init).getOrElse(Seq.empty)
-    val pbs: Seq[Pb] =
-      document.doc.flatMap(_.documentHeader).toSeq.flatMap(_.pbs).filterNot(_.isMissing)
-    val figures: Xml.Nodes =
-      pbs.map(pb => pageFigure(document, pageType, base, sourceDir, pb))
-
+    val figures: Xml.Nodes = present(document).map(pb => pageFigure(document, pb))
     Xml.element(XmlElement.Div).add(ScrollerClass).setChildren(figures)
 
-  private def pageFigure(
-    document: FullMarkupPage,
-    pageType: PageType,
-    base: String,
-    sourceDir: Seq[String],
-    pb: Pb
-  ): Xml.Element =
+  private def present(document: FullMarkupPage): Seq[Pb] =
+    document.doc.flatMap(_.documentHeader).toSeq.flatMap(_.pbs).filterNot(_.isMissing)
+
+  private def scanAttrs(element: Xml.Element, page: Page, id: String): Xml.Element =
+    page match
+      case full: FullMarkupPage if needed(full) =>
+        val pb: Option[Pb] = present(full).find(candidate => Pb.pageId(candidate.n) == id)
+        pb.fold(element): found =>
+          val (url, alt) = imageFor(full, found)
+          element.set("data-facsimile-src", url).set("data-facsimile-alt", alt)
+      case _ => element
+
+  private def pageFigure(document: FullMarkupPage, pb: Pb): Xml.Element =
     val id: String = Pb.pageId(pb.n)
-    val display: String = pageType.displayName(pb.n)
+    val (url, alt) = imageFor(document, pb)
+    val display: String = alt.stripPrefix("facsimile for page ")
     val img: Xml.Element = Xml.element(XmlElement.Img)
       .setId(id)
-      .set(XmlAttribute.Alt, s"facsimile for page $display")
-      .set(XmlAttribute.Src, imageUrl(base, sourceDir, pb.n, pb.facs))
+      .set(XmlAttribute.Alt, alt)
+      .set(XmlAttribute.Src, url)
     val link: Xml.Element =
       val a: Xml.Element = Xml.element(XmlElement.A)
         .setHref(s"${document.publishedPath}#$id")
