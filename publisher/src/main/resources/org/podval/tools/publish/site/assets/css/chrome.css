@@ -31,13 +31,68 @@
 }
 
 .header-search {
-    flex: 0 1 11rem;
+    display: flex;
+    align-items: center;
+    flex: 0 1 12rem;
     min-width: 0;
+    height: 1.75rem;
+    margin: 0;
+    border: 1px solid var(--border-color-01);
+    border-radius: 5px;
+    background-color: var(--background-color);
+}
+
+.header-search:focus-within {
+    outline: 2px solid var(--link-base-color);
+    outline-offset: 2px;
+}
+
+.header-search button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 1.75rem;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.header-search .icon-span {
+    padding-right: 0;
+    font-size: 0.8rem;
+    line-height: 1;
 }
 
 .header-search input {
+    flex: 1 1 auto;
     width: 100%;
     min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0 0.4rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-color);
+    font: inherit;
+    font-size: var(--small-font-size);
+    line-height: 1;
+    appearance: none;
+}
+
+.header-search input:focus {
+    outline: none;
+}
+
+.header-search input::-webkit-search-decoration,
+.header-search input::-webkit-search-cancel-button,
+.header-search input::-webkit-search-results-button,
+.header-search input::-webkit-search-results-decoration {
+    display: none;
 }
 
 .nav-toggle {

@@ -352,6 +352,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
       attr("action") := "/search",
       attr("method") := "get",
       role := "search",
+      element(
+        "button",
+        `type` := "submit",
+        aria("label") := accessible,
+        Icon("magnifying-glass", Icon.Solid).html
+      ),
       input(
         `type` := "search",
         attr("name") := "q",

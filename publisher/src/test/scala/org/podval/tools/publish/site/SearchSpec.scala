@@ -183,15 +183,17 @@ final class SearchSpec extends AnyFunSuite:
       val doc: String = read(target, "archive/rgada/282.html")
       assert(doc.contains("""class="header-search""""), doc)
       assert(doc.contains("""action="/search""""), doc)
+      assert(doc.contains("fa-magnifying-glass"), doc)
       assert(!doc.contains("search.json"), doc)
       assert(!doc.contains("/assets/js/search.js"), doc)
 
       val page: String = read(target, "search.html")
       assert(page.contains("/assets/js/search.js"), page)
-      assert(
-        page.contains("Поиск идёт по дипломатической транскрипции, без стемминга и без современной орфографии."),
-        page
-      )
+      assert(page.contains("""id="site-search-status""""), page)
+      assert(!page.contains("site-search-notice"), page)
+      assert(!page.contains("site-search-needs-js"), page)
+      assert(!page.contains("стемминг"), page)
+      assert(!page.contains("Серверного поиска"), page)
       val scripts: Seq[String] =
         """(?s)<script type="module">(.*?)</script>""".r.findAllMatchIn(page).map(_.group(1)).toSeq
       val loader: String = scripts.find(_.contains("/assets/js/search.js")).getOrElse("")

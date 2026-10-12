@@ -11,8 +11,6 @@ final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("searc
   override def titleDefault: String =
     if russian then "Поиск" else "Search"
 
-  override protected def descriptionDefault: Option[String] = Some(notice)
-
   override protected def iconDefault: Icon = Icon("magnifying-glass", Icon.Solid)
 
   override protected def extraLibraries: List[js.JSLibrary] = List(js.Search)
@@ -21,8 +19,6 @@ final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("searc
     div(
       id := "site-search",
       attr("data-lang") := dataLang,
-      p(className := "site-search-notice", notice),
-      p(className := "site-search-needs-js", needsScript),
       p(id := "site-search-status", className := "site-search-status"),
       element(
         "form",
@@ -42,18 +38,6 @@ final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("searc
 
   private def dataLang: String =
     if russian then "ru" else "en"
-
-  private def notice: String =
-    if russian then
-      "Поиск идёт по дипломатической транскрипции, без стемминга и без современной орфографии."
-    else
-      "Search matches the diplomatic transcription, without stemming or modernized spelling."
-
-  private def needsScript: String =
-    if russian then
-      "Этой странице нужны search.js и search.json. Серверного поиска нет."
-    else
-      "This page needs search.js and search.json. There is no server search."
 
   private def allLabel: String =
     if russian then "Все" else "All"
