@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- `TeiDate.filingYears` buckets a date by the years written on its attributes and does not convert calendars.
 - A TEI abbreviation expansion is italic inside roman parentheses.
   The gear can hide it.
   The abbreviation then keeps a dotted underline, or its titlo, and the expansion is a hover tip.

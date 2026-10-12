@@ -240,3 +240,77 @@ object TeiDate:
     else
       try Right(parts.map(_.toInt))
       catch case _: NumberFormatException => Left("Not a date")
+
+  final case class Filing(
+    years: Seq[Int],
+    label: String,
+    sortIn: Int => (Int, Int)
+  )
+
+  def filingYears(date: Xml.Element): Filing =
+    val values: Map[String, String] = temporalValues(date)
+    val prose: String = PlainText.visible(date, skipNotes = true, skipTips = false)
+    if values.isEmpty || schematronErrors(values).nonEmpty then undated(prose)
+    else values.get("when") match
+      case Some(raw) => whenFiling(raw, prose)
+      case None => endsFiling(values, prose)
+
+  private def undated(label: String): Filing =
+    Filing(Seq.empty, label, _ => (0, 0))
+
+  private def whenFiling(raw: String, prose: String): Filing =
+    parseValue("when", raw) match
+      case Left(_) => undated(prose)
+      case Right(numbers) => oneYear(numbers, raw, prose)
+
+  private def endsFiling(values: Map[String, String], prose: String): Filing =
+    val startName: String = if values.contains("from") then "from" else "notBefore"
+    val endName: String = if values.contains("to") then "to" else "notAfter"
+    (bound(values, startName), bound(values, endName)) match
+      case (Some(Left(_)), _) | (_, Some(Left(_))) => undated(prose)
+      case (Some(Right((raw, numbers))), None) => oneYear(numbers, raw, prose)
+      case (None, Some(Right((raw, numbers)))) => oneYear(numbers, raw, prose)
+      case (Some(Right(start)), Some(Right(end))) => bothEnds(start, end, prose)
+      case _ => undated(prose)
+
+  private def bound(
+    values: Map[String, String],
+    name: String
+  ): Option[Either[String, (String, Seq[Int])]] =
+    values.get(name).map(raw => parseValue(name, raw).map(numbers => raw -> numbers))
+
+  private def oneYear(numbers: Seq[Int], raw: String, prose: String): Filing =
+    Filing(Seq(numbers.head), if prose.nonEmpty then prose else raw, _ => monthDay(numbers))
+
+  private def bothEnds(
+    start: (String, Seq[Int]),
+    end: (String, Seq[Int]),
+    prose: String
+  ): Filing =
+    val (aRaw, aNumbers) = start
+    val (bRaw, bNumbers) = end
+    val a: Int = aNumbers.head
+    val b: Int = bNumbers.head
+    // U+2013 between the attribute strings. U+2014 between prose and that range.
+    val label: String =
+      if a == b then
+        if prose.nonEmpty then prose else rangeLabel(aRaw, bRaw)
+      else if prose.nonEmpty then s"$prose \u2014 ${rangeLabel(aRaw, bRaw)}"
+      else rangeLabel(aRaw, bRaw)
+    if b < a then undated(label)
+    else if b == a + 1 then
+      Filing(
+        Seq(a, b),
+        label,
+        year => monthDay(if year == b then bNumbers else aNumbers)
+      )
+    else Filing(Seq(a), label, _ => monthDay(aNumbers))
+
+  private def rangeLabel(aRaw: String, bRaw: String): String =
+    s"$aRaw \u2013 $bRaw"
+
+  private def monthDay(numbers: Seq[Int]): (Int, Int) =
+    numbers.drop(1) match
+      case Seq(month, day) => (month, day)
+      case Seq(month) => (month, 0)
+      case _ => (0, 0)

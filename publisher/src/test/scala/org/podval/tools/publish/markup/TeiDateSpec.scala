@@ -331,6 +331,179 @@ final class TeiDateSpec extends AnyFunSuite:
     assert(dumped.contains(">x<"), dumped)
   }
 
+  private def file(xml: String): TeiDate.Filing =
+    TeiDate.filingYears(parse(xml))
+
+  private def enRange(start: String, end: String): String =
+    s"$start \u2013 $end"
+
+  private def proseRange(prose: String, start: String, end: String): String =
+    s"$prose \u2014 ${enRange(start, end)}"
+
+  test("when with child text files that year and the prose") {
+    val filed: TeiDate.Filing = file("""<date when="1798-12-20">20 декабря 1798</date>""")
+    assert(filed.years == Seq(1798))
+    assert(filed.label == "20 декабря 1798")
+    assert(filed.sortIn(1798) == (12, 20))
+    assert(filed.sortIn(1801) == (12, 20))
+  }
+
+  test("when with no child text uses the raw attribute") {
+    val filed: TeiDate.Filing = file("""<date when="1798-12-20"/>""")
+    assert(filed.years == Seq(1798))
+    assert(filed.label == "1798-12-20")
+    assert(filed.sortIn(1798) == (12, 20))
+  }
+
+  test("when 1800-12-22 stays in 1800") {
+    val filed: TeiDate.Filing = file("""<date when="1800-12-22" calendar="#julian"/>""")
+    assert(filed.years == Seq(1800))
+    assert(filed.label == "1800-12-22")
+    assert(filed.sortIn(1801) == (12, 22))
+  }
+
+  test("prose with no temporal attribute is undated") {
+    val filed: TeiDate.Filing = file("""<date>около 1800</date>""")
+    assert(filed.years.isEmpty)
+    assert(filed.label == "около 1800")
+    val empty: TeiDate.Filing = file("""<date/>""")
+    assert(empty.years.isEmpty)
+    assert(empty.label.isEmpty)
+  }
+
+  test("same-year day range with prose keeps the prose only") {
+    val filed: TeiDate.Filing = file(
+      """<date notBefore="1800-11-15" notAfter="1800-11-16">15 или 16 ноября 1800</date>"""
+    )
+    assert(filed.years == Seq(1800))
+    assert(filed.label == "15 или 16 ноября 1800")
+    assert(!filed.label.contains("1800-11"))
+    assert(filed.sortIn(1800) == (11, 15))
+  }
+
+  test("same-year day range with no prose joins the raw attributes") {
+    val filed: TeiDate.Filing = file("""<date notBefore="1800-11-15" notAfter="1800-11-16"/>""")
+    assert(filed.years == Seq(1800))
+    assert(filed.label == enRange("1800-11-15", "1800-11-16"))
+    assert(filed.sortIn(1800) == (11, 15))
+  }
+
+  test("same-year month range with no prose files that year") {
+    val filed: TeiDate.Filing = file("""<date notBefore="1800-11" notAfter="1800-12"/>""")
+    assert(filed.years == Seq(1800))
+    assert(filed.label == enRange("1800-11", "1800-12"))
+    assert(filed.sortIn(1800) == (11, 0))
+  }
+
+  test("adjacent years file both and sort each bound") {
+    val prose: String = "конец 1798"
+    val filed: TeiDate.Filing = file(
+      s"""<date notBefore="1798-12-01" notAfter="1799-01-02">$prose</date>"""
+    )
+    assert(filed.years == Seq(1798, 1799))
+    assert(filed.label == proseRange(prose, "1798-12-01", "1799-01-02"))
+    assert(filed.sortIn(1798) == (12, 1))
+    assert(filed.sortIn(1799) == (1, 2))
+  }
+
+  test("adjacent years with no prose join the raw attributes") {
+    val filed: TeiDate.Filing = file("""<date notBefore="1798-12-01" notAfter="1799-01-02"/>""")
+    assert(filed.years == Seq(1798, 1799))
+    assert(filed.label == enRange("1798-12-01", "1799-01-02"))
+    assert(filed.sortIn(1798) == (12, 1))
+    assert(filed.sortIn(1799) == (1, 2))
+  }
+
+  test("from and to are the range ends") {
+    val filed: TeiDate.Filing = file("""<date from="1798-12-01" to="1799-01-02"/>""")
+    assert(filed.years == Seq(1798, 1799))
+    assert(filed.label == enRange("1798-12-01", "1799-01-02"))
+    assert(filed.sortIn(1798) == (12, 1))
+    assert(filed.sortIn(1799) == (1, 2))
+  }
+
+  test("a span of two or more years files only the start year") {
+    val filed: TeiDate.Filing = file("""<date notBefore="1790" notAfter="1800"/>""")
+    assert(filed.years == Seq(1790))
+    assert(filed.label.contains(enRange("1790", "1800")))
+    assert(filed.label == enRange("1790", "1800"))
+    assert(filed.sortIn(1790) == (0, 0))
+  }
+
+  test("one parsed end is that year") {
+    val bare: TeiDate.Filing = file("""<date notBefore="1798-08"/>""")
+    assert(bare.years == Seq(1798))
+    assert(bare.label == "1798-08")
+    assert(bare.sortIn(1798) == (8, 0))
+    val withProse: TeiDate.Filing = file("""<date to="1799-01-02">после</date>""")
+    assert(withProse.years == Seq(1799))
+    assert(withProse.label == "после")
+    assert(withProse.sortIn(1799) == (1, 2))
+  }
+
+  test("when together with an end is undated") {
+    val withProse: TeiDate.Filing = file(
+      """<date when="1798-12-20" notBefore="1798-12-01">20 декабря 1798</date>"""
+    )
+    assert(withProse.years.isEmpty)
+    assert(withProse.label == "20 декабря 1798")
+    val bare: TeiDate.Filing = file("""<date when="1798-12-20" notBefore="1798-12-01"/>""")
+    assert(bare.years.isEmpty)
+    assert(bare.label.isEmpty)
+  }
+
+  test("dotdot in when is undated and the label is the prose") {
+    val withProse: TeiDate.Filing = file("""<date when="1800-11-..">около</date>""")
+    assert(withProse.years.isEmpty)
+    assert(withProse.label == "около")
+    assert(!withProse.label.contains(".."))
+    val bare: TeiDate.Filing = file("""<date when="1800-11-.."/>""")
+    assert(bare.years.isEmpty)
+    assert(bare.label.isEmpty)
+  }
+
+  test("an end that does not parse is undated and does not use the raw attribute") {
+    val withProse: TeiDate.Filing = file(
+      """<date notBefore="1800-11-15" notAfter="..">15 ноября</date>"""
+    )
+    assert(withProse.years.isEmpty)
+    assert(withProse.label == "15 ноября")
+    assert(!withProse.label.contains(".."))
+    val bare: TeiDate.Filing = file("""<date notBefore=".." notAfter="1800"/>""")
+    assert(bare.years.isEmpty)
+    assert(bare.label.isEmpty)
+  }
+
+  test("an end year before the start year is undated and keeps the range") {
+    val prose: String = "наоборот"
+    val withProse: TeiDate.Filing = file(
+      s"""<date notBefore="1801-02-03" notAfter="1799-11-01">$prose</date>"""
+    )
+    assert(withProse.years.isEmpty)
+    assert(withProse.label == proseRange(prose, "1801-02-03", "1799-11-01"))
+    val bare: TeiDate.Filing = file("""<date notBefore="1801-02-03" notAfter="1799-11-01"/>""")
+    assert(bare.years.isEmpty)
+    assert(bare.label == enRange("1801-02-03", "1799-11-01"))
+  }
+
+  test("a note child is not part of the filing label") {
+    val filed: TeiDate.Filing = file(
+      """<date when="1798-12-20">20 декабря <note>сноска</note> 1798</date>"""
+    )
+    assert(filed.years == Seq(1798))
+    assert(filed.label == "20 декабря 1798")
+    assert(!filed.label.contains("сноска"))
+  }
+
+  test("visible skips notes and tip tokens when asked") {
+    val element: Xml.Element = parse(
+      """<date>a <note>n</note> <span class="x date-tip">Julian</span> <span tei-class="gloss-tip">tip</span> b</date>"""
+    )
+    assert(PlainText.visible(element, skipNotes = true, skipTips = false) == "a Julian tip b")
+    assert(PlainText.visible(element, skipNotes = true, skipTips = true) == "a b")
+    assert(PlainText.visible(element, skipNotes = false, skipTips = true) == "a n b")
+  }
+
   private def invalid(reporter: Reporter): Seq[String] =
     assert(reporter.errors.forall(_._1 eq PageError.InvalidDate), reporter.errors)
     reporter.errors.map(_._2)
