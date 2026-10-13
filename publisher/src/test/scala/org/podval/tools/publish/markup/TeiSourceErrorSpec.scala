@@ -39,10 +39,13 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
   )
 
   private def withSite(body: (Site, File) => Unit): Unit =
+    withConfiguredSite(files)(body)
+
+  private def withConfiguredSite(siteFiles: Map[String, String])(body: (Site, File) => Unit): Unit =
     val path: NioPath = NioFiles.createTempDirectory("site-publisher-tei-errors")
     try
       val dir: File = path.toFile
-      files.foreach: (relative, content) =>
+      siteFiles.foreach: (relative, content) =>
         Files.write(File(dir, relative), content)
       val target: File = File(dir, "_site")
       val site: Site = Site(SiteOptions(
@@ -93,6 +96,19 @@ final class TeiSourceErrorSpec extends AnyFunSuite:
       assert(TeiMarkup.expectedEntityFileName("A B") == "A_B")
       assert(errors.contains("""id="misnamed-entity""""), errors)
       assert(PageError.MisnamedEntity.id == "misnamed-entity")
+  }
+
+  test("@stable=true omits that file from misnamed entity") {
+    val person: String =
+      """<person stable="true">
+        |  <persName>A B</persName>
+        |</person>
+        |""".stripMargin
+    withConfiguredSite(files.updated("people/ab.xml", person)): (_, target) =>
+      val errors: String = html(target, "errors.html")
+      assert(!errors.contains("misnamed entity"), errors)
+      assert(!errors.contains("should be named 'A_B'"), errors)
+      assert(errors.contains("name without @ref"), errors)
   }
 
   test("errors page has a TOC when more than one kind is present") {

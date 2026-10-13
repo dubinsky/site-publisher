@@ -80,13 +80,17 @@ object Content:
               displayName.foreach: display =>
                 val expected: String = TeiMarkup.expectedEntityFileName(display)
                 val id: String = source.sourcePath.fileName
-                if expected != id then
+                // `@stable="true"` keeps a published id when the heading differs.
+                if expected != id && !isStableEntity(xml) then
                   source.error(PageError.MisnamedEntity, s"should be named '$expected'")
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, EntityContent(kind, role, displayName, PageContent.prepareAuthored(source, processed)))
           case None =>
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, MarkupContent(PageContent.prepareAuthored(source, processed)))
+
+  private def isStableEntity(xml: Xml.Element): Boolean =
+    xml.get("stable").exists(_.trim == "true")
 
   private def entityName(xml: Xml.Element, kind: EntityKind): Option[String] =
     xml.childElements

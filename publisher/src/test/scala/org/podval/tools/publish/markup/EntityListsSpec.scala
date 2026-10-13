@@ -56,6 +56,11 @@ final class EntityListsSpec extends AnyFunSuite:
         |  <placeName>Вильна</placeName>
         |</place>
         |""".stripMargin,
+    "name/яков.xml" ->
+      """<person role="jew">
+        |  <persName>Аарон</persName>
+        |</person>
+        |""".stripMargin,
     "doc.xml" ->
       """<TEI>
         |  <teiHeader><fileDesc><titleStmt><title>A document</title></titleStmt></fileDesc></teiHeader>
@@ -127,12 +132,14 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(!page.contains(">alter-rebbe<"), page)
   }
 
-  test("members are sorted by file name") {
+  test("members are sorted by display name in the site language") {
     withSite(): (_, target) =>
       val page: String = html(target, "name/jews.html")
-      val earlier: Int = page.indexOf("Earlier")
+      val aaron: Int = page.indexOf("Аарон")
       val zalman: Int = page.indexOf("Залман Борухович")
-      assert(earlier >= 0 && zalman >= 0 && earlier < zalman, page)
+      // File яков.xml would follow alter-rebbe.xml by file id. The heading Аарон leads the list.
+      assert(aaron >= 0 && zalman >= 0 && aaron < zalman, page)
+      assert(page.indexOf("""href="/name/яков.html"""") < page.indexOf("""href="/name/alter-rebbe.html""""), page)
   }
 
   test("list subpage has members of that list only") {

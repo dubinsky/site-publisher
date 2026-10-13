@@ -3,6 +3,8 @@ package org.podval.tools.publish.page
 import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlElement}
+import java.text.Collator
+import java.util.Locale
 
 /** Member lists for a TEI `entityLists` catalog, generated at render so the harvested
   * XML `Site.load` walks has no member hrefs (no backlinks). */
@@ -17,9 +19,28 @@ object EntityLists:
     Path(prefix(catalog) :+ spec.id).html
 
   def members(spec: EntityList, pages: Seq[Page]): Seq[Page] =
-    pages
-      .filter(page => page.entityKind.contains(spec.kind) && page.entityRole == spec.role)
-      .sortBy(page => page.sourcePath.map(_.fileName).getOrElse(page.path.fileName))
+    val matching: Seq[Page] =
+      pages.filter(page => page.entityKind.contains(spec.kind) && page.entityRole == spec.role)
+    if matching.isEmpty then matching
+    else matching.sorted(using memberOrdering(matching.head))
+
+  /** Heading order in the site language. The same heading keeps file-id order. */
+  private def memberOrdering(sample: Page): Ordering[Page] =
+    val collator: Collator = Collator.getInstance(localeOf(sample))
+    collator.setStrength(Collator.TERTIARY)
+    new Ordering[Page]:
+      def compare(a: Page, b: Page): Int =
+        val byName: Int = collator.compare(displayName(a), displayName(b))
+        if byName != 0 then byName else fileId(a).compareTo(fileId(b))
+
+  private def localeOf(page: Page): Locale =
+    page.site.config.lang
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .fold(Locale.ROOT)(lang => Locale.forLanguageTag(lang.replace('_', '-')))
+
+  private def fileId(page: Page): String =
+    page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)
 
   def kept(index: EntityListSpecs.Index, pages: Seq[Page]): Seq[(EntityList, Seq[Page])] =
     index.lists.flatMap: spec =>

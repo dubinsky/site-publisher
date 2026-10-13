@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Entity lists sort by the heading, the first name element, in the site language.
+  The same heading keeps file-id order.
+- `@stable="true"` on a `person`, `place`, or `org` keeps that file's id when the heading differs.
+  That file is left off the misnamed-entity report.
 - TEI `cell/@rows` greater than 1 becomes HTML `rowspan` of the same integer.
   `rows="1"`, `rows="0"`, and a non-numeric value do not set `rowspan`.
 - TEI `unclear` with `@cert` or `@reason` shows that text in a hover tip.
