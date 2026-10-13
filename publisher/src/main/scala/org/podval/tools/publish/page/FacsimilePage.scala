@@ -29,7 +29,9 @@ final class FacsimilePage(
 
   override protected def isFacsimileViewer: Boolean = true
 
-  override protected def extraLibraries: List[js.JSLibrary] = List(js.FacsimileCss)
+  override protected def extraLibraries: List[js.JSLibrary] =
+    List(js.FacsimileCss) ++
+      Option.when(document.doc.exists(_.documentHeader.isDefined))(js.CitationCopy).toList
 
   override def prev: Option[Page] = nextFacsimile(document.prev, _.prev)
 

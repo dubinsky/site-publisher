@@ -56,3 +56,13 @@ final class PageSource(
       case Some(reference) => reference.get match
         case None => readParseAndCache("Re-reading evicted", firstReading = false)
         case Some(cached) => cached
+
+  /** Source element before `process`. The published TEI is stamped from this, not from the HTML tree. */
+  def readRaw(): Xml.Element =
+    markup.readAndParse(
+      site = page.site,
+      sourcePath = sourcePath,
+      frontMatterStandAlone = frontMatterStandAlone,
+      message = "Reading TEI to publish",
+      firstReading = false
+    )._2

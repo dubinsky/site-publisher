@@ -19,8 +19,19 @@
     .site-header,
     .site-footer,
     .page-path,
-    .store-path,
     nav.pagination {
+        display: none;
+    }
+
+    /* The document number is the current crumb. Hide ancestor links, not that crumb. */
+    .store-path-bar:not(:has(.store-path-current)),
+    .store-path:not(:has(.store-path-current)) {
+        display: none;
+    }
+
+    .store-path a,
+    .store-path .store-path-sep,
+    .document-links {
         display: none;
     }
 

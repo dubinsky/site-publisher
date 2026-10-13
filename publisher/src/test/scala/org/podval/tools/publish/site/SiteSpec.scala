@@ -764,8 +764,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!File(targetDirectory, "stores/note/stray.html").isFile)
     val zebra: String = html("stores/note/zebra.html")
     assert(zebra.contains("store-header"), zebra)
-    assert(zebra.contains("""class="store-path""""), zebra)
-    assert(zebra.contains("""href="/stores/index.html""""), zebra)
+    assert(!zebra.contains("""class="store-path""""), zebra)
+    assert(!zebra.contains("""href="/stores/index.html""""), zebra)
     assert(!zebra.contains("Stores Fixture"), zebra)
     assert(zebra.contains("note zebra"), zebra)
     assert(zebra.contains("zebra body"), zebra)
@@ -779,6 +779,18 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(errors.contains("stray"), errors)
     assert(errors.contains("unresolved"), errors)
     assert(errors.contains("ghost.md"), errors)
+  }
+
+  test("authored page links to the git file under the work tree") {
+    val notes: String = html("notes.html")
+    assert(notes.contains("https://github.com/dubinsky/site-publisher/blob/"), notes)
+    assert(notes.contains("publisher/src/test/site/notes.md"), notes)
+    assert(!notes.contains("x-access-token"), notes)
+    assert(notes.contains("""class="page-meta""""), notes)
+    assert(notes.contains("""class="source-link""""), notes)
+    assert(notes.contains("""title="Source file on GitHub""""), notes)
+    assert(!notes.contains("""class="document-links""""), notes)
+    assert(!notes.contains("""class="citation-copy""""), notes)
   }
 
   test("collection document uses collector header with ancestor path and document selector") {
@@ -795,6 +807,12 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(doc.contains("""href="/case29/index.html""""), doc)
     assert(!doc.contains("Case 29"), doc)
     assert(doc.contains("document 001"), doc)
+    assert(doc.contains("""class="store-current""""), doc)
+    assert(doc.contains("""class="store-path-bar""""), doc)
+    assert(doc.contains("""class="document-links""""), doc)
+    assert(doc.contains("""class="source-link""""), doc)
+    assert(!doc.contains("""class="citation-copy""""), doc)
+    assert(!doc.contains("""class="page-meta""""), doc)
     assert(!doc.contains("<tei-head>document"), doc)
     assert(doc.contains("doc body"), doc)
     assert(!htmlOpen(doc).contains("""class="wide""""), htmlOpen(doc))

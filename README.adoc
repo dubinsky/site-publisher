@@ -596,10 +596,17 @@ A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translat
 is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip
 translations.
 `text/@xml:lang` must match the suffix.
-The page header (`.store-header`) holds ancestor path lines and this node's selector + name + title as `<l>`s, then
-`abstract`/`body` and the `by/@selector` label.
+The page header (`.store-header`) holds one ancestor path (`nav.store-path`) and this node's selector + name + title as
+an `<l class="store-current">`, then `abstract`/`body` and the `by/@selector` label.
+When the site has exactly one root store, that store is left off the path of its descendants.
+A second root store puts the crumb back.
+The root page itself is unchanged.
+A collection document with no title (no nonempty `titleStmt/title`, and no markup or front-matter title) does not get
+that large line.
+Its own selector and name (`документ 071`) are the last crumb, not a link, with `aria-current="page"`.
+A document that has a title keeps the large line.
 A TEI document under a `collection` also gets a `document-header` table from `teiHeader` (Описание, Дата, Кто, Кому,
-Расшифровка).
+Расшифровка, Перевод).
 A line is omitted when its value has no text.
 The Кому cell is the first `persName` in a `correspAction` with `type="received"`.
 When no action has that type, it is the `persName` with `role="addressee"`.
@@ -609,6 +616,36 @@ cell of the collection index.
 The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>.
 Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`).
 Documents under a store or collection use the same header.
+Each TEI document is also written as XML beside the HTML (`/rgia529/071.xml`, and the same stem for a `{base}-{xx}`
+translation).
+The file is generated.
+It is not the git file and it is not in the sitemap.
+`publicationStmt` uses the site `url` and the nested `license` (`name`, `link`, `holder`).
+`sourceDesc` is the archive path, plus `facsimiles-url` when that is set.
+`langUsage` is that document's `xml:lang`.
+`calendarDesc` is `tei-default-calendar` when that is set.
+`revisionDesc` says the published file is generated and the file in git is the source.
+The publication date is the build's HEAD commit time, omitted when the source directory is not in a git checkout.
+The document header links to that XML file.
+On the breadcrumb line, at the right, a TEI document also has the TEI link, the GitHub link, and a Cite button.
+Each of those has a tooltip: "Published TEI", "Source file on GitHub", and "Copy citation".
+The citation is not shown.
+The button copies the archive path, the page's canonical URL, the transcriber (`Расшифровка`), and the license name and
+holder.
+There is no access date.
+When the build has a HEAD commit, the copied text then says `Git hash` and the full SHA.
+When `origin` is a GitHub repository, it then gives the file URL, the same URL as the GitHub link.
+The canonical URL is the same string as `<link rel="canonical">`: `url` from `_site_config.yml` plus the public path.
+A `url` with no scheme is not given one.
+Every authored page with a source file links to that file on GitHub (`https://github.com/owner/name/blob/<branch>/…`)
+when `origin` is a GitHub remote.
+The link is the branch tip, not the commit the citation quotes.
+`git@github.com:owner/repo.git`, `ssh://git@github.com/owner/repo.git`, and
+`https://user:token@github.com/owner/repo.git` all become `https://github.com/owner/name`.
+A token in the remote is not written into the page.
+A source directory below the work tree (`docs/`) is included in the path.
+If `origin` is missing or is not GitHub, there is no link.
+There is no `repository` key in `_site_config.yml`.
 A scanned file under that directory that is not named in the includes is an error (translations are not).
 Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up`
 skips them.

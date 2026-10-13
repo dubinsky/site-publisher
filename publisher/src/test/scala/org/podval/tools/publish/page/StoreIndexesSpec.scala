@@ -179,6 +179,34 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(body.contains("<abstract></abstract>"), body)
   }
 
+  test("one root store is left off the descendant path") {
+    withSite(): (site, target) =>
+      val page: Page = site.pages.pages.find(_.title.contains("Переписка")).get
+      val doc: String = html(target, page.path.toString.dropWhile(_ == '/'))
+      val nav: String = storePath(doc)
+      assert(!nav.contains("Архивы"), nav)
+      assert(nav.contains("книги"), nav)
+  }
+
+  test("a second root store stays on the descendant path") {
+    withSite(Map(
+      "other.xml" ->
+        """<store>
+          |  <by selector="archive"/>
+          |</store>
+          |""".stripMargin
+    )): (site, target) =>
+      val page: Page = site.pages.pages.find(_.title.contains("Переписка")).get
+      val doc: String = html(target, page.path.toString.dropWhile(_ == '/'))
+      val nav: String = storePath(doc)
+      assert(nav.contains("Архивы"), nav)
+  }
+
+  private def storePath(doc: String): String =
+    val start: Int = doc.indexOf("""class="store-path"""")
+    assert(start >= 0, doc)
+    doc.substring(start, doc.indexOf("</nav>", start))
+
   test("home refreshes to archive-index; header lists Архивы after Имена") {
     withSite(): (_, target) =>
       val index: String = html(target, "index.html")

@@ -80,6 +80,7 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     .pages
     .filter(page => page != this && page.containingDirectory == path.path.init)
     .filterNot(_.isInstanceOf[PdfPage])
+    .filterNot(_.isInstanceOf[TeiDocumentPage])
     .filterNot(_.isInstanceOf[FacsimilePage])
     .filterNot(_.isInstanceOf[StoreIndexPage])
     .filterNot(_.isInstanceOf[YearIndexPage])

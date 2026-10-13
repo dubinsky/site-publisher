@@ -600,8 +600,20 @@ html.wide .page-content > .wrapper {
     display: block;
 }
 
-.store-path {
+.store-path-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: 1.5em;
+    row-gap: 0.25em;
     margin: 0 0 var(--space-2);
+}
+
+.store-path {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 12em;
     font-size: var(--small-font-size);
     line-height: var(--base-line-height);
     color: var(--text-color);
@@ -623,6 +635,45 @@ html.wide .page-content > .wrapper {
 .store-path-sep {
     padding-inline: 0.4em;
     color: var(--brand-color);
+}
+
+.store-path-current {
+    font-weight: 600;
+}
+
+.document-links {
+    margin: 0 0 0 auto;
+    font-size: var(--small-font-size);
+    line-height: var(--base-line-height);
+}
+
+.document-links a,
+.document-links a:visited,
+.page-meta a.source-link,
+.page-meta a.source-link:visited {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.document-links a:hover,
+.document-links a:focus-visible,
+.page-meta a.source-link:hover,
+.page-meta a.source-link:focus-visible {
+    color: var(--link-base-color);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+button.citation-copy {
+    margin: 0;
+    padding: 0.1em 0.5em;
+    font: inherit;
+    font-size: var(--small-font-size);
+    color: var(--text-color);
+    background: transparent;
+    border: 1px solid var(--border-color-01);
+    border-radius: 0.25em;
+    cursor: pointer;
 }
 
 .store-header l.store-current {

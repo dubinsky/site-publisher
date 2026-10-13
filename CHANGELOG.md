@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A site with one root store leaves that store off the path of its descendants.
+  A collection document with no title keeps its number on that path, not on a separate line.
+- Each TEI document is also published as XML beside the HTML, with a generated header (publication, source, language,
+  calendar, revision).
+  The document header links to that file.
+- A TEI document's breadcrumb line has the TEI link, a GitHub link, and a Cite button that copies the citation.
+  Those three have tooltips.
+  The citation is not shown.
+  The copied text names the build's HEAD commit as `Git hash` and includes the file URL.
+  Other authored pages link to the file on GitHub when `origin` is a GitHub repository.
+  There is no `repository` config key.
 - On a wide window the transcription shows the current scan to the right of the text.
   The text column stays the same width.
   The gear item "Show the facsimile beside the text" hides it.

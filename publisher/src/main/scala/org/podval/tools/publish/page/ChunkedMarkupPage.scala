@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Section
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
@@ -32,6 +33,9 @@ final class ChunkedMarkupPage(
   override protected def iconDefault: Icon = Icon.note
 
   override def pageHeader: Option[Xml.Element] = markupPage.pageHeader
+
+  override protected def extraLibraries: List[js.JSLibrary] =
+    Option.when(markupPage.doc.exists(_.documentHeader.isDefined))(js.CitationCopy).toList
 
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(markupPage)
   override protected def formatIsChunked: Boolean = true

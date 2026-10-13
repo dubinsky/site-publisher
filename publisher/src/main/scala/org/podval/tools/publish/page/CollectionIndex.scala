@@ -50,6 +50,7 @@ object CollectionIndex:
     directory.site.pages.pages
       .filterNot(_.isDirectory)
       .filterNot(_.isInstanceOf[PdfPage])
+      .filterNot(_.isInstanceOf[TeiDocumentPage])
       .filterNot(_.isInstanceOf[FacsimilePage])
       .filter(_.path.path.init == directory.path.path.init)
       .filterNot(isTranslation)
@@ -83,6 +84,7 @@ object CollectionIndex:
     page.parent.toSeq.flatMap: directory =>
       directory.site.pages.pages.filter: sibling =>
         sibling != page &&
+        !sibling.isInstanceOf[TeiDocumentPage] &&
         sibling.parent.contains(directory) &&
         splitLang(fileName(sibling))._2.isDefined &&
         splitLang(fileName(sibling))._1 == base

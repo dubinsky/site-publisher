@@ -176,17 +176,34 @@ final class EntitySpec extends AnyFunSuite:
       assert(doc.contains("""class="store-path""""), doc)
       assert(doc.contains("""href="/col/index.html""""), doc)
       assert(!doc.contains("""href="/people/alter-rebbe.html""""), doc)
-      assert(doc.contains("""class="store-current""""), doc)
+      assert(!doc.contains("""class="store-current""""), doc)
+      assert(doc.contains("""aria-current="page""""), doc)
       assert(doc.contains("документ 001"), doc)
       assert(!doc.contains("<tei-head>документ"), doc)
+      assert(index.contains("""class="store-current""""), index)
   }
 
   test("collection document header table from teiHeader") {
+    val config: String =
+      """title: Entity Fixture
+        |description: Entity ref tests
+        |url: http://entity.test
+        |author: Test
+        |email: test@entity.test
+        |lang: ru
+        |facsimiles-url: https://facsimiles.example/bucket/
+        |license:
+        |  name: CC BY 4.0
+        |  link: https://creativecommons.org/licenses/by/4.0/
+        |  holder: the Open Torah Project
+        |  holder-link: https://www.opentorah.org/
+        |""".stripMargin
     withSite(Map(
+      "_site_config.yml" -> config,
       "col.xml" ->
         """<collection n="1"><title>C</title></collection>""".stripMargin,
       "col/003.xml" ->
-        """<TEI>
+        """<TEI xmlns="http://www.tei-c.org/ns/1.0">
           |  <teiHeader>
           |    <fileDesc><titleStmt>
           |      <author><persName ref="alter-rebbe">the Rebbe</persName></author>
@@ -224,6 +241,58 @@ final class EntitySpec extends AnyFunSuite:
       val index: String = html(target, "col/index.html")
       assert(!index.contains("<tei-head>"), index)
       assert(!index.contains("Переводчик"), index)
+      assert(!index.contains("003.xml"), index)
+      assert(doc.contains("""href="/col/003.xml""""), doc)
+      assert(doc.contains("""class="store-path-bar""""), doc)
+      assert(!doc.contains("""class="citation-line""""), doc)
+      assert(!doc.contains("""class="citation-revision""""), doc)
+      assert(doc.contains("http://entity.test/col/003.html"), doc)
+      assert(doc.contains("Расшифровка: A"), doc)
+      assert(doc.contains("CC BY 4.0, the Open Torah Project"), doc)
+      assert(doc.contains("""class="citation-copy""""), doc)
+      assert(doc.contains(">Cite<"), doc)
+      assert(doc.contains("""title="Copy citation""""), doc)
+      assert(doc.contains("""title="Published TEI""""), doc)
+      assert(!doc.contains(">Copy<"), doc)
+      assert(doc.contains("data-citation="), doc)
+      assert(!doc.contains("Git hash"), doc)
+      assert(!doc.contains("/blob/"), doc)
+      assert(!doc.contains("""class="store-current""""), doc)
+      val tei: String = html(target, "col/003.xml")
+      assert(tei.contains("<?xml"), tei)
+      assert(tei.contains("publicationStmt"), tei)
+      assert(tei.contains("http://entity.test"), tei)
+      assert(tei.contains("CC BY 4.0"), tei)
+      assert(tei.contains("the Open Torah Project"), tei)
+      assert(tei.contains("sourceDesc"), tei)
+      assert(tei.contains("https://facsimiles.example/bucket/"), tei)
+      assert(tei.contains("""ident="ru""""), tei)
+      assert(!tei.contains("calendarDesc"), tei)
+      assert(tei.contains("This published file is generated."), tei)
+      assert(tei.contains("The file in git is the source."), tei)
+      assert(tei.contains("hello"), tei)
+      assert(tei.contains("abstract"), tei)
+      assert(!tei.contains("xmlns=\"\""), tei)
+  }
+
+  test("stamped TEI uses the site calendar and keeps profileDesc") {
+    withSite(Map(
+      "_site_config.yml" -> (siteConfig + "tei-default-calendar: julian\n"),
+      "doc.xml" ->
+        """<TEI xmlns="http://www.tei-c.org/ns/1.0">
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><title>Entities</title></titleStmt></fileDesc>
+          |    <profileDesc><abstract><p>kept</p></abstract></profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val tei: String = html(target, "doc.xml")
+      assert(tei.contains("calendarDesc"), tei)
+      assert(tei.contains("Julian calendar"), tei)
+      assert(tei.contains("kept"), tei)
+      assert(!tei.contains("xmlns=\"\""), tei)
   }
 
   test("document header omits a line whose value is empty") {

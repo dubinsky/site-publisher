@@ -6,7 +6,8 @@ import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMar
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
-  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree, YearIndexPage}
+  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree, TeiDocumentPage,
+  YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -224,6 +225,7 @@ final class Pages(site: Site):
       page.aliases.foreach(add)
       if page.chunk then page.chunks.foreach(add)
       if page.pdf then add(PdfPage(page))
+      if page.doc.exists(_.documentHeader.isDefined) then add(TeiDocumentPage(page))
       if Facsimile.needed(page) then add(FacsimilePage(page))
       
   private var selectorHopsVar: Set[Seq[String]] = Set.empty
