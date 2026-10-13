@@ -35,7 +35,7 @@ object TeiMarkup extends Markup(
           el.get("ref").map(_.trim).forall(_.isEmpty)
         )(el.getText)
       ).foreach(text => errorReporter.error(PageError.NoRef, text))
-    DialectWalk.gather(xml)(el => Option.when(el.isNamed("unclear"))(el.getText))
+    DialectWalk.gather(xml)(el => Option.when(el.isNamed("unclear"))(unclearMessage(el)))
       .foreach(text => errorReporter.error(PageError.Unclear, text))
 
   private[publish] def expectedEntityFileName(displayName: String): String =
@@ -138,15 +138,17 @@ object TeiMarkup extends Markup(
           convertPb,
           el => TeiDate.convert(el, errorReporter),
           TeiGap.convert,
+          el => TeiUnclear.convert(el, hands, errorReporter, reportedHands),
           el => TeiHand.convert(el, hands, errorReporter, reportedHands)
         )
         val result: Xml.Element = steps.foldLeft(ready)((el, step) => step(el))
         // Children are already finished. A `pre` wrapper is emitted as-is;
         // `code` inside an existing `pre` is not wrapped again.
+        // Those two paths do not lift a facsimile anchor out of a link.
         if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Emit(Seq(result))
         else convertCode(ready) match
           case Some(nodes) => Xml.Rewrite.Emit(nodes)
-          case None => Xml.Rewrite.Emit(Seq(result))
+          case None => Xml.Rewrite.Emit(AnchorPbSplit.lift(result))
 
   private def isTeiTitle(element: Xml.Element): Boolean =
     tei2Html.is(element, XmlElement.Title)
@@ -191,7 +193,7 @@ object TeiMarkup extends Markup(
         stripped.renameKeepingClass("tr")
 
       case "cell" =>
-        stripped.copyAttribute("cols", "colspan").renameKeepingClass("td")
+        copyRows(stripped.copyAttribute("cols", "colspan")).renameKeepingClass("td")
 
       case "graphic" =>
         stripped.copyAttribute("url", "src").renameKeepingClass("img")
@@ -215,7 +217,7 @@ object TeiMarkup extends Markup(
         stripped
 
   /** Xml2Html + TEI specials for a store header fragment (`title`, `abstract`).
-    * Date, gap, and hand tips are a second walk: the first re-enters the tip span and would
+    * Date, gap, unclear, and hand tips are a second walk: the first re-enters the tip span and would
     * rename `class` to `tei-class`. */
   private[publish] def convertFragment(xml: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     val hands: Map[String, TeiHand.Hand] = TeiHand.collect(xml)
@@ -223,12 +225,10 @@ object TeiMarkup extends Markup(
     val converted: Xml.Element = DialectWalk.transform(xml): element =>
       convertSpecial(tei2Html.convert(element), errorReporter)
     DialectWalk.transform(converted): element =>
-      TeiHand.convert(
-        TeiGap.convert(TeiDate.convert(element, errorReporter)),
-        hands,
-        errorReporter,
-        reportedHands
-      )
+      val dated: Xml.Element = TeiDate.convert(element, errorReporter)
+      val gapped: Xml.Element = TeiGap.convert(dated)
+      val unclear: Xml.Element = TeiUnclear.convert(gapped, hands, errorReporter, reportedHands)
+      TeiHand.convert(unclear, hands, errorReporter, reportedHands)
 
   /** Convert `note place="end"` and `place="foot"` in an already-assembled fragment tree
     * (one id sequence), then harvest, number, and append the lists. */
@@ -243,6 +243,22 @@ object TeiMarkup extends Markup(
   private def convertStoreChrome(element: Xml.Element): Xml.Element = element.getName.localName match
     case "store" | "collection" => element.setChildren(Seq.empty)
     case _ => element
+
+  private def copyRows(element: Xml.Element): Xml.Element =
+    element.get("rows").map(_.trim).flatMap(_.toIntOption) match
+      case Some(n) if n > 1 => element.set("rowspan", n.toString)
+      case _ => element
+
+  /** Page-error text for one `unclear`. Cert is the source token, not the lowercased CSS value. */
+  private def unclearMessage(element: Xml.Element): String =
+    val reading: String = element.getText
+    val cert: Option[String] = element.get("cert").map(_.trim).filter(_.nonEmpty)
+    val reason: Option[String] = element.get("reason").map(_.trim).filter(_.nonEmpty)
+    (cert, reason) match
+      case (None, None) => reading
+      case (Some(certainty), None) => s"$reading (cert: $certainty)"
+      case (None, Some(why)) => s"$reading (reason: $why)"
+      case (Some(certainty), Some(why)) => s"$reading (cert: $certainty; reason: $why)"
 
   private def dropIncludes(element: Xml.Element): Xml.Element =
     element.setChildren(element.getChildren.filterNot(node => node.asElement.exists(_.isInclude)))

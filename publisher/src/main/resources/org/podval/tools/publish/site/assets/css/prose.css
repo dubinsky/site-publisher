@@ -155,11 +155,11 @@ dd > p:last-child {
     margin-bottom: 0;
 }
 
-.glossary-ref, .footnote-ref, .citation-ref, .date-ref, .gap-ref, .hand-ref {
+.glossary-ref, .footnote-ref, .citation-ref, .date-ref, .gap-ref, .unclear-ref, .hand-ref {
     position: relative;
 }
 
-.glossary-tip, .footnote-tip, .citation-tip, .date-tip, .gap-tip, .hand-tip {
+.glossary-tip, .footnote-tip, .citation-tip, .date-tip, .gap-tip, .unclear-tip, .hand-tip {
     display: none;
     position: absolute;
     left: 0;
@@ -202,6 +202,7 @@ dd > p:last-child {
     .citation-ref:hover > .citation-tip,
     .date-ref:hover > .date-tip,
     .gap-ref:hover > .gap-tip,
+    .unclear-ref:hover > .unclear-tip,
     .hand-ref:hover > .hand-tip {
         display: block;
     }
@@ -212,6 +213,7 @@ dd > p:last-child {
 .citation-ref:focus-within > .citation-tip,
 .date-ref:focus-within > .date-tip,
 .gap-ref:focus-within > .gap-tip,
+.unclear-ref:focus-within > .unclear-tip,
 .hand-ref:focus-within > .hand-tip {
     display: block;
 }

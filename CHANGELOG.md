@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- TEI `cell/@rows` greater than 1 becomes HTML `rowspan` of the same integer.
+  `rows="1"`, `rows="0"`, and a non-numeric value do not set `rowspan`.
+- TEI `unclear` with `@cert` or `@reason` shows that text in a hover tip.
+  `@cert` is lowercased onto `data-cert`.
+  `medium` and `low` gain a dotted underline.
+  `unknown` gains a dashed outline.
+  `high` keeps the highlight only.
+  Print hides the tip.
+  The Errors page still lists every `unclear`, and the line names the cert and the reason when they are present.
+  A `@hand` on that reading keeps its own tip inside the unclear tip.
+- A link that contains a facsimile page break is split around that icon.
+  Both halves keep the link.
+  The icon stays between them.
+  A name without `@ref` is not split.
+  `id` and `xml:id` stay on the first half.
+  Both halves are listed on the entity page.
+
 ## [0.7.0] - 2026-10-13
 
 - A site with one root store leaves that store off the path of its descendants.

@@ -646,6 +646,37 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(cells.contains("2"), dumped)
   }
 
+  test("cell rows greater than 1 becomes rowspan of the same integer") {
+    val xml: Xml.Element = process(
+      """<table>
+        |  <row><cell rows="2" cols="2">A</cell></row>
+        |  <row><cell rows="02">B</cell></row>
+        |</table>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    assert(dumped.contains("""rowspan="2""""), dumped)
+    assert(!dumped.contains("""rowspan="3""""), dumped)
+    assert(dumped.contains("""colspan="2""""), dumped)
+    assert(dumped.contains("""rows="2""""), dumped)
+    assert(dumped.contains("""rows="02""""), dumped)
+    assert(xml.getText.contains("A"), dumped)
+    assert(xml.getText.contains("B"), dumped)
+  }
+
+  test("cell rows of 1, 0, or non-numeric does not set rowspan") {
+    def dumped(rows: String): String =
+      render(process(s"""<table><row><cell rows="$rows">A</cell></row></table>"""))
+    val one: String = dumped("1")
+    val zero: String = dumped("0")
+    val foo: String = dumped("foo")
+    assert(!one.contains("rowspan"), one)
+    assert(one.contains("""rows="1""""), one)
+    assert(!zero.contains("rowspan"), zero)
+    assert(zero.contains("""rows="0""""), zero)
+    assert(!foo.contains("rowspan"), foo)
+    assert(foo.contains("""rows="foo""""), foo)
+  }
+
   test("list type=gloss becomes glossary IR; xml:id on label wins; unmarked list stays") {
     val xml: Xml.Element = process(
       """<div>
@@ -1007,3 +1038,226 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(fws.head.get("hand").contains("#pencilOnly"), dumped)
     assert(fws.drop(1).forall(_.get("data-medium").isEmpty), dumped)
   }
+
+  test("unclear with reason gets a hover tip and keeps the reading") {
+    val xml: Xml.Element = process("""<p>a <unclear reason="torn">word</unclear> b</p>""")
+    val dumped: String = render(xml)
+    val refs: Seq[Xml.Element] = xml.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+    val unclear: Xml.Element = refs.head.childElements.head
+    val tip: Xml.Element = refs.head.childElements.drop(1).head
+    assert(unclear.isNamed("unclear"), dumped)
+    assert(unclear.getText == "word", dumped)
+    assert(tip.getText == "torn", dumped)
+    assert(dumped.contains("""class="unclear-ref""""), dumped)
+    assert(dumped.contains("""class="unclear-tip""""), dumped)
+    assert(!dumped.contains("""tei-class="unclear-tip""""), dumped)
+    assert(dumped.contains("""reason="torn""""), dumped)
+  }
+
+  test("unclear cert is lowercased onto data-cert and tipped") {
+    val xml: Xml.Element = process("""<p><unclear cert="Medium">word</unclear></p>""")
+    val dumped: String = render(xml)
+    val unclear: Xml.Element = xml.gather(el => Option.when(el.isNamed("unclear"))(el)).head
+    assert(unclear.get("data-cert").contains("medium"), dumped)
+    assert(unclear.get("cert").contains("Medium"), dumped)
+    val tips: Seq[Xml.Element] = xml.gather(el => Option.when(el.has(TeiUnclear.tip.TipClass))(el)).toSeq
+    assert(tips.map(_.getText) == Seq("medium"), dumped)
+  }
+
+  test("unclear cert and reason share one tip") {
+    val xml: Xml.Element = process("""<p><unclear cert="medium" reason="torn edge">word</unclear></p>""")
+    val dumped: String = render(xml)
+    val unclear: Xml.Element = xml.gather(el => Option.when(el.isNamed("unclear"))(el)).head
+    assert(unclear.get("data-cert").contains("medium"), dumped)
+    val tips: Seq[Xml.Element] = xml.gather(el => Option.when(el.has(TeiUnclear.tip.TipClass))(el)).toSeq
+    assert(tips.map(_.getText) == Seq("medium — torn edge"), dumped)
+  }
+
+  test("absent, empty, or whitespace unclear attributes do not wrap") {
+    val xml: Xml.Element = process(
+      """<p><unclear>a</unclear> <unclear cert="">b</unclear> <unclear cert="  " reason=" ">c</unclear></p>"""
+    )
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-cert"), dumped)
+    assert(!dumped.contains("data-unclear-tip"), dumped)
+  }
+
+  test("unclear tip wrap is not repeated on a second convert") {
+    val once: Xml.Element = TeiUnclear.convert(
+      parse("""<unclear cert="low" reason="torn">word</unclear>"""),
+      Map.empty,
+      PageErrorReporter.Silent,
+      mutable.Set.empty
+    )
+    val twice: Xml.Element = TeiUnclear.convert(once, Map.empty, PageErrorReporter.Silent, mutable.Set.empty)
+    val reentered: Xml.Element = DialectWalk.transform(once)(el =>
+      TeiUnclear.convert(el, Map.empty, PageErrorReporter.Silent, mutable.Set.empty)
+    )
+    val dumped: String = render(reentered)
+    assert(render(once) == render(twice), dumped)
+    assert(render(once) == dumped, dumped)
+    val refs: Seq[Xml.Element] = reentered.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).toSeq
+    assert(refs.size == 1, dumped)
+  }
+
+  test("misspelled cert is stored and tipped and stays an unclear page error") {
+    val input: String = """<p><unclear cert="medum">word</unclear></p>"""
+    val xml: Xml.Element = process(input)
+    val dumped: String = render(xml)
+    val unclear: Xml.Element = xml.gather(el => Option.when(el.isNamed("unclear"))(el)).head
+    assert(unclear.get("data-cert").contains("medum"), dumped)
+    val tips: Seq[Xml.Element] = xml.gather(el => Option.when(el.has(TeiUnclear.tip.TipClass))(el)).toSeq
+    assert(tips.map(_.getText) == Seq("medum"), dumped)
+    val reporter: Reporter = Reporter()
+    TeiMarkup.reportSourceErrors(parse(input), reporter, namesWithoutRef = false)
+    assert(reporter.errors.map((kind, _) => kind.id) == Seq("unclear"), reporter.errors)
+    assert(reporter.errors.map(_._2) == Seq("word (cert: medum)"), reporter.errors)
+  }
+
+  test("unclear page error names cert and reason from the source text") {
+    val reporter: Reporter = Reporter()
+    TeiMarkup.reportSourceErrors(
+      parse(
+        """<div>
+          |<unclear>plain</unclear>
+          |<unclear cert="Medium">c</unclear>
+          |<unclear reason=" torn ">r</unclear>
+          |<unclear cert="low" reason="edge">b</unclear>
+          |</div>""".stripMargin
+      ),
+      reporter,
+      namesWithoutRef = false
+    )
+    assert(reporter.errors.map(_._1.id).forall(_ == "unclear"), reporter.errors)
+    assert(reporter.errors.map(_._2) == Seq(
+      "plain",
+      "c (cert: Medium)",
+      "r (reason: torn)",
+      "b (cert: low; reason: edge)"
+    ), reporter.errors)
+  }
+
+  test("unclear with cert and hand nests the hand tip inside the unclear tip") {
+    val xml: Xml.Element = process(withHands(
+      """<unclear cert="low" hand="#pencilHand">word</unclear>"""
+    ))
+    val dumped: String = render(xml)
+    val unclearRefs: Seq[Xml.Element] = xml.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).toSeq
+    assert(unclearRefs.size == 1, dumped)
+    val handRef: Xml.Element = unclearRefs.head.childElements.head
+    assert(TeiHand.tip.isRef(handRef), dumped)
+    assert(handRef.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).isEmpty, dumped)
+    val unclear: Xml.Element = handRef.childElements.head
+    assert(unclear.isNamed("unclear"), dumped)
+    assert(unclear.getText == "word", dumped)
+    assert(unclear.get("data-cert").contains("low"), dumped)
+    assert(unclear.get("data-medium").contains("pencil"), dumped)
+    assert(unclear.get("data-unclear-tip").contains("true"), dumped)
+    assert(unclear.get("data-hand-tip").contains("true"), dumped)
+    val unclearTip: Xml.Element = unclearRefs.head.childElements.drop(1).head
+    val handTip: Xml.Element = handRef.childElements.drop(1).head
+    assert(unclearTip.getText == "low", dumped)
+    assert(handTip.getText == "записано карандашом", dumped)
+  }
+
+  test("hand-only unclear gets the hand tip and no unclear tip") {
+    val xml: Xml.Element = process(withHands(
+      """<unclear hand="#pencilHand">word</unclear>"""
+    ))
+    val dumped: String = render(xml)
+    assert(xml.gather(el => Option.when(TeiHand.tip.isRef(el))(el)).size == 1, dumped)
+    assert(xml.gather(el => Option.when(TeiUnclear.tip.isRef(el))(el)).isEmpty, dumped)
+    assert(!dumped.contains("data-cert"), dumped)
+    assert(!dumped.contains("data-unclear-tip"), dumped)
+    val unclear: Xml.Element = xml.gather(el => Option.when(el.isNamed("unclear"))(el)).head
+    assert(unclear.getText == "word", dumped)
+    assert(unclear.get("data-medium").contains("pencil"), dumped)
+  }
+
+  test("a name link split by pb keeps both halves and the facsimile anchor between them") {
+    val xml: Xml.Element = process(
+      """<l><orgName ref="Литовское_губернское_правление">Губернское<lb/> <pb n="161-2"/> правленіе</orgName></l>"""
+    )
+    val dumped: String = render(xml)
+    val line: Xml.Element = xml.gather(el => Option.when(el.isNamed("l"))(el)).head
+    val names: Seq[Xml.Element] = line.childElements.filter(el => el.isA && el.hasClass("orgName"))
+    val pages: Seq[Xml.Element] = line.childElements.filter(Pb.is)
+    assert(names.size == 2, dumped)
+    assert(pages.size == 1, dumped)
+    assert(names.forall(_.getHref.contains("Литовское_губернское_правление")), dumped)
+    assert(pages.head.getId.contains("p161-2"), dumped)
+    assert(line.childElements.indexOf(names.head) < line.childElements.indexOf(pages.head), dumped)
+    assert(line.childElements.indexOf(pages.head) < line.childElements.indexOf(names(1)), dumped)
+    assert(names.head.childElements.exists(_.isNamed("lb")), dumped)
+    assert(names(1).getText.contains("правленіе"), dumped)
+    assert(xml.gather(el => Option.when(el.isA && hasDescendantA(el))(el)).isEmpty, dumped)
+  }
+
+  test("a pb inside hi splits the name and keeps xml:id on the first half") {
+    val xml: Xml.Element = process(
+      """<p><persName xml:id="n1" ref="X">За<hi rend="superscript">л<pb n="1-2"/>ман</hi>ъ</persName></p>"""
+    )
+    val dumped: String = render(xml)
+    val names: Seq[Xml.Element] = xml.gather(el =>
+      Option.when(el.isA && el.hasClass("persName"))(el)
+    ).toSeq
+    assert(names.size == 2, dumped)
+    assert(names.forall(name => name.hasClass("persName") && name.getHref.contains("X")), dumped)
+    assert(names.forall(name => name.gather(el => Option.when(Pb.is(el))(el)).isEmpty), dumped)
+    val firstHi: Xml.Element = names.head.childElements.find(_.isNamed("hi")).get
+    assert(names.head.getText.contains("За"), dumped)
+    assert(firstHi.get("rend").contains("superscript"), dumped)
+    assert(firstHi.getText == "л", dumped)
+    assert(names.head.get("xml:id").contains("n1"), dumped)
+    val secondHi: Xml.Element = names(1).childElements.find(_.isNamed("hi")).get
+    assert(secondHi.get("rend").contains("superscript"), dumped)
+    assert(secondHi.getText == "ман", dumped)
+    assert(names(1).getText.contains("ъ"), dumped)
+    assert(names(1).get("xml:id").isEmpty, dumped)
+    assert(names(1).getId.isEmpty, dumped)
+    val page: Xml.Element = xml.gather(el => Option.when(Pb.is(el))(el)).head
+    assert(page.getId.contains("p1-2"), dumped)
+    assert(xml.gather(el => Option.when(el.isA && hasDescendantA(el))(el)).isEmpty, dumped)
+  }
+
+  test("a name without ref keeps its pb, and a ref splits around one") {
+    val xml: Xml.Element = process(
+      """<p><persName>За<pb n="3-1"/>лманъ</persName> <ref target="#somewhere">ab<pb n="3-2"/>cd</ref></p>"""
+    )
+    val dumped: String = render(xml)
+    val persons: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("persName"))(el)).toSeq
+    assert(persons.size == 1, dumped)
+    assert(persons.head.gather(el => Option.when(Pb.is(el))(el)).nonEmpty, dumped)
+    val refs: Seq[Xml.Element] = xml.gather(el => Option.when(el.isA && el.hasClass("ref"))(el)).toSeq
+    assert(refs.size == 2, dumped)
+    assert(refs.forall(_.getHref.contains("#somewhere")), dumped)
+    assert(refs.forall(_.getText.nonEmpty), dumped)
+    val page: Xml.Element = xml.gather(el => Option.when(el.isA && el.getId.contains("p3-2"))(el)).head
+    assert(Pb.is(page), dumped)
+    assert(refs.forall(ref => ref.gather(el => Option.when(Pb.is(el))(el)).isEmpty), dumped)
+  }
+
+  test("a page-number fw after pb stays inside the second name half") {
+    val xml: Xml.Element = process(
+      """<p><persName ref="Нохим_Ицкович">Нохиму<lb/><pb n="107-2"/><fw type="pageNum">107 об.</fw>Ицковичу</persName></p>"""
+    )
+    val dumped: String = render(xml)
+    val names: Seq[Xml.Element] = xml.childElements.filter(el => el.isA && el.hasClass("persName"))
+    val pages: Seq[Xml.Element] = xml.childElements.filter(Pb.is)
+    assert(names.size == 2, dumped)
+    assert(pages.size == 1, dumped)
+    assert(xml.childElements.indexOf(pages.head) == xml.childElements.indexOf(names.head) + 1, dumped)
+    assert(xml.childElements.indexOf(names(1)) == xml.childElements.indexOf(pages.head) + 1, dumped)
+    assert(names.head.childElements.exists(_.isNamed("lb")), dumped)
+    assert(!names.head.childElements.exists(_.isNamed("fw")), dumped)
+    val fw: Xml.Element = names(1).childElements.find(_.isNamed("fw")).get
+    assert(fw.get("type").contains("pageNum"), dumped)
+    assert(fw.getText.contains("107 об."), dumped)
+    assert(names(1).getText.contains("Ицковичу"), dumped)
+    assert(names.forall(_.getHref.contains("Нохим_Ицкович")), dumped)
+  }
+
+  private def hasDescendantA(element: Xml.Element): Boolean =
+    element.childElements.exists(child => child.isA || hasDescendantA(child))

@@ -59,6 +59,7 @@
     .footnote-tip,
     .date-tip,
     .gap-tip,
+    .unclear-tip,
     .hand-tip {
         display: none !important;
     }

@@ -161,6 +161,16 @@ unclear {
     background-color: var(--editorial-color);
 }
 
+unclear[data-cert="medium"],
+unclear[data-cert="low"] {
+    text-decoration-line: underline;
+    text-decoration-style: dotted;
+}
+
+unclear[data-cert="unknown"] {
+    outline: 1px dashed var(--editorial-color);
+}
+
 sic {
     text-decoration: var(--editorial-color) underline;
 }
