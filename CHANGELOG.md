@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-13
+
 - A site with one root store leaves that store off the path of its descendants.
   A collection document with no title keeps its number on that path, not on a separate line.
 - Each TEI document is also published as XML beside the HTML, with a generated header (publication, source, language,
@@ -47,7 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Print always shows the expansion.
 - An AsciiDoc deletion is struck through.
   Parentheses stay the abbreviation mark.
-- feat: TEI document's translator
+- A TEI document header has a Перевод line from `editor` with `role="translator"`.
 
 ## [0.6.0] - 2026-10-08
 
