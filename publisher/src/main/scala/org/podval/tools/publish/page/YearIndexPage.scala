@@ -193,9 +193,7 @@ final class YearIndexPage(
     page.sourcePath.map(_.toString).getOrElse("")
 
   private def linkText(page: Page): String =
-    val header: String = pathLabel(page)
-    val base: String = CollectionIndex.baseName(page)
-    if header.isEmpty then base else s"$header, $base"
+    StoreIndexes.documentPath(page, root)
 
   private def descriptionText(page: Page): Option[String] =
     page.doc.flatMap(_.documentHeader).flatMap(_.description)

@@ -460,6 +460,8 @@ Members are every matching entity on the site, sorted by file name; the link tex
 The entity page `<h1>` / `<title>` is that first name, not the file name.
 Document backlinks on an entity page still come from `@ref` in other documents (grouped by TEI collection when the
 source sits under one).
+The group heading is that collection's archive path, the same `/` spelling as the document breadcrumb, and the whole
+path is one link to the collection.
 The document row opens the first mention in the text.
 A mention that exists only in `teiHeader` leaves that row on the document, because the published page does not keep
 those anchors.
@@ -598,6 +600,8 @@ translations.
 `text/@xml:lang` must match the suffix.
 The page header (`.store-header`) holds one ancestor path (`nav.store-path`) and this node's selector + name + title as
 an `<l class="store-current">`, then `abstract`/`body` and the `by/@selector` label.
+The steps are separated by `/`.
+The flat collection index, search hits, the year index, the citation, and `sourceDesc` use that same spelling.
 When the site has exactly one root store, that store is left off the path of its descendants.
 A second root store puts the crumb back.
 The root page itself is unchanged.

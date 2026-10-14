@@ -90,25 +90,24 @@ object StoreIndexes:
     li(link, description)
 
   def pathHeaderHorizontal(page: Page, root: Page): String =
-    storeChain(page).dropWhile(_.path == root.path).map(formatHeaderNode(_, page)).filter(_.nonEmpty).mkString(", ")
+    PageHeader.joinCrumbs(storeChain(page).dropWhile(_.path == root.path))
 
-  /** Collection path header for backlink groups. Drops a root-store prefix when one is an ancestor. */
+  /** Collection path for a backlink group. Drops a root-store prefix when one is an ancestor. */
   def collectionHeader(collection: Page): String =
     val chain: Seq[Page] = storeChain(collection)
     val dropped: Seq[Page] =
       chain.find(isRootStore).fold(chain)(root => chain.dropWhile(_.path == root.path))
-    dropped.map(formatHeaderNode(_, collection)).filter(_.nonEmpty).mkString(", ")
+    PageHeader.joinCrumbs(dropped)
+
+  /** Store path, then the document's file stem, in the breadcrumb spelling. */
+  def documentPath(page: Page, root: Page): String =
+    PageHeader.appendArchivePath(pathHeaderHorizontal(page, root), CollectionIndex.baseName(page))
 
   def collectionOf(page: Page): Option[Page] =
     (PageHeader.collectorAncestors(page) :+ page).findLast(_.store.exists(_.isCollection))
 
   private def storeChain(page: Page): Seq[Page] =
     (PageHeader.collectorAncestors(page) ++ Seq(page)).filter(_.store.isDefined)
-
-  private def formatHeaderNode(node: Page, langPage: Page): String =
-    val sel: String = PageHeader.selectorName(node).map(PageHeader.selectorDisplayName(_, langPage.site.languageSpec)).getOrElse("")
-    val name: String = PageHeader.pageDisplayName(node)
-    s"$sel $name".trim
 
   def documentsUnder(root: Page, pages: Seq[Page]): Seq[Page] =
     pages.filter: page =>

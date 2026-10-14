@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{PlainText, TeiDate}
-import org.podval.tools.publish.page.{CollectionIndex, FullMarkupPage, GraphOwner, NamedWindows, Page, StoreContent,
+import org.podval.tools.publish.page.{FullMarkupPage, GraphOwner, NamedWindows, Page, StoreContent,
   StoreIndexes, SyntheticAsset}
 import org.podval.tools.publish.util.{Files, Icon, Json}
 import org.podval.xml.{Xml, XmlParser}
@@ -128,9 +128,7 @@ object SearchJson:
 
   private def pathLabel(page: Page): String =
     rootStore(page).fold(""): root =>
-      val header: String = StoreIndexes.pathHeaderHorizontal(page, root)
-      val base: String = CollectionIndex.baseName(page)
-      if header.isEmpty then base else s"$header, $base"
+      StoreIndexes.documentPath(page, root)
 
   private def rootStore(page: Page): Option[Page] =
     (storeAncestors(page) :+ page).find(StoreIndexes.isRootStore)

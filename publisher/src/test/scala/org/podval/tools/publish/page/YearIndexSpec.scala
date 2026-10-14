@@ -144,7 +144,7 @@ final class YearIndexSpec extends AnyFunSuite:
       assert("""<span class="date">\s*20 декабря 1798\s*</span>""".r.findFirstIn(year).isDefined, year)
       assert(year.contains("Показания Шнеура Залмана"), year)
       assert(!year.contains("<persName"), year)
-      assert(year.contains("архив РГАДА, 282"), year)
+      assert(year.contains("архив РГАДА / 282"), year)
       assert(!year.contains("date-tip"), year)
       assert(!year.contains("date-ref"), year)
       assert(!year.contains("Julian"), year)

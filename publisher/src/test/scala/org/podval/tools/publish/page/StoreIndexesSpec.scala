@@ -165,7 +165,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(rgadaHref > derzhavinHref, tree)
       val flat: String = html(target, "archive-index.html")
       assert(flat.contains("<title>Дела | Archive Fixture</title>"), flat)
-      assert(flat.contains("архив книги, книга Державин: Переписка"), flat)
+      assert(flat.contains("архив книги / книга Державин: Переписка"), flat)
       assert(flat.contains("архив РГАДА: О секте"), flat)
       assert(flat.contains("From the notes."), flat)
       assert(flat.contains("Донос"), flat)
@@ -233,7 +233,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(!tree.contains("<em>архив</em>"), tree)
       val flat: String = html(target, "archive-index.html")
       assert(flat.contains("<title>Cases | Archive Fixture</title>"), flat)
-      assert(flat.contains("archive books, book Державин"), flat)
+      assert(flat.contains("archive books / book Державин"), flat)
   }
 
   test("rewrites /collections to the tree page; no Refresh file") {

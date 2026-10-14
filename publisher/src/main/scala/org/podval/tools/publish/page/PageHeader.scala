@@ -160,6 +160,15 @@ object PageHeader:
       page
     )
 
+  /** Same words as a breadcrumb step, joined the way the bar separates steps. */
+  private[page] val archivePathJoin: String = " / "
+
+  private[page] def joinCrumbs(pages: Seq[Page]): String =
+    pages.map(crumbLabel).filter(_.nonEmpty).mkString(archivePathJoin)
+
+  private[page] def appendArchivePath(path: String, next: String): String =
+    if path.isEmpty then next else s"$path$archivePathJoin$next"
+
   private def crumbLabel(page: Page): String =
     val spec: Language.Spec = page.site.languageSpec
     val short: String = pageDisplayName(page)
@@ -324,7 +333,7 @@ object PageHeader:
   /** Store crumbs, with the single root store omitted, then this document. */
   private[page] def addressLabel(page: Page): String =
     val self: Seq[Page] = if page.store.isEmpty then Seq(page) else Seq.empty
-    (visibleAncestors(page) ++ self).map(crumbLabel).filter(_.nonEmpty).mkString(", ")
+    joinCrumbs(visibleAncestors(page) ++ self)
 
   private def licenseClause(page: Page): Option[String] =
     page.site.config.license.map: license =>

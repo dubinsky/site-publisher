@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Archive paths use `/`, in the spelling of the document breadcrumb.
+  That spelling is the backlink group, the flat index, search hits, the year index, the citation, and published
+  `sourceDesc`.
+  A backlink group stays one link to the collection.
 - The current step on the path is the same weight as the steps before it.
 - Entity lists sort by the heading, the first name element, in the site language.
   The same heading keeps file-id order.
