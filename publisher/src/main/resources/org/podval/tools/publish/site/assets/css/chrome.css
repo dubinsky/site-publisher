@@ -637,10 +637,6 @@ html.wide .page-content > .wrapper {
     color: var(--brand-color);
 }
 
-.store-path-current {
-    font-weight: 600;
-}
-
 .document-links {
     margin: 0 0 0 auto;
     font-size: var(--small-font-size);

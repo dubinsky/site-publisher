@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The current step on the path is the same weight as the steps before it.
 - Entity lists sort by the heading, the first name element, in the site language.
   The same heading keeps file-id order.
 - `@stable="true"` on a `person`, `place`, or `org` keeps that file's id when the heading differs.
