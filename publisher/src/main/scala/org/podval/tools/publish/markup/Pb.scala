@@ -19,7 +19,7 @@ object Pb:
 
   def is(element: Xml.Element): Boolean = element.isA && element.has(Class)
 
-  def anchor(n: Option[String]): Xml.Element =
+  def anchor(n: Option[String], blank: Boolean = false): Xml.Element =
     var result: Xml.Element = Xml.element(XmlElement.A)
       .add(Class)
       .set(XmlAttribute.Title, "Facsimile")
@@ -29,7 +29,37 @@ object Pb:
       result = result
         .setId(pageId(n))
         .set("aria-label", s"Facsimile page $n")
+    if blank then result = result.set("data-facsimile-blank", "true")
     result
+
+  /** Non-missing `pb/@n` with no text before the next `pb`. The aside gives that page a screen of height. */
+  def noTranscription(xml: Xml.Element): Set[String] =
+    fold(Reading(Set.empty, None, false), xml).close
+
+  private final case class Reading(blank: Set[String], open: Option[String], seen: Boolean):
+    def close: Set[String] =
+      open.filter(_ => !seen).fold(blank)(blank + _)
+
+    def see: Reading =
+      if seen then this else copy(seen = true)
+
+    def break(n: Option[String], missing: Boolean): Reading =
+      val closed: Set[String] = open.filter(_ => !seen).fold(blank)(blank + _)
+      val next: Option[String] = if missing then None else n
+      Reading(closed, next, false)
+
+  private def fold(reading: Reading, node: Xml.Node): Reading =
+    node.asElement match
+      case Some(el) if el.isNamed("teiHeader") => reading
+      case Some(el) if el.isNamed("pb") =>
+        val n: Option[String] = el.get("n").map(_.trim).filter(_.nonEmpty)
+        reading.break(n, isTrue(el.get("missing")))
+      case Some(el) =>
+        el.getChildren.foldLeft(reading)(fold)
+      case None if node.isCharacters =>
+        reading.see
+      case None =>
+        reading
 
   def harvest(xml: Xml.Element): Seq[Pb] =
     xml.gather(

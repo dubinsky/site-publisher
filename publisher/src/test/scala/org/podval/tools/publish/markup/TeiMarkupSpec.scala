@@ -235,6 +235,44 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains(">Not after<"), dumped)
   }
 
+  test("a page with no text before the next pb is a blank facsimile page") {
+    val source: String =
+      """<TEI>
+        |  <teiHeader><fileDesc><titleStmt>
+        |    <title>Header text</title>
+        |    <pb n="header"/>
+        |  </titleStmt></fileDesc></teiHeader>
+        |  <text><body>
+        |    <pb n="1"/>
+        |    <pb n="2"/>
+        |    <p>words</p>
+        |    <pb n="3"/>
+        |    <!-- note -->
+        |    <pb n="4" missing="true"/>
+        |    <pb n="5"/>
+        |    <p> </p>
+        |  </body></text>
+        |</TEI>
+        |""".stripMargin
+    assert(Pb.noTranscription(parse(source)) == Set("1", "3", "5"))
+    val dumped: String = render(process(source))
+    assert(blankAttr(dumped, "p1"), dumped)
+    assert(blankAttr(dumped, "p3"), dumped)
+    assert(blankAttr(dumped, "p5"), dumped)
+    assert(dumped.contains("""id="p2""""), dumped)
+    assert(!blankAttr(dumped, "p2"), dumped)
+    assert(dumped.contains("""id="p4""""), dumped)
+    assert(!blankAttr(dumped, "p4"), dumped)
+    assert(dumped.contains("""id="pheader""""), dumped)
+    assert(!blankAttr(dumped, "pheader"), dumped)
+  }
+
+  private def blankAttr(page: String, id: String): Boolean =
+    val marker: String = s"""id="$id""""
+    val start: Int = page.indexOf(marker)
+    if start < 0 then false
+    else page.substring(start, page.indexOf(">", start) + 1).contains("data-facsimile-blank")
+
   test("pb becomes a facsimile anchor with p{n} id") {
     val dumped: String = render(process(
       """<TEI>

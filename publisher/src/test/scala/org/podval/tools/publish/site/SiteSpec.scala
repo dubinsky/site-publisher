@@ -230,6 +230,15 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(css.contains("max-height: none"), css)
     assert(css.contains("overflow: visible"), css)
     assert(css.contains("align-self: auto"), css)
+    assert(css.contains("a.pb[data-facsimile-blank]"), css)
+    assert(
+      css.contains("min-height: calc(100dvh - var(--header-height) - 6px - var(--spacing-unit) - var(--space-3))"),
+      css
+    )
+    assert(css.contains("aside.transclusion a.pb[data-facsimile-blank]"), css)
+    val blankAt: Int = css.indexOf("a.pb[data-facsimile-blank]")
+    val screenAt: Int = css.indexOf("@media screen and (min-width: 1312px)")
+    assert(screenAt >= 0 && blankAt > screenAt, css)
     assert(!css.contains("scroll-padding-top"), css)
     assert(!css.contains("html.facsimile "), css)
     assert(!css.contains("filter"), css)

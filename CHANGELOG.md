@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A facsimile page with no transcribed text stays in the side-by-side pane.
+  While the pane is open, that page is a screen tall, so scrolling reaches its scan.
+  A missing photo does not grow.
 - Archive paths use `/`, in the spelling of the document breadcrumb.
   That spelling is the backlink group, the flat index, search hits, the year index, the citation, and published
   `sourceDesc`.

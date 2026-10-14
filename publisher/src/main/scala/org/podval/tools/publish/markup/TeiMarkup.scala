@@ -65,6 +65,7 @@ object TeiMarkup extends Markup(
     // Endnotes inside it stay notes: the document-header table renders the ones on its cells.
     val hands: Map[String, TeiHand.Hand] = TeiHand.collect(body)
     val reportedHands: mutable.Set[String] = mutable.Set.empty
+    val blankPages: Set[String] = Pb.noTranscription(body)
     // One walk: rename this element, finish its children, then build IR.
     // `Emit` inserts the IR nodes without visiting them, so `class` stays `class`.
     val withIr: Xml.Element = body.rewrite(
@@ -78,7 +79,8 @@ object TeiMarkup extends Markup(
           biblIds,
           hands,
           reportedHands,
-          errorReporter
+          errorReporter,
+          blankPages
         ),
       stopAtCode = false
     )
@@ -96,7 +98,8 @@ object TeiMarkup extends Markup(
     biblIds: Set[String],
     hands: Map[String, TeiHand.Hand],
     reportedHands: mutable.Set[String],
-    errorReporter: PageErrorReporter
+    errorReporter: PageErrorReporter,
+    blankPages: Set[String]
   ): Xml.Rewrite =
     val converted: Xml.Element = convertSpecial(tei2Html.convert(element), errorReporter)
     // `teiHeader` endnotes are rendered later, on the document-header cells, not as article footnotes.
@@ -113,7 +116,8 @@ object TeiMarkup extends Markup(
             biblIds,
             hands,
             reportedHands,
-            errorReporter
+            errorReporter,
+            blankPages
           ) match
             case Xml.Rewrite.Keep(result) => Seq(result)
             case Xml.Rewrite.Emit(nodes) => nodes
@@ -135,7 +139,7 @@ object TeiMarkup extends Markup(
           convertBibliographyPlaceholder,
           convertQuote,
           convertFigure,
-          convertPb,
+          el => convertPb(el, blankPages),
           el => TeiDate.convert(el, errorReporter),
           TeiGap.convert,
           el => TeiUnclear.convert(el, hands, errorReporter, reportedHands),
@@ -273,11 +277,11 @@ object TeiMarkup extends Markup(
 
   // After Xml2Html so `a.pb` / icon `class` is not prefixed to `tei-class`.
   // `TeiGap.convert` is in this pass for the same reason (`span.gap-tip`).
-  private def convertPb(element: Xml.Element): Xml.Element =
+  private def convertPb(element: Xml.Element, blankPages: Set[String]): Xml.Element =
     if !element.isNamed("pb") then element
     else
       val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
-      Pb.anchor(n)
+      Pb.anchor(n, blank = n.exists(blankPages.contains))
 
   // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
   // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.

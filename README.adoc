@@ -800,6 +800,9 @@ It is on unless the reader turns it off.
 A page-break icon selects that scan while the pane is open.
 It opens the viewer when the pane is closed.
 The header facsimile icon always opens the viewer.
+A page with no transcribed text keeps its scan in that pane.
+While the pane is open, that page is a screen tall, so scrolling reaches it.
+A missing photo does not.
 Print and PDF do not include the pane.
 
 Collection **Страницы** is page numbers on the transcription `#p{n}` only.

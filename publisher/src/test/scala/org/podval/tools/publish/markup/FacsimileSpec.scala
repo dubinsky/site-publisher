@@ -395,6 +395,45 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(viewers.length == 1, viewers)
   }
 
+  test("a page with no transcription keeps its scan in the aside") {
+    withSite(Map(
+      "col/004.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt>
+          |      <author><persName ref="ab">A</persName></author>
+          |    </titleStmt></fileDesc>
+          |    <profileDesc><abstract>Blank verso</abstract></profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body>
+          |    <pb n="004-1"/>
+          |    <p>recto</p>
+          |    <pb n="004-2"/>
+          |    <pb n="004-3" missing="true"/>
+          |    <pb n="004-4"/>
+          |    <p>later</p>
+          |  </body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val transcription: String = html(target, "col/004.html")
+      val recto: String = openTag(transcription, """id="p004-1"""")
+      assert(recto.contains("""data-facsimile-src="https://facsimiles.test/col/004-1.jpg""""), recto)
+      assert(!recto.contains("data-facsimile-blank"), recto)
+      val verso: String = openTag(transcription, """id="p004-2"""")
+      assert(verso.contains("data-facsimile-blank=\"true\""), verso)
+      assert(verso.contains("""data-facsimile-src="https://facsimiles.test/col/004-2.jpg""""), verso)
+      val missing: String = openTag(transcription, """id="p004-3"""")
+      assert(!missing.contains("data-facsimile-blank"), missing)
+      assert(!missing.contains("data-facsimile-src"), missing)
+      val later: String = openTag(transcription, """id="p004-4"""")
+      assert(!later.contains("data-facsimile-blank"), later)
+      assert(later.contains("""data-facsimile-src="https://facsimiles.test/col/004-4.jpg""""), later)
+      val viewer: String = html(target, "col/004/facsimile.html")
+      assert(viewer.contains("""src="https://facsimiles.test/col/004-2.jpg""""), viewer)
+      assert(!viewer.contains("004-3.jpg"), viewer)
+  }
+
   test("transcluded transcription does not grow a facsimile aside") {
     withSite(Map(
       "host.md" ->
