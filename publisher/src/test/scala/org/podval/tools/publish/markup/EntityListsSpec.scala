@@ -156,6 +156,7 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(places.contains("Места"), places)
       assert(places.contains("Вильна"), places)
       assert(!places.contains("Залман"), places)
+      assert(!places.contains("<svg"), places)
   }
 
   test("listPerson inside a TEI document is not filled from the directory") {

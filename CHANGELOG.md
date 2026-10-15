@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A place list draws a map of places that have a coordinate.
+  The area of a circle is the number of cases that name the place.
+  A place with a coordinate and no such case is a ring.
+  A place far from the others stays in the table.
+  The coordinate is TEI `geo`: latitude, then longitude.
+  Rivers and the coast come from `_place-map-base.txt` at the site root.
+  Without that file, the map has no such lines.
 - A file at the year page's path is rendered above the generated list.
   The page title stays the year-page title when that file has none.
 - A link to a generated page keeps its fragment.

@@ -84,7 +84,11 @@ object EntityLists:
     val lines: Xml.Nodes = members.map(member =>
       Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
     )
-    Xml.element(spec.kind.listElement).setId(spec.id).setChildren(lines)
+    val list: Xml.Element = Xml.element(spec.kind.listElement).setId(spec.id).setChildren(lines)
+    if spec.kind != EntityKind.Place then list
+    else PlaceMap.render(members).fold(list)(map =>
+      Xml.element("div").addClass("place-map-block").setChildren(Seq(map, list))
+    )
 
   def displayName(page: Page): String =
     page.entityDisplayName.getOrElse(page.title)

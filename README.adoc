@@ -467,6 +467,66 @@ A mention that exists only in `teiHeader` leaves that row on the document, becau
 those anchors.
 The catalog itself is not a backlink source.
 
+A `place` with `location/geo` is a point on the place-list map.
+The text is the latitude, then the longitude, separated by a space.
+`idno` with `type="wikidata"` may name the same place.
+The area of a circle is the number of cases that mention the place.
+A case is a collection whose parent groups by `case` or `дело`, and a case counts once.
+A place with a coordinate and no such case is a ring.
+A place too far from the others is listed under the map and is not drawn.
+A province, a country, or a part of a city is left without a coordinate.
+Rivers and the coast come from `_place-map-base.txt` at the site root.
+The publisher does not supply them, and it does not check that the file exists.
+Without the file, the map is drawn with no such lines.
+The name starts with `_`, so the file is not published.
+Do not add a `_site_config.yml` key for it.
+
+A blank line separates polylines.
+A `#` line is a comment.
+A block with no coordinates is ignored, so the attribution can stand in its own block.
+A block whose first line is `# coast` is coastline.
+Any other block is a river.
+Each remaining line is longitude, then latitude.
+That order is the opposite of TEI `geo`.
+
+To write the file for a site, give this prompt:
+
+[source]
+----
+Write `_place-map-base.txt` at the root of this site-publisher site.
+
+Read every place file.
+A place with `location/geo` has a coordinate: latitude, then longitude, in decimal degrees.
+Keep the cluster that fits in 15° of latitude and 15° of longitude.
+Recompute the median after each drop.
+Distance is the hypotenuse of the latitude difference and the longitude difference times the cosine of the median latitude.
+Drop the farthest place until both spans are at most 15°.
+That cluster is the region.
+Leave the dropped places out of the box.
+
+Rivers: Natural Earth 10m `ne_10m_rivers_lake_centerlines`.
+Coast: Natural Earth 50m `ne_50m_coastline`.
+Both are public domain.
+The 50m rivers omit rivers the 10m set includes, so do not use them.
+Clip to the cluster with about one degree of margin.
+Simplify rivers to about 0.12° and the coast to about 0.15°.
+Do not draw a line that is not in the extract.
+A river or a shore that stops short in the extract stops short in the file.
+
+Write `_place-map-base.txt` in this form.
+A blank line separates polylines.
+A line that starts with `#` is a comment.
+A block with no coordinates is ignored, so name the source, the scale, and the public-domain status in a block of its own.
+A block whose first line is `# coast` is coastline.
+Any other block is a river.
+Name the river on a `#` line when the extract names it.
+Every coordinate line is longitude, then latitude, separated by a space.
+That order is the opposite of TEI `geo`.
+
+The leading `_` keeps the file out of the published site.
+Do not add a key to `_site_config.yml`.
+----
+
 When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not
 inlined).
 A catalog with a single non-empty list *is* that list (no `{n}` subpage).
