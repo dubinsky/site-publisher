@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The gear checkbox that shows abbreviation expansions also shows corrections in the text.
+  Off, the correction is a hover tip and the source word keeps its underline.
+  Print and PDF still show the correction.
 - Search keeps a `break="no"` line-break hyphen and stores the joined spelling as the next word.
   The joined spelling is letters and numbers only, so punctuation stays on the hyphenated word.
   Consecutive `break="no"` hyphens are one word.

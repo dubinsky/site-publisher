@@ -312,7 +312,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   attr("data-setting") := "abbr-expand",
                   attr("checked") := "checked"
                 ),
-                "Show abbreviation expansions in the text"
+                "Show expansions and corrections in the text"
               ),
               label(className := "site-settings-item",
                 input(

@@ -828,11 +828,14 @@ The parentheses stay roman.
 The publisher does not reorder.
 Reverse order would show the expansion as the main text.
 
-**Show abbreviation expansions in the text** is on unless the reader turns it off.
+**Show expansions and corrections in the text** is on unless the reader turns it off.
 Off, the expansion is hidden, a dotted underline marks an abbreviation that has no titlo, and the expansion is a hover
 tip.
+The same off state hides `corr` and shows it as a hover tip.
+`sic` keeps its editorial underline.
+It does not gain a dotted underline.
 A titlo stays the overline.
-Print and PDF always show the expansion.
+Print and PDF always show the expansion and the correction.
 The checkbox is on every page.
 It is not the apparatus menu below.
 
@@ -1042,7 +1045,9 @@ The page graph uses the same colors.
 
 **Show glossary definitions in the text** inlines glossary and citation definitions.
 
-**Show abbreviation expansions in the text** is on unless turned off.
+**Show expansions and corrections in the text** is on unless turned off.
+It covers a correction inside `choice` as well as an abbreviation expansion.
+Print and PDF still show the correction.
 See <<tei-choice>>.
 
 **Seamless transclusions** hides the box and header around a transcluded region.

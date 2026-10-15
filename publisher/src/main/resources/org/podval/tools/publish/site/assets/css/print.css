@@ -82,8 +82,9 @@
         white-space: inherit;
     }
 
-    /* A stored "hide expansions" choice is screen-only. Print keeps the italic reading. */
-    html.abbr-expand-off choice > expan {
+    /* A stored off choice is screen-only. Print keeps the expansion and the correction. */
+    html.abbr-expand-off choice > expan,
+    html.abbr-expand-off choice > corr {
         display: inline;
         position: static;
         left: auto;
@@ -95,18 +96,25 @@
         border: none;
         background: none;
         box-shadow: none;
-        font-style: italic;
         white-space: inherit;
     }
 
+    html.abbr-expand-off choice > expan {
+        font-style: italic;
+    }
+
     html.abbr-expand-off choice abbr + expan:before,
-    html.abbr-expand-off choice expan + abbr:before {
+    html.abbr-expand-off choice expan + abbr:before,
+    html.abbr-expand-off choice sic + corr:before,
+    html.abbr-expand-off choice corr + sic:before {
         content: " (";
         font-style: normal;
     }
 
     html.abbr-expand-off choice abbr + expan:after,
-    html.abbr-expand-off choice expan + abbr:after {
+    html.abbr-expand-off choice expan + abbr:after,
+    html.abbr-expand-off choice sic + corr:after,
+    html.abbr-expand-off choice corr + sic:after {
         content: ")";
         font-style: normal;
     }

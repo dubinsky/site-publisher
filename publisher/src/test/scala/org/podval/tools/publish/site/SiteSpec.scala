@@ -87,7 +87,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val abbrAt: Int = home.indexOf("""id="setting-abbr-expand"""")
     val abbrTag: String = home.slice((abbrAt - 40).max(0), abbrAt + 180)
     assert(abbrTag.contains("""checked="checked""""), abbrTag)
-    assert(home.contains("Show abbreviation expansions in the text"), home)
+    assert(home.contains("Show expansions and corrections in the text"), home)
     assert(home.contains("""id="setting-transclusion-clean""""), home)
     assert(home.contains("""data-setting="transclusion-clean""""), home)
     assert(home.contains("Seamless transclusions"), home)
