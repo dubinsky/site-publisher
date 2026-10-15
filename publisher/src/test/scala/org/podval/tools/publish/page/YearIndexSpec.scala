@@ -218,6 +218,61 @@ final class YearIndexSpec extends AnyFunSuite:
       )
   }
 
+  test("renders a file at the year path above the list") {
+    val files: Map[String, String] = tree(docs) + (
+      "archive-years.md" ->
+        """Дата в заголовке.
+          |
+          |Смотри [хронологию](/arrests).
+          |""".stripMargin,
+      "arrests.md" ->
+        """---
+          |title: Хронология
+          |---
+          |Текст.
+          |""".stripMargin
+    )
+    withSite(files): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      assert(year.contains("Дата в заголовке."), year)
+      assert(year.contains("""href="/arrests.html""""), year)
+      assert(year.contains(">хронологию<"), year)
+      assert(year.contains("""<h1 class="page-title">Годы</h1>"""), year)
+      val proseAt: Int = year.indexOf("Дата в заголовке.")
+      val linkAt: Int = year.indexOf("/arrests.html")
+      val indexAt: Int = year.indexOf("y1798")
+      assert(proseAt >= 0 && linkAt > proseAt && indexAt > linkAt, year)
+      val around: String = year.substring(proseAt, linkAt + 80)
+      assert(around.contains("""target="hierarchyViewer""""), around)
+      val index: String = html(target, "index.html")
+      assert(!index.contains("archive-years"), index)
+      assert(!index.contains("Дата в заголовке"), index)
+  }
+
+  test("keeps a fragment on a link to the year index and drops one on an authored page") {
+    val files: Map[String, String] = tree(docs) + (
+      "archive-years.md" ->
+        """Дата в заголовке.
+          |""".stripMargin,
+      "note.md" ->
+        """---
+          |title: Note
+          |---
+          |Смотри [месяц](/archive-years#y1798-m12) и [нет](/about#missing).
+          |""".stripMargin
+    )
+    withSite(files): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      assert(year.contains("Дата в заголовке."), year)
+      assert(year.contains("""id="y1798-m12""""), year)
+      val note: String = html(target, "note.html")
+      assert(note.contains("""href="/archive-years.html#y1798-m12""""), note)
+      assert(note.contains(">месяц<"), note)
+      assert(note.contains("""href="/about.html""""), note)
+      assert(!note.contains("about.html#missing"), note)
+      assert(!note.contains("unresolved-link"), note)
+  }
+
   test("does not write a year page when the root has no TEI documents") {
     withSite(tree(Map.empty)): (site, target) =>
       assert(!File(target, "archive-years.html").isFile)

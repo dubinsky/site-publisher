@@ -551,12 +551,28 @@ final class Pages(site: Site):
       if docs.isEmpty then None
       else
         val yearPage = YearIndexPage(site, root, docs)
+        takeAuthoredYearPage(yearPage)
         add(yearPage)
         Some(yearPage)
     if roots.length == 1 then
       yearPages match
         case Seq(yearPage) => installLeafAlias(StoreIndexes.yearsAlias, yearPage)
         case _ => ()
+
+  // The scan already created a page for `{root}-years.md`. That file is the text above the list.
+  private def takeAuthoredYearPage(yearPage: YearIndexPage): Unit =
+    get(yearPage.path) match
+      case Some(existing: MarkupPage) =>
+        existing.source.foreach: source =>
+          yearPage.setSource(PageSource(
+            page = yearPage,
+            markup = source.markup,
+            sourcePath = source.sourcePath,
+            frontMatterStandAlone = source.frontMatterStandAlone
+          ))
+        removeWhere(_ eq existing)
+      case _ =>
+        ()
 
   private def installSearchAlias(): Unit =
     if site.config.search.enabled then
@@ -728,15 +744,20 @@ final class Pages(site: Site):
       else find(path, isFileHref, kind)
 
     to.map: to =>
-      val fragment: Option[Link.ToFragment] = fragmentStr.flatMap: fragment =>
+      val fragment: Option[Link.ToFragment] = fragmentStr.map(_.trim).filter(_.nonEmpty).flatMap: fragment =>
         val content: Option[PageContent] = to.real.content
-        if fragment.startsWith("^")
-        then content.flatMap(_.blocks.resolve(id = fragment.substring(1).trim))
-        else if fragment.contains("#")
-        then content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq))
-        else content.flatMap(_.ids.resolve(fragment)).orElse(
-          content.map(_.toc).flatMap(_.resolveSection(names = Seq(fragment.trim)))
-        )
+        val resolved: Option[Link.ToFragment] =
+          if fragment.startsWith("^")
+          then content.flatMap(_.blocks.resolve(id = fragment.substring(1).trim))
+          else if fragment.contains("#")
+          then content.map(_.toc).flatMap(_.resolveSection(names = fragment.split('#').map(_.trim).toSeq))
+          else content.flatMap(_.ids.resolve(fragment)).orElse(
+            content.map(_.toc).flatMap(_.resolveSection(names = Seq(fragment.trim)))
+          )
+        // A generated page has no authored ids. The year index keeps its ids on the
+        // generated list even when a file is rendered above that list.
+        val generated: Boolean = content.isEmpty || to.real.isInstanceOf[YearIndexPage]
+        resolved.orElse(Option.when(generated)(Link.ToId(fragment)))
 
       Link(
         page = to,

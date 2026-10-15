@@ -10,7 +10,7 @@ final class PageSource(
   val page: MarkupPage,
   val markup: Markup,
   val sourcePath: Path,
-  frontMatterStandAlone: Option[Path]
+  val frontMatterStandAlone: Option[Path]
 ) extends PageErrorReporter:
   
   override def error(

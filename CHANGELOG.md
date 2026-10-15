@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A file at the year page's path is rendered above the generated list.
+  The page title stays the year-page title when that file has none.
+- A link to a generated page keeps its fragment.
+  The page has no authored ids to check the fragment against.
+  The year index keeps such a fragment when a file is rendered above the list.
+  Those ids are on the list.
+  A fragment that an authored page does not contain is still left off.
 - Markdown pretty-print leaves a table as written, including one that shares a paragraph with the text above it.
   A hard break in a blockquote keeps that quote's marker.
 - A facsimile page with no transcribed text stays in the side-by-side pane.

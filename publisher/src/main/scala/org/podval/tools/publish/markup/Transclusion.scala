@@ -136,7 +136,9 @@ object Transclusion:
     isTerminal: Boolean
   ): (Xml.Element, Map[String, Footnote]) =
     val isChunked: Boolean = sectionId.isDefined || !isTerminal
-    val fromPage: FullMarkupPage = host.source.page.asFullMarkupPage.get
+    // A synthetic page can carry an authored file (the year index). Expansion only
+    // needs that host to resolve links; the transcluded page stays a full markup page.
+    val fromPage: Page = host.source.page
     val initial: List[(Page, Region)] = sectionId.toList.map(id => (fromPage, Region.Section(id)))
     val counter: Counter = Counter()
     val footnotes: FootnoteSink = FootnoteSink()
@@ -167,7 +169,7 @@ object Transclusion:
 
   private def expandElement(
     element: Xml.Element,
-    fromPage: FullMarkupPage,
+    fromPage: Page,
     fromContent: PageContent,
     stack: List[(Page, Region)],
     hops: Int,
@@ -201,7 +203,7 @@ object Transclusion:
 
   private def expandNodes(
     nodes: Xml.Nodes,
-    fromPage: FullMarkupPage,
+    fromPage: Page,
     fromContent: PageContent,
     stack: List[(Page, Region)],
     hops: Int,
@@ -277,7 +279,7 @@ object Transclusion:
 
   private def expandHop(
     anchor: Xml.Element,
-    fromPage: FullMarkupPage,
+    fromPage: Page,
     fromContent: PageContent,
     stack: List[(Page, Region)],
     hops: Int,

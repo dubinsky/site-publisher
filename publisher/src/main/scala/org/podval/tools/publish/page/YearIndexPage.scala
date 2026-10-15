@@ -11,7 +11,8 @@ import scala.math.Ordering.Implicits.infixOrderingOps
 
 /** Synthetic `{root}-years.html`: original TEI documents under one root store.
   * A closed year line, then a closed month line. A day line appears when three or more
-  * documents share that exact day. Undated documents are grouped by the archive under the root. */
+  * documents share that exact day. Undated documents are grouped by the archive under the root.
+  * A file at this path is rendered above the list. */
 final class YearIndexPage(
   site: Site,
   root: Page,
@@ -50,6 +51,9 @@ final class YearIndexPage(
 
   override def prev: Option[Page] = None
   override def next: Option[Page] = None
+
+  override def markupContent: Option[Xml.Element] =
+    markupContent(sectionId = None, isTerminal = true)
 
   override protected def syntheticContent: Xml.Element =
     val rows: Seq[(Page, TeiDate.Filing)] = documents.map(page => page -> filingOf(page))
