@@ -277,6 +277,12 @@ a.pb {
     margin-left: 0.15em;
 }
 
+/* One line between the surrounding text. Not a screen tall. */
+span.pb[data-facsimile-missing] {
+    display: block;
+    margin: 0.75em 0;
+}
+
 a.pb .icon-span {
     padding-right: 0;
 }

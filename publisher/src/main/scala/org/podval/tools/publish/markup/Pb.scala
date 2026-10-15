@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
-/** TEI `pb` harvested from the raw tree for collection `Страницы`, missing-photo notes, and facsimile JPEGs. */
+/** TEI `pb` harvested from the raw tree for collection `Страницы`, the missing-leaf line, and facsimile JPEGs. */
 final class Pb(
   //  val id: Option[String],
   val n: String,
@@ -18,6 +18,23 @@ object Pb:
   def pageId(n: String): String = s"p$n"
 
   def is(element: Xml.Element): Boolean = element.isA && element.has(Class)
+
+  /** A page break in the transcription: the facsimile anchor, or the missing-leaf line. */
+  def isBreak(element: Xml.Element): Boolean =
+    element.has(Class) && (element.isA || element.isElement(XmlElement.Span))
+
+  /** One line. Not a link, and not a screen tall. `009об. Нет фотографии.` */
+  def missingLine(n: Option[String], empty: Boolean): Xml.Element =
+    val label: String = n.fold("")(PageType.Manuscript.displayName)
+    val sentence: String =
+      if label.isEmpty then "Нет фотографии."
+      else if empty then s"$label. Нет фотографии. Пустая."
+      else s"$label. Нет фотографии."
+    var result: Xml.Element = Xml.element(XmlElement.Span).add(Class).setText(sentence)
+    n.foreach(value => result = result.setId(pageId(value)))
+    result = result.set("data-facsimile-missing", "true")
+    if empty then result = result.set("data-facsimile-empty", "true")
+    result
 
   def anchor(n: Option[String], blank: Boolean = false): Xml.Element =
     var result: Xml.Element = Xml.element(XmlElement.A)

@@ -239,11 +239,15 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(transcription.contains("""id="p002-2""""), transcription)
       assert(transcription.contains("""id="p003-1""""), transcription)
       val missing: String = openTag(transcription, """id="p002-2"""")
-      assert(missing.contains("""href="/col/002/facsimile.html#p002-2""""), missing)
+      assert(missing.contains("data-facsimile-missing=\"true\""), missing)
+      assert(!missing.contains("href"), missing)
       assert(!missing.contains("data-facsimile-src"), missing)
+      assert(transcription.contains("002об. Нет фотографии."), transcription)
       val emptyMissing: String = openTag(transcription, """id="p003-1"""")
-      assert(emptyMissing.contains("""href="/col/002/facsimile.html#p003-1""""), emptyMissing)
-      assert(!emptyMissing.contains("data-facsimile-src"), emptyMissing)
+      assert(emptyMissing.contains("data-facsimile-missing=\"true\""), emptyMissing)
+      assert(emptyMissing.contains("data-facsimile-empty=\"true\""), emptyMissing)
+      assert(!emptyMissing.contains("href"), emptyMissing)
+      assert(transcription.contains("003. Нет фотографии. Пустая."), transcription)
       val present: String = openTag(transcription, """id="p002-1"""")
       assert(present.contains("""data-facsimile-src="https://facsimiles.test/col/002-1.jpg""""), present)
   }
@@ -412,6 +416,7 @@ final class FacsimileSpec extends AnyFunSuite:
           |    <pb n="004-3" missing="true"/>
           |    <pb n="004-4"/>
           |    <p>later</p>
+          |    <pb n="005-2" missing="true" empty="true"/>
           |  </body></text>
           |</TEI>
           |""".stripMargin
@@ -424,14 +429,26 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(verso.contains("data-facsimile-blank=\"true\""), verso)
       assert(verso.contains("""data-facsimile-src="https://facsimiles.test/col/004-2.jpg""""), verso)
       val missing: String = openTag(transcription, """id="p004-3"""")
+      assert(missing.contains("data-facsimile-missing=\"true\""), missing)
       assert(!missing.contains("data-facsimile-blank"), missing)
       assert(!missing.contains("data-facsimile-src"), missing)
+      assert(!missing.contains("href"), missing)
+      val missingAt: Int = transcription.indexOf("""id="p004-3"""")
+      assert(transcription.lastIndexOf("<", missingAt) >= 0, transcription)
+      assert(
+        transcription.substring(transcription.lastIndexOf("<", missingAt)).startsWith("<span"),
+        transcription
+      )
+      assert(transcription.contains("004-3. Нет фотографии."), transcription)
+      assert(transcription.contains("005об. Нет фотографии. Пустая."), transcription)
+      assert(html(target, "assets/js/facsimile-aside.js").contains("Нет фотографии."), transcription)
       val later: String = openTag(transcription, """id="p004-4"""")
       assert(!later.contains("data-facsimile-blank"), later)
       assert(later.contains("""data-facsimile-src="https://facsimiles.test/col/004-4.jpg""""), later)
       val viewer: String = html(target, "col/004/facsimile.html")
       assert(viewer.contains("""src="https://facsimiles.test/col/004-2.jpg""""), viewer)
       assert(!viewer.contains("004-3.jpg"), viewer)
+      assert(!viewer.contains("005-2.jpg"), viewer)
   }
 
   test("transcluded transcription does not grow a facsimile aside") {

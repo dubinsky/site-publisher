@@ -301,6 +301,12 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!header.pbs.head.isMissing, header.pbs.head)
     assert(header.pbs.last.isMissing && header.pbs.last.isEmpty, header.pbs.last)
     assert(header.pbs.forall(_.facs.isEmpty), header.pbs.map(_.facs))
+    assert(!header.hasBodyText, header.hasBodyText)
+    val withText = DocumentHeader.harvest(parse(
+      """<TEI><teiHeader><fileDesc><titleStmt></titleStmt></fileDesc></teiHeader>
+        |<text><body><pb n="1"/><p>word</p></body></text></TEI>""".stripMargin
+    )).get
+    assert(withText.hasBodyText, withText.hasBodyText)
   }
 
   test("person has no document title") {

@@ -11,7 +11,9 @@ final class DocumentHeader(
   val transcribers: Seq[Xml.Element],
   val translators: Seq[Xml.Element],
   val lang: Option[String],
-  val pbs: Seq[Pb]
+  val pbs: Seq[Pb],
+  /** Non-whitespace text outside `teiHeader`. A stub of page breaks alone is false. */
+  val hasBodyText: Boolean
 ):
   def isEmpty: Boolean =
     description.isEmpty && date.isEmpty && authors.isEmpty && addressee.isEmpty &&
@@ -31,8 +33,18 @@ object DocumentHeader:
         transcribers = editors(titleStmt, "transcriber"),
         translators = editors(titleStmt, "translator"),
         lang = textLang(xml),
-        pbs = Pb.harvest(xml)
+        pbs = Pb.harvest(xml),
+        hasBodyText = bodyText(xml)
       )
+
+  /** True when any non-whitespace text sits outside `teiHeader`. */
+  private def bodyText(xml: Xml.Element): Boolean =
+    def walk(node: Xml.Node): Boolean =
+      node.asElement match
+        case Some(el) if el.isNamed("teiHeader") => false
+        case Some(el) => el.getChildren.exists(walk)
+        case None => node.isCharacters
+    xml.getChildren.exists(walk)
 
   private def textLang(xml: Xml.Element): Option[String] =
     child(xml, "text").flatMap: text =>

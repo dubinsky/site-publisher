@@ -39,7 +39,7 @@ object CollectionIndex:
     val scroll: Xml.Element =
       Xml.element(XmlElement.Div).addClass("collection-scroll").setChildren(Seq(table))
     TeiMarkup.finishFootnotes(
-      Xml.element(XmlElement.Div).setChildren(scroll +: missingNotes(store, originals)),
+      Xml.element(XmlElement.Div).setChildren(counts(store, originals) :+ scroll),
       page.source.getOrElse(PageErrorReporter.Silent)
     )
 
@@ -141,20 +141,50 @@ object CollectionIndex:
       case Seq(one) => one
       case many => many.reduce((left, right) => left ++ Seq(Xml.text(" ")) ++ right)
 
-  private def missingNotes(store: StoreContent, originals: Seq[Page]): Xml.Nodes =
-    val missing: Seq[(Page, Pb)] = originals.sortBy(baseName).flatMap: document =>
-      document.doc.flatMap(_.documentHeader).toSeq.flatMap(_.pbs).filter(_.isMissing).map(document -> _)
-    def note(flavour: String, keep: Pb => Boolean): Option[Xml.Element] =
-      val pages: Seq[String] = missing.filter((_, pb) => keep(pb)).map: (document, pb) =>
-        store.pageType.displayName(pb.n)
-      Option.when(pages.nonEmpty):
-        Xml.element(XmlElement.P).setText(
-          s"Отсутствуют фотографии ${pages.length} $flavour страниц: ${pages.mkString(" ")}"
-        )
-    Seq(
-      note("пустых", _.isEmpty),
-      note("непустых", pb => !pb.isEmpty)
-    ).flatten.map(el => el: Xml.Node)
+  /** Document counts, then one closed disclosure per non-zero leaf count. Above the table. */
+  private def counts(store: StoreContent, originals: Seq[Page]): Seq[Xml.Node] =
+    val ordered: Seq[Page] = originals.sortBy(baseName)
+    val headers: Seq[(Page, DocumentHeader)] = ordered.flatMap: document =>
+      document.doc.flatMap(_.documentHeader).map(document -> _)
+    val line: Xml.Element = Xml.element(XmlElement.P).addClass("collection-counts").setText(
+      s"Документов ${ordered.length}. С расшифровкой ${headers.count((_, header) => header.hasBodyText)}. " +
+        s"С фотографией ${headers.count((_, header) => header.pbs.exists(pb => !pb.isMissing))}."
+    )
+    val missing: Seq[(Page, Pb)] = headers.flatMap: (document, header) =>
+      header.pbs.filter(_.isMissing).map(document -> _)
+    val untranscribed: Seq[(Page, Int)] = headers.flatMap: (document, header) =>
+      val leaves: Int = header.pbs.count(pb => !pb.isMissing)
+      Option.when(!header.hasBodyText && leaves > 0)(document -> leaves)
+    def leaves(keep: Pb => Boolean): Seq[Xml.Element] =
+      missing.filter((_, pb) => keep(pb)).map((document, pb) => leafLink(store, document, pb))
+    line +: Seq(
+      leafDisclosure(s"Нет фотографий, пустые: ${leaves(_.isEmpty).length}", leaves(_.isEmpty)),
+      leafDisclosure(s"Нет фотографий, с текстом: ${leaves(pb => !pb.isEmpty).length}", leaves(pb => !pb.isEmpty)),
+      leafDisclosure(
+        s"Без расшифровки: ${untranscribed.map((_, leaves) => leaves).sum}",
+        untranscribed.map((document, _) => documentLink(document, baseName(document)))
+      )
+    ).flatten
+
+  private def leafDisclosure(summary: String, links: Seq[Xml.Element]): Option[Xml.Element] =
+    Option.when(links.nonEmpty):
+      Xml.element(XmlElement.Details).addClass("collection-gap").setChildren(Seq(
+        Xml.element(XmlElement.Summary).setText(summary),
+        Xml.element(XmlElement.P).setChildren(spaced(links))
+      ))
+
+  private def leafLink(store: StoreContent, document: Page, pb: Pb): Xml.Element =
+    NamedWindows.setXmlTarget(
+      Xml.element(XmlElement.A)
+        .setHref(s"${document.publishedPath}#${Pb.pageId(pb.n)}")
+        .setText(store.pageType.displayName(pb.n)),
+      document
+    )
+
+  private def spaced(nodes: Seq[Xml.Element]): Xml.Nodes =
+    nodes match
+      case Seq() => Seq.empty
+      case head +: tail => (head: Xml.Node) +: tail.flatMap(node => Seq(Xml.text(" "), node: Xml.Node))
 
   private def titleRow(page: Page, title: Option[Xml.Element]): Option[Xml.Element] =
     title.map: xml =>

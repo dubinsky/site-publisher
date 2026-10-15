@@ -138,10 +138,46 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(index.contains("""href="/col/000.html""""), index)
       assert(index.contains("""href="/col/000.html#p000-1""""), index)
       assert(index.contains(">000об<"), index)
-      assert(index.contains("Отсутствуют фотографии 1 непустых страниц:"), index)
-      assert(index.contains("002об"), index)
-      assert(index.contains("Отсутствуют фотографии 1 пустых страниц:"), index)
-      assert(index.contains("003"), index)
+      val countsAt: Int = index.indexOf("collection-counts")
+      val tableAt: Int = index.indexOf("collection-index")
+      assert(countsAt >= 0 && countsAt < tableAt, index)
+      assert(index.contains("Документов 3. С расшифровкой 3. С фотографией 3."), index)
+      assert(index.contains("<summary>Нет фотографий, пустые: 1</summary>"), index)
+      assert(index.contains("""href="/col/002.html#p003-1"""), index)
+      assert(index.contains(">003<"), index)
+      assert(index.contains("<summary>Нет фотографий, с текстом: 1</summary>"), index)
+      assert(index.contains("""href="/col/002.html#p002-2"""), index)
+      assert(index.contains(">002об<"), index)
+      assert(!index.contains("Без расшифровки"), index)
+      assert(!index.contains("Отсутствуют фотографии"), index)
+      assert(!index.contains("<details open"), index)
+  }
+
+  test("untranscribed count is scanned leaves of documents with no text") {
+    withSite(Map(
+      "col/044.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><author>?</author></titleStmt></fileDesc>
+          |    <profileDesc/>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body>
+          |    <pb n="044-1"/>
+          |    <pb n="044-2"/>
+          |    <pb n="045-2" missing="true" empty="true"/>
+          |  </body></text>
+          |</TEI>
+          |""".stripMargin
+    )): (_, target) =>
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("Документов 4. С расшифровкой 3. С фотографией 4."), index)
+      assert(index.contains("<summary>Без расшифровки: 2</summary>"), index)
+      assert(index.contains("""href="/col/044.html">044</a>"""), index)
+      assert(index.contains("<summary>Нет фотографий, пустые: 2</summary>"), index)
+      assert(index.contains("""href="/col/044.html#p045-2"""), index)
+      val document: String = html(target, "col/044.html")
+      assert(document.contains("045об. Нет фотографии. Пустая."), document)
+      assert(!document.contains("044. Нет фотографии."), document)
   }
 
   test("abstract endnotes become numbered footnotes, not inline text") {

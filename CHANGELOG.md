@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A collection index states how many documents there are, how many have a transcription, and how many have a scan.
+  A missing photograph, split into empty leaves and leaves with text, and the scanned leaves of a document that has no
+  transcription, are counts above the table.
+  Each non-zero count opens a list of links.
+  A zero count is left off.
+- A missing photograph is a line in the transcription: the leaf name, then «Нет фотографии.».
+  An empty leaf adds «Пустая.».
+  The line is not a link.
+  While the facsimile pane is open, that line hides the scan and shows «Нет фотографии.».
 - A place list draws a map of places that have a coordinate.
   The area of a circle is the number of cases that name the place.
   A place with a coordinate and no such case is a ring.

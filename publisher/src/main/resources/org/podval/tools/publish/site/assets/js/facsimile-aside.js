@@ -21,7 +21,7 @@
 
   function candidates() {
     if (!pageBody) return [];
-    var nodes = pageBody.querySelectorAll("a.pb[data-facsimile-src]");
+    var nodes = pageBody.querySelectorAll("a.pb[data-facsimile-src], span.pb[data-facsimile-missing]");
     var list = [];
     var i;
     for (i = 0; i < nodes.length; i++) {
@@ -96,8 +96,34 @@
     pre.src = url;
   }
 
+  function isMissing(anchor) {
+    return anchor.getAttribute("data-facsimile-missing") === "true";
+  }
+
+  function showMissing(anchor) {
+    loadingUrl = "";
+    if (pendingImage) {
+      pendingImage.onload = null;
+      pendingImage.onerror = null;
+      pendingImage = null;
+    }
+    img.removeAttribute("src");
+    img.alt = "";
+    aside.setAttribute("data-facsimile-state", "missing");
+    if (status) {
+      status.hidden = false;
+      status.textContent = "Нет фотографии.";
+    }
+    mark(anchor);
+    prefetchNext(candidates(), anchor);
+  }
+
   function show(anchor) {
     if (!paneDisplayed() || !anchor) return;
+    if (isMissing(anchor)) {
+      showMissing(anchor);
+      return;
+    }
     var url = anchor.getAttribute("data-facsimile-src");
     if (!url) return;
     var alt = anchor.getAttribute("data-facsimile-alt") || "";

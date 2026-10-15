@@ -281,7 +281,13 @@ object TeiMarkup extends Markup(
     if !element.isNamed("pb") then element
     else
       val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
-      Pb.anchor(n, blank = n.exists(blankPages.contains))
+      if attributeTrue(element, "missing") then Pb.missingLine(n, empty = attributeTrue(element, "empty"))
+      else Pb.anchor(n, blank = n.exists(blankPages.contains))
+
+  private def attributeTrue(element: Xml.Element, name: String): Boolean =
+    element.get(name).exists: value =>
+      val trimmed: String = value.trim
+      trimmed == "true" || trimmed == "1"
 
   // Figure in TEI: <figure> with <graphic url> (already <img>) and optional <head>/<figDesc>.
   // Convert after Xml2Html so Figure IR classes are not prefixed to tei-class.

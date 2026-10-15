@@ -9,7 +9,7 @@ private[markup] object AnchorPbSplit:
     case Break(pb: Xml.Element)
 
   def lift(element: Xml.Element): Seq[Xml.Node] =
-    if Pb.is(element) || !containsPb(element) then Seq(element)
+    if Pb.isBreak(element) || !containsPb(element) then Seq(element)
     else
       val children: Seq[Xml.Node] = element.getChildren.flatMap(liftNode)
       if splittableAnchor(element) then split(element, children)
@@ -21,9 +21,9 @@ private[markup] object AnchorPbSplit:
   private def splittableAnchor(element: Xml.Element): Boolean =
     element.isA && !Pb.is(element)
 
-  /** Descendant `a.pb`, not this element itself. */
+  /** Descendant page break, not this element itself. */
   private def containsPb(element: Xml.Element): Boolean =
-    element.childElements.exists(child => Pb.is(child) || containsPb(child))
+    element.childElements.exists(child => Pb.isBreak(child) || containsPb(child))
 
   private def split(anchor: Xml.Element, children: Seq[Xml.Node]): Seq[Xml.Node] =
     emit(anchor, coalesce(children.flatMap(explode)))
@@ -31,7 +31,7 @@ private[markup] object AnchorPbSplit:
   private def explode(node: Xml.Node): Seq[Piece] = node.asElement match
     case None =>
       Seq(Piece.Content(Seq(node)))
-    case Some(element) if Pb.is(element) =>
+    case Some(element) if Pb.isBreak(element) =>
       Seq(Piece.Break(element))
     case Some(element) if !containsPb(element) =>
       Seq(Piece.Content(Seq(element)))

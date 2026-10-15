@@ -700,6 +700,14 @@ table.document-header {
     }
 }
 
+p.collection-counts {
+    margin-bottom: var(--space-2);
+}
+
+details.collection-gap {
+    margin-bottom: var(--space-2);
+}
+
 .collection-scroll {
     max-width: 100%;
     margin-top: var(--space-2);
