@@ -193,6 +193,27 @@ final class CitationSpec extends AnyFunSuite:
     assert(dumped.contains("""class="bibliography""""), dumped)
   }
 
+  test("Markdown @key inside code and a fenced block stays literal") {
+    val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
+      """See `@hand` and @lamport94.
+        |
+        |```
+        |every @facs resolves
+        |```
+        |""".stripMargin,
+      File("t.md")
+    ))
+    val converted: Xml.Element = MarkdownCite.convertElement(xml)
+    val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(converted)
+    val dumped: String = render(converted)
+    assert(dumped.contains("@hand"), dumped)
+    assert(dumped.contains("@facs"), dumped)
+    assert(!dumped.contains("data-key=\"hand\""), dumped)
+    assert(!dumped.contains("data-key=\"facs\""), dumped)
+    assert(items.exists((mode, item) => mode == Citation.Mode.Narrative && item.key == "lamport94"), dumped)
+    assert(!items.exists((_, item) => item.key == "hand" || item.key == "facs"), dumped)
+  }
+
   test("Markdown [-@key] and [@key1; @key2]") {
     val xml: Xml.Element = parse(MarkdownMarkup.xmlContent(
       "See [-@knuth79] and [@knuth79; @lamport94].",

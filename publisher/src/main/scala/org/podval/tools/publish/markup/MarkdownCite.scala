@@ -5,13 +5,19 @@ import scala.annotation.tailrec
 
 object MarkdownCite:
   def convertElement(element: Xml.Element): Xml.Element =
-    val converted: Xml.Element =
-      if isBibliographyFence(element)
-      then Citation.listPlaceholder
-      else element.convertText(convert(Seq.empty, _))
-    converted.setChildren(converted.getChildren.map(child =>
-      child.asElement.fold(child)(convertElement)
-    ))
+    // Lookup stops at code, so a cite created here would drop the text and the warning.
+    if isVerbatim(element) then element
+    else
+      val converted: Xml.Element =
+        if isBibliographyFence(element)
+        then Citation.listPlaceholder
+        else element.convertText(convert(Seq.empty, _))
+      converted.setChildren(converted.getChildren.map(child =>
+        child.asElement.fold(child)(convertElement)
+      ))
+
+  private def isVerbatim(element: Xml.Element): Boolean =
+    element.isElement(XmlElement.Code) || element.isElement(XmlElement.Pre)
 
   private def isBibliographyFence(element: Xml.Element): Boolean =
     element.isElement(XmlElement.P) && element.getText.trim == ":::bibliography"

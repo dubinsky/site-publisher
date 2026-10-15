@@ -1475,6 +1475,7 @@ AsciiDoc:: no `asciidoctor-bibliography` gem.
 
 Markdown:: Pandoc citation syntax (no extra FlexMark extension).
            `me@host.com` is left as an email.
+           `@key` inside inline code or a fenced block stays as written.
            Obsidian does not format `[@key]` natively.
            Community plugin https://obsidian.md/plugins?id=obsidian-pandoc-reference-list[Pandoc Reference List]
            recognizes Pandoc citekeys in the note (sidebar; optional inline).
@@ -1484,6 +1485,7 @@ Markdown:: Pandoc citation syntax (no extra FlexMark extension).
 ----
 - `[@knuth79]`, `[@knuth79, p. 12]`, `[@knuth79; @lamport94]` — parenthetical
 - `@knuth79` — narrative (`me@host.com` is left as an email)
+- `@hand` inside inline code, or the same in a fenced block, is not a citation
 - `[-@lamport94]` — suppress author
 - `:::bibliography` — list placeholder
 See [@knuth79] and [@knuth79, p. 12] and [@knuth79; @lamport94]

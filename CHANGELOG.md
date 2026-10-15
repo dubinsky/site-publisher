@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Markdown `@key` inside inline code or a fenced block stays as written.
+  A citation in the surrounding prose is unchanged.
 - A collection index states how many documents there are, how many have a transcription, and how many have a scan.
   A missing photograph, split into empty leaves and leaves with text, and the scanned leaves of a document that has no
   transcription, are counts above the table.
