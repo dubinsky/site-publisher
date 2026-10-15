@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Markdown pretty-print leaves a table as written, including one that shares a paragraph with the text above it.
+  A hard break in a blockquote keeps that quote's marker.
 - A facsimile page with no transcribed text stays in the side-by-side pane.
   While the pane is open, that page is a screen tall, so scrolling reaches its scan.
   A missing photo does not grow.

@@ -65,7 +65,10 @@ object MarkdownProse extends ProseFormatter:
   private def editParagraph(paragraph: Paragraph, source: String, options: ProseOptions): Option[Edit] =
     val start: Int = paragraph.getStartOffset
     val end: Int = paragraph.getEndOffset
-    continuation(paragraph, source) match
+    // A GFM table does not interrupt a paragraph, so its rows stay in this one.
+    // Joining those lines would remove the row breaks.
+    if hasTableSeparator(source.substring(start, end)) then None
+    else continuation(paragraph, source) match
       case None => None
       case Some(contPrefix) =>
         val lineStart: Int = startOfLine(source, start)
@@ -74,6 +77,32 @@ object MarkdownProse extends ProseFormatter:
         val body: String = ProseLayout.layout(tokens, options, already, contPrefix, MarkdownLeadIn.matches)
         val text: String = if source.substring(start, end).endsWith("\n") then body + "\n" else body
         Some(Edit(start, end, text))
+
+  /** A delimiter row (`| --- | --- |`, `--- | ---`, `| :--- |`) anywhere in the paragraph. */
+  private def hasTableSeparator(text: String): Boolean =
+    linesOf(text).exists(tableSeparatorLine)
+
+  private def linesOf(text: String): List[String] =
+    if text.isEmpty then Nil
+    else
+      val (line, rest) = text.span(_ != '\n')
+      line :: linesOf(rest.drop(1))
+
+  private def tableSeparatorLine(line: String): Boolean =
+    val body: String = line.dropWhile(ch => ch == ' ' || ch == '\t' || ch == '>').trim
+    val cells: List[String] = splitCells(body)
+    cells.exists(_.nonEmpty) && cells.forall(separatorCell)
+
+  private def splitCells(text: String): List[String] =
+    if !text.contains('|') then Nil
+    else cellsFrom(text)
+
+  private def cellsFrom(text: String): List[String] =
+    val (cell, rest) = text.span(_ != '|')
+    cell.trim :: (if rest.isEmpty then Nil else cellsFrom(rest.drop(1)))
+
+  private def separatorCell(cell: String): Boolean =
+    cell.isEmpty || cell.matches(":?-{3,}:?")
 
   private def continuation(paragraph: Node, source: String): Option[String] =
     val start: Int = paragraph.getStartOffset
@@ -108,21 +137,23 @@ object MarkdownProse extends ProseFormatter:
     val kids: List[Node] = children(paragraph)
     val tokens = List.newBuilder[Token]
     var cursor: Int = paragraph.getStartOffset
-    var afterSoft: Boolean = false
+    var afterBreak: Boolean = false
     kids.foreach: kid =>
       val gap: String = source.substring(cursor, kid.getStartOffset)
       val dropGap: Boolean =
         (gap.nonEmpty && gap.forall(isGapSpace) && kid.isInstanceOf[SoftLineBreak]) ||
-          (afterSoft && gap.forall(ch => isGapSpace(ch) || ch == '>'))
+          (afterBreak && gap.forall(ch => isGapSpace(ch) || ch == '>'))
       if !dropGap && gap.nonEmpty then tokens ++= splitText(gap)
-      afterSoft = false
+      afterBreak = false
       kid match
         case _: SoftLineBreak =>
           tokens += Token.Spaces(" ")
-          afterSoft = true
+          afterBreak = true
         case hard: HardLineBreak =>
           val chars: String = source.substring(hard.getStartOffset, hard.getEndOffset)
           tokens += Token.Hard(chars.takeWhile(_ != '\n'))
+          // Quote markers for this line sit in the next gap. The continuation prefix writes them again.
+          afterBreak = true
         case other =>
           tokens ++= inlineTokens(other, source)
       cursor = kid.getEndOffset

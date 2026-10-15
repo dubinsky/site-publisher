@@ -154,6 +154,50 @@ final class MarkdownProseSpec extends AnyFunSuite:
     assert(preorder(source) == preorder(once))
   }
 
+  test("a hard break in a blockquote keeps a single marker") {
+    val quote: String = "> Hello world.  \n> Next line stays.\n"
+    assert(format(quote) == quote)
+    val slash: String = "> Hello world.\\\n> Next line stays.\n"
+    assert(format(slash) == slash)
+    val nested: String = "> > Hello world.  \n> > Next stays.\n"
+    assert(format(nested) == nested)
+    val many: String = "> One.  \n> Two.  \n> Three stays.\n"
+    assert(format(many) == many)
+    val listed: String = "> - Hello world.  \n>   Next line stays.\n"
+    assert(format(listed) == listed)
+    assert(preorder(listed) == preorder(format(listed)))
+    val emphasis: String = "> **Hello world.  \n> Next** stays.\n"
+    val emphasized: String = format(emphasis)
+    assert(preorder(emphasis) == preorder(emphasized))
+    assert(!emphasized.contains("\n> >"))
+    val item: String = "- Hello world.  \n  Next line stays.\n"
+    assert(format(item) == item)
+  }
+
+  test("a table that shares a paragraph keeps its rows") {
+    val glued: String = "Hello world. Next.\n| a | b |\n| --- | --- |\n| c | d |\n"
+    assert(format(glued) == glued)
+    val quoted: String = "> Hello world. Next.\n> | a | b |\n> | --- | --- |\n> | c | d |\n"
+    assert(format(quoted) == quoted)
+    val listed: String = "- Hello world. Next.\n  | a | b |\n  | --- | --- |\n  | c | d |\n"
+    assert(format(listed) == listed)
+    val plain: String = "Hello world. Next.\na | b\n--- | ---\nc | d\n"
+    assert(format(plain) == plain)
+    val aligned: String = "Intro text. More.\n| :--- | ---: |\n| a | b |\n"
+    assert(format(aligned) == aligned)
+    val single: String = "Intro.\n| foo |\n| --- |\n| bar |\n"
+    assert(format(single) == single)
+    val separated: String = "Hello world. Next.\n\n| a | b |\n| --- | --- |\n| c | d |\n"
+    val apart: String = format(separated)
+    assert(apart.contains("Hello world.\nNext.\n"))
+    assert(apart.contains("| a | b |\n| --- | --- |\n| c | d |\n"))
+    assert(preorder(separated) == preorder(apart))
+    val pipes: String = "The value is left | middle | right. Next sentence.\n"
+    assert(format(pipes) == "The value is left | middle | right.\nNext sentence.\n")
+    assert(preorder(glued) == preorder(format(glued)))
+    assert(preorder(quoted) == preorder(format(quoted)))
+  }
+
   test("crlf is refused") {
     assert(MarkdownProse.format("Hello.\r\n", options) == Left(ProseFailure.Crlf))
   }
