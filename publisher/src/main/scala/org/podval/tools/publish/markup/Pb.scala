@@ -14,6 +14,10 @@ final class Pb(
 
 object Pb:
   object Class extends CssClass("pb")
+  private object FaceClass extends CssClass("pb-face")
+  private object NameClass extends CssClass("pb-name")
+  private object LabelClass extends CssClass("pb-label")
+  private object TipClass extends CssClass("pb-tip")
 
   def pageId(n: String): String = s"p$n"
 
@@ -23,31 +27,62 @@ object Pb:
   def isBreak(element: Xml.Element): Boolean =
     element.has(Class) && (element.isA || element.isElement(XmlElement.Span))
 
-  /** One line. Not a link, and not a screen tall. `009об. Нет фотографии.` */
+  /** One line. Not a link, and not a screen tall. Faded icon, then `009об. Нет фотографии.` */
   def missingLine(n: Option[String], empty: Boolean): Xml.Element =
-    val label: String = n.fold("")(PageType.Manuscript.displayName)
-    val sentence: String =
-      if label.isEmpty then "Нет фотографии."
-      else if empty then s"$label. Нет фотографии. Пустая."
-      else s"$label. Нет фотографии."
-    var result: Xml.Element = Xml.element(XmlElement.Span).add(Class).setText(sentence)
+    val label: String = displayLabel(n)
+    val sentence: String = missingSentence(label, empty)
+    // The sentence is the visible text, so the tooltip is not also the accessible description.
+    var result: Xml.Element = Xml.element(XmlElement.Span)
+      .add(Class)
+      .setChildren(Seq(face(Seq(icon, textSpan(LabelClass, sentence)), sentence, n)))
     n.foreach(value => result = result.setId(pageId(value)))
     result = result.set("data-facsimile-missing", "true")
     if empty then result = result.set("data-facsimile-empty", "true")
     result
 
   def anchor(n: Option[String], blank: Boolean = false): Xml.Element =
+    val label: String = displayLabel(n)
+    val sentence: String = facsimileSentence(label)
+    val visible: Seq[Xml.Node] =
+      if label.isEmpty then Seq(icon) else Seq(icon, textSpan(NameClass, label))
     var result: Xml.Element = Xml.element(XmlElement.A)
       .add(Class)
-      .set(XmlAttribute.Title, "Facsimile")
       .set(XmlAttribute.Target, "facsimile")
-      .setChildren(Seq(Icon.images.html: Xml.Node))
-    n.foreach: n =>
+      .setChildren(Seq(face(visible, sentence, n)))
+    n.foreach: value =>
       result = result
-        .setId(pageId(n))
-        .set("aria-label", s"Facsimile page $n")
+        .setId(pageId(value))
+        .set("aria-describedby", tipId(value))
     if blank then result = result.set("data-facsimile-blank", "true")
     result
+
+  private def displayLabel(n: Option[String]): String =
+    n.fold("")(PageType.Manuscript.displayName)
+
+  private def missingSentence(label: String, empty: Boolean): String =
+    if label.isEmpty then "Нет фотографии."
+    else if empty then s"$label. Нет фотографии. Пустая."
+    else s"$label. Нет фотографии."
+
+  private def facsimileSentence(label: String): String =
+    if label.isEmpty then "Факсимиле."
+    else s"$label. Факсимиле."
+
+  private def tipId(n: String): String = s"${pageId(n)}-tip"
+
+  private def icon: Xml.Node = Icon.images.html
+
+  private def textSpan(css: CssClass, text: String): Xml.Node =
+    Xml.element(XmlElement.Span).add(css).setText(text)
+
+  /** Tip is inside the face, not the page break. A blank scan stretches the anchor to the screen. */
+  private def face(visible: Seq[Xml.Node], sentence: String, n: Option[String]): Xml.Node =
+    var tip: Xml.Element = Xml.element(XmlElement.Span)
+      .add(TipClass)
+      .set(XmlAttribute.Role, "tooltip")
+      .setText(sentence)
+    n.foreach(value => tip = tip.setId(tipId(value)))
+    Xml.element(XmlElement.Span).add(FaceClass).setChildren(visible :+ tip)
 
   /** Non-missing `pb/@n` with no text before the next `pb`. The aside gives that page a screen of height. */
   def noTranscription(xml: Xml.Element): Set[String] =

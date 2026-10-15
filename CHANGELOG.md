@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A page break shows the images icon and the leaf name.
+  The name is smaller than the transcription.
+  Hovering a scan shows the leaf name and «Факсимиле.».
+  A missing photograph keeps its own line, with that icon faded, the leaf name, and «Нет фотографии.».
+  The line is not a link.
+  Hovering it shows the same sentence.
+  An empty leaf still adds «Пустая.».
 - Markdown `@key` inside inline code or a fenced block stays as written.
   A citation in the surrounding prose is unchanged.
 - A collection index states how many documents there are, how many have a transcription, and how many have a scan.

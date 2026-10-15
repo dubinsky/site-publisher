@@ -282,8 +282,36 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(dumped.contains("""id="p000-1""""), dumped)
     assert(dumped.contains("""class="pb""""), dumped)
     assert(dumped.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), dumped)
+    assert(dumped.contains("""class="pb-name""""), dumped)
+    assert(dumped.contains(">000</span>"), dumped)
+    assert(dumped.contains("""aria-describedby="p000-1-tip""""), dumped)
+    assert(dumped.contains("""id="p000-1-tip""""), dumped)
+    assert(dumped.contains("""role="tooltip""""), dumped)
+    assert(dumped.contains("000. Факсимиле."), dumped)
+    assert(!dumped.contains("""title="Facsimile""""), dumped)
     assert(!dumped.contains("tei-class"), dumped)
     assert(!dumped.contains("⎙"), dumped)
+  }
+
+  test("a missing pb is a faded icon and a line, with the same sentence as its tooltip") {
+    val dumped: String = render(process(
+      """<TEI>
+        |  <text><body>
+        |    <pb n="049-2" missing="true"/>
+        |    <pb n="050-2" missing="true" empty="true"/>
+        |  </body></text>
+        |</TEI>""".stripMargin
+    ))
+    assert(dumped.contains("""id="p049-2""""), dumped)
+    assert(dumped.contains("data-facsimile-missing=\"true\""), dumped)
+    assert(dumped.contains("""class="pb-label""""), dumped)
+    assert(dumped.contains("049об. Нет фотографии."), dumped)
+    assert(dumped.contains("""id="p049-2-tip""""), dumped)
+    assert(dumped.contains("050об. Нет фотографии. Пустая."), dumped)
+    assert(dumped.contains("data-facsimile-empty=\"true\""), dumped)
+    assert(!dumped.contains("href"), dumped)
+    assert(!dumped.contains("aria-describedby"), dumped)
+    assert(dumped.contains("""class="icon-span grey fa-classic fa-solid fa-images""""), dumped)
   }
 
   test("document header harvests lang and pbs from the raw tree") {

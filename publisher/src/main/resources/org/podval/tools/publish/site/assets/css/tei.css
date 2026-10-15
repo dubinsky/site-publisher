@@ -277,14 +277,69 @@ a.pb {
     margin-left: 0.15em;
 }
 
-/* One line between the surrounding text. Not a screen tall. */
+a.pb:hover {
+    text-decoration: none;
+}
+
+a.pb:hover .pb-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Smaller than the transcription, and not the pageNum pill. */
+a.pb .pb-name {
+    font-size: 0.8em;
+    vertical-align: 0.15em;
+}
+
+/* The face is only as tall as the icon. The blank-page anchor is a screen tall. */
+.pb-face {
+    position: relative;
+    display: inline;
+}
+
+.pb-tip {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.25em);
+    z-index: 10;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(24em, 80vw);
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border-color-01);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: nowrap;
+    box-shadow: 0 0.15em 0.4em color-mix(in oklab, var(--brand-color), transparent 70%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .pb-face:hover > .pb-tip {
+        display: block;
+    }
+}
+
+a.pb:focus-within > .pb-face > .pb-tip {
+    display: block;
+}
+
+/* One line between the surrounding text. Not a screen tall. The icon is the page mark, faded. */
 span.pb[data-facsimile-missing] {
     display: block;
     margin: 0.75em 0;
+    padding-left: 0.6em;
+    border-left: 3px solid var(--border-color-01);
+    font-size: 0.875em;
+    color: var(--brand-color);
 }
 
-a.pb .icon-span {
-    padding-right: 0;
+span.pb[data-facsimile-missing] .icon-span {
+    opacity: 0.45;
 }
 
 figure > tei-head {

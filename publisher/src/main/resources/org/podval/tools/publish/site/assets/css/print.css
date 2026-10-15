@@ -60,7 +60,8 @@
     .date-tip,
     .gap-tip,
     .unclear-tip,
-    .hand-tip {
+    .hand-tip,
+    .pb-tip {
         display: none !important;
     }
 
