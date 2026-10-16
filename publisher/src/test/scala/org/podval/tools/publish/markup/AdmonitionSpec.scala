@@ -1,7 +1,8 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.Asciidoctor
-import org.podval.tools.publish.site.PageErrorReporter
+import org.podval.metadata.Language
+import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser, XmlElement}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -140,6 +141,36 @@ final class AdmonitionSpec extends AnyFunSuite:
     ).toSeq
     assert(titles == Seq("Note"), dumped)
     assert(dumped.contains("just body"), dumped)
+  }
+
+  test("Russian AsciiDoc uses the catalog title unless the author wrote one") {
+    val russian: PageErrorReporter = new PageErrorReporter:
+      override def languageSpec: Language.Spec = Language.Russian.toSpec
+      override def error(
+        kind: PageError.Kind,
+        message: String,
+        cause: Option[Throwable]
+      ): Unit = ()
+    def process(source: String): Xml.Element =
+      AsciiDocMarkup.process(
+        parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
+        russian
+      )._1
+    def titles(xml: Xml.Element): Seq[String] =
+      admonitions(xml).flatMap(_.gather(element =>
+        Option.when(Admonition.isTitle(element))(element.getText.trim)
+      ))
+    val untitled: Xml.Element = process("NOTE: Auxiliary information.\n")
+    assert(titles(untitled) == Seq("Примечание"), render(untitled))
+    val titled: Xml.Element = process(
+      """.Watch out
+        |[WARNING]
+        |====
+        |Multi-paragraph body.
+        |====
+        |""".stripMargin
+    )
+    assert(titles(titled) == Seq("Watch out"), render(titled))
   }
 
   test("AsciiDoc TIP IMPORTANT CAUTION become admonition IR") {

@@ -349,10 +349,10 @@ object AsciiDocMarkup extends Markup(
       val cells: Seq[Xml.Element] = element.gather(el =>
         Option.when(el.isElement(XmlElement.Td))(el)
       )
-      val icon: Option[Xml.Element] = cells.find(_.hasClass("icon"))
       val content: Option[Xml.Element] = cells.find(_.hasClass("content"))
       val contentChildren: Xml.Nodes =
         content.fold(Seq.empty[Xml.Node])(_.getChildren.filterNot(_.isWhitespace))
+      // The icon cell is Asciidoctor's English textlabel, not an author title.
       val (titleFromContent: Option[String], body: Xml.Nodes) =
         contentChildren.headOption.flatMap(_.asElement)
           .filter(child => child.isElement(XmlElement.Div) && child.hasClass("title")) match
@@ -360,14 +360,7 @@ object AsciiDocMarkup extends Markup(
               (Some(heading.getText.trim).filter(_.nonEmpty), contentChildren.drop(1))
             case None =>
               (None, contentChildren)
-      val titleFromIcon: Option[String] =
-        icon.flatMap: cell =>
-          val labelled: Option[String] = cell
-            .gather(el => el.get(XmlAttribute.Title))
-            .headOption
-            .orElse(Some(cell.getText.trim).filter(_.nonEmpty))
-          labelled.map(_.trim).filter(_.nonEmpty)
-      Admonition.make(typeName, titleFromContent.orElse(titleFromIcon), body)
+      Admonition.make(typeName, titleFromContent, body)
 
   private def convertCalloutList(element: Xml.Element): Xml.Element =
     if !element.isElement(XmlElement.Div) || !element.hasClass("colist") then element

@@ -200,7 +200,7 @@ object PlaceMap:
       .set("viewBox", s"0 0 ${fmt(width)} ${fmt(height)}")
       .set("role", "img")
       .setChildren(Seq(
-        Xml.element("title").setText(titleText),
+        Xml.element("title").setText(Messages.text("map.title")),
         Xml.element("defs").setChildren(Seq(clip)),
         clipped,
         labels,
@@ -357,22 +357,16 @@ object PlaceMap:
         Xml.element(XmlElement.Td).setChildren(Seq(linked)),
         Xml.element(XmlElement.Td).setText(place.cases.toString)
       ) ++ Option.when(outside.nonEmpty)(
-        Xml.element(XmlElement.Td).setText(if outside.contains(place) then outsideWord else "")
+        Xml.element(XmlElement.Td).setText(if outside.contains(place) then Messages.text("map.outside") else "")
       ).toSeq
       Xml.element(XmlElement.Tr).setChildren(cells)
     Xml.element(XmlElement.Table).addClass("place-map-table").setChildren(header +: rows)
 
   private def fmt(n: Double): String = String.format(Locale.US, "%.1f", n)
 
-  private def titleText(using Language.Spec): String =
-    Messages.text("map.title")
-
   private def caption(withLines: Boolean)(using Language.Spec): String =
     val lines: String = if !withLines then "" else Messages.text("map.lines") + " "
     Messages.text("map.caption", "lines" -> lines)
-
-  private def outsideWord(using Language.Spec): String =
-    Messages.text("map.outside")
 
   private object Base:
     final case class Line(kind: String, points: Seq[(Double, Double)])
