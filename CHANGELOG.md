@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Pin xml 0.6.0.
 - A name-list page heading is the list title.
   The `name` selector word and the axis line (`имя:`) are not shown.
 - A `{base}+reg` file is a regularized reading of `{base}`, not a language.
