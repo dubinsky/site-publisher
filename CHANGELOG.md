@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A Markdown `<date>` with `@when`, `@from`, `@to`, `@notBefore`, or `@notAfter` gets the same calendar hover as a TEI
+  date.
+  The words on the page stay as written.
+  A `<date>` in code stays as written.
+  A hover tip inside a heading is not part of the section id or the table-of-contents title.
+
 ## [0.8.0] - 2026-10-15
 
 - Pin xml 0.6.0.

@@ -66,9 +66,19 @@ object Section:
     result
 
   def headingText(header: Xml.Element): String =
-    Xml.toString(header.getChildren.filterNot: node =>
-      node.isWhitespace || node.asElement.exists(_.has(AnchorClass))
-    ).trim
+    textBesideTips(header, dropWhitespace = true).trim
+
+  // A hover tip is not the title. Whitespace-only nodes are dropped only on the heading
+  // itself, as the old direct-child filter did. Nested spaces stay.
+  private def textBesideTips(element: Xml.Element, dropWhitespace: Boolean): String =
+    element.getChildren.map:
+      case node if dropWhitespace && node.isWhitespace => ""
+      case node if node.asElement.exists(el => el.has(AnchorClass) || PlainText.isTip(el)) => ""
+      case node =>
+        node.asElement match
+          case Some(el) => textBesideTips(el, dropWhitespace = false)
+          case None => node.getText
+    .mkString
 
   def addPermalink(element: Xml.Element): Xml.Element =
     if !is(element) then element else

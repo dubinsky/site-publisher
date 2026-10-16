@@ -2,8 +2,10 @@ package org.podval.tools.publish.markup
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
+import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlParser}
 import org.scalatest.funsuite.AnyFunSuite
+import java.io.File
 
 final class TeiDateSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
@@ -503,6 +505,87 @@ final class TeiDateSpec extends AnyFunSuite:
     assert(filed.label == "20 декабря 1798")
     assert(!filed.label.contains("сноска"))
   }
+
+  test("markdown date uses the site calendar and keeps the words") {
+    val (dumped, reporter) = markdown(
+      """<date when="1798-08-11">11 августа</date>""",
+      Language.Russian,
+      julian = true
+    )
+    assert(reporter.errors.isEmpty, reporter.errors)
+    assert(dumped.contains("date-ref"), dumped)
+    assert(dumped.contains("11 августа"), dumped)
+    assert(dumped.contains("Юлианский"), dumped)
+    assert(dumped.contains("1798 август 11"), dumped)
+    assert(dumped.contains("1798 август 22"), dumped)
+    assert(dumped.contains("5558 Элул 10"), dumped)
+  }
+
+  test("markdown notBefore and notAfter use the uncertainty headers") {
+    val (dumped, reporter) = markdown(
+      """<date notBefore="1800-11-15" notAfter="1800-11-16">15 или 16 ноября</date>""",
+      Language.Russian,
+      julian = true
+    )
+    assert(reporter.errors.isEmpty, reporter.errors)
+    assert(dumped.contains("Не раньше"), dumped)
+    assert(dumped.contains("Не позже"), dumped)
+    assert(dumped.contains("15 или 16 ноября"), dumped)
+  }
+
+  test("markdown heading date keeps the words as the section id") {
+    val (xml, reporter) = markdownXml(
+      """### <date when="1798-05-08">8 мая</date>""",
+      Language.Russian,
+      julian = true
+    )
+    assert(reporter.errors.isEmpty, reporter.errors)
+    val normalized: Xml.Element = xml.transform(Section.normalize(_, IdGenerator("_id")))
+    val dumped: String = render(normalized)
+    assert(dumped.contains("""id="8-мая""""), dumped)
+    assert(dumped.contains("Юлианский"), dumped)
+    val section: Xml.Element = normalized.childElements.find(Section.is).get
+    assert(Section.headingText(Section.heading(section).get) == "8 мая")
+  }
+
+  test("a date in a markdown fence is not a hover") {
+    val (dumped, reporter) = markdown(
+      """```
+        |<date when="1798-08-11">11 августа</date>
+        |```
+        |""".stripMargin
+    )
+    assert(reporter.errors.isEmpty, reporter.errors)
+    assert(!dumped.contains("date-ref"), dumped)
+    assert(dumped.contains("1798-08-11"), dumped)
+  }
+
+  test("markdown invalid date is reported and left as written") {
+    val (dumped, reporter) = markdown("""<date when="1798-13-40">x</date>""")
+    assert(invalid(reporter).nonEmpty)
+    assert(!dumped.contains("date-ref"), dumped)
+    assert(dumped.contains(">x<"), dumped)
+  }
+
+  private def markdown(
+    source: String,
+    language: Language = Language.English,
+    julian: Boolean = false
+  ): (String, Reporter) =
+    val (xml, reporter) = markdownXml(source, language, julian)
+    (render(xml), reporter)
+
+  private def markdownXml(
+    source: String,
+    language: Language,
+    julian: Boolean
+  ): (Xml.Element, Reporter) =
+    val reporter: Reporter = Reporter(language, julian)
+    val xml: Xml.Element = MarkdownMarkup.process(
+      parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
+      reporter
+    )._1
+    (xml, reporter)
 
   test("visible skips notes and tip tokens when asked") {
     val element: Xml.Element = parse(

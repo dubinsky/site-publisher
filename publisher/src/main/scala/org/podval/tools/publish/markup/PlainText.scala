@@ -203,7 +203,7 @@ object PlainText:
       case None => buf.append(node.asAtom.getOrElse(""))
 
   // Same token test as LinkContext.isTip. That method is private.
-  private def isTip(element: Xml.Element): Boolean =
+  private[markup] def isTip(element: Xml.Element): Boolean =
     val tokens: Seq[String] = element.getClasses ++
       element.get("tei-class").toSeq.flatMap(_.split(' ')).map(_.trim).filter(_.nonEmpty)
     tokens.exists(_.endsWith("-tip"))

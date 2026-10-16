@@ -72,6 +72,8 @@ object MarkdownMarkup extends Markup(
         result = result.convertText(MarkdownWikiLink.convert(Seq.empty, _))
       result = convertFootnoteLink(result).getOrElse(result)
       result = convertFootnoteBody(result).getOrElse(result)
+      // Same hover as a TEI date. The walk re-enters the wrapped date; `data-calendars` stops it.
+      result = TeiDate.convert(result, errorReporter)
       result
     )
     HtmlMarkup.process(

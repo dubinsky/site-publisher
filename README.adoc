@@ -815,6 +815,13 @@ Any other `@calendar` value is Gregorian.
 This disagrees with the TEI Guidelines: the attributes are not rewritten to Gregorian; `@calendar` selects how the
 numbers are read, and it still describes the prose.
 
+Markdown uses the same element.
+A `<date>` in a Markdown page with those attributes gets this hover.
+The words on the page stay as written.
+`@calendar` and `tei-default-calendar` apply as they do for TEI.
+A `<date>` in code stays as written.
+A hover tip inside a heading is left out of the section id and the table-of-contents title.
+
 The collection index and document-header Дата cell show `@when` as the visible text when `@when` is present.
 A `note` inside that `date` stays in the cell.
 Otherwise the cell shows the element's own text, still inside `<date>`, so the tip can attach.
