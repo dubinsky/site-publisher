@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A name-list page heading is the list title.
+  The `name` selector word and the axis line (`имя:`) are not shown.
 - A `{base}+reg` file is a regularized reading of `{base}`, not a language.
   It keeps the same `xml:lang`, is not a collection row, and is left out of prev/next and search.
   It shares the original's facsimile.

@@ -453,8 +453,9 @@ Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
 - `@n` is the list id (`/name/{n}.html` when the catalog has two or more non-empty lists);
 - `@role` present: entities of that kind whose root `@role` matches, anywhere in the site; omitted: entities of that
   kind with no role;
-- `<head>` on the list is the list page title (`<title>` is still accepted); a direct child `<title>` of `entityLists`
-  is the catalog page title.
+- `<head>` on the list is the list page title (`<title>` is still accepted).
+  The heading is that title alone: no `name` selector word, and no axis line under it.
+  A direct child `<title>` of `entityLists` is the catalog page title.
 
 Empty lists are omitted.
 Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName`

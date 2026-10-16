@@ -93,7 +93,9 @@ object PageHeader:
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
       documentLangGroup(page, resolvedFragment(page, bodyEl).getChildren, block = true)
     val byLabel: Xml.Nodes =
-      StoreTree.by(page).filterNot(_.selector.names.hasName("document")).toSeq.map: by =>
+      // `By("name")` on a list page is the member hop. The heading is the list title.
+      if page.isInstanceOf[EntityListPage] then Seq.empty
+      else StoreTree.by(page).filterNot(_.selector.names.hasName("document")).toSeq.map: by =>
         Xml.element("l").addClass("store-by").setText(
           s"${selectorDisplayName(by.selector, page.site.languageSpec)}:"
         )
@@ -215,7 +217,9 @@ object PageHeader:
   /** `by/@selector` of the parent store, or `"document"` under a collection, or a parent
     * directory segment that is a known selector (`archive/` → archive/архив in the site language). */
   private[page] def selectorName(page: Page): Option[String] =
-    page.parent.flatMap: parent =>
+    // A catalog directory named `name` is not the list's selector.
+    if page.isInstanceOf[EntityListPage] then None
+    else page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
       StoreTree.by(parent).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
         .orElse:
