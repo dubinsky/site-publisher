@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-15
+
 - Pin xml 0.6.0.
 - A name-list page heading is the list title.
   The `name` selector word and the axis line (`имя:`) are not shown.
