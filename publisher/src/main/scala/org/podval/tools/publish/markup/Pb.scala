@@ -1,5 +1,7 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
+import org.podval.tools.publish.site.Messages
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
@@ -27,12 +29,12 @@ object Pb:
   def isBreak(element: Xml.Element): Boolean =
     element.has(Class) && (element.isA || element.isElement(XmlElement.Span))
 
-  /** One line. Not a link, and not a screen tall. Faded icon, then `009об. Нет фотографии.` */
+  /** One line. Not a link, and not a screen tall. Faded icon, then the missing-photograph sentence. */
   def missingLine(
     n: Option[String],
     empty: Boolean,
     chrome: Option[(String, String)] = None
-  ): Xml.Element =
+  )(using Language.Spec): Xml.Element =
     val label: String = displayLabel(n)
     val sentence: String = missingSentence(label, empty)
     // The sentence is the visible text, so the tooltip is not also the accessible description.
@@ -48,7 +50,7 @@ object Pb:
     n: Option[String],
     blank: Boolean = false,
     chrome: Option[(String, String)] = None
-  ): Xml.Element =
+  )(using Language.Spec): Xml.Element =
     val label: String = displayLabel(n)
     val sentence: String = facsimileSentence(label)
     val visible: Seq[Xml.Node] =
@@ -72,14 +74,14 @@ object Pb:
   private def displayLabel(n: Option[String]): String =
     n.fold("")(PageType.Manuscript.displayName)
 
-  private def missingSentence(label: String, empty: Boolean): String =
-    if label.isEmpty then "Нет фотографии."
-    else if empty then s"$label. Нет фотографии. Пустая."
-    else s"$label. Нет фотографии."
+  private def missingSentence(label: String, empty: Boolean)(using Language.Spec): String =
+    if label.isEmpty then Messages.text("pb.missing")
+    else if empty then Messages.text("pb.missingEmpty", "label" -> label)
+    else Messages.text("pb.missingNamed", "label" -> label)
 
-  private def facsimileSentence(label: String): String =
-    if label.isEmpty then "Факсимиле."
-    else s"$label. Факсимиле."
+  private def facsimileSentence(label: String)(using Language.Spec): String =
+    if label.isEmpty then Messages.text("pb.facsimile")
+    else Messages.text("pb.facsimileNamed", "label" -> label)
 
   private def tipId(n: String): String = s"${pageId(n)}-tip"
 

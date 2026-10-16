@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.markup.{LinkKind, Region, Transclusion, WikiLink}
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
 import org.podval.xml.Xml
@@ -91,8 +92,9 @@ final class TransclusionEdges:
         .sortBy(_.title)
       if hosts.isEmpty then None
       else Some:
+        given Language.Spec = page.site.languageSpec
         page.withInterfaceLang(div(className := "embedded-in",
-          h3("Embedded in"),
+          h3(Messages.text("pages.embedded")),
           ul(grouped(page, hosts))
         ))
 

@@ -286,7 +286,7 @@ final class EntityListsSpec extends AnyFunSuite:
   test("entity page keeps document backlinks and does not list the names index") {
     withSite(): (_, target) =>
       val page: String = html(target, "name/alter-rebbe.html")
-      assert(page.contains("Backlinks"), page)
+      assert(page.contains("Обратные ссылки"), page)
       val back: Int = page.indexOf("class=\"backlinks\"")
       assert(back >= 0, page)
       val section: String = page.substring(back)

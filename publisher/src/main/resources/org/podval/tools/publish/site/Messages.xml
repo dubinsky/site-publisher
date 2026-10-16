@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Messages>
+  <message key="nav.menu">
+    <name lang="en" n="Menu"/>
+    <name lang="ru" n="Меню"/>
+  </message>
+  <message key="nav.search">
+    <name lang="en" n="Search"/>
+    <name lang="ru" n="Поиск"/>
+  </message>
+  <message key="nav.settings">
+    <name lang="en" n="Settings"/>
+    <name lang="ru" n="Настройки"/>
+  </message>
+  <message key="nav.content">
+    <name lang="en" n="Content"/>
+    <name lang="ru" n="Содержание"/>
+  </message>
+  <message key="nav.path">
+    <name lang="en" n="Path"/>
+    <name lang="ru" n="Путь"/>
+  </message>
+  <message key="settings.color">
+    <name lang="en" n="Color scheme"/>
+    <name lang="ru" n="Цветовая схема"/>
+  </message>
+  <message key="settings.system">
+    <name lang="en" n="System"/>
+    <name lang="ru" n="Как в системе"/>
+  </message>
+  <message key="settings.light">
+    <name lang="en" n="Light"/>
+    <name lang="ru" n="Светлая"/>
+  </message>
+  <message key="settings.dark">
+    <name lang="en" n="Dark"/>
+    <name lang="ru" n="Тёмная"/>
+  </message>
+  <message key="settings.glossary">
+    <name lang="en">Show glossary definitions in the text</name>
+    <name lang="ru">Показывать определения глоссария в тексте</name>
+  </message>
+  <message key="settings.editorial">
+    <name lang="en">Show expansions and corrections in the text</name>
+    <name lang="ru">Показывать раскрытия и исправления в тексте</name>
+  </message>
+  <message key="settings.transclusion">
+    <name lang="en" n="Seamless transclusions"/>
+    <name lang="ru" n="Включения без рамки"/>
+  </message>
+  <message key="settings.facsimile">
+    <name lang="en">Show the facsimile beside the text</name>
+    <name lang="ru">Показывать факсимиле рядом с текстом</name>
+  </message>
+  <message key="settings.add">
+    <name lang="en" n="Additions"/>
+    <name lang="ru" n="Добавления"/>
+  </message>
+  <message key="settings.del">
+    <name lang="en" n="Deletions"/>
+    <name lang="ru" n="Удаления"/>
+  </message>
+  <message key="settings.see">
+    <name lang="en" n="Sources"/>
+    <name lang="ru" n="Источники"/>
+  </message>
+  <message key="settings.plain">
+    <name lang="en" n="Plain"/>
+    <name lang="ru" n="Без пометок"/>
+  </message>
+  <message key="settings.hidden">
+    <name lang="en" n="Hidden"/>
+    <name lang="ru" n="Скрыть"/>
+  </message>
+  <message key="settings.distinct.add">
+    <name lang="en" n="[Distinct]"/>
+    <name lang="ru" n="[Как в тексте]"/>
+  </message>
+  <message key="settings.distinct.del">
+    <name lang="en" n="Distinct"/>
+    <name lang="ru" n="Как в тексте"/>
+  </message>
+  <message key="settings.distinct.see">
+    <name lang="en">&lt;Distinct&gt;</name>
+    <name lang="ru">&lt;Как в тексте&gt;</name>
+  </message>
+  <message key="format.transcription">
+    <name lang="en" n="Transcription"/>
+    <name lang="ru" n="Расшифровка"/>
+  </message>
+  <message key="format.onePage">
+    <name lang="en" n="One-page HTML"/>
+    <name lang="ru" n="Одна страница"/>
+  </message>
+  <message key="format.chunked">
+    <name lang="en" n="Chunked HTML"/>
+    <name lang="ru" n="По разделам"/>
+  </message>
+  <message key="format.facsimile">
+    <name lang="en" n="Facsimile"/>
+    <name lang="ru" n="Факсимиле"/>
+  </message>
+  <message key="format.facsimileAlt">
+    <name lang="en">facsimile for page {n}</name>
+    <name lang="ru">факсимиле листа {n}</name>
+  </message>
+  <message key="format.facsimileTitle">
+    <name lang="en">{title} facsimile</name>
+    <name lang="ru">{title}, факсимиле</name>
+  </message>
+  <message key="meta.published">
+    <name lang="en" n="Published:"/>
+    <name lang="ru" n="Опубликовано:"/>
+  </message>
+  <message key="meta.updated">
+    <name lang="en" n="Updated:"/>
+    <name lang="ru" n="Обновлено:"/>
+  </message>
+  <message key="meta.publishedTei">
+    <name lang="en" n="Published TEI"/>
+    <name lang="ru" n="Опубликованный TEI"/>
+  </message>
+  <message key="meta.githubTip">
+    <name lang="en" n="Source file on GitHub"/>
+    <name lang="ru" n="Исходный файл на GitHub"/>
+  </message>
+  <message key="meta.cite">
+    <name lang="en" n="Cite"/>
+    <name lang="ru" n="Ссылка"/>
+  </message>
+  <message key="meta.citeTip">
+    <name lang="en" n="Copy citation"/>
+    <name lang="ru" n="Копировать ссылку"/>
+  </message>
+  <message key="meta.transcriber">
+    <name lang="en">Transcription: {names}</name>
+    <name lang="ru">Расшифровка: {names}</name>
+  </message>
+  <message key="meta.gitHash">
+    <name lang="en">Git hash {sha}.</name>
+    <name lang="ru">Хеш git {sha}.</name>
+  </message>
+  <message key="doc.description">
+    <name lang="en" n="Description"/>
+    <name lang="ru" n="Описание"/>
+  </message>
+  <message key="doc.date">
+    <name lang="en" n="Date"/>
+    <name lang="ru" n="Дата"/>
+  </message>
+  <message key="doc.who">
+    <name lang="en" n="From"/>
+    <name lang="ru" n="Кто"/>
+  </message>
+  <message key="doc.to">
+    <name lang="en" n="To"/>
+    <name lang="ru" n="Кому"/>
+  </message>
+  <message key="doc.language">
+    <name lang="en" n="Language"/>
+    <name lang="ru" n="Язык"/>
+  </message>
+  <message key="doc.document">
+    <name lang="en" n="Document"/>
+    <name lang="ru" n="Документ"/>
+  </message>
+  <message key="doc.pages">
+    <name lang="en" n="Pages"/>
+    <name lang="ru" n="Страницы"/>
+  </message>
+  <message key="doc.transcriber">
+    <name lang="en" n="Transcription"/>
+    <name lang="ru" n="Расшифровка"/>
+  </message>
+  <message key="doc.translation">
+    <name lang="en" n="Translation"/>
+    <name lang="ru" n="Перевод"/>
+  </message>
+  <message key="collection.counts">
+    <name lang="en">Documents: {documents}. With a transcription: {transcribed}. With a photograph: {photographed}.</name>
+    <name lang="ru">Документов {documents}. С расшифровкой {transcribed}. С фотографией {photographed}.</name>
+  </message>
+  <message key="collection.missingEmpty">
+    <name lang="en">Missing photographs, blank: {n}</name>
+    <name lang="ru">Нет фотографий, пустые: {n}</name>
+  </message>
+  <message key="collection.missingText">
+    <name lang="en">Missing photographs, with text: {n}</name>
+    <name lang="ru">Нет фотографий, с текстом: {n}</name>
+  </message>
+  <message key="collection.untranscribed">
+    <name lang="en">Without a transcription: {n}</name>
+    <name lang="ru">Без расшифровки: {n}</name>
+  </message>
+  <message key="pb.missing">
+    <name lang="en" n="No photograph."/>
+    <name lang="ru" n="Нет фотографии."/>
+  </message>
+  <message key="pb.missingNamed">
+    <name lang="en">{label}. No photograph.</name>
+    <name lang="ru">{label}. Нет фотографии.</name>
+  </message>
+  <message key="pb.missingEmpty">
+    <name lang="en">{label}. No photograph. Blank.</name>
+    <name lang="ru">{label}. Нет фотографии. Пустая.</name>
+  </message>
+  <message key="pb.facsimile">
+    <name lang="en" n="Facsimile."/>
+    <name lang="ru" n="Факсимиле."/>
+  </message>
+  <message key="pb.facsimileNamed">
+    <name lang="en">{label}. Facsimile.</name>
+    <name lang="ru">{label}. Факсимиле.</name>
+  </message>
+  <message key="pb.scanFailed">
+    <name lang="en" n="This scan did not load."/>
+    <name lang="ru" n="Этот скан не загрузился."/>
+  </message>
+  <message key="search.year">
+    <name lang="en" n="Year"/>
+    <name lang="ru" n="Год"/>
+  </message>
+  <message key="search.archive">
+    <name lang="en" n="Archive"/>
+    <name lang="ru" n="Архив"/>
+  </message>
+  <message key="search.language">
+    <name lang="en" n="Language"/>
+    <name lang="ru" n="Язык"/>
+  </message>
+  <message key="search.all">
+    <name lang="en" n="All"/>
+    <name lang="ru" n="Все"/>
+  </message>
+  <message key="search.typeQuery">
+    <name lang="en" n="Type a query."/>
+    <name lang="ru" n="Введите запрос."/>
+  </message>
+  <message key="search.none">
+    <name lang="en" n="No matches."/>
+    <name lang="ru" n="Нет совпадений."/>
+  </message>
+  <message key="search.loadFailed">
+    <name lang="en">Could not load search.json.</name>
+    <name lang="ru">Не удалось загрузить search.json.</name>
+  </message>
+  <message key="search.overflow">
+    <name lang="en" n="100 of {n}"/>
+    <name lang="ru" n="100 из {n}"/>
+  </message>
+  <message key="search.kind.document">
+    <name lang="en" n="document"/>
+    <name lang="ru" n="документ"/>
+  </message>
+  <message key="search.kind.name">
+    <name lang="en" n="name"/>
+    <name lang="ru" n="имя"/>
+  </message>
+  <message key="search.kind.note">
+    <name lang="en" n="note"/>
+    <name lang="ru" n="заметка"/>
+  </message>
+  <message key="search.kind.collection">
+    <name lang="en" n="collection"/>
+    <name lang="ru" n="дело"/>
+  </message>
+  <message key="years.title">
+    <name lang="en" n="Years"/>
+    <name lang="ru" n="Годы"/>
+  </message>
+  <message key="years.undated">
+    <name lang="en" n="Undated"/>
+    <name lang="ru" n="Без даты"/>
+  </message>
+  <message key="years.noMonth">
+    <name lang="en" n="No month"/>
+    <name lang="ru" n="без месяца"/>
+  </message>
+  <message key="years.noArchive">
+    <name lang="en" n="No archive"/>
+    <name lang="ru" n="Без архива"/>
+  </message>
+  <message key="map.title">
+    <name lang="en" n="Places named in the cases"/>
+    <name lang="ru" n="Места, названные в делах"/>
+  </message>
+  <message key="map.lines">
+    <name lang="en">Lines are the main rivers and the coast.</name>
+    <name lang="ru">Линии — крупные реки и берег.</name>
+  </message>
+  <message key="map.caption">
+    <name lang="en">A circle is a settlement. Its area is the number of cases that name the place. A ring has a coordinate and is named in no case. Points are modern coordinates. {lines}A place far from the others stays in the table.</name>
+    <name lang="ru">Круг — населённый пункт. Площадь круга — число дел, в которых место названо. Кольцо — место с координатой, которого нет ни в одном деле. Точки — современные координаты. {lines}Место далеко от остальных остаётся в таблице.</name>
+  </message>
+  <message key="map.north">
+    <name lang="en" n="N"/>
+    <name lang="ru" n="С"/>
+  </message>
+  <message key="map.noCases">
+    <name lang="en" n="no cases"/>
+    <name lang="ru" n="нет дел"/>
+  </message>
+  <message key="map.km">
+    <name lang="en" n="{km} km"/>
+    <name lang="ru" n="{km} км"/>
+  </message>
+  <message key="map.place">
+    <name lang="en" n="Place"/>
+    <name lang="ru" n="Место"/>
+  </message>
+  <message key="map.cases">
+    <name lang="en" n="Cases"/>
+    <name lang="ru" n="Дела"/>
+  </message>
+  <message key="map.outside">
+    <name lang="en" n="outside the frame"/>
+    <name lang="ru" n="за рамкой"/>
+  </message>
+  <message key="graph.title">
+    <name lang="en" n="Graph"/>
+    <name lang="ru" n="Граф"/>
+  </message>
+  <message key="graph.description">
+    <name lang="en" n="Site page graph"/>
+    <name lang="ru" n="Граф страниц сайта"/>
+  </message>
+  <message key="graph.filter">
+    <name lang="en" n="Filter"/>
+    <name lang="ru" n="Фильтр"/>
+  </message>
+  <message key="graph.filterLabel">
+    <name lang="en" n="Filter graph"/>
+    <name lang="ru" n="Фильтр графа"/>
+  </message>
+  <message key="graph.orphans">
+    <name lang="en" n="Show orphans"/>
+    <name lang="ru" n="Показывать несвязанные"/>
+  </message>
+  <message key="graph.loadFailed">
+    <name lang="en">Could not load the graph.</name>
+    <name lang="ru">Не удалось загрузить граф.</name>
+  </message>
+  <message key="graph.status">
+    <name lang="en" n="{n} nodes, {e} edges"/>
+    <name lang="ru" n="{n} узлов, {e} рёбер"/>
+  </message>
+  <message key="graph.large">
+    <name lang="en">(large graph, simplified layout)</name>
+    <name lang="ru">(большой граф, упрощённая раскладка)</name>
+  </message>
+  <message key="pages.posts">
+    <name lang="en" n="Posts"/>
+    <name lang="ru" n="Записи"/>
+  </message>
+  <message key="pages.postsAll">
+    <name lang="en" n="All posts"/>
+    <name lang="ru" n="Все записи"/>
+  </message>
+  <message key="pages.tags">
+    <name lang="en" n="Tags"/>
+    <name lang="ru" n="Метки"/>
+  </message>
+  <message key="pages.tagsAll">
+    <name lang="en" n="All tags"/>
+    <name lang="ru" n="Все метки"/>
+  </message>
+  <message key="pages.byTag">
+    <name lang="en" n="Pages by tags"/>
+    <name lang="ru" n="Страницы по меткам"/>
+  </message>
+  <message key="pages.backlinks">
+    <name lang="en" n="Backlinks"/>
+    <name lang="ru" n="Обратные ссылки"/>
+  </message>
+  <message key="pages.embedded">
+    <name lang="en" n="Embedded in"/>
+    <name lang="ru" n="Включено в"/>
+  </message>
+  <message key="pages.category">
+    <name lang="en" n="In this category"/>
+    <name lang="ru" n="В этой категории"/>
+  </message>
+  <message key="pages.newer">
+    <name lang="en" n="Newer"/>
+    <name lang="ru" n="Новее"/>
+  </message>
+  <message key="pages.older">
+    <name lang="en" n="Older"/>
+    <name lang="ru" n="Старее"/>
+  </message>
+  <message key="pages.pagination">
+    <name lang="en" n="Pagination"/>
+    <name lang="ru" n="Страницы"/>
+  </message>
+  <message key="pages.rss">
+    <name lang="en" n="RSS feed"/>
+    <name lang="ru" n="Канал RSS"/>
+  </message>
+  <message key="pages.sitemap">
+    <name lang="en" n="Sitemap"/>
+    <name lang="ru" n="Карта сайта"/>
+  </message>
+  <message key="date.calendar">
+    <name lang="en" n="Calendar"/>
+    <name lang="ru" n="Календарь"/>
+  </message>
+  <message key="date.date">
+    <name lang="en" n="Date"/>
+    <name lang="ru" n="Дата"/>
+  </message>
+  <message key="date.from">
+    <name lang="en" n="From"/>
+    <name lang="ru" n="С"/>
+  </message>
+  <message key="date.to">
+    <name lang="en" n="To"/>
+    <name lang="ru" n="По"/>
+  </message>
+  <message key="date.notBefore">
+    <name lang="en" n="Not before"/>
+    <name lang="ru" n="Не раньше"/>
+  </message>
+  <message key="date.notAfter">
+    <name lang="en" n="Not after"/>
+    <name lang="ru" n="Не позже"/>
+  </message>
+  <message key="date.julian">
+    <name lang="en" n="Julian"/>
+    <name lang="ru" n="Юлианский"/>
+  </message>
+  <message key="date.gregorian">
+    <name lang="en" n="Gregorian"/>
+    <name lang="ru" n="Григорианский"/>
+  </message>
+  <message key="date.jewish">
+    <name lang="en" n="Jewish"/>
+    <name lang="ru" n="Еврейский"/>
+  </message>
+  <message key="admonition.note">
+    <name lang="en" n="Note"/>
+    <name lang="ru" n="Примечание"/>
+  </message>
+  <message key="admonition.tip">
+    <name lang="en" n="Tip"/>
+    <name lang="ru" n="Совет"/>
+  </message>
+  <message key="admonition.warning">
+    <name lang="en" n="Warning"/>
+    <name lang="ru" n="Предупреждение"/>
+  </message>
+  <message key="admonition.important">
+    <name lang="en" n="Important"/>
+    <name lang="ru" n="Важно"/>
+  </message>
+  <message key="admonition.caution">
+    <name lang="en" n="Caution"/>
+    <name lang="ru" n="Осторожно"/>
+  </message>
+</Messages>

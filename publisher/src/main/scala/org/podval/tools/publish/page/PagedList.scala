@@ -1,5 +1,7 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
+import org.podval.tools.publish.site.Messages
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{nav as navEl, *, given}
 
@@ -12,16 +14,16 @@ object PagedList:
   def slice[A](items: Seq[A], pageIndex: Int, size: Int): Seq[A] =
     items.drop((pageIndex - 1) * size).take(size)
 
-  def nav(current: Int, total: Int, hrefFor: Int => String): Xml.Element =
+  def nav(current: Int, total: Int, hrefFor: Int => String)(using Language.Spec): Xml.Element =
     def pageLink(i: Int, label: String, cls: String): Xml.Element =
       a(className := cls, href := hrefFor(i), label)
-    navEl(className := "pagination", aria("label") := "Pagination",
-      Option.when(current > 1)(pageLink(current - 1, "Newer", "pagination-prev")),
+    navEl(className := "pagination", aria("label") := Messages.text("pages.pagination"),
+      Option.when(current > 1)(pageLink(current - 1, Messages.text("pages.newer"), "pagination-prev")),
       (1 to total).map: i =>
         if i == current
         then span(className := "pagination-current", aria("current") := "page", i.toString)
         else pageLink(i, i.toString, "pagination-page")
       ,
-      Option.when(current < total)(pageLink(current + 1, "Older", "pagination-next"))
+      Option.when(current < total)(pageLink(current + 1, Messages.text("pages.older"), "pagination-next"))
     )
 

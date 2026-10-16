@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
@@ -291,6 +292,7 @@ object TeiMarkup extends Markup(
   ): Xml.Element =
     if !element.isNamed("pb") then element
     else
+      given Language.Spec = errorReporter.languageSpec
       val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
       val chrome: Option[(String, String)] = errorReporter.interfaceChrome
       if attributeTrue(element, "missing") then

@@ -1,5 +1,7 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
+import org.podval.tools.publish.site.Messages
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Xml, XmlElement}
 import java.io.File
@@ -52,7 +54,8 @@ object PlaceMap:
   def render(members: Seq[Page]): Option[Xml.Element] =
     val places: Seq[Place] = placesOf(members)
     Option.when(places.nonEmpty):
-      figure(places, russian(members.head), Base.load(members.head.site.sourceDirectory))
+      given Language.Spec = members.head.site.languageSpec
+      figure(places, Base.load(members.head.site.sourceDirectory))
 
   private def placesOf(members: Seq[Page]): Seq[Place] =
     val counts: Map[Page, Int] = caseCounts(members)
@@ -96,9 +99,6 @@ object PlaceMap:
         val name: String = selector.trim
         name == "case" || name == "дело"
 
-  private def russian(page: Page): Boolean =
-    page.site.config.lang.exists(_.trim.toLowerCase.startsWith("ru"))
-
   private def keep(places: Seq[Place]): Seq[Place] =
     if places.length <= 1 || fits(places) then places
     else keep(places.filterNot(_ == farthestPlace(places)))
@@ -121,12 +121,12 @@ object PlaceMap:
     val mid: Int = sorted.length / 2
     if sorted.length % 2 == 1 then sorted(mid) else (sorted(mid - 1) + sorted(mid)) / 2
 
-  private def figure(places: Seq[Place], ru: Boolean, lines: Seq[Base.Line]): Xml.Element =
+  private def figure(places: Seq[Place], lines: Seq[Base.Line])(using Language.Spec): Xml.Element =
     val (inside, outside) = partition(places)
     val drawn: Seq[Dot] = layout(inside)
-    val svg: Xml.Element = drawing(drawn, inside, ru, lines)
-    val note: Xml.Element = Xml.element("figcaption").setText(caption(ru, lines.nonEmpty))
-    val rows: Xml.Element = table(places, outside.toSet, ru)
+    val svg: Xml.Element = drawing(drawn, inside, lines)
+    val note: Xml.Element = Xml.element("figcaption").setText(caption(lines.nonEmpty))
+    val rows: Xml.Element = table(places, outside.toSet)
     Xml.element("figure").addClass("place-map").setChildren(Seq(svg, note, rows))
 
   private final case class Dot(place: Place, x: Double, y: Double, r: Double) derives CanEqual
@@ -184,7 +184,7 @@ object PlaceMap:
       scale, cos
     )
 
-  private def drawing(dots: Seq[Dot], inside: Seq[Place], ru: Boolean, lines: Seq[Base.Line]): Xml.Element =
+  private def drawing(dots: Seq[Dot], inside: Seq[Place], lines: Seq[Base.Line])(using Language.Spec): Xml.Element =
     val frame: Frame = frameOf(inside)
     val height: Double = frame.mapHeight + band
     val clip: Xml.Element = Xml.element("clipPath").set("id", "place-map-frame").setChildren(Seq(
@@ -200,13 +200,13 @@ object PlaceMap:
       .set("viewBox", s"0 0 ${fmt(width)} ${fmt(height)}")
       .set("role", "img")
       .setChildren(Seq(
-        Xml.element("title").setText(titleText(ru)),
+        Xml.element("title").setText(titleText),
         Xml.element("defs").setChildren(Seq(clip)),
         clipped,
         labels,
-        north(ru),
-        legend(dots, frame, ru),
-        scaleBar(frame, ru)
+        north,
+        legend(dots, frame),
+        scaleBar(frame)
       ))
 
   private def frameRect(frame: Frame): Xml.Element =
@@ -280,17 +280,17 @@ object PlaceMap:
       Box(dot.x - w / 2, dot.y + dot.r + gap, w, h)
     )
 
-  private def north(ru: Boolean): Xml.Element =
+  private def north(using Language.Spec): Xml.Element =
     val x: Double = width - 22
     val y: Double = 16
     Xml.element("g").addClass("place-map-north").setChildren(Seq(
       line(x, y + 22, x, y + 6),
       Xml.element("polygon").set("points", s"$x,${fmt(y)} ${fmt(x - 4)},${fmt(y + 8)} ${fmt(x + 4)},${fmt(y + 8)}"),
       Xml.element("text").set("x", fmt(x)).set("y", fmt(y + 34)).set("text-anchor", "middle")
-        .setText(if ru then "С" else "N")
+        .setText(Messages.text("map.north"))
     ))
 
-  private def legend(dots: Seq[Dot], frame: Frame, ru: Boolean): Xml.Element =
+  private def legend(dots: Seq[Dot], frame: Frame)(using Language.Spec): Xml.Element =
     val maxCases: Int = dots.map(_.place.cases).maxOption.getOrElse(0)
     val counts: Seq[Int] = legendCounts(dots.map(_.place.cases))
     val y: Double = frame.mapHeight + 26
@@ -302,7 +302,7 @@ object PlaceMap:
         .set("cx", fmt(x)).set("cy", fmt(y)).set("r", fmt(r))
       val text: Xml.Element = Xml.element("text").addClass("place-map-label")
         .set("x", fmt(x + r + 6)).set("y", fmt(y + 4))
-        .setText(if count == 0 then (if ru then "нет дел" else "no cases") else count.toString)
+        .setText(if count == 0 then Messages.text("map.noCases") else count.toString)
       Seq(circle, text)
     Xml.element("g").addClass("place-map-legend").setChildren(items)
 
@@ -314,7 +314,7 @@ object PlaceMap:
       case many => Seq(many.head, many(many.length / 2), many.last).distinct
     if counts.exists(_ == 0) then sized :+ 0 else sized
 
-  private def scaleBar(frame: Frame, ru: Boolean): Xml.Element =
+  private def scaleBar(frame: Frame)(using Language.Spec): Xml.Element =
     val pxPerKm: Double = frame.scale / kmPerDegree
     val km: Int = Seq(50, 100, 200, 400).find(k =>
       val px = k * pxPerKm
@@ -329,7 +329,7 @@ object PlaceMap:
       line(x + bar, y - 4, x + bar, y + 4),
       Xml.element("text").addClass("place-map-label")
         .set("x", fmt(x)).set("y", fmt(y - 8))
-        .setText(s"$km ${if ru then "км" else "km"}")
+        .setText(Messages.text("map.km", "km" -> km))
     ))
 
   private def line(x1: Double, y1: Double, x2: Double, y2: Double): Xml.Element =
@@ -337,13 +337,15 @@ object PlaceMap:
       .set("x1", fmt(x1)).set("y1", fmt(y1))
       .set("x2", fmt(x2)).set("y2", fmt(y2))
 
-  private def table(places: Seq[Place], outside: Set[Place], ru: Boolean): Xml.Element =
-    val collator: Collator = Collator.getInstance(if ru then Locale.forLanguageTag("ru") else Locale.ROOT)
+  private def table(places: Seq[Place], outside: Set[Place])(using spec: Language.Spec): Xml.Element =
+    val collator: Collator = Collator.getInstance(
+      if spec.language.contains(Language.Russian) then Locale.forLanguageTag("ru") else Locale.ROOT
+    )
     val ordered: Seq[Place] = places.sortWith: (a, b) =>
       if a.cases != b.cases then a.cases > b.cases
       else collator.compare(a.name, b.name) < 0
     val head: Seq[String] =
-      Seq(if ru then "Место" else "Place", if ru then "Дела" else "Cases") ++
+      Seq(Messages.text("map.place"), Messages.text("map.cases")) ++
         Option.when(outside.nonEmpty)("").toSeq
     val header: Xml.Element = Xml.element(XmlElement.Tr).setChildren(
       head.map(label => Xml.element(XmlElement.Th).setText(label))
@@ -355,36 +357,22 @@ object PlaceMap:
         Xml.element(XmlElement.Td).setChildren(Seq(linked)),
         Xml.element(XmlElement.Td).setText(place.cases.toString)
       ) ++ Option.when(outside.nonEmpty)(
-        Xml.element(XmlElement.Td).setText(if outside.contains(place) then outsideWord(ru) else "")
+        Xml.element(XmlElement.Td).setText(if outside.contains(place) then outsideWord else "")
       ).toSeq
       Xml.element(XmlElement.Tr).setChildren(cells)
     Xml.element(XmlElement.Table).addClass("place-map-table").setChildren(header +: rows)
 
   private def fmt(n: Double): String = String.format(Locale.US, "%.1f", n)
 
-  private def titleText(ru: Boolean): String =
-    if ru then "Места, названные в делах" else "Places named in the cases"
+  private def titleText(using Language.Spec): String =
+    Messages.text("map.title")
 
-  private def caption(ru: Boolean, withLines: Boolean): String =
-    val lines: String =
-      if !withLines then ""
-      else if ru then "Линии — крупные реки и берег. "
-      else "Lines are the main rivers and the coast. "
-    if ru then
-      "Круг — населённый пункт. Площадь круга — число дел, в которых место названо. " +
-        "Кольцо — место с координатой, которого нет ни в одном деле. " +
-        "Точки — современные координаты. " +
-        lines +
-        "Место далеко от остальных остаётся в таблице."
-    else
-      "A circle is a settlement. Its area is the number of cases that name the place. " +
-        "A ring has a coordinate and is named in no case. " +
-        "Points are modern coordinates. " +
-        lines +
-        "A place far from the others stays in the table."
+  private def caption(withLines: Boolean)(using Language.Spec): String =
+    val lines: String = if !withLines then "" else Messages.text("map.lines") + " "
+    Messages.text("map.caption", "lines" -> lines)
 
-  private def outsideWord(ru: Boolean): String =
-    if ru then "за рамкой" else "outside the frame"
+  private def outsideWord(using Language.Spec): String =
+    Messages.text("map.outside")
 
   private object Base:
     final case class Line(kind: String, points: Seq[(Double, Double)])

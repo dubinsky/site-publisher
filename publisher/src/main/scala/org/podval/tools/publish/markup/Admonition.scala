@@ -1,5 +1,7 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
+import org.podval.tools.publish.site.Messages
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Markup-neutral admonition IR. CSS styles only these classes.
@@ -19,11 +21,18 @@ object Admonition:
     title: Option[String],
     body: Xml.Nodes,
     fold: Option[Boolean] = None
-  ): Xml.Element =
+  )(using Language.Spec): Xml.Element =
     val kind: String = typeName.trim.toLowerCase
+    // An authored title stays. Empty type is the literal Note, not admonition.note.
     val displayTitle: String =
       if kind.isEmpty then "Note"
-      else kind.head.toUpper.toString + kind.tail
+      else kind match
+        case "note" => Messages.text("admonition.note")
+        case "tip" => Messages.text("admonition.tip")
+        case "important" => Messages.text("admonition.important")
+        case "caution" => Messages.text("admonition.caution")
+        case "warning" => Messages.text("admonition.warning")
+        case _ => kind.head.toUpper.toString + kind.tail
     val label: String = title.map(_.trim).filter(_.nonEmpty).getOrElse(displayTitle)
     val titleElement: Xml.Element = fold match
       case Some(_) => Xml.element("summary").add(TitleClass).setText(label)

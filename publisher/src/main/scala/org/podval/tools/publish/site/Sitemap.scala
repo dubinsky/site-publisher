@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.markup.HtmlMarkup
 import org.podval.tools.publish.page.SyntheticXmlAsset
 import org.podval.tools.publish.util.Icon
@@ -9,10 +10,10 @@ import org.podval.xml.dsl.{*, given}
 object Sitemap:
   val path: Path = Path("sitemap").withExtension("xml")
   
-  def sitemapLink: Xml.Element = link(
-    rel := "sitemap", 
-    `type` := "application/xml", 
-    titleAttr := "Sitemap",
+  def sitemapLink(using Language.Spec): Xml.Element = link(
+    rel := "sitemap",
+    `type` := "application/xml",
+    titleAttr := Messages.text("pages.sitemap"),
     href := path.toString
   )
 

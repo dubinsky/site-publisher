@@ -81,7 +81,7 @@
     aside.setAttribute("data-facsimile-state", "error");
     if (!status) return;
     status.hidden = false;
-    status.textContent = "This scan did not load.";
+    status.textContent = status.getAttribute("data-error") || "";
   }
 
   function prefetchNext(list, anchor) {
@@ -112,7 +112,7 @@
     aside.setAttribute("data-facsimile-state", "missing");
     if (status) {
       status.hidden = false;
-      status.textContent = "Нет фотографии.";
+      status.textContent = status.getAttribute("data-missing") || "";
     }
     mark(anchor);
     prefetchNext(candidates(), anchor);

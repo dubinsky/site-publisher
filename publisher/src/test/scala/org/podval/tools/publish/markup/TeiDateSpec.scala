@@ -67,7 +67,7 @@ final class TeiDateSpec extends AnyFunSuite:
       julian = true
     )
     assert(reporter.errors.isEmpty, reporter.errors)
-    assert(dumped.contains("Julian"), dumped)
+    assert(dumped.contains("Юлианский"), dumped)
     assert(dumped.contains("1798 август 11"), dumped)
     assert(dumped.contains("1798 август 22"), dumped)
     assert(dumped.contains("5558 Элул 10"), dumped)
@@ -208,7 +208,7 @@ final class TeiDateSpec extends AnyFunSuite:
       julian = true
     )
     assert(reporter.errors.isEmpty, reporter.errors)
-    assert(dumped.contains(">From<"), dumped)
+    assert(dumped.contains(">С<"), dumped)
     assert(dumped.contains("1798 август 11"), dumped)
     assert(dumped.contains("1798 август 22"), dumped)
   }

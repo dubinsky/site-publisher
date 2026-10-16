@@ -344,6 +344,8 @@ Useful fields:
 - `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback.
   Site `lang` also selects store and selector display names (publisher `Selector.xml`, TEI `<name lang>`); omitted is
   `en`.
+  Generated chrome follows that `lang` in `_site_config.yml`, and English when it is omitted.
+  That is the gear, the collection table, and the search page.
 - `tags`, `categories` (<<categories>>), `aliases`
 - `icon`, `permalink`, `post`, `date`
 - `pdf` - see <<pdf>>

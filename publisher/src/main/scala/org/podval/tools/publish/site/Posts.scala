@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{DirectoryPage, Page, PagedList, PagedMarkupPage, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
@@ -21,8 +22,13 @@ object Posts:
     catch case e: DateTimeParseException => None
 
 final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html):
-  override def titleDefault: String = "Posts"
-  override protected def descriptionDefault: Option[String] = Some("All posts")
+  override def titleDefault: String =
+    given Language.Spec = site.languageSpec
+    Messages.text("pages.posts")
+
+  override protected def descriptionDefault: Option[String] =
+    given Language.Spec = site.languageSpec
+    Some(Messages.text("pages.postsAll"))
   override protected def iconDefault: Icon = Icon.envelope
 
   def posts: List[Page] = site
@@ -50,12 +56,13 @@ final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").ht
   override protected def syntheticContent: Xml.Element = batchContent(1)
 
   def batchContent(pageIndex: Int): Xml.Element =
+    given Language.Spec = site.languageSpec
     val size: Int = pageSize.getOrElse(Int.MaxValue)
     val batch: Seq[Page] = PagedList.slice(posts, pageIndex, size)
     val total: Int = pageSize.fold(1)(PagedList.batchCount(posts.size, _))
     div(className := "home",
       //      h1(className := "page-heading", page.title)
-      h2(className := "post-list-heading", "Posts"),
+      h2(className := "post-list-heading", Messages.text("pages.posts")),
       ul(className := "post-list", batch.map(post =>
         li(
           span(className := "post-meta", post.date.map(_.toShortString).getOrElse("")),

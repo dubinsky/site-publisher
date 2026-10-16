@@ -259,6 +259,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
     httpServerVar.foreach(_.stop(0))
 
   def siteHeader(page: MarkupPage): Xml.Element =
+    given Language.Spec = languageSpec
     val browse: Seq[Xml.Element] = Seq(
       page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
       page.prev.map(_.navRef(Icon.arrowLeft)),
@@ -280,7 +281,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
           .set("type", "button")
           .set("aria-expanded", "false")
           .set("aria-controls", "site-nav")
-          .set("aria-label", "Menu")
+          .set("aria-label", Messages.text("nav.menu"))
           .setChildren(Seq(span(className := "nav-toggle-icon"))),
         nav(id := "site-nav", className := "site-nav",
           navGroup("nav-pages", pages.headerPages.map(_.ref())),
@@ -290,11 +291,11 @@ final class Site(options: SiteOptions) extends JSLibrary:
         details(className := "site-settings",
           summary(
             className := "site-settings-toggle",
-            titleAttr := "Settings",
-            aria("label") := "Settings",
+            titleAttr := Messages.text("nav.settings"),
+            aria("label") := Messages.text("nav.settings"),
             Icon.gear.html
           ),
-          div(className := "site-settings-menu", role := "group", aria("label") := "Settings",
+          div(className := "site-settings-menu", role := "group", aria("label") := Messages.text("nav.settings"),
             div(className := "site-settings-section", colorSchemeSetting),
             div(className := "site-settings-section",
               label(className := "site-settings-item",
@@ -303,7 +304,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   id := "setting-glossary-expand",
                   attr("data-setting") := "glossary-expand"
                 ),
-                "Show glossary definitions in the text"
+                Messages.text("settings.glossary")
               ),
               label(className := "site-settings-item",
                 input(
@@ -312,7 +313,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   attr("data-setting") := "abbr-expand",
                   attr("checked") := "checked"
                 ),
-                "Show expansions and corrections in the text"
+                Messages.text("settings.editorial")
               ),
               label(className := "site-settings-item",
                 input(
@@ -320,7 +321,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   id := "setting-transclusion-clean",
                   attr("data-setting") := "transclusion-clean"
                 ),
-                "Seamless transclusions"
+                Messages.text("settings.transclusion")
               ),
               label(className := "site-settings-item",
                 input(
@@ -329,14 +330,14 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   attr("data-setting") := "facsimile-aside",
                   attr("checked") := "checked"
                 ),
-                "Show the facsimile beside the text"
+                Messages.text("settings.facsimile")
               )
             ),
             Option.when(config.apparatus)(
               div(className := "site-settings-section",
-                apparatusSetting("add", "Additions"),
-                apparatusSetting("del", "Deletions"),
-                apparatusSetting("see", "Sources")
+                apparatusSetting("add", Messages.text("settings.add")),
+                apparatusSetting("del", Messages.text("settings.del")),
+                apparatusSetting("see", Messages.text("settings.see"))
               )
             )
           )
@@ -345,7 +346,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
     ))
 
   private def headerSearch: Xml.Element =
-    val accessible: String = if languageSpec == Language.Russian.toSpec then "Поиск" else "Search"
+    given Language.Spec = languageSpec
+    val accessible: String = Messages.text("nav.search")
     element(
       "form",
       className := "header-search",
@@ -366,16 +368,17 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
   private def colorSchemeSetting: Xml.Element =
+    given Language.Spec = languageSpec
     div(
       className := "site-settings-choice",
       role := "radiogroup",
       aria("labelledby") := "setting-color-scheme-label",
-      span(id := "setting-color-scheme-label", className := "site-settings-choice-label", "Color scheme"),
+      span(id := "setting-color-scheme-label", className := "site-settings-choice-label", Messages.text("settings.color")),
       div(
         className := "site-settings-radios",
-        colorChoice("system", "System", selected = true),
-        colorChoice("light", "Light", selected = false),
-        colorChoice("dark", "Dark", selected = false)
+        colorChoice("system", Messages.text("settings.system"), selected = true),
+        colorChoice("light", Messages.text("settings.light"), selected = false),
+        colorChoice("dark", Messages.text("settings.dark"), selected = false)
       )
     )
 
@@ -414,12 +417,16 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   /** Distinct shows the marks the text uses. Additions `[ ]`, deletions struck through, sources `< >`. */
   private def apparatusLabel(kind: String, value: String): String =
-    if value != "distinct" then value.capitalize
-    else kind match
-      case "add" => "[Distinct]"
-      case "del" => "Distinct"
-      case "see" => "<Distinct>"
-      case _ => "Distinct"
+    given Language.Spec = languageSpec
+    value match
+      case "plain" => Messages.text("settings.plain")
+      case "hidden" => Messages.text("settings.hidden")
+      case "distinct" => kind match
+        case "add" => Messages.text("settings.distinct.add")
+        case "del" => Messages.text("settings.distinct.del")
+        case "see" => Messages.text("settings.distinct.see")
+        case _ => "Distinct"
+      case other => other.capitalize
 
   private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =
     Option.when(items.nonEmpty)(div(className := s"nav-group $cls", items))
@@ -438,6 +445,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
     )
 
   def siteFooter: Xml.Element =
+    given Language.Spec = languageSpec
     footer(className := "site-footer",
       div(className := "wrapper",
         div(className := "footer-col-wrapper",

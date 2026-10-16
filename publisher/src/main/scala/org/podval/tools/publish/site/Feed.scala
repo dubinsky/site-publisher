@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlXmlWriterConfig, Xml}
@@ -14,11 +15,11 @@ object Feed:
 
   def icon: Icon = Icon.rss
 
-  def feedFooter: Xml.Element = a(
+  def feedFooter(using Language.Spec): Xml.Element = a(
     className := "footer-feed",
     href := Feed.path.toString,
-    titleAttr := "RSS feed",
-    aria("label") := "RSS feed",
+    titleAttr := Messages.text("pages.rss"),
+    aria("label") := Messages.text("pages.rss"),
     icon.html
   )
 

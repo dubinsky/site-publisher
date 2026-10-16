@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.metadata.{Language, Name}
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
-import org.podval.tools.publish.site.{PageErrorReporter, Seo}
+import org.podval.tools.publish.site.{Messages, PageErrorReporter, Seo}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import org.podval.xml.dsl.{*, given}
@@ -36,15 +36,16 @@ object PageHeader:
     span(className := "page-path", path.map(page => span("/", page.ref(withIcon = false))))
 
   private def articleMeta(page: MarkupPage): Xml.Element =
+    given Language.Spec = page.site.languageSpec
     div(className := "page-meta",
       join(
         join(
           join(
             join(
               join(
-                timeHtml(Option.when(page.dateModified.nonEmpty)("Published:"), page.date, "page-published"),
+                timeHtml(Option.when(page.dateModified.nonEmpty)(Messages.text("meta.published")), page.date, "page-published"),
                 "•",
-                timeHtml(Some("Updated:"), page.dateModified, "page-modified")
+                timeHtml(Some(Messages.text("meta.updated")), page.dateModified, "page-modified")
               ),
               "•",
               page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
@@ -83,6 +84,7 @@ object PageHeader:
     * One root store is left off descendant paths. A collection document with no title puts its
     * crumb on that path instead of a second line. */
   private def collectorHeaderXml(page: MarkupPage): Xml.Element =
+    given Language.Spec = page.site.languageSpec
     val untitledDocument: Boolean = isCollectionDocument(page) && !hasBibliographicTitle(page)
     val head: Seq[Xml.Node] = if untitledDocument then Seq.empty else Seq(currentHead(page))
     val index: Option[StoreContent] = page.store
@@ -126,7 +128,7 @@ object PageHeader:
   /** One wrapping line. A nameless store whose file name is a selector uses that selector's plural
     * (`archive` → Архивы), so the raw id is not the crumb.
     * `current` is the document itself: not a link, `aria-current="page"`. */
-  private def ancestorPath(pages: Seq[Page], current: Option[String]): Option[Xml.Element] =
+  private def ancestorPath(pages: Seq[Page], current: Option[String])(using Language.Spec): Option[Xml.Element] =
     val linked: Seq[Xml.Node] = pages match
       case Seq() => Seq.empty
       case head +: tail =>
@@ -137,7 +139,7 @@ object PageHeader:
         val node: Xml.Element =
           span(className := "store-path-current", aria("current") := "page", label)
         if linked.isEmpty then Seq(node) else linked ++ Seq(pathSep, node)
-    Option.when(crumbs.nonEmpty)(nav(className := "store-path", aria("label") := "Path", crumbs))
+    Option.when(crumbs.nonEmpty)(nav(className := "store-path", aria("label") := Messages.text("nav.path"), crumbs))
 
   /** Drop the ancestor that is the site's only root store. A second root puts the crumb back. */
   private def visibleAncestors(page: Page): Seq[Page] =
@@ -299,31 +301,34 @@ object PageHeader:
     if page.doc.exists(_.documentHeader.isDefined) || isCollector(page) then sourceLink(page) else None
 
   private def teiLink(page: Page): Option[Xml.Element] =
+    given Language.Spec = page.site.languageSpec
     Option.when(page.doc.exists(_.documentHeader.isDefined))(
       a(
         href := page.publishedPath.withExtension(TeiDocumentPage.extension).toString,
-        titleAttr := "Published TEI",
+        titleAttr := Messages.text("meta.publishedTei"),
         "TEI"
       )
     )
 
   private def sourceLink(page: Page): Option[Xml.Element] =
     page.sourcePath.map(_.toString).flatMap(page.site.git.blobUrl).map: url =>
-      a(className := "source-link", href := url, titleAttr := "Source file on GitHub", "GitHub")
+      a(className := "source-link", href := url, titleAttr := Messages.text("meta.githubTip")(using page.site.languageSpec), "GitHub")
 
   private def copyButton(page: MarkupPage): Option[Xml.Element] =
+    given Language.Spec = page.site.languageSpec
     Option.when(page.doc.exists(_.documentHeader.isDefined))(
       Xml.element("button").addClass("citation-copy").set("type", "button")
-        .set(XmlAttribute.Title, "Copy citation")
+        .set(XmlAttribute.Title, Messages.text("meta.citeTip"))
         .set("data-citation", clipboardCitation(page))
-        .setText("Cite")
+        .setText(Messages.text("meta.cite"))
     )
 
   /** Clipboard text. Not rendered. No access date.
     * The git clause is the full HEAD SHA and the file URL, the same URL as the GitHub link. */
   private def clipboardCitation(page: Page): String =
+    given Language.Spec = page.site.languageSpec
     val sentence: String = citationLine(page)
-    val hash: Option[String] = page.site.git.head.map(head => s"Git hash ${head.sha}.")
+    val hash: Option[String] = page.site.git.head.map(head => Messages.text("meta.gitHash", "sha" -> head.sha))
     val file: Option[String] = page.sourcePath.map(_.toString).flatMap(page.site.git.blobUrl)
     val tail: String = (hash.toSeq ++ file.toSeq).mkString(" ")
     if sentence.nonEmpty && tail.nonEmpty then s"$sentence $tail"
@@ -332,11 +337,12 @@ object PageHeader:
 
   /** Archival address, canonical URL, transcriber, and licence. */
   private def citationLine(page: Page): String =
+    given Language.Spec = page.site.languageSpec
     val transcriber: Option[String] = page.doc.flatMap(_.documentHeader)
       .map(_.transcribers)
       .map(plainText)
       .filter(_.nonEmpty)
-      .map(names => s"Расшифровка: $names")
+      .map(names => Messages.text("meta.transcriber", "names" -> names))
     val parts: Seq[String] = Seq(
       Option(addressLabel(page)).filter(_.nonEmpty),
       Some(Seo.canonical(page)),
@@ -361,14 +367,15 @@ object PageHeader:
     elements.map(_.getText.trim).filter(_.nonEmpty).mkString(", ")
 
   private def documentHeaderTable(page: MarkupPage): Option[Xml.Element] =
+    given Language.Spec = page.site.languageSpec
     page.doc.flatMap(_.documentHeader).filter(meta => !meta.isEmpty && isCollectionDocument(page)).flatMap: meta =>
       val rows: Seq[Xml.Element] = Seq(
-        headerRow(page, "Описание", meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
-        headerRow(page, "Дата", dateCell(meta.date)),
-        headerRow(page, "Кто", joinedInner(meta.authors)),
-        headerRow(page, "Кому", meta.addressee.toSeq.map(el => el: Xml.Node)),
-        headerRow(page, "Расшифровка", joinedInner(meta.transcribers)),
-        headerRow(page, "Перевод", joinedInner(meta.translators))
+        headerRow(page, Messages.text("doc.description"), meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
+        headerRow(page, Messages.text("doc.date"), dateCell(meta.date)),
+        headerRow(page, Messages.text("doc.who"), joinedInner(meta.authors)),
+        headerRow(page, Messages.text("doc.to"), meta.addressee.toSeq.map(el => el: Xml.Node)),
+        headerRow(page, Messages.text("doc.transcriber"), joinedInner(meta.transcribers)),
+        headerRow(page, Messages.text("doc.translation"), joinedInner(meta.translators))
       ).flatten
       Option.when(rows.nonEmpty)(
         Xml.element(XmlElement.Table).addClass("document-header").setChildren(rows)

@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Generated chrome follows the site language in `_site_config.yml`.
+  English is the fallback.
+  The gear, the collection table, and the search page use that language.
+  Scripts read the sentence from the page.
 - The gear checkbox that shows abbreviation expansions also shows corrections in the text.
   Off, the correction is a hover tip and the source word keeps its underline.
   Print and PDF still show the correction.

@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.asciidoctor.{Asciidoctor, Attributes, Options, SafeMode}
+import org.podval.metadata.Language
 import org.podval.tools.publish.prose.{AsciiDocProse, ProseFormatter}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
@@ -78,12 +79,14 @@ object AsciiDocMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) = HtmlMarkup.process(
-    cleanup(xml), 
-    errorReporter
-  )
+  ): (Xml.Element, Option[Xml.Element]) =
+    given Language.Spec = errorReporter.languageSpec
+    HtmlMarkup.process(
+      cleanup(xml),
+      errorReporter
+    )
 
-  private[markup] def cleanup(xml: Xml.Element): Xml.Element =
+  private[markup] def cleanup(xml: Xml.Element)(using spec: Language.Spec = Language.English.toSpec): Xml.Element =
     var cleaned: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
 
@@ -338,7 +341,7 @@ object AsciiDocMarkup extends Markup(
     node.asElement.exists(el => el.isElement(XmlElement.Div) && el.hasClass("attribution"))
 
   // Asciidoctor: <div class="admonitionblock note"><table> icon + content cells.
-  private def convertAdmonition(element: Xml.Element): Xml.Element =
+  private def convertAdmonition(element: Xml.Element)(using Language.Spec): Xml.Element =
     if !element.isElement(XmlElement.Div) || !element.hasClass("admonitionblock") then element
     else
       val typeName: String =

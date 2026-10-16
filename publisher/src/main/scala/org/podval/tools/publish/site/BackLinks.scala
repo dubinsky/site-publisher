@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -20,8 +21,9 @@ final class BackLinks:
       .sortBy(_._1.title)
 
     if page.hasSyntheticContent && !page.isDirectory || pageBackLinks.isEmpty then None else Some:
+      given Language.Spec = page.site.languageSpec
       page.withInterfaceLang(div(className := "backlinks",
-        h3("Backlinks"),
+        h3(Messages.text("pages.backlinks")),
         ul(groupedItems(page, pageBackLinks))
       ))
 

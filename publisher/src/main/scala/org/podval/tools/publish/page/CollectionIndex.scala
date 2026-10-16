@@ -1,7 +1,8 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
-import org.podval.tools.publish.site.{PageError, PageErrorReporter}
+import org.podval.tools.publish.site.{Messages, PageError, PageErrorReporter}
 import org.podval.xml.{Xml, XmlElement}
 
 /** Collection directory index: collector `table.collection-index`, generated at render.
@@ -12,18 +13,19 @@ object CollectionIndex:
     val cssClass: String
   )
 
-  val columns: Seq[Column] = Seq(
-    Column("Описание", "description"),
-    Column("Дата", "date"),
-    Column("Кто", "author"),
-    Column("Кому", "addressee"),
-    Column("Язык", "language"),
-    Column("Документ", "document"),
-    Column("Страницы", "pages"),
-    Column("Расшифровка", "transcriber")
+  private def columns(using Language.Spec): Seq[Column] = Seq(
+    Column(Messages.text("doc.description"), "description"),
+    Column(Messages.text("doc.date"), "date"),
+    Column(Messages.text("doc.who"), "author"),
+    Column(Messages.text("doc.to"), "addressee"),
+    Column(Messages.text("doc.language"), "language"),
+    Column(Messages.text("doc.document"), "document"),
+    Column(Messages.text("doc.pages"), "pages"),
+    Column(Messages.text("doc.transcriber"), "transcriber")
   )
 
   def generate(page: Page, store: StoreContent): Xml.Element =
+    given Language.Spec = page.site.languageSpec
     store.pageTypeName.filterNot(PageType.isKnown).foreach: name =>
       error(page, s"unknown pageType '$name'")
     val originals: Seq[Page] = listingOriginals(page)
@@ -142,13 +144,17 @@ object CollectionIndex:
       case many => many.reduce((left, right) => left ++ Seq(Xml.text(" ")) ++ right)
 
   /** Document counts, then one closed disclosure per non-zero leaf count. Above the table. */
-  private def counts(store: StoreContent, originals: Seq[Page]): Seq[Xml.Node] =
+  private def counts(store: StoreContent, originals: Seq[Page])(using Language.Spec): Seq[Xml.Node] =
     val ordered: Seq[Page] = originals.sortBy(baseName)
     val headers: Seq[(Page, DocumentHeader)] = ordered.flatMap: document =>
       document.doc.flatMap(_.documentHeader).map(document -> _)
     val line: Xml.Element = Xml.element(XmlElement.P).addClass("collection-counts").setText(
-      s"Документов ${ordered.length}. С расшифровкой ${headers.count((_, header) => header.hasBodyText)}. " +
-        s"С фотографией ${headers.count((_, header) => header.pbs.exists(pb => !pb.isMissing))}."
+      Messages.text(
+        "collection.counts",
+        "documents" -> ordered.length,
+        "transcribed" -> headers.count((_, header) => header.hasBodyText),
+        "photographed" -> headers.count((_, header) => header.pbs.exists(pb => !pb.isMissing))
+      )
     )
     val missing: Seq[(Page, Pb)] = headers.flatMap: (document, header) =>
       header.pbs.filter(_.isMissing).map(document -> _)
@@ -158,10 +164,13 @@ object CollectionIndex:
     def leaves(keep: Pb => Boolean): Seq[Xml.Element] =
       missing.filter((_, pb) => keep(pb)).map((document, pb) => leafLink(store, document, pb))
     line +: Seq(
-      leafDisclosure(s"Нет фотографий, пустые: ${leaves(_.isEmpty).length}", leaves(_.isEmpty)),
-      leafDisclosure(s"Нет фотографий, с текстом: ${leaves(pb => !pb.isEmpty).length}", leaves(pb => !pb.isEmpty)),
+      leafDisclosure(Messages.text("collection.missingEmpty", "n" -> leaves(_.isEmpty).length), leaves(_.isEmpty)),
       leafDisclosure(
-        s"Без расшифровки: ${untranscribed.map((_, leaves) => leaves).sum}",
+        Messages.text("collection.missingText", "n" -> leaves(pb => !pb.isEmpty).length),
+        leaves(pb => !pb.isEmpty)
+      ),
+      leafDisclosure(
+        Messages.text("collection.untranscribed", "n" -> untranscribed.map((_, leaves) => leaves).sum),
         untranscribed.map((document, _) => documentLink(document, baseName(document)))
       )
     ).flatten
@@ -186,7 +195,7 @@ object CollectionIndex:
       case Seq() => Seq.empty
       case head +: tail => (head: Xml.Node) +: tail.flatMap(node => Seq(Xml.text(" "), node: Xml.Node))
 
-  private def titleRow(page: Page, title: Option[Xml.Element]): Option[Xml.Element] =
+  private def titleRow(page: Page, title: Option[Xml.Element])(using Language.Spec): Option[Xml.Element] =
     title.map: xml =>
       val inner: Xml.Element = Xml.element(XmlElement.Span).addClass("part-title")
         .setChildren(convertedNodes(page, xml.getChildren))

@@ -1,5 +1,6 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page}
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
@@ -37,8 +38,9 @@ final class Categories:
         .map(_.from)
         .sortBy(member => (member.title, member.publishedPath.toString))
       Option.when(members.nonEmpty):
+        given Language.Spec = page.site.languageSpec
         page.withInterfaceLang(div(className := "category-members",
-          h3("In this category"),
+          h3(Messages.text("pages.category")),
           Page.pageList(members)
         ))
 

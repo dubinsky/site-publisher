@@ -1,5 +1,6 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
 import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -10,6 +11,7 @@ final class PagedListSpec extends AnyFunSuite:
   }
 
   test("nav: page 1 is newest, so Older goes forward and Newer back") {
+    given Language.Spec = Language.English.toSpec
     val first: String = HtmlXmlWriterConfig.render(PagedList.nav(1, 3, i => s"/$i"))
     assert(first.contains("""class="pagination""""), first)
     assert(!first.contains("Newer"), first)

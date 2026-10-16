@@ -1,7 +1,8 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{CollectionIndex, FacsimilePage, FullMarkupPage, NamedWindows, Page}
-import org.podval.tools.publish.site.Path
+import org.podval.tools.publish.site.{Messages, Path}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** Per-document facsimile viewer: JPEG URLs and scroller XML. `pb` hrefs are filled at render. */
@@ -50,14 +51,15 @@ object Facsimile:
           CollectionIndex.baseName(sibling) == base
       .headOption.getOrElse(page)
 
-  def imageFor(document: FullMarkupPage, pb: Pb): (String, String) =
+  def imageFor(document: FullMarkupPage, pb: Pb)(using Language.Spec): (String, String) =
     val base: String = document.site.config.facsimilesUrl.map(_.trim).filter(_.nonEmpty).get
     val sourceDir: Seq[String] = document.sourcePath.map(_.path.init).getOrElse(Seq.empty)
     val url: String = imageUrl(base, sourceDir, pb.n, pb.facs)
-    val alt: String = s"facsimile for page ${displayName(document, pb.n)}"
+    val alt: String = Messages.text("format.facsimileAlt", "n" -> displayName(document, pb.n))
     (url, alt)
 
   def resolveLink(element: Xml.Element, page: Page, isChunked: Boolean): Xml.Element =
+    given Language.Spec = page.site.languageSpec
     if !Pb.is(element) then element
     else page.site.pages.facsimilePage(page) match
       case None => element
@@ -79,6 +81,7 @@ object Facsimile:
 
   /** Primary `img` has no `src`: `display: none` would not cancel that fetch. */
   def aside(document: FullMarkupPage): Xml.Element =
+    given Language.Spec = document.site.languageSpec
     val pb: Pb = present(document).head
     val (url, alt) = imageFor(document, pb)
     val img: Xml.Element = Xml.element(XmlElement.Img)
@@ -90,6 +93,8 @@ object Facsimile:
     val status: Xml.Element = Xml.element(XmlElement.P)
       .addClass("facsimile-aside-status")
       .set(XmlAttribute.Hidden, "hidden")
+      .set("data-missing", Messages.text("pb.missing"))
+      .set("data-error", Messages.text("pb.scanFailed"))
     val fallback: Xml.Element = Xml.element(XmlElement.Img)
       .set(XmlAttribute.Alt, alt)
       .set("decoding", "async")
@@ -104,11 +109,12 @@ object Facsimile:
     document.withInterfaceLang(
       Xml.element(XmlElement.Aside)
         .addClass("facsimile-aside")
-        .set("aria-label", "Facsimile")
+        .set("aria-label", Messages.text("format.facsimile"))
         .setChildren(Seq(frame))
     )
 
   def scroller(viewer: FacsimilePage): Xml.Element =
+    given Language.Spec = viewer.site.languageSpec
     val document: FullMarkupPage = viewer.document
     val figures: Xml.Nodes = present(document).map(pb => pageFigure(document, pb))
     Xml.element(XmlElement.Div).add(ScrollerClass).setChildren(figures)
@@ -119,7 +125,7 @@ object Facsimile:
   private def displayName(document: FullMarkupPage, n: String): String =
     document.parent.flatMap(_.store).map(_.pageType).getOrElse(PageType.Manuscript).displayName(n)
 
-  private def pageFigure(document: FullMarkupPage, pb: Pb): Xml.Element =
+  private def pageFigure(document: FullMarkupPage, pb: Pb)(using Language.Spec): Xml.Element =
     val id: String = Pb.pageId(pb.n)
     val (url, alt) = imageFor(document, pb)
     val display: String = displayName(document, pb.n)

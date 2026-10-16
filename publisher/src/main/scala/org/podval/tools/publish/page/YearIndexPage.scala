@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.opentorah.calendar.roman.Julian
 import org.podval.metadata.Language
 import org.podval.tools.publish.markup.{PlainText, TeiDate}
-import org.podval.tools.publish.site.{Path, Site}
+import org.podval.tools.publish.site.{Messages, Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -37,7 +37,8 @@ final class YearIndexPage(
   )
 
   override def titleDefault: String =
-    if russian then "Годы" else "Years"
+    given Language.Spec = site.languageSpec
+    Messages.text("years.title")
 
   override protected def iconDefault: Icon = Icon.calendar
 
@@ -59,14 +60,13 @@ final class YearIndexPage(
     val rows: Seq[(Page, TeiDate.Filing)] = documents.map(page => page -> filingOf(page))
     div(className := "year-index").setChildren(yearSections(rows) ++ undatedSection(rows))
 
-  private def russian: Boolean =
-    site.languageSpec == Language.Russian.toSpec
-
   private def undatedHeading: String =
-    if russian then "Без даты" else "Undated"
+    given Language.Spec = site.languageSpec
+    Messages.text("years.undated")
 
   private def noMonth: String =
-    if russian then "без месяца" else "No month"
+    given Language.Spec = site.languageSpec
+    Messages.text("years.noMonth")
 
   private def filingOf(page: Page): TeiDate.Filing =
     page.doc.flatMap(_.documentHeader).flatMap(_.date).fold(TeiDate.emptyFiling)(TeiDate.filingYears)
@@ -161,7 +161,8 @@ final class YearIndexPage(
 
   private def dayHeading(month: Int, day: Int, count: Int): String =
     val when: String =
-      if russian then s"$day ${russianGenitive.getOrElse(month, monthName(month))}"
+      if site.languageSpec == Language.Russian.toSpec then
+        s"$day ${russianGenitive.getOrElse(month, monthName(month))}"
       else s"${monthName(month)} $day"
     counted(when, count)
 
@@ -183,7 +184,8 @@ final class YearIndexPage(
 
   private def archiveLabel(archive: Option[Page]): String =
     archive.map(PageHeader.pageDisplayName).filter(_.nonEmpty).getOrElse:
-      if russian then "Без архива" else "No archive"
+      given Language.Spec = site.languageSpec
+      Messages.text("years.noArchive")
 
   private def archiveId(page: Page): String =
     val chain: Seq[Page] =

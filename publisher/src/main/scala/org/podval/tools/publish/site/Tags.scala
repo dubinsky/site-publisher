@@ -1,13 +1,19 @@
 package org.podval.tools.publish.site
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{Xml, XmlAst}
 import org.podval.xml.dsl.{*, given}
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
-  override def titleDefault: String = "Tags"
-  override protected def descriptionDefault: Option[String] = Some("Pages by tags")
+  override def titleDefault: String =
+    given Language.Spec = site.languageSpec
+    Messages.text("pages.tags")
+
+  override protected def descriptionDefault: Option[String] =
+    given Language.Spec = site.languageSpec
+    Some(Messages.text("pages.byTag"))
   override protected def iconDefault: Icon = Icon.tags
 
   private def fullMarkupPages: List[FullMarkupPage] = site
@@ -32,10 +38,11 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
   )
 
   override protected def syntheticContent: Xml.Element =
+    given Language.Spec = site.languageSpec
     div(className := "tags",
-      h2("All tags"),
+      h2(Messages.text("pages.tagsAll")),
       p(tagsAll.map(tagRef)),
-      h2("Pages by tags"),
+      h2(Messages.text("pages.byTag")),
       ul(tagsAll.map(tag =>
         li(
           h3(className := "page-tag", id := XmlAst.toId(tag), tag),

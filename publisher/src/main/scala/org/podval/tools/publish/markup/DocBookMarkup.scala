@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
@@ -44,6 +45,7 @@ object DocBookMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
+    given Language.Spec = errorReporter.languageSpec
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val coNumbers: IdGenerator = IdGenerator("")
     val rawTitle: Option[Xml.Element] = documentTitle(xml)
@@ -76,7 +78,7 @@ object DocBookMarkup extends Markup(
     coNumbers: IdGenerator,
     footnoteIds: Set[String],
     biblIds: Set[String]
-  ): Xml.Rewrite =
+  )(using Language.Spec): Xml.Rewrite =
     val renameSections: Boolean = !isRoot || !element.getName.localNameIn(rootElements)
     val converted: Xml.Element = convertSpecial(db2Html.convert(element), renameSections)
     val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
@@ -313,7 +315,7 @@ object DocBookMarkup extends Markup(
       Xml.element(XmlElement.Dd).setChildren(item.getChildren.filterNot(_.isWhitespace))
     dts ++ dds
 
-  private def convertAdmonition(element: Xml.Element): Xml.Element =
+  private def convertAdmonition(element: Xml.Element)(using Language.Spec): Xml.Element =
     if !element.getName.localNameIn(admonitionTypes) || Admonition.is(element) then element
     else
       val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)

@@ -9,16 +9,26 @@ import org.podval.xml.dsl.{*, given}
 
 final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("search").html):
   override def titleDefault: String =
-    if russian then "Поиск" else "Search"
+    given Language.Spec = site.languageSpec
+    Messages.text("nav.search")
 
   override protected def iconDefault: Icon = Icon("magnifying-glass", Icon.Solid)
 
   override protected def extraLibraries: List[js.JSLibrary] = List(js.Search)
 
   override protected def syntheticContent: Xml.Element =
+    given Language.Spec = site.languageSpec
     div(
       id := "site-search",
-      attr("data-lang") := dataLang,
+      attr("data-type-query") := Messages.text("search.typeQuery"),
+      attr("data-none") := Messages.text("search.none"),
+      attr("data-load-failed") := Messages.text("search.loadFailed"),
+      // search.js replaces {n}. The value is that token, not a count.
+      attr("data-overflow") := Messages.text("search.overflow", "n" -> "{n}"),
+      attr("data-kind-document") := Messages.text("search.kind.document"),
+      attr("data-kind-name") := Messages.text("search.kind.name"),
+      attr("data-kind-note") := Messages.text("search.kind.note"),
+      attr("data-kind-collection") := Messages.text("search.kind.collection"),
       p(id := "site-search-status", className := "site-search-status"),
       element(
         "form",
@@ -26,28 +36,19 @@ final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("searc
         attr("action") := "/search",
         attr("method") := "get",
         role := "search",
-        filter(if russian then "Год" else "Year", "year"),
-        filter(if russian then "Архив" else "Archive", "archive"),
-        filter(if russian then "Язык" else "Language", "lang")
+        filter(Messages.text("search.year"), "year"),
+        filter(Messages.text("search.archive"), "archive"),
+        filter(Messages.text("search.language"), "lang")
       ),
       element("ol", id := "site-search-hits", className := "site-search-hits")
     )
 
-  private def russian: Boolean =
-    site.languageSpec == Language.Russian.toSpec
-
-  private def dataLang: String =
-    if russian then "ru" else "en"
-
-  private def allLabel: String =
-    if russian then "Все" else "All"
-
-  private def filter(caption: String, name: String): Xml.Element =
+  private def filter(caption: String, name: String)(using Language.Spec): Xml.Element =
     label(
       s"$caption ",
       element(
         "select",
         attr("name") := name,
-        element("option", allLabel)
+        element("option", Messages.text("search.all"))
       )
     )

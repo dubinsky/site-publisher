@@ -1,5 +1,6 @@
 package org.podval.tools.publish.markup
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.prose.{MarkdownProse, ProseFormatter}
 import org.podval.tools.publish.site.PageErrorReporter
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst, XmlElement}
@@ -63,6 +64,7 @@ object MarkdownMarkup extends Markup(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
   ): (Xml.Element, Option[Xml.Element]) =
+    given Language.Spec = errorReporter.languageSpec
     val result: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element
       result = MarkdownWikiBlock.convert(result, errorReporter).getOrElse(result)
@@ -79,7 +81,7 @@ object MarkdownMarkup extends Markup(
       errorReporter
     )
 
-  private[markup] def convert(xml: Xml.Element): Xml.Element =
+  private[markup] def convert(xml: Xml.Element)(using spec: Language.Spec = Language.English.toSpec): Xml.Element =
     xml.transform((element: Xml.Element) =>
       val children: Xml.Nodes = element.getChildren.convertElements(HtmlMarkup.unwrapSpuriousParagraph)
       convertAdmonition(convertTaskList(element.setChildren(convertDescriptionLists(children))))
@@ -96,11 +98,11 @@ object MarkdownMarkup extends Markup(
   // Obsidian core callouts: `> [!type] Title` (optional `+`/`-` fold). FlexMark emits a blockquote.
   private val admonitionMarker = """\[!([A-Za-z0-9_-]+)\]([+-])?[ \t]*""".r
 
-  private def convertAdmonition(element: Xml.Element): Xml.Element =
+  private def convertAdmonition(element: Xml.Element)(using Language.Spec): Xml.Element =
     if !element.isElement(XmlElement.Blockquote) then element
     else obsidianAdmonition(element).getOrElse(element)
 
-  private def obsidianAdmonition(quote: Xml.Element): Option[Xml.Element] =
+  private def obsidianAdmonition(quote: Xml.Element)(using Language.Spec): Option[Xml.Element] =
     val children: Xml.Nodes = quote.getChildren.filterNot(_.isWhitespace).toList
     for
       first <- children.headOption.flatMap(_.asElement).filter(_.isElement(XmlElement.P))

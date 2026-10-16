@@ -1,7 +1,9 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
+import org.podval.tools.publish.site.Messages
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import scala.annotation.tailrec
@@ -17,7 +19,9 @@ final class FacsimilePage(
 
   override def titleFromPath: String = document.titleFromPath
 
-  override def titleDefault: String = s"${document.title} facsimile"
+  override def titleDefault: String =
+    given Language.Spec = site.languageSpec
+    Messages.text("format.facsimileTitle", "title" -> document.title)
 
   override protected def iconDefault: Icon = Icon.images
 

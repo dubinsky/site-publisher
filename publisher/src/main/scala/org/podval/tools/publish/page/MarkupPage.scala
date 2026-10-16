@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.metadata.Language
 import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
-import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
+import org.podval.tools.publish.site.{Feed, Messages, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.podval.xml.dsl.{*, given}
@@ -86,20 +86,21 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   protected def facsimileAside: Option[Xml.Element] = None
 
   final def formatLinks: Seq[Xml.Element] = formatSourcePage.toSeq.flatMap: page =>
+    given Language.Spec = site.languageSpec
     val onePage: Option[Xml.Element] =
       if formatIsFacsimile then
         Some(formatLink(
           page.publishedPath.toString,
           Icon.fileLines,
-          "Transcription",
+          Messages.text("format.transcription"),
           NamedWindows.targetAttr(page).orElse(Some(Facsimile.textTarget))
         ))
       else Option.when(formatIsChunked)(
-        formatLink(page.publishedPath.toString, Icon.fileLines, "One-page HTML")
+        formatLink(page.publishedPath.toString, Icon.fileLines, Messages.text("format.onePage"))
       )
     val chunked: Option[Xml.Element] =
       Option.when(!formatIsChunked && !formatIsFacsimile && page.chunk)(
-        formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, "Chunked HTML")
+        formatLink(page.publishedPath.add(DirectoryPage.fileName).html.toString, Icon.tableList, Messages.text("format.chunked"))
       )
     val pdf: Option[Xml.Element] = Option.when(page.pdf)(
       formatLink(page.path.withExtension(PdfPage.extension).toString, Icon.pdf, "PDF")
@@ -109,7 +110,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         formatLink(
           viewer.publishedPath.toString,
           Icon.images,
-          "Facsimile",
+          Messages.text("format.facsimile"),
           NamedWindows.targetAttr(viewer).orElse(Some(Facsimile.facsimileTarget))
         )
     ).flatten
@@ -151,6 +152,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       then element.getPrefixedClasses("language")
       else element.flatMapElements(getLanguages)
 
+    given Language.Spec = site.languageSpec
     val languages: Set[String] = markupContent.fold(Set.empty)(getLanguages(_).toSet)
     val languagesToHighlight: Set[String] = languages - "mermaid"
 
@@ -191,7 +193,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       ),
       body(
         site.siteHeader(this),
-        main(className := "page-content", aria("label") := "Content",
+        main(className := "page-content", aria("label") := Messages.text("nav.content"),
           div(className := "wrapper",
             article(className := "page",
               pageHeader,

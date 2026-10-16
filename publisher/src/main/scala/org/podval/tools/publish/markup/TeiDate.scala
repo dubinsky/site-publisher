@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.opentorah.calendar.jewish.Jewish
 import org.opentorah.calendar.roman.{Gregorian, Julian}
 import org.podval.metadata.Language
-import org.podval.tools.publish.site.{PageError, PageErrorReporter}
+import org.podval.tools.publish.site.{Messages, PageError, PageErrorReporter}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
 
 /** TEI `<date>` temporal attributes → hover table in Julian / Gregorian / Jewish.
@@ -21,11 +21,11 @@ object TeiDate:
   private val temporalNames: Seq[String] = Seq("when", "notBefore", "notAfter", "from", "to")
 
   // Start-like then end-like. `from`/`notBefore` and `to`/`notAfter` are mutually exclusive.
-  private val endSpecs: Seq[(String, String, Boolean)] = Seq(
-    ("from", "From", false),
-    ("notBefore", "Not before", false),
-    ("to", "To", true),
-    ("notAfter", "Not after", true)
+  private def endSpecs(using Language.Spec): Seq[(String, String, Boolean)] = Seq(
+    ("from", Messages.text("date.from"), false),
+    ("notBefore", Messages.text("date.notBefore"), false),
+    ("to", Messages.text("date.to"), true),
+    ("notAfter", Messages.text("date.notAfter"), true)
   )
 
   def defaultIsJulian(value: Option[String]): Boolean =
@@ -127,10 +127,10 @@ object TeiDate:
           case Left(message) => Left(Seq(message))
           case Right(numbers) =>
             val bounds: Seq[Bound] = numbers match
-              case Seq(_, _, _) => Seq(Bound("Date", "when", raw, numbers, last = false))
+              case Seq(_, _, _) => Seq(Bound(Messages.text("date.date"), "when", raw, numbers, last = false))
               case _ => Seq(
-                Bound("From", "when", raw, numbers, last = false),
-                Bound("To", "when", raw, numbers, last = true)
+                Bound(Messages.text("date.from"), "when", raw, numbers, last = false),
+                Bound(Messages.text("date.to"), "when", raw, numbers, last = true)
               )
             endsColumns(bounds, useJulian)
       case None =>
@@ -209,11 +209,11 @@ object TeiDate:
     julian: Option[Seq[String]],
     gregorian: Seq[String],
     jewish: Seq[String]
-  ): Xml.Element =
-    val julianRow: Option[Xml.Element] = julian.map(values => dataRow("Julian", values))
-    table(Seq(headerRow("Calendar" +: valueHeaders)) ++ julianRow.toSeq ++ Seq(
-      dataRow("Gregorian", gregorian),
-      dataRow("Jewish", jewish)
+  )(using Language.Spec): Xml.Element =
+    val julianRow: Option[Xml.Element] = julian.map(values => dataRow(Messages.text("date.julian"), values))
+    table(Seq(headerRow(Messages.text("date.calendar") +: valueHeaders)) ++ julianRow.toSeq ++ Seq(
+      dataRow(Messages.text("date.gregorian"), gregorian),
+      dataRow(Messages.text("date.jewish"), jewish)
     ))
 
   private def table(rows: Seq[Xml.Element]): Xml.Element =

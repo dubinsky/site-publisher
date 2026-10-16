@@ -1,16 +1,22 @@
 export function run() {
   var root = document.getElementById("site-search");
   if (!root) return;
-  var ru = root.getAttribute("data-lang") === "ru";
   var form = root.querySelector(".site-search-filters");
   var yearSelect = form.querySelector('select[name="year"]');
   var archiveSelect = form.querySelector('select[name="archive"]');
   var langSelect = form.querySelector('select[name="lang"]');
   var status = document.getElementById("site-search-status");
   var hits = document.getElementById("site-search-hits");
-  var typeQuery = ru ? "Введите запрос." : "Type a query.";
-  var noMatches = ru ? "Нет совпадений." : "No matches.";
-  var couldNotLoad = ru ? "Не удалось загрузить search.json." : "Could not load search.json.";
+  var typeQuery = root.getAttribute("data-type-query") || "";
+  var noMatches = root.getAttribute("data-none") || "";
+  var couldNotLoad = root.getAttribute("data-load-failed") || "";
+  var overflow = root.getAttribute("data-overflow") || "";
+  var kinds = {
+    document: root.getAttribute("data-kind-document") || "",
+    name: root.getAttribute("data-kind-name") || "",
+    note: root.getAttribute("data-kind-note") || "",
+    collection: root.getAttribute("data-kind-collection") || ""
+  };
   var params = new URLSearchParams(location.search);
   var q = params.get("q") || "";
   var year = params.get("year") || "";
@@ -70,7 +76,7 @@ export function run() {
     var matched = records.filter(matches);
     var shown = matched.slice(0, 100);
     if (matched.length === 0) status.textContent = noMatches;
-    else if (matched.length > 100) status.textContent = "100 " + (ru ? "из" : "of") + " " + matched.length;
+    else if (matched.length > 100) status.textContent = overflow.replace("{n}", String(matched.length));
     else status.textContent = "";
     shown.forEach(function (record) { hits.appendChild(row(record)); });
   }
@@ -110,10 +116,7 @@ export function run() {
   }
 
   function kindWord(kind) {
-    var words = ru
-      ? { document: "документ", name: "имя", note: "заметка", collection: "дело" }
-      : { document: "document", name: "name", note: "note", collection: "collection" };
-    return words[kind] || kind || "";
+    return kinds[kind] || kind || "";
   }
 
   // Required example: stored text "На" is marked when the query is "на" (original offsets, 40 before and 80 after).

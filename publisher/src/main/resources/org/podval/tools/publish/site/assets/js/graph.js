@@ -5,6 +5,9 @@ export function run(cytoscape) {
   var search = document.getElementById("site-graph-search");
   var orphans = document.getElementById("site-graph-orphans");
   var status = document.getElementById("site-graph-status");
+  var loadFailed = status ? (status.getAttribute("data-load-failed") || "") : "";
+  var statusPattern = status ? (status.getAttribute("data-status") || "") : "";
+  var largeNote = status ? (status.getAttribute("data-large") || "") : "";
   var FORCE_MAX = 400;
   var CONCENTRIC_AFTER = 2000;
 
@@ -15,7 +18,7 @@ export function run(cytoscape) {
     start(data);
   }).catch(function (err) {
     console.warn(err);
-    if (status) status.textContent = "Could not load the graph.";
+    if (status) status.textContent = loadFailed;
   });
 
   function displayEdges(edges) {
@@ -114,8 +117,8 @@ export function run(cytoscape) {
     });
 
     var edgeCount = cy.edges().length;
-    var note = n > CONCENTRIC_AFTER ? " (large graph, simplified layout)" : "";
-    if (status) status.textContent = n + " nodes, " + edgeCount + " edges" + note;
+    var note = n > CONCENTRIC_AFTER && largeNote ? " " + largeNote : "";
+    if (status) status.textContent = statusPattern.replace("{n}", String(n)).replace("{e}", String(edgeCount)) + note;
 
     cy.one("layoutstop", function () {
       cy.fit(undefined, 24);
