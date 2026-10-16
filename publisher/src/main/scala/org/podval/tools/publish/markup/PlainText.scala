@@ -15,29 +15,166 @@ object PlainText:
   def diplomaticBody(root: Xml.Element): String =
     val body: Option[Xml.Element] =
       root.childElements.find(_.isNamed("text")).flatMap(_.childElements.find(_.isNamed("body")))
-    val raw: String = body.fold("")(element => walkDiplomatic(element).result())
+    val raw: String = body.fold("")(element => new Diplomatic(element).result())
     raw.replaceAll("\\s+", " ").trim
 
-  private def walkDiplomatic(element: Xml.Element): StringBuilder =
-    element.getChildren.foldLeft(new StringBuilder)(appendDiplomatic)
+  // U+002D only. A maqaf (U+05BE) is not a line-break hyphen.
+  private val breakHyphen: Char = '-'
 
-  private def appendDiplomatic(buf: StringBuilder, node: Xml.Node): StringBuilder =
-    node.asElement match
-      case Some(child) => appendDiplomaticElement(buf, child)
-      case None => buf.append(node.asAtom.getOrElse(""))
-
-  private def appendDiplomaticElement(buf: StringBuilder, element: Xml.Element): StringBuilder =
-    val name: String = element.getName.localName
-    if diplomaticSkip.contains(name) then buf
-    else if name == "lb" then
-      if element.get("break").exists(_.trim == "no") then buf else space(buf)
-    else if name == "pb" then space(buf)
+  private def isLetterOrNumber(c: Char): Boolean =
+    if c.isLetter then true
     else
-      val spaced: StringBuilder = if diplomaticBlocks.contains(name) then space(buf) else buf
-      element.getChildren.foldLeft(spaced)(appendDiplomatic)
+      val kind: Int = Character.getType(c)
+      kind == Character.DECIMAL_DIGIT_NUMBER ||
+        kind == Character.LETTER_NUMBER ||
+        kind == Character.OTHER_NUMBER
 
-  private def space(buf: StringBuilder): StringBuilder =
-    if buf.isEmpty || buf.last.isWhitespace then buf else buf.append(' ')
+  // Joined spelling for a break="no" hyphen. The diplomatic characters stay.
+  // The extra token is the next word after that word, so the snippet still sees the hyphen.
+  private final class Diplomatic(root: Xml.Element):
+    private val buf: StringBuilder = new StringBuilder
+    private val joined: StringBuilder = new StringBuilder
+    private val held: StringBuilder = new StringBuilder
+    private var joining: Boolean = false
+    private var closed: Boolean = false
+    private var skipIntroducedWs: Boolean = false
+    private var hyphenPending: Boolean = false
+
+    def result(): String =
+      root.getChildren.foreach(appendNode)
+      endWord()
+      buf.result()
+
+    private def appendNode(node: Xml.Node): Unit =
+      node.asElement match
+        case Some(child) => appendElement(child)
+        case None => appendAtom(node.asAtom.getOrElse(""))
+
+    private def appendElement(element: Xml.Element): Unit =
+      val name: String = element.getName.localName
+      if diplomaticSkip.contains(name) then ()
+      else if name == "lb" && isBreakNo(element) then onBreakNo()
+      else if name == "lb" || name == "pb" then
+        endWord()
+        space()
+      else if diplomaticBlocks.contains(name) then
+        endWord()
+        space()
+        element.getChildren.foreach(appendNode)
+      else
+        continueThroughInline()
+        element.getChildren.foreach(appendNode)
+
+    private def isBreakNo(element: Xml.Element): Boolean =
+      element.get("break").exists(_.trim == "no")
+
+    private def onBreakNo(): Unit =
+      if joining && hyphenPending then
+        buf.append(held)
+        held.clear()
+        hyphenPending = false
+        skipIntroducedWs = true
+      else if !joining && breakHyphenAtEnd then
+        joined.clear()
+        joined.append(runBeforeBreakHyphen)
+        joining = true
+        closed = false
+        skipIntroducedWs = true
+        hyphenPending = false
+        held.clear()
+
+    private def breakHyphenAtEnd: Boolean =
+      buf.toString.reverse.dropWhile(_.isWhitespace).startsWith(breakHyphen.toString)
+
+    private def runBeforeBreakHyphen: String =
+      buf.toString.reverse.dropWhile(_.isWhitespace).drop(1).takeWhile(isLetterOrNumber).reverse
+
+    private def continueThroughInline(): Unit =
+      if joining && hyphenPending then
+        if held.nonEmpty then endWord()
+        else
+          hyphenPending = false
+          closed = true
+
+    private def endWord(): Unit =
+      val ws: String = if hyphenPending then held.toString else ""
+      held.clear()
+      hyphenPending = false
+      flushJoined()
+      if ws.nonEmpty then buf.append(ws)
+
+    private def flushJoined(): Unit =
+      if joining && joined.nonEmpty then
+        space()
+        buf.append(joined.toString)
+      joining = false
+      closed = false
+      skipIntroducedWs = false
+      joined.clear()
+
+    private def space(): Unit =
+      if buf.nonEmpty && !buf.last.isWhitespace then buf.append(' ')
+
+    private def appendAtom(text: String): Unit =
+      if text.isEmpty then ()
+      else if !joining then buf.append(text)
+      else appendJoining(text)
+
+    private def appendJoining(text: String): Unit =
+      if text.isEmpty then ()
+      else if !joining then buf.append(text)
+      else if skipIntroducedWs then
+        val (ws, rest) = text.span(_.isWhitespace)
+        buf.append(ws)
+        if rest.nonEmpty then
+          skipIntroducedWs = false
+          appendJoining(rest)
+      else if hyphenPending then
+        val (ws, rest) = text.span(_.isWhitespace)
+        if rest.isEmpty then held.append(ws)
+        else if ws.nonEmpty || held.nonEmpty then
+          val boundary: String = held.toString + ws
+          held.clear()
+          hyphenPending = false
+          flushJoined()
+          buf.append(boundary)
+          appendJoining(rest)
+        else
+          hyphenPending = false
+          closed = true
+          appendJoining(text)
+      else if closed then
+        val (ws, afterWs) = text.span(_.isWhitespace)
+        if ws.nonEmpty then
+          flushJoined()
+          buf.append(ws)
+          appendJoining(afterWs)
+        else
+          val (word, after) = text.span(!_.isWhitespace)
+          buf.append(word)
+          appendJoining(after)
+      else
+        val (run, rest) = text.span(isLetterOrNumber)
+        if run.nonEmpty then
+          buf.append(run)
+          joined.append(run)
+          appendJoining(rest)
+        else
+          val (ws, afterWs) = text.span(_.isWhitespace)
+          if ws.nonEmpty then
+            flushJoined()
+            buf.append(ws)
+            appendJoining(afterWs)
+          else if text.head == breakHyphen then
+            buf.append(breakHyphen)
+            hyphenPending = true
+            appendJoining(text.drop(1))
+          else
+            val (punct, after) = text.span: c =>
+              !c.isWhitespace && c != breakHyphen && !isLetterOrNumber(c)
+            buf.append(punct)
+            closed = true
+            appendJoining(after)
 
   def visible(element: Xml.Element, skipNotes: Boolean, skipTips: Boolean): String =
     val buf: StringBuilder = element.getChildren.foldLeft(new StringBuilder): (acc, node) =>

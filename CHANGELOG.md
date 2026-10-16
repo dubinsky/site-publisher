@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Search keeps a `break="no"` line-break hyphen and stores the joined spelling as the next word.
+  The joined spelling is letters and numbers only, so punctuation stays on the hyphenated word.
+  Consecutive `break="no"` hyphens are one word.
+  An ordinary hyphen, a hyphen before a normal line break, and a maqaf are not joined.
 - `html lang` is the document language: TEI `text/@xml:lang`, otherwise front matter, otherwise the site language,
   otherwise English.
   `dir`, alignment, and `data-interface-lang` follow the site language.

@@ -997,6 +997,13 @@ The index is the diplomatic transcription: the spelling of the source, including
 spelling.
 A `sic` reading is indexed.
 A `corr` reading is not.
+A line-break hyphen is kept, and the joined spelling is the next word.
+`Борухо-<lb break="no"/>вичъ` is stored as `Борухо-вичъ Боруховичъ`.
+Punctuation stays on the hyphenated word, so `Борухо-вичъ,` is followed by `Боруховичъ` and not by `Боруховичъ,`.
+Consecutive `break="no"` hyphens are one joined word: `на-хо-дилось` and `находилось`.
+A hyphen that is not immediately before such a break is not joined, including `что-то` and a hyphen before an ordinary
+`lb`.
+A maqaf (`U+05BE`) is not joined.
 Notes, name pages, and a collection's title and abstract are included.
 Collection tables, non-collection stores, and entity-list catalogs are not.
 An empty query shows no hits.

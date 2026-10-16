@@ -49,6 +49,42 @@ final class SearchSpec extends AnyFunSuite:
       "<p>пропущенноеслово</p>"
     )
 
+  private val commaHyphen: String =
+    tei(
+      """<date when="1798-12-21">21 декабря 1798</date>""",
+      """<p>Префикс Борухо-<lb break="no"/>вичъ, суффикс.</p>"""
+    )
+
+  private val consecutiveHyphen: String =
+    tei(
+      """<date when="1798-12-22">22 декабря 1798</date>""",
+      """<p>Тут на-<lb break="no"/>хо-<lb break="no"/>дилось слово.</p>"""
+    )
+
+  private val maqafHyphen: String =
+    tei(
+      """<date when="1798-12-23">23 декабря 1798</date>""",
+      "<p>Тут Шалом\u05be<lb break=\"no\"/>алейхем слово.</p>"
+    )
+
+  private val plainBreak: String =
+    tei(
+      """<date when="1798-12-24">24 декабря 1798</date>""",
+      """<p>Тут что-то и Книго-<lb/>продавец слово.</p>"""
+    )
+
+  private val authoredHyphen: String =
+    tei(
+      """<date when="1798-12-25">25 декабря 1798</date>""",
+      "<p>кавалеру Римскому-Кор-<lb break=\"no\"/>\n сакову конец.</p>"
+    )
+
+  private val continuationSpace: String =
+    tei(
+      """<date when="1798-12-26">26 декабря 1798</date>""",
+      "<p>Посредствомъ Могилев-<lb break=\"no\"/>\n скою губерніею конец.</p>"
+    )
+
   private def tree(search: String): Map[String, String] = Map(
     "_site_config.yml" ->
       s"""title: Search Fixture
@@ -108,6 +144,12 @@ final class SearchSpec extends AnyFunSuite:
     "archive/rgada/400.xml" -> datedTwo,
     "archive/rgada/283.xml" -> ranged,
     "archive/rgada/000.xml" -> undated,
+    "archive/rgada/501.xml" -> commaHyphen,
+    "archive/rgada/502.xml" -> consecutiveHyphen,
+    "archive/rgada/503.xml" -> maqafHyphen,
+    "archive/rgada/504.xml" -> plainBreak,
+    "archive/rgada/505.xml" -> authoredHyphen,
+    "archive/rgada/506.xml" -> continuationSpace,
     "archive/skip/999.xml" -> skipped
   )
 
@@ -205,6 +247,21 @@ final class SearchSpec extends AnyFunSuite:
       assert(!json.contains("коррслово"), json)
       assert(!json.contains("сносканеиндекс"), json)
       assert(json.contains("Борухо-вичъ"), json)
+      assert(one.contains("Борухо-вичъ. Боруховичъ"), one)
+      assert(json.contains("Борухо-вичъ, Боруховичъ"), json)
+      assert(!json.contains("Боруховичъ,"), json)
+      assert(json.contains("на-хо-дилось находилось"), json)
+      assert(json.split("находилось", -1).length == 2, json)
+      assert(json.contains("Шалом\u05beалейхем"), json)
+      assert(!json.contains("Шаломалейхем"), json)
+      assert(json.contains("что-то"), json)
+      assert(!json.contains("чтото"), json)
+      assert(json.contains("Книго-"), json)
+      assert(!json.contains("Книгопродавец"), json)
+      assert(json.contains("Римскому-Кор- сакову Корсакову"), json)
+      assert(!json.contains("РимскомуКорсакову"), json)
+      assert(json.contains("Могилев- скою Могилевскою губерніею"), json)
+      assert(!json.contains("Могилевскоюгуберніею"), json)
 
       val script: String = read(target, "assets/js/search.js")
       assert(script.contains("stored text \"На\" is marked when the query is \"на\""), script)
