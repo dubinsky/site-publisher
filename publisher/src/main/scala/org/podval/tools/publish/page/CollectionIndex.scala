@@ -73,17 +73,6 @@ object CollectionIndex:
   def langOf(page: Page): Option[String] =
     page.doc.flatMap(_.documentHeader).flatMap(_.lang).orElse(splitLang(fileName(page))._2)
 
-  def translationsOf(page: Page): Seq[Page] =
-    val base: String = baseName(page)
-    page.parent.toSeq.flatMap: directory =>
-      directory.site.pages.pages.filter: sibling =>
-        sibling != page &&
-        !sibling.isInstanceOf[TeiDocumentPage] &&
-        sibling.parent.contains(directory) &&
-        splitLang(fileName(sibling))._2.isDefined &&
-        splitLang(fileName(sibling))._1 == base
-    .sortBy(sibling => langOf(sibling).getOrElse(fileName(sibling)))
-
   private def listingOriginals(page: Page): Seq[Page] =
     page match
       case directory: DirectoryPage =>
@@ -92,27 +81,22 @@ object CollectionIndex:
 
   private def documentRow(store: StoreContent, document: Page): Xml.Element =
     val header: Option[DocumentHeader] = document.doc.flatMap(_.documentHeader)
-    val translations: Seq[Page] = translationsOf(document)
     val cells: Seq[Xml.Element] = Seq(
       cell("description", convertedNodes(document, header.flatMap(_.description).fold(Seq.empty)(_.getChildren))),
       cell("date", convertedNodes(document, PageHeader.dateCell(header.flatMap(_.date)))),
       cell("author", convertedNodes(document, PageHeader.joinedInner(header.toSeq.flatMap(_.authors)))),
       cell("addressee", convertedNodes(document, header.flatMap(_.addressee).toSeq.map(el => el: Xml.Node))),
-      cell("language", languageCell(document, header, translations)),
+      cell("language", languageCell(document, header)),
       cell("document", Seq(documentLink(document, baseName(document)))),
       cell("pages", pagesCell(document, header, store.pageType)),
       cell("transcriber", convertedNodes(document, PageHeader.joinedInner(header.toSeq.flatMap(_.transcribers))))
     )
     Xml.element(XmlElement.Tr).setChildren(cells.map(el => el: Xml.Node))
 
-  private def languageCell(
-    document: Page,
-    header: Option[DocumentHeader],
-    translations: Seq[Page]
-  ): Xml.Nodes =
+  private def languageCell(document: Page, header: Option[DocumentHeader]): Xml.Nodes =
     val lang: Xml.Nodes = header.flatMap(_.lang).orElse(langOf(document)).fold(Seq.empty[Xml.Node])(l => Seq(Xml.text(l)))
-    val links: Xml.Nodes = translations.flatMap: translation =>
-      Seq(Xml.text(" "), langLink(translation): Xml.Node)
+    val links: Xml.Nodes = document.site.pages.alternates.others(document).flatMap: member =>
+      Seq(Xml.text(" "), langLink(member.page, member.code): Xml.Node)
     lang ++ links
 
   private def pagesCell(document: Page, header: Option[DocumentHeader], pageType: PageType): Xml.Nodes =
@@ -201,8 +185,8 @@ object CollectionIndex:
       document
     )
 
-  private def langLink(translation: Page): Xml.Element =
-    documentLink(translation, langOf(translation).getOrElse(fileName(translation)))
+  private def langLink(translation: Page, code: String): Xml.Element =
+    documentLink(translation, code)
 
   private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
     if nodes.isEmpty then Seq.empty

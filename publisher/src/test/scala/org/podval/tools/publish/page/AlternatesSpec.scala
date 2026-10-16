@@ -172,3 +172,60 @@ final class AlternatesSpec extends AnyFunSuite:
       assert(errors.contains("/about-en.md"), errors)
       assert(errors.contains("/en/about.md"), errors)
   }
+
+  test("nested directory readings cluster only from the site root") {
+    withFiles(Map(
+      "notes/about.md" -> "A note.\n",
+      "en/notes/about.md" -> "The English note.\n",
+      "col.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "col/001.xml" -> tei(""" xml:lang="he""""),
+      "col/001-ru.xml" -> tei(""" xml:lang="ru""""),
+      "en/col/001.xml" -> tei(""" xml:lang="en""""),
+      "col/en/001.xml" -> tei(""" xml:lang="en""""),
+      "only-ru.md" -> "No original.\n",
+      "about.md" -> "Root note.\n",
+      "English/about.md" -> "Not a catalog code.\n",
+      "zz/about.md" -> "Not a catalog code.\n"
+    )): (_, target) =>
+      val note: String = html(target, "notes/about.html")
+      val noteLink: String = openTag(note, """class="nav-item translation"""")
+      assert(noteLink.contains("""href="/en/notes/about.html""""), noteLink)
+      assert(note.contains("""hreflang="en""""), note)
+      val noteEn: String = html(target, "en/notes/about.html")
+      val noteBack: String = openTag(noteEn, """class="nav-item translation"""")
+      assert(noteBack.contains("""href="/notes/about.html""""), noteBack)
+      assert(noteEn.contains("""hreflang="ru""""), noteEn)
+
+      val index: String = html(target, "col/index.html")
+      assert(index.contains("""class="language">he <a href="/en/col/001.html">en</a> <a href="/col/001-ru.html">ru</a>"""), index)
+      assert(!index.contains("""href="/col/en/001.html""""), index)
+      val document: String = html(target, "col/001.html")
+      assert(document.contains("""class="nav-item translation""""), document)
+      assert(document.contains("""href="/en/col/001.html""""), document)
+      assert(document.contains("""href="/col/001-ru.html""""), document)
+      assert(!document.contains("""href="/col/en/001.html""""), document)
+      val buried: String = html(target, "col/en/001.html")
+      assert(!buried.contains("""class="nav-item translation""""), buried)
+      assert(!buried.contains("hreflang"), buried)
+      assert(!buried.contains("""href="/col/001.html""""), buried)
+
+      val lone: String = html(target, "only-ru.html")
+      assert(!lone.contains("""class="nav-item translation""""), lone)
+      assert(!lone.contains("hreflang"), lone)
+
+      val root: String = html(target, "about.html")
+      assert(!root.contains("""class="nav-item translation""""), root)
+      assert(!root.contains("hreflang"), root)
+      assert(!root.contains("""href="/English/about.html""""), root)
+      assert(!root.contains("""href="/zz/about.html""""), root)
+      val english: String = html(target, "English/about.html")
+      assert(!english.contains("""class="nav-item translation""""), english)
+      assert(!english.contains("hreflang"), english)
+      val unknown: String = html(target, "zz/about.html")
+      assert(!unknown.contains("""class="nav-item translation""""), unknown)
+      assert(!unknown.contains("hreflang"), unknown)
+  }
