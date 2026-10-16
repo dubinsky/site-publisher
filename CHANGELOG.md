@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A `{base}-{xx}` suffix and a site-root language directory (`en/notes/about.md`) are two readings of one page.
+  The header links them by autonym, both ways, including outside a collection.
+  The collection Язык cell stays the code.
+  `html lang` is `text/@xml:lang`, then the suffix, then that directory, then front matter, then the site language.
+  Disagreeing signals on the file are one `Wrong language` error.
+  A cluster emits `hreflang` for every member, including itself, and `x-default` for the unsuffixed page.
+  Canonical stays the page itself.
+  There is no redirect.
 - Generated chrome follows the site language in `_site_config.yml`.
   English is the fallback.
   The gear, the collection table, and the search page use that language.
@@ -18,10 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   The joined spelling is letters and numbers only, so punctuation stays on the hyphenated word.
   Consecutive `break="no"` hyphens are one word.
   An ordinary hyphen, a hyphen before a normal line break, and a maqaf are not joined.
-- `html lang` is the document language: TEI `text/@xml:lang`, otherwise front matter, otherwise the site language,
-  otherwise English.
-  `dir`, alignment, and `data-interface-lang` follow the site language.
-  When the two differ, chrome uses the interface language and the page body uses the document language.
+- `dir`, alignment, and `data-interface-lang` follow the site language.
+  When the document language and the site language differ, chrome uses the interface language and the page body uses the
+  document language.
   A content `xml:lang` is copied to HTML `lang`.
   `<code lang>` stays the highlight language.
   A citeproc locale that is missing falls back to `en-US`.

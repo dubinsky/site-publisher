@@ -16,15 +16,19 @@ object PageContent:
     firstReading: Boolean
   ): PageContent =
     val xmlLang: Option[String] = MarkupPage.languageCode(DocumentHeader.textXmlLang(xml))
-    // One cascade: TEI `text/@xml:lang`, else front matter, else the site language, else `en`.
-    // Suffix and directory are a later change. `lang` returns this stored code.
+    val suffix: Option[String] = Alternates.suffixCode(source.sourcePath)
+    val directory: Option[String] = Alternates.directoryCode(source.sourcePath)
+    // One cascade: TEI `text/@xml:lang`, else the filename suffix, else a site-root language
+    // directory, else front matter, else the site language, else `en`. `lang` returns this stored code.
     source.setDocumentCode(
       xmlLang
+        .orElse(suffix)
+        .orElse(directory)
         .orElse(MarkupPage.languageCode(frontMatter.lang))
         .orElse(MarkupPage.languageCode(source.page.site.config.lang))
         .getOrElse("en")
     )
-    reportLanguageAgreement(source, frontMatter, xml)
+    reportLanguageAgreement(source, frontMatter, xml, suffix, directory)
     val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml, firstReading)
 
     (frontMatter.title, title) match
@@ -44,16 +48,27 @@ object PageContent:
       textXmlLang = xmlLang
     )
 
-  /** Front matter, `text/@xml:lang`, and `text/@lang`. The site language is not a signal. */
+  /** Signals on this file only. The site language is not one.
+    * A missing `text/@xml:lang` counts only for a TEI root, and only when a suffix or language directory is present.
+    * Suffix is listed before the directory.
+    */
   private def reportLanguageAgreement(
     source: PageSource,
     frontMatter: FrontMatter,
-    xml: Xml.Element
+    xml: Xml.Element,
+    suffix: Option[String],
+    directory: Option[String]
   ): Unit =
+    val xmlLang: Option[String] = MarkupPage.languageCode(DocumentHeader.textXmlLang(xml))
+    val xmlSignal: Option[String] =
+      if !xml.isNamed("TEI") then xmlLang
+      else xmlLang.orElse(Option.when(suffix.orElse(directory).isDefined)("missing"))
     val signals: Seq[String] = Seq(
-      MarkupPage.languageCode(DocumentHeader.textXmlLang(xml)),
+      xmlSignal,
       MarkupPage.languageCode(DocumentHeader.textBareLang(xml)),
-      MarkupPage.languageCode(frontMatter.lang)
+      MarkupPage.languageCode(frontMatter.lang),
+      suffix,
+      directory
     ).flatten.distinct
     if signals.length > 1 then
       source.error(

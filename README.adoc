@@ -656,12 +656,35 @@ A `collection` body is `table.collection-index` (Описание, Дата, К�
 a page list.
 Optional `<part from="000">` title rows split the table; `pageType` is `manuscript` (default: `000` / `000об`) or `book`
 (numeric).
-A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`: not a table row; Язык
-is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip
-translations.
-`text/@xml:lang` must match the suffix.
-`html lang` is that document language: `text/@xml:lang` when the TEI file has one, otherwise front matter `lang`,
-otherwise site `lang`, otherwise `en`.
+A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translation of `{base}`.
+The two letters are the language code even when the catalog does not know them.
+It is not a table row.
+The Язык cell stays the code: `he ru`, with `ru` linking to the translation.
+The site header links every reading to the others.
+The link text is the autonym (`русский`), not `[ru]`, and the link carries `lang` and `hreflang`.
+A translation links back.
+The same suffix works outside a collection.
+Prev/next still skip translations.
+A site-root directory whose name is a catalog code (`en`, not `English` and not `zz`) is another reading of the tail
+with the same extension (`en/notes/about.md` and `notes/about.md`).
+`col/en/001.xml` is not one: only the first segment counts.
+A cluster needs the unsuffixed page that is not under a language prefix.
+A lone `001-ru.xml` or a lone `en/about.md` has no header link and no `hreflang`.
+Two files with the same code are an error, and one link remains: the suffix file if there is one, otherwise the first
+published path.
+`html lang` is one stored code: `text/@xml:lang`, otherwise the filename suffix, otherwise that directory, otherwise
+front matter `lang`, otherwise site `lang`, otherwise `en`.
+Front matter, `text/@xml:lang`, `text/@lang`, the suffix, and the directory are signals.
+The site language is not.
+When two signals differ, the file is `Wrong language`.
+On a TEI file, a missing `text/@xml:lang` is a signal when a suffix or a language directory is present (`missing != ru`).
+Markdown and AsciiDoc have no such attribute, so `en/about.md` with no front matter is not an error.
+When the cluster has another member, every member's head has `hreflang` for each member, including itself, and
+`hreflang="x-default"` pointing at the unsuffixed page.
+The URL is absolute, the same string as `<link rel="canonical">`.
+Canonical stays the page itself.
+A page with no alternate has no `hreflang`.
+There is no `Accept-Language` and no redirect.
 A name the catalog knows (`Russian`, `ru-RU`) is published as the code (`ru`).
 `dir` and `data-interface-lang` on `<html>` are the interface language, which is site `lang`, not `html lang`.
 `dir` is `rtl` for `he` and `yi`, and `ltr` otherwise.

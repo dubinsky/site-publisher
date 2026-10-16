@@ -61,11 +61,6 @@ object Content:
         (lists.title, lists)
       case "TEI" =>
         val header: DocumentHeader = DocumentHeader.harvest(xml).get
-        CollectionIndex.checkLang(
-          source.sourcePath.fileName,
-          header.lang,
-          (kind, message) => source.error(kind, message)
-        )
         if firstReading then
           TeiMarkup.reportSourceErrors(xml, source, namesWithoutRef = true)
         val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)

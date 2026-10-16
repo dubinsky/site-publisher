@@ -55,7 +55,14 @@ object Seo:
         published = published,
         modified = modified
       )))
-    ).flatten
+    ).flatten ++ hreflang(page)
+
+  /** Full set, including self, only when another reading exists. `x-default` is the unsuffixed page. */
+  private def hreflang(page: MarkupPage): Seq[Xml.Element] =
+    page.site.pages.alternates.cluster(page).filter(_.others.nonEmpty).toSeq.flatMap: cluster =>
+      cluster.members.map: member =>
+        link(rel := "alternate", attr("hreflang") := member.code, href := canonical(member.page))
+      :+ link(rel := "alternate", attr("hreflang") := "x-default", href := canonical(cluster.original.page))
 
   private def isHome(page: Page): Boolean = page.path.path == Seq(DirectoryPage.fileName)
 

@@ -206,15 +206,19 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(index.contains("""class="language">he <a href="/col/001-ru.html">ru</a>"""), index)
   }
 
-  test("original document has [lang] nav; translation does not; prev/next skip translations") {
+  test("original header links the autonym; translation links back; prev/next skip translations") {
     withSite(): (site, target) =>
       val original: String = html(target, "col/001.html")
       assert(original.contains("""class="nav-item translation""""), original)
-      assert(original.contains("[ru]"), original)
+      assert(original.contains("русский"), original)
+      assert(!original.contains("[ru]"), original)
+      assert(original.contains("""hreflang="ru""""), original)
       assert(original.contains("""href="/col/001-ru.html""""), original)
       assert(original.contains("""id="p001-1""""), original)
       val translation: String = html(target, "col/001-ru.html")
-      assert(!translation.contains("""class="nav-item translation""""), translation)
+      val linkAt: Int = translation.indexOf("""class="nav-item translation"""")
+      assert(linkAt >= 0, translation)
+      assert(translation.substring(linkAt, linkAt + 200).contains("""href="/col/001.html""""), translation)
       val first: MarkupPage = pageNamed(site, "000").asInstanceOf[MarkupPage]
       val middle: MarkupPage = pageNamed(site, "001").asInstanceOf[MarkupPage]
       val translated: MarkupPage = pageNamed(site, "001-ru").asInstanceOf[MarkupPage]

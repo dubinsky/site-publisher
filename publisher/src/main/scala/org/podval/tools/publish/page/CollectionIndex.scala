@@ -73,14 +73,6 @@ object CollectionIndex:
   def langOf(page: Page): Option[String] =
     page.doc.flatMap(_.documentHeader).flatMap(_.lang).orElse(splitLang(fileName(page))._2)
 
-  def checkLang(sourcePathFileName: String, lang: Option[String], report: (PageError.Kind, String) => Unit): Unit =
-    splitLang(sourcePathFileName)._2.foreach: fileLang =>
-      if !lang.contains(fileLang) then
-        report(
-          PageError.FileName,
-          s"Wrong language in $sourcePathFileName: ${lang.getOrElse("missing")} != $fileLang"
-        )
-
   def translationsOf(page: Page): Seq[Page] =
     val base: String = baseName(page)
     page.parent.toSeq.flatMap: directory =>
@@ -91,11 +83,6 @@ object CollectionIndex:
         splitLang(fileName(sibling))._2.isDefined &&
         splitLang(fileName(sibling))._1 == base
     .sortBy(sibling => langOf(sibling).getOrElse(fileName(sibling)))
-
-  def translationsToLink(page: Page): Seq[Page] =
-    if isTranslation(page) then Seq.empty
-    else if !page.parent.exists(_.store.exists(_.isCollection)) then Seq.empty
-    else translationsOf(page)
 
   private def listingOriginals(page: Page): Seq[Page] =
     page match

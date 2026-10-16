@@ -117,14 +117,16 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     Seq(onePage, chunked, pdf, facsimile).flatten
 
   final def translationLinks: Seq[Xml.Element] =
-    CollectionIndex.translationsToLink(formatSourcePage.getOrElse(this)).flatMap: translation =>
-      CollectionIndex.langOf(translation).map: lang =>
-        a(
-          className := "nav-item translation",
-          href := translation.publishedPath.toString,
-          NamedWindows.targetAttr(translation).map(name => target := name),
-          s"[$lang]"
-        )
+    val page: MarkupPage = formatSourcePage.getOrElse(this)
+    site.pages.alternates.others(page).map: member =>
+      a(
+        className := "nav-item translation",
+        href := member.page.publishedPath.toString,
+        langAttr := member.code,
+        attr("hreflang") := member.code,
+        NamedWindows.targetAttr(member.page).map(name => target := name),
+        Alternates.autonym(member.code)
+      )
 
   private def formatLink(
     url: String,

@@ -4,7 +4,7 @@ import org.podval.metadata.Names
 import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMarkup, Link, LinkKind, Markup, TeiMarkup,
   XmlMarkup}
-import org.podval.tools.publish.page.{Alias, AssetWithSourcePath, CollectionIndex, DirectoryPage,
+import org.podval.tools.publish.page.{Alias, Alternates, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
   PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree, TeiDocumentPage,
   YearIndexPage}
@@ -18,6 +18,10 @@ final class Pages(site: Site):
   private var pagesVar: List[Page] = List.empty
 
   def pages: List[Page] = pagesVar
+
+  private var alternatesVar: Alternates.Index = Alternates.Index.empty
+
+  def alternates: Alternates.Index = alternatesVar
 
   // First occupant wins, matching `List.find`. `Page.equals` is path identity, so
   // dropping a page uses `eq` and then promotes the earliest page still listed.
@@ -112,6 +116,7 @@ final class Pages(site: Site):
     pages.foreach(page => StoreTree.node(page).freeze())
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
+    alternatesVar = Alternates.build(site)
 
     site.errors.throwIfErrors()
 
