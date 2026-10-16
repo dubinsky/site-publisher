@@ -437,12 +437,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
         case None => span(license.name.trim)
     )
 
-  def siteFooter: Xml.Element = siteFooterElement(None)
-
-  def siteFooter(page: MarkupPage): Xml.Element = siteFooterElement(Some(page))
-
-  private def siteFooterElement(page: Option[MarkupPage]): Xml.Element =
-    val built: Xml.Element = footer(className := "site-footer",
+  def siteFooter: Xml.Element =
+    footer(className := "site-footer",
       div(className := "wrapper",
         div(className := "footer-col-wrapper",
           div(className := "footer-col",
@@ -475,7 +471,8 @@ final class Site(options: SiteOptions) extends JSLibrary:
         )
       )
     )
-    page.fold(built)(_.withInterfaceLang(built))
+
+  def siteFooter(page: MarkupPage): Xml.Element = page.withInterfaceLang(siteFooter)
 
 object Site:
   /** `lang` from `_site_config.yml` (`en`, `ru`, `en-US`, `Russian`, …). Omitted or unknown is English. */

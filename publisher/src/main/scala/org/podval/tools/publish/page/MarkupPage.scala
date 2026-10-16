@@ -11,13 +11,15 @@ import org.podval.xml.dsl.{*, given}
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
-  // TEI `text/@xml:lang`, else front matter. Suffix and directory are a later change.
-  private def fileDocumentCode: Option[String] =
-    content.flatMap: pageContent =>
-      pageContent.textXmlLang.orElse(MarkupPage.languageCode(pageContent.frontMatter.lang))
-
+  /** The code stored before conversion. Bibliography calls this during conversion; reading content again would recurse. */
   final def lang: String =
-    fileDocumentCode.orElse(MarkupPage.languageCode(site.config.lang)).getOrElse("en")
+    val fromSite: String = MarkupPage.languageCode(site.config.lang).getOrElse("en")
+    source.fold(fromSite) { pageSource =>
+      pageSource.documentCode.getOrElse {
+        val _ = pageSource.content
+        pageSource.documentCode.getOrElse(fromSite)
+      }
+    }
 
   final def interfaceCode: String = site.languageSpec.language.get.name
 
@@ -218,11 +220,3 @@ object MarkupPage:
     raw.map(_.trim).filter(_.nonEmpty).map: token =>
       val primary: String = token.takeWhile(c => c != '-' && c != '_')
       Language.forName(token).orElse(Language.forName(primary)).map(_.name).getOrElse(token)
-
-  /** `xmlLang` is already reduced. Front matter and the site language are not. */
-  private[page] def documentCode(
-    xmlLang: Option[String],
-    frontMatterLang: Option[String],
-    siteLang: Option[String]
-  ): String =
-    xmlLang.orElse(languageCode(frontMatterLang)).orElse(languageCode(siteLang)).getOrElse("en")

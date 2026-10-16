@@ -30,16 +30,13 @@ final class PageSource(
 
   private var documentCodeVar: Option[String] = None
 
-  /** Set before TEI conversion. Does not read `page.lang` (that would re-enter content). */
+  /** Stored before conversion so `lang` and the chrome comparison share one code. */
   def setDocumentCode(code: String): Unit = documentCodeVar = Some(code)
 
+  def documentCode: Option[String] = documentCodeVar
+
   override def interfaceChrome: Option[(String, String)] =
-    documentCodeVar.filter(_ != interfaceCode).map(_ => (interfaceCode, interfaceDir))
-
-  private def interfaceCode: String = page.site.languageSpec.language.get.name
-
-  private def interfaceDir: String =
-    if interfaceCode == "he" || interfaceCode == "yi" then "rtl" else "ltr"
+    documentCode.filter(_ != page.interfaceCode).map(_ => (page.interfaceCode, page.interfaceDir))
 
   private var contentVar: Option[SoftReference[PageContent]] = None
 

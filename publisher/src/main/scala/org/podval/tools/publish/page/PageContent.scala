@@ -16,7 +16,14 @@ object PageContent:
     firstReading: Boolean
   ): PageContent =
     val xmlLang: Option[String] = MarkupPage.languageCode(DocumentHeader.textXmlLang(xml))
-    source.setDocumentCode(MarkupPage.documentCode(xmlLang, frontMatter.lang, source.page.site.config.lang))
+    // One cascade: TEI `text/@xml:lang`, else front matter, else the site language, else `en`.
+    // Suffix and directory are a later change. `lang` returns this stored code.
+    source.setDocumentCode(
+      xmlLang
+        .orElse(MarkupPage.languageCode(frontMatter.lang))
+        .orElse(MarkupPage.languageCode(source.page.site.config.lang))
+        .getOrElse("en")
+    )
     reportLanguageAgreement(source, frontMatter, xml)
     val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml, firstReading)
 
