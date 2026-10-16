@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- `html lang` is the document language: TEI `text/@xml:lang`, otherwise front matter, otherwise the site language,
+  otherwise English.
+  `dir`, alignment, and `data-interface-lang` follow the site language.
+  When the two differ, chrome uses the interface language and the page body uses the document language.
+  A content `xml:lang` is copied to HTML `lang`.
+  `<code lang>` stays the highlight language.
+  A citeproc locale that is missing falls back to `en-US`.
 - A page break shows the images icon and the leaf name.
   The name is smaller than the transcription.
   Hovering a scan shows the leaf name and «Факсимиле.».

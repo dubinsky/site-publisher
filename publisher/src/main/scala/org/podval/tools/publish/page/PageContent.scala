@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, Facsimile, Footnote, Glossary, Ids,
-  Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
+import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, DocumentHeader, Facsimile,
+  Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
@@ -15,6 +15,9 @@ object PageContent:
     xml: Xml.Element,
     firstReading: Boolean
   ): PageContent =
+    val xmlLang: Option[String] = MarkupPage.languageCode(DocumentHeader.textXmlLang(xml))
+    source.setDocumentCode(MarkupPage.documentCode(xmlLang, frontMatter.lang, source.page.site.config.lang))
+    reportLanguageAgreement(source, frontMatter, xml)
     val (title: Option[Xml.Element], doc: Content) = Content.parse(source, xml, firstReading)
 
     (frontMatter.title, title) match
@@ -30,8 +33,26 @@ object PageContent:
       source = source,
       frontMatter = frontMatter,
       title = title,
-      doc = doc
+      doc = doc,
+      textXmlLang = xmlLang
     )
+
+  /** Front matter, `text/@xml:lang`, and `text/@lang`. The site language is not a signal. */
+  private def reportLanguageAgreement(
+    source: PageSource,
+    frontMatter: FrontMatter,
+    xml: Xml.Element
+  ): Unit =
+    val signals: Seq[String] = Seq(
+      MarkupPage.languageCode(DocumentHeader.textXmlLang(xml)),
+      MarkupPage.languageCode(DocumentHeader.textBareLang(xml)),
+      MarkupPage.languageCode(frontMatter.lang)
+    ).flatten.distinct
+    if signals.length > 1 then
+      source.error(
+        PageError.FileName,
+        s"Wrong language in ${source.sourcePath.fileName}: ${signals.mkString(" != ")}"
+      )
 
   private[page] def prepareAuthored(
     source: PageSource,
@@ -85,7 +106,9 @@ final class PageContent private(
   val source: PageSource,
   val frontMatter: FrontMatter,
   val title: Option[Xml.Element],
-  val doc: Content
+  val doc: Content,
+  /** Reduced `text/@xml:lang`. Not `text/@lang`, and not the site language. */
+  val textXmlLang: Option[String]
 ):
   def xml: Xml.Element = doc.xml
   def toc: Toc = doc.toc
@@ -196,7 +219,8 @@ final class PageContent private(
       documentDirectory = sourceFile.getParentFile,
       bibliography = frontMatter.bibliography,
       csl = frontMatter.csl,
-      lang = frontMatter.lang.orElse(source.page.site.config.lang)
+      lang = Some(source.page.lang),
+      localeContext = source.sourcePath.toString
     )
 
   private def insertToc(

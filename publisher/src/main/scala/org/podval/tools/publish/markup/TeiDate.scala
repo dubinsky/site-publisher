@@ -51,7 +51,7 @@ object TeiDate:
           val useJulian: Boolean = sourceIsJulian(element, errorReporter)
           given Language.Spec = errorReporter.languageSpec
           hover(values, useJulian) match
-            case Right(table) => wrap(element, table)
+            case Right(table) => wrap(element, table, errorReporter)
             case Left(messages) => reject(element, errorReporter, messages)
 
   private def reject(
@@ -89,11 +89,14 @@ object TeiDate:
       case _ => Seq.empty
     whenError ++ fromError ++ toError
 
-  private def wrap(date: Xml.Element, table: Xml.Element): Xml.Element =
+  private def wrap(date: Xml.Element, table: Xml.Element, reporter: PageErrorReporter): Xml.Element =
     var tip: Xml.Element = Xml
       .element(XmlElement.Span)
       .add(TipClass)
       .setChildren(Seq(table: Xml.Node))
+    reporter.interfaceChrome.foreach: pair =>
+      val (code, dir) = pair
+      tip = tip.set(XmlAttribute.Lang, code).set("dir", dir)
     var value: Xml.Element = date.set(Converted, "true")
     date.getId.foreach: id =>
       val tipId: String = s"$id-tip"

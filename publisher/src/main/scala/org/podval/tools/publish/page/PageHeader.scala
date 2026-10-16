@@ -20,11 +20,11 @@ object PageHeader:
     val path: Xml.Node =
       if links.isEmpty then pagePath(page)
       else pathBar(Seq(pagePath(page)), links)
-    header(className := "page-header",
+    page.withInterfaceLang(header(className := "page-header",
       path,
-      h1(className := "page-title", page.title),
+      page.withDocumentLang(h1(className := "page-title", page.title)),
       Option.when(!page.hasSyntheticContent)(articleMeta(page))
-    )
+    ))
 
   private def pagePath(page: Page): Xml.Element =
     def parents(page: Page): Seq[Page] = page.parent match
@@ -86,9 +86,10 @@ object PageHeader:
     val untitledDocument: Boolean = isCollectionDocument(page) && !hasBibliographicTitle(page)
     val head: Seq[Xml.Node] = if untitledDocument then Seq.empty else Seq(currentHead(page))
     val index: Option[StoreContent] = page.store
-    val description: Xml.Nodes = index.flatMap(_.description).toSeq.map(xml => resolvedFragment(page, xml))
+    val description: Xml.Nodes = index.flatMap(_.description).toSeq.map: xml =>
+      withDocumentLangIfBare(page, resolvedFragment(page, xml))
     val body: Xml.Nodes = index.flatMap(_.body).fold(Seq.empty[Xml.Node]): bodyEl =>
-      resolvedFragment(page, bodyEl).getChildren
+      documentLangGroup(page, resolvedFragment(page, bodyEl).getChildren, block = true)
     val byLabel: Xml.Nodes =
       StoreTree.by(page).filterNot(_.selector.names.hasName("document")).toSeq.map: by =>
         Xml.element("l").addClass("store-by").setText(
@@ -102,7 +103,7 @@ object PageHeader:
     val links: Seq[Xml.Node] = documentLinks(page)
     val bar: Seq[Xml.Node] =
       if crumbs.isEmpty && links.isEmpty then Seq.empty else Seq(pathBar(crumbs, links))
-    TeiMarkup.finishFootnotes(
+    page.withInterfaceLang(TeiMarkup.finishFootnotes(
       Xml.element("header").addClass("store-header").setChildren(
         bar ++
           head ++
@@ -112,7 +113,7 @@ object PageHeader:
           byLabel
       ),
       page.source.getOrElse(PageErrorReporter.Silent)
-    )
+    ))
 
   private[page] def collectorAncestors(page: Page): Seq[Page] =
     def loop(opt: Option[Page]): List[Page] = opt match
@@ -241,9 +242,23 @@ object PageHeader:
           case _: EntityListPage => page.title
           case _ => page.titleFromPath
 
-  private def storeTitleInner(page: Page): Xml.Nodes =
+  private def storeTitleInner(page: MarkupPage): Xml.Nodes =
     page.store.flatMap(_.title).fold(Seq.empty[Xml.Node]): title =>
-      resolvedFragment(page, title).getChildren
+      // `getChildren` drops `lang` that `copyContentLang` set on the title element.
+      documentLangGroup(page, resolvedFragment(page, title).getChildren, block = false)
+
+  /** One element, so the selector word on `l.store-current` stays the interface language. */
+  private def documentLangGroup(page: MarkupPage, nodes: Xml.Nodes, block: Boolean): Xml.Nodes =
+    if !page.languagesDiffer || nodes.isEmpty then nodes
+    else
+      val wrapper: Xml.Element =
+        if block then Xml.element(XmlElement.Div) else Xml.element(XmlElement.Span)
+      Seq(wrapper.set(XmlAttribute.Lang, page.lang).setChildren(nodes))
+
+  private def withDocumentLangIfBare(page: MarkupPage, element: Xml.Element): Xml.Element =
+    if page.languagesDiffer && element.get(XmlAttribute.Lang).forall(_.trim.isEmpty)
+    then element.set(XmlAttribute.Lang, page.lang)
+    else element
 
   def resolvedFragment(page: Page, xml: Xml.Element): Xml.Element =
     val converted: Xml.Element = TeiMarkup.convertFragment(
@@ -364,12 +379,12 @@ object PageHeader:
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
   /** A line whose converted value has no text is omitted. `?` and other authored text stay. */
-  private def headerRow(page: Page, heading: String, nodes: Xml.Nodes): Option[Xml.Element] =
+  private def headerRow(page: MarkupPage, heading: String, nodes: Xml.Nodes): Option[Xml.Element] =
     val value: Xml.Nodes = convertedNodes(page, nodes)
     Option.when(hasVisibleContent(value))(
       Xml.element(XmlElement.Tr).setChildren(Seq(
         Xml.element(XmlElement.Td).addClass("heading").setText(heading),
-        Xml.element(XmlElement.Td).addClass("value").setChildren(value)
+        page.withDocumentLang(Xml.element(XmlElement.Td).addClass("value").setChildren(value))
       ))
     )
 

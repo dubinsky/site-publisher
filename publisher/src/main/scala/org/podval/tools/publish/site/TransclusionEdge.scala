@@ -91,10 +91,10 @@ final class TransclusionEdges:
         .sortBy(_.title)
       if hosts.isEmpty then None
       else Some:
-        div(className := "embedded-in",
+        page.withInterfaceLang(div(className := "embedded-in",
           h3("Embedded in"),
           ul(grouped(page, hosts))
-        )
+        ))
 
   private def grouped(page: MarkupPage, hosts: Seq[FullMarkupPage]): Seq[Xml.Element] =
     val byCollection: Map[Option[Page], Seq[FullMarkupPage]] =

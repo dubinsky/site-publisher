@@ -5,9 +5,18 @@
     text-align: right;
 }
 /* render Latin and some other scripts as ltr */
-[lang="en"], [lang="fr"], [lang="de"], [lang="it"], [lang="ru"], [lang="pl"], [lang*="ar-Latn-"], [lang*="ota-Latn-"] {
+[lang="en"], [lang="fr"], [lang="de"], [lang="it"], [lang="ru"], [lang="pl"], [lang="sv"], [lang="lt"], [lang="la"], [lang*="ar-Latn-"], [lang*="ota-Latn-"] {
     direction: ltr;
     text-align: left;
+}
+/* Interface direction wins over html lang, including alignment, which inherits. */
+html[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+html[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
 }
 
 html {

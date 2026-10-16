@@ -101,10 +101,12 @@ object Facsimile:
     val frame: Xml.Element = Xml.element(XmlElement.Div)
       .addClass("facsimile-aside-frame")
       .setChildren(Seq(img, status, noscript: Xml.Node))
-    Xml.element(XmlElement.Aside)
-      .addClass("facsimile-aside")
-      .set("aria-label", "Facsimile")
-      .setChildren(Seq(frame))
+    document.withInterfaceLang(
+      Xml.element(XmlElement.Aside)
+        .addClass("facsimile-aside")
+        .set("aria-label", "Facsimile")
+        .setChildren(Seq(frame))
+    )
 
   def scroller(viewer: FacsimilePage): Xml.Element =
     val document: FullMarkupPage = viewer.document

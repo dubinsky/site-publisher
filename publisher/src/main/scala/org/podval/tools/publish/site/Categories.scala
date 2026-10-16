@@ -37,10 +37,10 @@ final class Categories:
         .map(_.from)
         .sortBy(member => (member.title, member.publishedPath.toString))
       Option.when(members.nonEmpty):
-        div(className := "category-members",
+        page.withInterfaceLang(div(className := "category-members",
           h3("In this category"),
           Page.pageList(members)
-        )
+        ))
 
 object Categories:
   private def chip(page: Page): Xml.Element = a(

@@ -47,8 +47,19 @@ object DocumentHeader:
     xml.getChildren.exists(walk)
 
   private def textLang(xml: Xml.Element): Option[String] =
-    child(xml, "text").flatMap: text =>
-      text.get(XmlAttribute.XmlLang).orElse(text.get(XmlAttribute.Lang)).map(_.trim).filter(_.nonEmpty)
+    textXmlLang(xml).orElse(textBareLang(xml))
+
+  /** `text/@xml:lang` only. `text/@lang` is a second signal, not this value. */
+  private[publish] def textXmlLang(xml: Xml.Element): Option[String] =
+    textAttribute(xml, XmlAttribute.XmlLang)
+
+  /** `text/@lang` only. Not an inner `xml:lang` and not `code/@lang`. */
+  private[publish] def textBareLang(xml: Xml.Element): Option[String] =
+    textAttribute(xml, XmlAttribute.Lang)
+
+  private def textAttribute(xml: Xml.Element, attribute: XmlAttribute): Option[String] =
+    if !xml.isNamed("TEI") then None
+    else child(xml, "text").flatMap(_.get(attribute)).map(_.trim).filter(_.nonEmpty)
 
   /** `correspAction/@type="received"`, otherwise `persName/@role="addressee"`. */
   private def addresseeOf(profileDesc: Xml.Element): Option[Xml.Element] =

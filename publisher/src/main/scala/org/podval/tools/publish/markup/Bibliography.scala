@@ -4,14 +4,17 @@ import de.undercouch.citeproc.CSL
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.{CSLCitation, CSLCitationItem, CSLCitationItemBuilder}
 import org.podval.xml.{Xml, XmlElement, XmlParser}
+import org.slf4j.{Logger, LoggerFactory}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import java.io.{File, FileInputStream}
 
 final class Bibliography(
   private val provider: Option[BibTeXItemDataProvider],
   val style: String,
-  val lang: String
+  val lang: String,
+  private val localeContext: String = ""
 ):
+  private var localeWarned: Boolean = false
   def contains(key: String): Boolean =
     provider.exists(_.getIds.contains(key))
 
@@ -22,7 +25,7 @@ final class Bibliography(
       case None =>
         (stubs.map(stub => stub -> Bibliography.unresolved(stub)).toMap, None)
       case Some(provider) =>
-        val csl: CSL = CSL(provider, style, lang)
+        val csl: CSL = citeproc(provider)
         csl.setOutputFormat("html")
         val replacements: Map[Xml.Element, Xml.Element] = stubs.map: stub =>
           val items: Seq[Citation.Item] = Citation.itemsOf(stub)
@@ -77,25 +80,37 @@ final class Bibliography(
         result = result.setChildren(result.getChildren :+ bibliography)
       (result, unknownLabels(stubs))
 
+  private def citeproc(provider: BibTeXItemDataProvider): CSL =
+    try CSL(provider, style, lang)
+    catch case e: IllegalArgumentException =>
+      if !localeWarned then
+        localeWarned = true
+        val where: String = if localeContext.isEmpty then "" else s"$localeContext: "
+        Bibliography.logger.warn(s"${where}no citeproc locale for '$lang'; using en-US (${e.getMessage})")
+      CSL(provider, style, "en-US")
+
 object Bibliography:
+  private val logger: Logger = LoggerFactory.getLogger(classOf[Bibliography])
+
   def load(
     documentDirectory: File,
     bibliography: Option[String],
     csl: Option[String],
-    lang: Option[String]
+    lang: Option[String],
+    localeContext: String = ""
   ): Bibliography =
     val locale: String = lang.getOrElse("en-US")
     (bibliography, csl) match
       case (Some(name), Some(style)) =>
         val file = File(documentDirectory, name)
-        if !file.isFile then Bibliography(None, style, locale)
+        if !file.isFile then Bibliography(None, style, locale, localeContext)
         else
           val provider: BibTeXItemDataProvider = BibTeXItemDataProvider()
           val in: FileInputStream = FileInputStream(file)
           try provider.addDatabase(BibTeXConverter().loadDatabase(in))
           finally in.close()
-          Bibliography(Some(provider), style, locale)
-      case _ => Bibliography(None, csl.getOrElse(""), locale)
+          Bibliography(Some(provider), style, locale, localeContext)
+      case _ => Bibliography(None, csl.getOrElse(""), locale, localeContext)
 
   private def unresolved(stub: Xml.Element): Xml.Element =
     val keys: String = Citation.itemsOf(stub).map(_.key).mkString("; ")

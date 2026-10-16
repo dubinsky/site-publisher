@@ -1,17 +1,40 @@
 package org.podval.tools.publish.page
 
+import org.podval.metadata.Language
 import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
 import org.podval.tools.publish.site.{Feed, Path, Seo, Site, Sitemap}
 import org.podval.tools.publish.util.Icon
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.podval.xml.dsl.{*, given}
 
 abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with PageWithContent:
   override def titleDefault: String = path.fileName
 
-  final def lang: String = content(_.frontMatter.lang).orElse(langDefault).orElse(site.config.lang).getOrElse("en")
-  protected def langDefault: Option[String] = Some("en")
+  // TEI `text/@xml:lang`, else front matter. Suffix and directory are a later change.
+  private def fileDocumentCode: Option[String] =
+    content.flatMap: pageContent =>
+      pageContent.textXmlLang.orElse(MarkupPage.languageCode(pageContent.frontMatter.lang))
+
+  final def lang: String =
+    fileDocumentCode.orElse(MarkupPage.languageCode(site.config.lang)).getOrElse("en")
+
+  final def interfaceCode: String = site.languageSpec.language.get.name
+
+  final def interfaceDir: String =
+    if interfaceCode == "he" || interfaceCode == "yi" then "rtl" else "ltr"
+
+  final def languagesDiffer: Boolean = lang != interfaceCode
+
+  /** Interface `lang` and `dir` when the document is a different language. */
+  final def withInterfaceLang(element: Xml.Element): Xml.Element =
+    if !languagesDiffer then element
+    else element.set(XmlAttribute.Lang, interfaceCode).set("dir", interfaceDir)
+
+  /** Document `lang` when it differs from the interface. */
+  final def withDocumentLang(element: Xml.Element): Xml.Element =
+    if !languagesDiffer then element
+    else element.set(XmlAttribute.Lang, lang)
 
   private var sourceVar: Option[PageSource] = None
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
@@ -147,7 +170,10 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         site.googleAnalytics.map(js.GoogleAnalytics(_))
       ).flatten ++ extraLibraries :+ site
 
-    html(langAttr := lang,
+    html(
+      langAttr := lang,
+      attr("dir") := interfaceDir,
+      attr("data-interface-lang") := interfaceCode,
       head(
         meta(charset := "utf-8"),
         meta(name := "viewport", contentAttr := "width=device-width, initial-scale=1"),
@@ -167,16 +193,16 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           div(className := "wrapper",
             article(className := "page",
               pageHeader,
-              div(className := "page-body",
+              withDocumentLang(div(className := "page-body",
                 articleBody ++ site.categories.html(this).toSeq
-              )
+              ))
             ),
             site.backLinks.html(this),
             site.transclusions.html(this)
           ),
           companion
         ),
-        site.siteFooter,
+        site.siteFooter(this),
         libraries.flatMap(_.scripts)
       )
     ).when(htmlClass.nonEmpty)(className := htmlClass)
@@ -185,3 +211,18 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   private def isCollectionIndex: Boolean =
     doc.exists(_.wide)
+
+object MarkupPage:
+  /** Known names become the enum code. An unknown token is kept whole. */
+  private[page] def languageCode(raw: Option[String]): Option[String] =
+    raw.map(_.trim).filter(_.nonEmpty).map: token =>
+      val primary: String = token.takeWhile(c => c != '-' && c != '_')
+      Language.forName(token).orElse(Language.forName(primary)).map(_.name).getOrElse(token)
+
+  /** `xmlLang` is already reduced. Front matter and the site language are not. */
+  private[page] def documentCode(
+    xmlLang: Option[String],
+    frontMatterLang: Option[String],
+    siteLang: Option[String]
+  ): String =
+    xmlLang.orElse(languageCode(frontMatterLang)).orElse(languageCode(siteLang)).getOrElse("en")

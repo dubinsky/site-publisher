@@ -265,7 +265,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
       page.next.map(_.navRef(Icon.arrowRight))
     ).flatten
     val views: Seq[Xml.Element] = page.formatLinks ++ page.translationLinks
-    header(className := "site-header",
+    page.withInterfaceLang(header(className := "site-header",
       div(className := "wrapper",
         a(
           className := "site-title",
@@ -342,7 +342,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
           )
         )
       )
-    )
+    ))
 
   private def headerSearch: Xml.Element =
     val accessible: String = if languageSpec == Language.Russian.toSpec then "Поиск" else "Search"
@@ -437,8 +437,12 @@ final class Site(options: SiteOptions) extends JSLibrary:
         case None => span(license.name.trim)
     )
 
-  def siteFooter: Xml.Element =
-    footer(className := "site-footer",
+  def siteFooter: Xml.Element = siteFooterElement(None)
+
+  def siteFooter(page: MarkupPage): Xml.Element = siteFooterElement(Some(page))
+
+  private def siteFooterElement(page: Option[MarkupPage]): Xml.Element =
+    val built: Xml.Element = footer(className := "site-footer",
       div(className := "wrapper",
         div(className := "footer-col-wrapper",
           div(className := "footer-col",
@@ -471,6 +475,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
         )
       )
     )
+    page.fold(built)(_.withInterfaceLang(built))
 
 object Site:
   /** `lang` from `_site_config.yml` (`en`, `ru`, `en-US`, `Russian`, …). Omitted or unknown is English. */

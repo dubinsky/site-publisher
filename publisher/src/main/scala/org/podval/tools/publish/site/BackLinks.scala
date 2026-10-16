@@ -20,10 +20,10 @@ final class BackLinks:
       .sortBy(_._1.title)
 
     if page.hasSyntheticContent && !page.isDirectory || pageBackLinks.isEmpty then None else Some:
-      div(className := "backlinks",
+      page.withInterfaceLang(div(className := "backlinks",
         h3("Backlinks"),
         ul(groupedItems(page, pageBackLinks))
-      )
+      ))
 
   private def groupedItems(
     page: MarkupPage,

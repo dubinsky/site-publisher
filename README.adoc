@@ -658,6 +658,22 @@ A file named `{base}-{xx}` (two-letter language, dash at length 3) is a translat
 is `he ru` with `ru` linking to the translation; the original document's site header has `[ru]`; prev/next skip
 translations.
 `text/@xml:lang` must match the suffix.
+`html lang` is that document language: `text/@xml:lang` when the TEI file has one, otherwise front matter `lang`,
+otherwise site `lang`, otherwise `en`.
+A name the catalog knows (`Russian`, `ru-RU`) is published as the code (`ru`).
+`dir` and `data-interface-lang` on `<html>` are the interface language, which is site `lang`, not `html lang`.
+`dir` is `rtl` for `he` and `yi`, and `ltr` otherwise.
+The root rules `html[dir="ltr"]` and `html[dir="rtl"]` set both `direction` and `text-align`, so a Hebrew document does
+not right-align the Russian chrome.
+An `xml:lang` on a content element is also an HTML `lang` on that element.
+`<code lang>` is the highlight language (`tei-lang`), not HTML `lang`.
+When the document language and the interface language differ, the site header and footer, the page or store header, the
+facsimile aside, backlinks, embedded-in, category members, page breaks, and the date tip carry the interface `lang` and
+`dir`, and `div.page-body` carries the document `lang`.
+A note's `h1.page-title` carries the document language.
+On a collection document the value cells do, and `l.store-current` does not.
+A store title and a store body are wrapped so the selector word stays in the interface language.
+`span.store-name` keeps the language of the name.
 The page header (`.store-header`) holds one ancestor path (`nav.store-path`) and this node's selector + name + title as
 an `<l class="store-current">`, then `abstract`/`body` and the `by/@selector` label.
 The steps are separated by `/`.

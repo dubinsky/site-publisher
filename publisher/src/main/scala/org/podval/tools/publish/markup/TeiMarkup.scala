@@ -87,7 +87,9 @@ object TeiMarkup extends Markup(
     (markHeadedDivs(withIr), title)
 
   private def convertNames(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
-    DialectWalk.transform(element)(el => convertSpecial(tei2Html.convert(el), errorReporter))
+    DialectWalk.transform(element)(el =>
+      copyContentLang(convertSpecial(tei2Html.convert(el), errorReporter))
+    )
 
   private def walk(
     element: Xml.Element,
@@ -101,7 +103,7 @@ object TeiMarkup extends Markup(
     errorReporter: PageErrorReporter,
     blankPages: Set[String]
   ): Xml.Rewrite =
-    val converted: Xml.Element = convertSpecial(tei2Html.convert(element), errorReporter)
+    val converted: Xml.Element = copyContentLang(convertSpecial(tei2Html.convert(element), errorReporter))
     // `teiHeader` endnotes are rendered later, on the document-header cells, not as article footnotes.
     val headerHere: Boolean = inHeader || element.isNamed("teiHeader")
     val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
@@ -139,7 +141,7 @@ object TeiMarkup extends Markup(
           convertBibliographyPlaceholder,
           convertQuote,
           convertFigure,
-          el => convertPb(el, blankPages),
+          el => convertPb(el, blankPages, errorReporter),
           el => TeiDate.convert(el, errorReporter),
           TeiGap.convert,
           el => TeiUnclear.convert(el, hands, errorReporter, reportedHands),
@@ -227,7 +229,7 @@ object TeiMarkup extends Markup(
     val hands: Map[String, TeiHand.Hand] = TeiHand.collect(xml)
     val reportedHands: mutable.Set[String] = mutable.Set.empty
     val converted: Xml.Element = DialectWalk.transform(xml): element =>
-      convertSpecial(tei2Html.convert(element), errorReporter)
+      copyContentLang(convertSpecial(tei2Html.convert(element), errorReporter))
     DialectWalk.transform(converted): element =>
       val dated: Xml.Element = TeiDate.convert(element, errorReporter)
       val gapped: Xml.Element = TeiGap.convert(dated)
@@ -275,14 +277,25 @@ object TeiMarkup extends Markup(
   private def xmlId(element: Xml.Element): Option[String] =
     element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
 
+  // After Xml2Html. Only `xml:lang` becomes HTML `lang`. Bare `lang` is already `tei-lang`.
+  private def copyContentLang(element: Xml.Element): Xml.Element =
+    element.get(XmlAttribute.XmlLang).map(_.trim).filter(_.nonEmpty).fold(element): code =>
+      element.set(XmlAttribute.Lang, code)
+
   // After Xml2Html so `a.pb` / icon `class` is not prefixed to `tei-class`.
   // `TeiGap.convert` is in this pass for the same reason (`span.gap-tip`).
-  private def convertPb(element: Xml.Element, blankPages: Set[String]): Xml.Element =
+  private def convertPb(
+    element: Xml.Element,
+    blankPages: Set[String],
+    errorReporter: PageErrorReporter
+  ): Xml.Element =
     if !element.isNamed("pb") then element
     else
       val n: Option[String] = element.get("n").map(_.trim).filter(_.nonEmpty)
-      if attributeTrue(element, "missing") then Pb.missingLine(n, empty = attributeTrue(element, "empty"))
-      else Pb.anchor(n, blank = n.exists(blankPages.contains))
+      val chrome: Option[(String, String)] = errorReporter.interfaceChrome
+      if attributeTrue(element, "missing") then
+        Pb.missingLine(n, empty = attributeTrue(element, "empty"), chrome = chrome)
+      else Pb.anchor(n, blank = n.exists(blankPages.contains), chrome = chrome)
 
   private def attributeTrue(element: Xml.Element, name: String): Boolean =
     element.get(name).exists: value =>

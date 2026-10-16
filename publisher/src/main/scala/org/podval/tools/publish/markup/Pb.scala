@@ -28,7 +28,11 @@ object Pb:
     element.has(Class) && (element.isA || element.isElement(XmlElement.Span))
 
   /** One line. Not a link, and not a screen tall. Faded icon, then `009об. Нет фотографии.` */
-  def missingLine(n: Option[String], empty: Boolean): Xml.Element =
+  def missingLine(
+    n: Option[String],
+    empty: Boolean,
+    chrome: Option[(String, String)] = None
+  ): Xml.Element =
     val label: String = displayLabel(n)
     val sentence: String = missingSentence(label, empty)
     // The sentence is the visible text, so the tooltip is not also the accessible description.
@@ -38,9 +42,13 @@ object Pb:
     n.foreach(value => result = result.setId(pageId(value)))
     result = result.set("data-facsimile-missing", "true")
     if empty then result = result.set("data-facsimile-empty", "true")
-    result
+    withChrome(result, chrome)
 
-  def anchor(n: Option[String], blank: Boolean = false): Xml.Element =
+  def anchor(
+    n: Option[String],
+    blank: Boolean = false,
+    chrome: Option[(String, String)] = None
+  ): Xml.Element =
     val label: String = displayLabel(n)
     val sentence: String = facsimileSentence(label)
     val visible: Seq[Xml.Node] =
@@ -54,7 +62,12 @@ object Pb:
         .setId(pageId(value))
         .set("aria-describedby", tipId(value))
     if blank then result = result.set("data-facsimile-blank", "true")
-    result
+    withChrome(result, chrome)
+
+  private def withChrome(element: Xml.Element, chrome: Option[(String, String)]): Xml.Element =
+    chrome.fold(element): pair =>
+      val (code, dir) = pair
+      element.set(XmlAttribute.Lang, code).set("dir", dir)
 
   private def displayLabel(n: Option[String]): String =
     n.fold("")(PageType.Manuscript.displayName)

@@ -28,6 +28,19 @@ final class PageSource(
 
   override def teiDefaultCalendarIsJulian: Boolean = page.site.teiDefaultCalendarIsJulian
 
+  private var documentCodeVar: Option[String] = None
+
+  /** Set before TEI conversion. Does not read `page.lang` (that would re-enter content). */
+  def setDocumentCode(code: String): Unit = documentCodeVar = Some(code)
+
+  override def interfaceChrome: Option[(String, String)] =
+    documentCodeVar.filter(_ != interfaceCode).map(_ => (interfaceCode, interfaceDir))
+
+  private def interfaceCode: String = page.site.languageSpec.language.get.name
+
+  private def interfaceDir: String =
+    if interfaceCode == "he" || interfaceCode == "yi" then "rtl" else "ltr"
+
   private var contentVar: Option[SoftReference[PageContent]] = None
 
   def cache(
