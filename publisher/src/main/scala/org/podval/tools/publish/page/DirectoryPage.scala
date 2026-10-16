@@ -45,19 +45,35 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     else path.fileName // "index"
 
   def prev(page: Page): Option[Page] =
-    position(page).filter(_ > 0).map(i => listFor(page)(i - 1))
+    position(page).filter(_ > 0).map(i => navList(page)(i - 1))
 
   def next(page: Page): Option[Page] =
-    position(page).flatMap(i => listFor(page).drop(i + 1).headOption)
+    position(page).flatMap(i => navList(page).drop(i + 1).headOption)
 
   private def position(page: Page): Option[Int] =
-    val list: List[Page] = listFor(page)
-    val exact: Int = list.indexOf(page)
+    val list: List[Page] = navList(page)
+    if CollectionIndex.isReading(page) then readingPosition(list, page)
+    else
+      val exact: Int = list.indexOf(page)
+      if exact >= 0 then Some(exact)
+      else collectionSlot(list, CollectionIndex.baseName(page))
+
+  /** A reading sits in the original's slot, so its neighbors are that page's neighbors. */
+  private def readingPosition(list: List[Page], page: Page): Option[Int] =
+    val stem: String = CollectionIndex.withoutReading(CollectionIndex.fileName(page))
+    val exact: Int = list.indexWhere(child => CollectionIndex.fileName(child) == stem)
     if exact >= 0 then Some(exact)
-    else if store.exists(_.isCollection) then
-      val i: Int = list.indexWhere(child => CollectionIndex.baseName(child) == CollectionIndex.baseName(page))
+    else collectionSlot(list, CollectionIndex.splitLang(stem)._1)
+
+  private def collectionSlot(list: List[Page], base: String): Option[Int] =
+    if !store.exists(_.isCollection) then None
+    else
+      val i: Int = list.indexWhere(child => CollectionIndex.baseName(child) == base)
       Option.when(i >= 0)(i)
-    else None
+
+  /** Readings stay out of prev/next in every directory. A listing may still link them. */
+  private def navList(page: Page): List[Page] =
+    listFor(page).filterNot(CollectionIndex.isReading)
 
   private def listFor(page: Page): List[Page] =
     storeChildrenVar.getOrElse(

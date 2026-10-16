@@ -20,11 +20,14 @@ object PageContent:
     val directory: Option[String] = Alternates.directoryCode(source.sourcePath)
     // One cascade: TEI `text/@xml:lang`, else the filename suffix, else a site-root language
     // directory, else front matter, else the site language, else `en`. `lang` returns this stored code.
-    source.setDocumentCode(
+    val fileCode: Option[String] =
       xmlLang
         .orElse(suffix)
         .orElse(directory)
         .orElse(MarkupPage.languageCode(frontMatter.lang))
+    source.setFileDocumentCode(fileCode)
+    source.setDocumentCode(
+      fileCode
         .orElse(MarkupPage.languageCode(source.page.site.config.lang))
         .getOrElse("en")
     )
@@ -71,6 +74,7 @@ object PageContent:
       directory
     ).flatten.distinct
     if signals.length > 1 then
+      source.markLanguageDisagreement()
       source.error(
         PageError.FileName,
         s"Wrong language in ${source.sourcePath.fileName}: ${signals.mkString(" != ")}"

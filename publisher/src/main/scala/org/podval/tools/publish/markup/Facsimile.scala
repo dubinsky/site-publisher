@@ -16,6 +16,7 @@ object Facsimile:
   def needed(page: FullMarkupPage): Boolean =
     page.site.config.facsimilesUrl.map(_.trim).exists(_.nonEmpty) &&
     !CollectionIndex.isTranslation(page) &&
+    !CollectionIndex.isReading(page) &&
     present(page).nonEmpty
 
   def path(document: Page): Path = document.path.add(fileName).html
@@ -39,17 +40,20 @@ object Facsimile:
       s"$slash$mid$n.jpg"
 
   def original(page: Page): Page =
-    if !CollectionIndex.isTranslation(page) then page
+    // A reading maps to its base sibling first. A translation of that sibling then maps as before.
+    val stripped: Page = CollectionIndex.originalOfReading(page).getOrElse(page)
+    if !CollectionIndex.isTranslation(stripped) then stripped
     else
-      val base: String = CollectionIndex.baseName(page)
-      page.parent.toSeq.flatMap: directory =>
+      val base: String = CollectionIndex.baseName(stripped)
+      stripped.parent.toSeq.flatMap: directory =>
         directory.site.pages.pages.filter: sibling =>
           sibling.isInstanceOf[FullMarkupPage] &&
           !sibling.isDirectory &&
           sibling.parent.contains(directory) &&
           !CollectionIndex.isTranslation(sibling) &&
+          !CollectionIndex.isReading(sibling) &&
           CollectionIndex.baseName(sibling) == base
-      .headOption.getOrElse(page)
+      .headOption.getOrElse(stripped)
 
   def imageFor(document: FullMarkupPage, pb: Pb)(using Language.Spec): (String, String) =
     val base: String = document.site.config.facsimilesUrl.map(_.trim).filter(_.nonEmpty).get

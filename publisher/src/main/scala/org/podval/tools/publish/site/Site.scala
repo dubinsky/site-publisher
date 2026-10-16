@@ -265,7 +265,7 @@ final class Site(options: SiteOptions) extends JSLibrary:
       page.prev.map(_.navRef(Icon.arrowLeft)),
       page.next.map(_.navRef(Icon.arrowRight))
     ).flatten
-    val views: Seq[Xml.Element] = page.formatLinks ++ page.translationLinks
+    val views: Seq[Xml.Element] = page.formatLinks ++ page.translationLinks ++ page.readingLinks
     page.withInterfaceLang(header(className := "site-header",
       div(className := "wrapper",
         a(

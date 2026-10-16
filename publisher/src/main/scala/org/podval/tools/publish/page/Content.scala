@@ -195,7 +195,8 @@ final class StoreContent(
     allPages.foreach: extra =>
       extra.sourcePath.foreach: extraSource =>
         if StoreContent.isUnlisted(extraSource, sourcePath, indexed, listed) &&
-           !CollectionIndex.isTranslation(extra) then
+           !CollectionIndex.isTranslation(extra) &&
+           !CollectionIndex.isReading(extra) then
           page.site.error(
             extraSource,
             PageError.NotInStore,

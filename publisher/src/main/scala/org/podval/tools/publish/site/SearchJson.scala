@@ -1,8 +1,8 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{PlainText, TeiDate}
-import org.podval.tools.publish.page.{FullMarkupPage, GraphOwner, NamedWindows, Page, StoreContent,
-  StoreIndexes, SyntheticAsset}
+import org.podval.tools.publish.page.{CollectionIndex, FullMarkupPage, GraphOwner, NamedWindows, Page,
+  StoreContent, StoreIndexes, SyntheticAsset}
 import org.podval.tools.publish.util.{Files, Icon, Json}
 import org.podval.xml.{Xml, XmlParser}
 import java.nio.charset.StandardCharsets
@@ -49,6 +49,7 @@ object SearchJson:
 
   private def recordOf(page: FullMarkupPage): Option[Record] =
     if page.sourcePath.isEmpty then None
+    else if CollectionIndex.isReading(page) then None
     else if page.isDirectory && !page.hasSyntheticContent then None
     else kindOf(page) match
       case None => None

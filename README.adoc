@@ -665,6 +665,15 @@ The link text is the autonym (`русский`), not `[ru]`, and the link carrie
 A translation links back.
 The same suffix works outside a collection.
 Prev/next still skip translations.
+A file named `{base}+reg` is a regularized reading of `{base}`, not a language.
+`doc-ru+reg` reads `doc-ru`.
+It keeps that file's `xml:lang`.
+It is not a collection row.
+Prev/next skip it in every directory, and from the reading they are the original's neighbors.
+It shares the original's facsimile.
+The original's header links `[reg]` after the language links.
+The reading does not link back, and it is not in the `hreflang` set.
+It is not in search.
 A site-root directory whose name is a catalog code (`en`, not `English` and not `zz`) is another reading of the tail
 with the same extension (`en/notes/about.md` and `notes/about.md`).
 `col/en/001.xml` is not one: only the first segment counts.

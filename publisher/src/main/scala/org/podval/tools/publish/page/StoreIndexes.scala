@@ -114,6 +114,7 @@ object StoreIndexes:
       page.isInstanceOf[FullMarkupPage] &&
         page.doc.exists(_.documentHeader.isDefined) &&
         !CollectionIndex.isTranslation(page) &&
+        !CollectionIndex.isReading(page) &&
         PageHeader.collectorAncestors(page).exists(_.path == root.path)
 
   def collectionsUnder(root: Page): Seq[Page] =

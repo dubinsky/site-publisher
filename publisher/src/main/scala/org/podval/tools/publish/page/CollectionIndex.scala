@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
-import org.podval.tools.publish.site.{Messages, PageError, PageErrorReporter}
+import org.podval.tools.publish.site.{Messages, PageError, PageErrorReporter, Path, Site}
 import org.podval.xml.{Xml, XmlElement}
 
 /** Collection directory index: collector `table.collection-index`, generated at render.
@@ -45,8 +45,10 @@ object CollectionIndex:
       page.source.getOrElse(PageErrorReporter.Silent)
     )
 
+  val readingSuffix: String = "+reg"
+
   def listingChildren(store: StoreContent, children: List[Page]): List[Page] =
-    if store.isCollection then children.filterNot(isTranslation) else children
+    if store.isCollection then children.filterNot(page => isTranslation(page) || isReading(page)) else children
 
   def originalsUnder(directory: DirectoryPage): List[Page] =
     directory.site.pages.pages
@@ -56,19 +58,77 @@ object CollectionIndex:
       .filterNot(_.isInstanceOf[FacsimilePage])
       .filter(_.path.path.init == directory.path.path.init)
       .filterNot(isTranslation)
+      .filterNot(isReading)
       .sortBy(baseName)
 
   def isTranslation(page: Page): Boolean = splitLang(fileName(page))._2.isDefined
+
+  def isReadingName(name: String): Boolean = name.endsWith(readingSuffix)
+
+  def isReading(page: Page): Boolean = isReadingName(fileName(page))
+
+  /** Stem the reading transcribes. `doc-ru+reg` is `doc-ru`, which may itself be a translation. */
+  def withoutReading(name: String): String =
+    if isReadingName(name) then name.dropRight(readingSuffix.length) else name
 
   def baseName(page: Page): String = splitLang(fileName(page))._1
 
   def fileName(page: Page): String =
     page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)
 
+  /** `+reg` is not a language. The dash rule does not see that stem, even when the name under it would match. */
   def splitLang(name: String): (String, Option[String]) =
-    val dash: Int = name.lastIndexOf('-')
-    if dash == -1 || dash != name.length - 3 then (name, None)
-    else (name.substring(0, dash), Some(name.substring(dash + 1)))
+    if isReadingName(name) then (name, None)
+    else
+      val dash: Int = name.lastIndexOf('-')
+      if dash == -1 || dash != name.length - 3 then (name, None)
+      else (name.substring(0, dash), Some(name.substring(dash + 1)))
+
+  /** The `+reg` sibling of this page, same extension and parent. A reading has none. */
+  def readingOf(page: Page): Option[MarkupPage] =
+    page.sourcePath.filter(source => !isReadingName(source.fileName)).flatMap: source =>
+      val readingPath: Path = Path(source.path.init :+ (source.fileName + readingSuffix), source.extension)
+      page.site.pages.pages.collectFirst:
+        case candidate: MarkupPage if candidate.sourcePath.contains(readingPath) => candidate
+
+  /** The sibling this reading transcribes. Not the translation's unsuffixed original. */
+  def originalOfReading(page: Page): Option[Page] =
+    page.sourcePath.filter(source => isReadingName(source.fileName)).flatMap: source =>
+      val originalPath: Path = Path(source.path.init :+ withoutReading(source.fileName), source.extension)
+      page.site.pages.pages.find(_.sourcePath.contains(originalPath))
+
+  /** After the scan. The reading's file code, before the site fallback, must equal the original's. */
+  def reportReadings(site: Site): Unit =
+    site.pages.pages.foreach:
+      case reading: MarkupPage if isReading(reading) =>
+        reading.sourcePath.foreach: source =>
+          val _ = reading.lang
+          originalOfReading(reading) match
+            case Some(original: MarkupPage) =>
+              val _ = original.lang
+              reportReadingLanguage(site, reading, original, source)
+            case _ =>
+              site.error(source, PageError.FileName, s"no original for ${sourceFile(source)}")
+      case _ =>
+
+  private def reportReadingLanguage(
+    site: Site,
+    reading: MarkupPage,
+    original: MarkupPage,
+    source: Path
+  ): Unit =
+    if !reading.source.exists(_.languageDisagrees) then
+      val left: Option[String] = reading.source.flatMap(_.fileDocumentCode)
+      val right: Option[String] = original.source.flatMap(_.fileDocumentCode)
+      if left != right then
+        site.error(
+          source,
+          PageError.FileName,
+          s"Wrong language in ${sourceFile(source)}: ${left.getOrElse("")} != ${right.getOrElse("")}"
+        )
+
+  private def sourceFile(source: Path): String =
+    source.fileName + source.extension.fold("")("." + _)
 
   def langOf(page: Page): Option[String] =
     page.doc.flatMap(_.documentHeader).flatMap(_.lang).orElse(splitLang(fileName(page))._2)

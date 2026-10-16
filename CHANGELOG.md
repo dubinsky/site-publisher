@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A `{base}+reg` file is a regularized reading of `{base}`, not a language.
+  It keeps the same `xml:lang`, is not a collection row, and is left out of prev/next and search.
+  It shares the original's facsimile.
+  The original's header links `[reg]`.
 - A `{base}-{xx}` suffix and a site-root language directory (`en/notes/about.md`) are two readings of one page.
   The header links them by autonym, both ways, including outside a collection.
   The collection Язык cell stays the code.

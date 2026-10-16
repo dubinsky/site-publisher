@@ -35,6 +35,20 @@ final class PageSource(
 
   def documentCode: Option[String] = documentCodeVar
 
+  /** Document code before the site fallback. Absent when the file declares nothing. */
+  private var fileDocumentCodeVar: Option[String] = None
+
+  def setFileDocumentCode(code: Option[String]): Unit = fileDocumentCodeVar = code
+
+  def fileDocumentCode: Option[String] = fileDocumentCodeVar
+
+  private var languageDisagreementVar: Boolean = false
+
+  /** The file's own signals already disagree. The reading check must not add a second error. */
+  def languageDisagrees: Boolean = languageDisagreementVar
+
+  def markLanguageDisagreement(): Unit = languageDisagreementVar = true
+
   override def interfaceChrome: Option[(String, String)] =
     documentCode.filter(_ != page.interfaceCode).map(_ => (page.interfaceCode, page.interfaceDir))
 

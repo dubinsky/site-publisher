@@ -48,7 +48,8 @@ object CollectionAliases:
   private def originalFacsimile(remainder: Seq[String]): Seq[String] =
     remainder match
       case Seq(name, Facsimile.fileName) =>
-        Seq(CollectionIndex.splitLang(name)._1, Facsimile.fileName)
+        // Strip `+reg` before splitLang. `doc-ru+reg` is not a language; `doc-ru` is.
+        Seq(CollectionIndex.splitLang(CollectionIndex.withoutReading(name))._1, Facsimile.fileName)
       case other => other
 
   private def strings(values: Seq[String]): String =

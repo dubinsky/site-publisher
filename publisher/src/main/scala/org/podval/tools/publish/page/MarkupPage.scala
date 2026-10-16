@@ -118,7 +118,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
 
   final def translationLinks: Seq[Xml.Element] =
     val page: MarkupPage = formatSourcePage.getOrElse(this)
-    site.pages.alternates.others(page).map: member =>
+    if CollectionIndex.isReading(page) then Seq.empty
+    else site.pages.alternates.others(page).map: member =>
       a(
         className := "nav-item translation",
         href := member.page.publishedPath.toString,
@@ -126,6 +127,17 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         attr("hreflang") := member.code,
         NamedWindows.targetAttr(member.page).map(name => target := name),
         Alternates.autonym(member.code)
+      )
+
+  /** On the original only, after the language links. Not an autonym and not `hreflang`. */
+  final def readingLinks: Seq[Xml.Element] =
+    val page: MarkupPage = formatSourcePage.getOrElse(this)
+    CollectionIndex.readingOf(page).toSeq.map: reading =>
+      a(
+        className := "nav-item reading",
+        href := reading.publishedPath.toString,
+        NamedWindows.targetAttr(reading).map(name => target := name),
+        "[reg]"
       )
 
   private def formatLink(

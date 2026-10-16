@@ -15,9 +15,15 @@ export function parsePath(pathname) {
 }
 
 export function splitLang(name) {
+  // `+reg` is a reading, not a language, even when the stem under it would match `-xx`.
+  if (name.endsWith("+reg")) return { base: name, lang: null };
   const dash = name.lastIndexOf("-");
   if (dash === -1 || dash !== name.length - 3) return { base: name, lang: null };
   return { base: name.slice(0, dash), lang: name.slice(dash + 1) };
+}
+
+function withoutReading(name) {
+  return name.endsWith("+reg") ? name.slice(0, -"+reg".length) : name;
 }
 
 export function inboundFacsimile(remainder) {
@@ -29,7 +35,8 @@ export function inboundFacsimile(remainder) {
 
 export function originalFacsimile(remainder) {
   if (remainder.length === 2 && remainder[1] === "facsimile") {
-    return [splitLang(remainder[0]).base, "facsimile"];
+    // Strip `+reg` before splitLang so `doc-ru+reg` serves the same viewer as `doc-ru`.
+    return [splitLang(withoutReading(remainder[0])).base, "facsimile"];
   }
   return remainder;
 }

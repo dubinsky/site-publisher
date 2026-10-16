@@ -117,6 +117,7 @@ final class Pages(site: Site):
     siteStoreVar = Some(StoreTree.siteStore(pages, Names(site.config.title)))
     installCollectionAliases()
     alternatesVar = Alternates.build(site)
+    CollectionIndex.reportReadings(site)
 
     site.errors.throwIfErrors()
 
@@ -340,7 +341,9 @@ final class Pages(site: Site):
           listedIn
 
     def isListed(sourcePath: Path): Boolean =
-      listedHere.forall((_, listed) => listed.contains(sourcePath))
+      // A `+reg` reading is not an include. The collection does not have to name it.
+      CollectionIndex.isReadingName(sourcePath.fileName) ||
+        listedHere.forall((_, listed) => listed.contains(sourcePath))
 
     def coversDirectory(dirPath: Seq[String]): Boolean =
       listedHere.forall((_, listed) => listed.exists(_.path.startsWith(dirPath)))
