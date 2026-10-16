@@ -100,6 +100,9 @@ final class PrettyPrintSpec extends AnyFunSuite:
   }
 
   test("person names stack and a store keeps includes, a comment, and an empty name") {
+    val prefixedSource: String =
+      """<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:p>ok</tei:p></tei:TEI>
+        |""".stripMargin
     withSite(Map(
       "alter.xml" ->
         """<person xmlns="http://www.tei-c.org/ns/1.0" role="jew">
@@ -107,6 +110,7 @@ final class PrettyPrintSpec extends AnyFunSuite:
           |<p>text</p>
           |</person>
           |""".stripMargin,
+      "prefixed.xml" -> prefixedSource,
       "archive.xml" ->
         """<store xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
           |<by selector="archive">
@@ -135,6 +139,12 @@ final class PrettyPrintSpec extends AnyFunSuite:
       assert(store.contains("xmlns:xi="), store)
       assert(store.indexOf("xmlns:tei=") == store.lastIndexOf("xmlns:tei="), store)
       assert(store.indexOf("xmlns:xi=") == store.lastIndexOf("xmlns:xi="), store)
+      val prefixed: String = text(dir, "prefixed.xml")
+      assert(prefixed.contains("ok"), prefixed)
+      assert(prefixed.contains("TEI"), prefixed)
+      assert(prefixed != prefixedSource, prefixed)
+      site.prettyPrint()
+      assert(text(dir, "prefixed.xml") == prefixed)
   }
 
   test("glued lb stays on one line and a following line stays a break") {

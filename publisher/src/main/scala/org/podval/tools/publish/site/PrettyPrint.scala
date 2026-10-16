@@ -105,7 +105,7 @@ object PrettyPrint:
         warn(site, file, error.toString)
         Counts().incConsidered.incMalformed
       case Right(document) =>
-        Markup.forElement(document.root.getName.qName) match
+        Markup.forElement(document.root.getName.localName) match
           case None =>
             warn(site, file, s"unknown root ${document.root.getName.qName}")
             Counts().incConsidered.incUnknownRoot

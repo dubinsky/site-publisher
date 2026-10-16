@@ -129,7 +129,8 @@ object TeiMarkup extends Markup(
           Seq(node)
     val ready: Xml.Element = converted.setChildren(children)
     val asFootnote: Option[Xml.Nodes] =
-      if headerHere then None else convertFootnote(ready, footnoteCorrelationIds)
+      if headerHere || Footnote.inVerbatim(parent) then None
+      else convertFootnote(ready, footnoteCorrelationIds)
     asFootnote match
       case Some(nodes) =>
         Xml.Rewrite.Emit(nodes)
@@ -241,8 +242,9 @@ object TeiMarkup extends Markup(
     * (one id sequence), then harvest, number, and append the lists. */
   private[publish] def finishFootnotes(xml: Xml.Element, report: PageErrorReporter): Xml.Element =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
-    val converted: Xml.Element = DialectWalk.rewrite(xml): (element, _) =>
-      convertFootnote(element, footnoteCorrelationIds) match
+    val converted: Xml.Element = DialectWalk.rewrite(xml): (element, parent) =>
+      if Footnote.inVerbatim(parent) then Xml.Rewrite.Keep(element)
+      else convertFootnote(element, footnoteCorrelationIds) match
         case Some(nodes) => Xml.Rewrite.Replace(nodes)
         case None => Xml.Rewrite.Keep(element)
     Footnote.finish(converted, report, localTables = false)

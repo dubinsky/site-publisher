@@ -508,6 +508,30 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(leftover.head.getText.contains("keep me"), dumped)
   }
 
+  test("note inside code or pre stays a note") {
+    def noteRemains(xml: Xml.Element): Unit =
+      val code: Xml.Element = xml.gather(
+        el => Option.when(el.isNamed("code"))(el),
+        stopAtCode = false
+      ).head
+      assert(code.childElements.exists(el => el.isNamed("note") && el.getText.contains("inside")))
+      assert(code.gather(
+        el => Option.when(el.hasClass("footnote-link"))(el),
+        stopAtCode = false
+      ).isEmpty)
+
+    val processed: Xml.Element = process(
+      """<div><p><code><note place="end">inside</note></code></p></div>"""
+    )
+    noteRemains(processed)
+    noteRemains(TeiMarkup.finishFootnotes(processed, PageErrorReporter.Silent))
+
+    val fragment: Xml.Element = parse(
+      """<pre><code><note place="foot">inside</note></code></pre>"""
+    )
+    noteRemains(TeiMarkup.finishFootnotes(fragment, PageErrorReporter.Silent))
+  }
+
   test("note after text or a preceding element has no separating HTML space") {
     def published(input: String, width: Int = 40): String =
       val xml: Xml.Element = process(input)

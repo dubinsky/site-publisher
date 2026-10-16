@@ -37,6 +37,15 @@ object Footnote:
 
   val tip: Tip = Tip("footnote")
 
+  // `literal`, `programlisting`, `screen`, and `literallayout` are still the parent
+  // when the child is visited; `convertCode` renames them afterwards.
+  private[markup] def inVerbatim(parent: Option[Xml.Element]): Boolean =
+    parent.exists(_.getName.localNameIn(verbatimParents))
+
+  private val verbatimParents: Set[String] = Set(
+    "code", "pre", "literal", "programlisting", "screen", "literallayout"
+  )
+
   def isLink(element: Xml.Element): Boolean =
     element.has(LinkClass) && element.get(CorrelationId).isDefined
 

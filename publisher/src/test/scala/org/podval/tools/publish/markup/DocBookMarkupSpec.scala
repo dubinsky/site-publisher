@@ -26,6 +26,11 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(Markup.forElement("section").isEmpty)
     assert(Markup.forElement("TEI").contains(TeiMarkup))
     assert(Markup.forElement("store").contains(TeiMarkup))
+    val prefixed: Xml.Element = parse("""<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"/>""")
+    assert(prefixed.getName.qName == "tei:TEI")
+    assert(Markup.forElement(prefixed.getName.localName) == Markup.forElement("TEI"))
+    assert(Markup.forElement(prefixed.getName.localName).contains(TeiMarkup))
+    assert(Markup.forElement(prefixed.getName.qName).isEmpty)
   }
 
   test("para and simpara become p; document title is extracted") {
@@ -237,6 +242,32 @@ final class DocBookMarkupSpec extends AnyFunSuite:
     assert(ids == Seq("fn1", "fn1"), dumped)
     val leftover: Seq[Xml.Element] = xml.gather(el => Option.when(el.isNamed("footnote"))(el)).toSeq
     assert(leftover.isEmpty, dumped)
+  }
+
+  test("footnote inside a listing stays a footnote; co still becomes a callout") {
+    def listing(name: String, extra: String = ""): Xml.Element = process(
+      s"""<article><$name><footnote>in</footnote>$extra</$name></article>"""
+    )
+
+    def footnoteRemains(xml: Xml.Element): Unit =
+      val dumped: String = render(xml)
+      val notes: Seq[Xml.Element] = xml.gather(
+        el => Option.when(el.isNamed("footnote"))(el),
+        stopAtCode = false
+      ).toSeq
+      assert(notes.size == 1, dumped)
+      assert(notes.head.getText.contains("in"), dumped)
+      assert(xml.gather(
+        el => Option.when(el.hasClass("footnote-link"))(el),
+        stopAtCode = false
+      ).isEmpty, dumped)
+
+    val program: Xml.Element = listing("programlisting", """<co label="1"/>""")
+    footnoteRemains(program)
+    assert(program.gather(el => Option.when(Callout.isMark(el))(el), stopAtCode = false).size == 1, render(program))
+    footnoteRemains(listing("screen"))
+    footnoteRemains(listing("literallayout"))
+    footnoteRemains(listing("literal"))
   }
 
   test("footnote label is the visible marker; blank label keeps the series number") {

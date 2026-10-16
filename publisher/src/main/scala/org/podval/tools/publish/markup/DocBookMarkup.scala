@@ -99,7 +99,9 @@ object DocBookMarkup extends Markup(
         case None =>
           Seq(node)
     val ready: Xml.Element = converted.setChildren(children)
-    convertFootnote(ready, footnoteCorrelationIds)
+    val asFootnote: Option[Xml.Nodes] =
+      if Footnote.inVerbatim(parent) then None else convertFootnote(ready, footnoteCorrelationIds)
+    asFootnote
       .orElse(convertFootnoteRef(ready, footnoteIds))
       .orElse(convertCo(ready, coNumbers)) match
       case Some(nodes) =>

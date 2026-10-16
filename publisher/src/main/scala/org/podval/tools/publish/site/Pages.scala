@@ -468,7 +468,7 @@ final class Pages(site: Site):
         message = "Reading to disambiguate XML dialect",
         firstReading = true,
       )
-      Markup.forElement(xml.getName.qName) match
+      Markup.forElement(xml.getName.localName) match
         case Some(markup) => Some(markup, Some((frontMatter, xml)))
         case None =>
           if !Pages.isMalformedXmlPlaceholder(xml) then
