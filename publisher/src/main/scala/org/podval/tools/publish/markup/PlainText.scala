@@ -30,11 +30,12 @@ object PlainText:
         kind == Character.OTHER_NUMBER
 
   // Joined spelling for a break="no" hyphen. The diplomatic characters stay.
-  // The extra token is the next word after that word, so the snippet still sees the hyphen.
   private final class Diplomatic(root: Xml.Element):
     private val buf: StringBuilder = new StringBuilder
     private val joined: StringBuilder = new StringBuilder
     private val held: StringBuilder = new StringBuilder
+    // Tokens already closed by punctuation or an authored hyphen, emitted when the word ends.
+    private var parked: List[String] = Nil
     private var joining: Boolean = false
     private var closed: Boolean = false
     private var skipIntroducedWs: Boolean = false
@@ -62,26 +63,29 @@ object PlainText:
         space()
         element.getChildren.foreach(appendNode)
       else
-        continueThroughInline()
+        // An inline element is not a word break, so a hyphen still sees an lb inside it.
         element.getChildren.foreach(appendNode)
 
     private def isBreakNo(element: Xml.Element): Boolean =
       element.get("break").exists(_.trim == "no")
 
     private def onBreakNo(): Unit =
-      if joining && hyphenPending then
+      // Still accumulating: consecutive break="no" hyphens are one token.
+      if joining && hyphenPending && !closed then
         buf.append(held)
         held.clear()
         hyphenPending = false
         skipIntroducedWs = true
-      else if !joining && breakHyphenAtEnd then
-        joined.clear()
+      // Closed by punctuation or an authored hyphen: a later break hyphen is its own token.
+      else if breakHyphenAtEnd && (!joining || closed) then
+        buf.append(held)
+        held.clear()
+        parkJoined()
         joined.append(runBeforeBreakHyphen)
         joining = true
         closed = false
-        skipIntroducedWs = true
         hyphenPending = false
-        held.clear()
+        skipIntroducedWs = true
 
     private def breakHyphenAtEnd: Boolean =
       buf.toString.reverse.dropWhile(_.isWhitespace).startsWith(breakHyphen.toString)
@@ -89,12 +93,9 @@ object PlainText:
     private def runBeforeBreakHyphen: String =
       buf.toString.reverse.dropWhile(_.isWhitespace).drop(1).takeWhile(isLetterOrNumber).reverse
 
-    private def continueThroughInline(): Unit =
-      if joining && hyphenPending then
-        if held.nonEmpty then endWord()
-        else
-          hyphenPending = false
-          closed = true
+    private def parkJoined(): Unit =
+      if joined.nonEmpty then parked = parked :+ joined.toString
+      joined.clear()
 
     private def endWord(): Unit =
       val ws: String = if hyphenPending then held.toString else ""
@@ -104,13 +105,15 @@ object PlainText:
       if ws.nonEmpty then buf.append(ws)
 
     private def flushJoined(): Unit =
-      if joining && joined.nonEmpty then
-        space()
-        buf.append(joined.toString)
+      if joining then parkJoined()
       joining = false
       closed = false
       skipIntroducedWs = false
-      joined.clear()
+      val tokens: List[String] = parked
+      parked = Nil
+      tokens.foreach: token =>
+        space()
+        buf.append(token)
 
     private def space(): Unit =
       if buf.nonEmpty && !buf.last.isWhitespace then buf.append(' ')
@@ -149,9 +152,13 @@ object PlainText:
           flushJoined()
           buf.append(ws)
           appendJoining(afterWs)
+        else if text.head == breakHyphen then
+          buf.append(breakHyphen)
+          hyphenPending = true
+          appendJoining(text.drop(1))
         else
-          val (word, after) = text.span(!_.isWhitespace)
-          buf.append(word)
+          val (chunk, after) = text.span(c => c != breakHyphen && !c.isWhitespace)
+          buf.append(chunk)
           appendJoining(after)
       else
         val (run, rest) = text.span(isLetterOrNumber)

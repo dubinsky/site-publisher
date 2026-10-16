@@ -85,6 +85,17 @@ final class SearchSpec extends AnyFunSuite:
       "<p>Посредствомъ Могилев-<lb break=\"no\"/>\n скою губерніею конец.</p>"
     )
 
+  private val laterBreak: String =
+    tei(
+      """<date when="1798-12-27">27 декабря 1798</date>""",
+      """<p>Имя на-<lb break="no"/>хо-<persName><lb break="no"/>дилось</persName> конец.</p>
+        |<p>Имя на-<lb break="no"/>хо-<hi><lb break="no"/>дилось</hi> конец.</p>
+        |<p>Имя Го-<lb break="no"/>ле-ни-<lb break="no"/>щев конец.</p>
+        |<p>Имя на-<lb break="no"/>хо,ди-<lb break="no"/>лось конец.</p>
+        |<p>Имя Голени-<lb break="no"/>щеву-Кутузову конец.</p>
+        |""".stripMargin
+    )
+
   private def tree(search: String): Map[String, String] = Map(
     "_site_config.yml" ->
       s"""title: Search Fixture
@@ -150,6 +161,7 @@ final class SearchSpec extends AnyFunSuite:
     "archive/rgada/504.xml" -> plainBreak,
     "archive/rgada/505.xml" -> authoredHyphen,
     "archive/rgada/506.xml" -> continuationSpace,
+    "archive/rgada/507.xml" -> laterBreak,
     "archive/skip/999.xml" -> skipped
   )
 
@@ -251,7 +263,15 @@ final class SearchSpec extends AnyFunSuite:
       assert(json.contains("Борухо-вичъ, Боруховичъ"), json)
       assert(!json.contains("Боруховичъ,"), json)
       assert(json.contains("на-хо-дилось находилось"), json)
-      assert(json.split("находилось", -1).length == 2, json)
+      assert(json.split("на-хо-дилось находилось", -1).length == 4, json)
+      assert(json.split("находилось", -1).length == 4, json)
+      assert(json.contains("Го-ле-ни-щев Голе нищев"), json)
+      assert(!json.contains("Голенищев "), json)
+      assert(json.contains("на-хо,ди-лось нахо дилось"), json)
+      assert(!json.contains("нахо,"), json)
+      assert(!json.contains("дилось,"), json)
+      assert(json.contains("Голени-щеву-Кутузову Голенищеву"), json)
+      assert(!json.contains("ГоленищевуКутузову"), json)
       assert(json.contains("Шалом\u05beалейхем"), json)
       assert(!json.contains("Шаломалейхем"), json)
       assert(json.contains("что-то"), json)
