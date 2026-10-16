@@ -280,9 +280,11 @@ bibl[rendition~="#block"] {
     background-image: linear-gradient(currentColor, currentColor);
 }
 
+/* Icon and folio label wrap as one unit, so the icon is not left at the end of a line. */
 a.pb {
     text-decoration: none;
     margin-left: 0.15em;
+    white-space: nowrap;
 }
 
 a.pb:hover {
