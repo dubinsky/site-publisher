@@ -5,7 +5,8 @@ import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
-/** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections). */
+/** Synthetic `{root}-collections.html` (tree) or `{root}-index.html` (flat collections).
+  * A file at this path is rendered above the list. */
 final class StoreIndexPage(
   site: Site,
   path: Path,
@@ -28,6 +29,9 @@ final class StoreIndexPage(
 
   override def prev: Option[Page] = None
   override def next: Option[Page] = None
+
+  override def markupContent: Option[Xml.Element] =
+    markupContent(sectionId = None, isTerminal = true)
 
   override protected def syntheticContent: Xml.Element =
     kind match

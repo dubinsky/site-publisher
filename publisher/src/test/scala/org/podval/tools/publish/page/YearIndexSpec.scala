@@ -210,12 +210,8 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(!nav.contains("years"), nav)
       assert(!nav.contains("Годы"), nav)
       assert(!nav.contains("archive-years"), nav)
-      assert(site.pages.rewriteRequest(Path.fromHref("/years")).map(_.toString).contains("/archive-years.html"))
-      val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
-      assert(
-        table.exists(entry => entry.from == Seq("years") && entry.index.toString == "/archive-years.html"),
-        table.map(entry => s"${entry.from.mkString("/")} -> ${entry.index}").mkString(", ")
-      )
+      assert(site.pages.rewriteRequest(Path.fromHref("/years")).isEmpty)
+      assert(!CollectionAliases.entries(site.pages).exists(_.from == Seq("years")))
   }
 
   test("renders a file at the year path above the list") {

@@ -544,36 +544,24 @@ final class Pages(site: Site):
 
   private def addStoreIndexes(): Unit =
     val roots: Seq[Page] = pages.filter(StoreIndexes.isRootStore)
-    val trees: Seq[StoreIndexPage] = roots.map: root =>
-      val tree: StoreIndexPage = StoreIndexPage.tree(site, root)
-      add(tree)
-      tree
     roots.foreach: root =>
-      add(StoreIndexPage.flat(site, root))
-    trees match
-      case Seq(tree) =>
-        installLeafAlias(StoreIndexes.collectionsAlias, tree)
-      case _ =>
-    val yearPages: Seq[YearIndexPage] = roots.flatMap: root =>
+      addIndex(StoreIndexPage.tree(site, root))
+      addIndex(StoreIndexPage.flat(site, root))
       val docs = StoreIndexes.documentsUnder(root, pages)
-      if docs.isEmpty then None
-      else
-        val yearPage = YearIndexPage(site, root, docs)
-        takeAuthoredYearPage(yearPage)
-        add(yearPage)
-        Some(yearPage)
-    if roots.length == 1 then
-      yearPages match
-        case Seq(yearPage) => installLeafAlias(StoreIndexes.yearsAlias, yearPage)
-        case _ => ()
+      if docs.nonEmpty then addIndex(YearIndexPage(site, root, docs))
 
-  // The scan already created a page for `{root}-years.md`. That file is the text above the list.
-  private def takeAuthoredYearPage(yearPage: YearIndexPage): Unit =
-    get(yearPage.path) match
+  private def addIndex(page: MarkupPage): Unit =
+    takeAuthored(page)
+    add(page)
+
+  // The scan already created a page for `{root}-collections`, `{root}-index`, or `{root}-years`.
+  // That file is the text above the list.
+  private def takeAuthored(page: MarkupPage): Unit =
+    get(page.path) match
       case Some(existing: MarkupPage) =>
         existing.source.foreach: source =>
-          yearPage.setSource(PageSource(
-            page = yearPage,
+          page.setSource(PageSource(
+            page = page,
             markup = source.markup,
             sourcePath = source.sourcePath,
             frontMatterStandAlone = source.frontMatterStandAlone

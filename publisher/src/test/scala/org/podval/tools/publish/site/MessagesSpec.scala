@@ -21,6 +21,7 @@ final class MessagesSpec extends AnyFunSuite:
     "search.year", "search.archive", "search.language", "search.all",
     "search.typeQuery", "search.none", "search.loadFailed", "search.overflow",
     "search.kind.document", "search.kind.name", "search.kind.note", "search.kind.collection",
+    "index.title",
     "years.title", "years.undated", "years.noMonth", "years.noArchive",
     "map.title", "map.lines", "map.caption", "map.north", "map.noCases", "map.km",
     "map.place", "map.cases", "map.outside",

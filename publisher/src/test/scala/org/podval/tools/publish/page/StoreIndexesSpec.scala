@@ -54,7 +54,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       """---
         |title: About
         |---
-        |See [дела](/collections).
+        |See [дела](/archive-collections).
         |""".stripMargin,
     "archive.xml" ->
       """<store xmlns:xi="http://www.w3.org/2001/XInclude">
@@ -138,7 +138,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(site.pages.resolve("/books/Державин", None, from).map(_.page.real).contains(derzhavinPage))
       val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
       assert(table.exists(_.from == Seq("rgada")), table.map(_.from).toString)
-      assert(table.exists(_.from == Seq("collections")), table.map(_.from).toString)
+      assert(!table.exists(_.from == Seq("collections")), table.map(_.from).toString)
       val siteStore = site.pages.siteStore
       assert(siteStore.names.hasName("Archive Fixture"))
       assert(siteStore.stores.exists(store => StoreTree.pageOf(store).exists(StoreIndexes.isRootStore)))
@@ -164,7 +164,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(derzhavinHref > booksHref, tree)
       assert(rgadaHref > derzhavinHref, tree)
       val flat: String = html(target, "archive-index.html")
-      assert(flat.contains("<title>Дела | Archive Fixture</title>"), flat)
+      assert(flat.contains("<title>Коллекции | Archive Fixture</title>"), flat)
       assert(flat.contains("архив книги / книга Державин: Переписка"), flat)
       assert(flat.contains("архив РГАДА: О секте"), flat)
       assert(flat.contains("From the notes."), flat)
@@ -186,6 +186,8 @@ final class StoreIndexesSpec extends AnyFunSuite:
       val nav: String = storePath(doc)
       assert(!nav.contains("Архивы"), nav)
       assert(nav.contains("книги"), nav)
+      assert(site.pages.rewriteRequest(Path.fromHref("/collections")).isEmpty)
+      assert(site.pages.rewriteRequest(Path.fromHref("/years")).isEmpty)
   }
 
   test("a second root store stays on the descendant path") {
@@ -232,21 +234,50 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(tree.contains("<em>book</em>"), tree)
       assert(!tree.contains("<em>архив</em>"), tree)
       val flat: String = html(target, "archive-index.html")
-      assert(flat.contains("<title>Cases | Archive Fixture</title>"), flat)
+      assert(flat.contains("<title>Collections | Archive Fixture</title>"), flat)
       assert(flat.contains("archive books / book Державин"), flat)
   }
 
-  test("rewrites /collections to the tree page; no Refresh file") {
+  test("does not rewrite /collections; one root stays off the path without that alias") {
     withSite(): (site, target) =>
       assert(!File(target, "collections.html").isFile)
-      val rewritten: Option[String] =
-        site.pages.rewriteRequest(Path.fromHref("/collections")).map(_.toString)
-      assert(rewritten.contains("/archive-collections.html"), rewritten)
+      assert(site.pages.rewriteRequest(Path.fromHref("/collections")).isEmpty)
       val table: Seq[CollectionAliases.Entry] = CollectionAliases.entries(site.pages)
-      assert(table.exists(_.from == Seq("collections")), table.map(_.from).toString)
-      val viaTable: Option[String] =
-        CollectionAliases.rewrite(Path.fromHref("/collections"), table).map(_.toString)
-      assert(viaTable.contains("/archive-collections.html"), viaTable)
+      assert(!table.exists(_.from == Seq("collections")), table.map(_.from).toString)
+      assert(CollectionAliases.rewrite(Path.fromHref("/collections"), table).isEmpty)
       val about: String = html(target, "about.html")
       assert(about.contains("""href="/archive-collections.html""""), about)
+  }
+
+  test("renders a file at the collections and index paths above the lists") {
+    withSite(Map(
+      "archive-collections.md" ->
+        """---
+          |title: Дела по архивам
+          |---
+          |Дерево.
+          |""".stripMargin,
+      "archive-index.md" ->
+        """---
+          |title: Дела
+          |---
+          |Список.
+          |""".stripMargin
+    )): (site, target) =>
+      val tree: String = html(target, "archive-collections.html")
+      assert(tree.contains("""<h1 class="page-title">Дела по архивам</h1>"""), tree)
+      assert(tree.contains("Дерево."), tree)
+      val proseAt: Int = tree.indexOf("Дерево.")
+      val listAt: Int = tree.indexOf("tree-index")
+      assert(proseAt >= 0 && listAt > proseAt, tree)
+      val flat: String = html(target, "archive-index.html")
+      assert(flat.contains("""<h1 class="page-title">Дела</h1>"""), flat)
+      assert(flat.contains("Список."), flat)
+      val flatProse: Int = flat.indexOf("Список.")
+      val flatList: Int = flat.indexOf("Державин")
+      assert(flatProse >= 0 && flatList > flatProse, flat)
+      assert(site.pages.pages.count(_.path.toString == "/archive-collections.html") == 1)
+      assert(site.pages.pages.count(_.path.toString == "/archive-index.html") == 1)
+      val errors: String = html(target, "errors.html")
+      assert(!errors.contains("Duplicates for the path"), errors)
   }

@@ -264,6 +264,10 @@
     <name lang="en" n="collection"/>
     <name lang="ru" n="дело"/>
   </message>
+  <message key="index.title">
+    <name lang="en" n="Collections"/>
+    <name lang="ru" n="Коллекции"/>
+  </message>
   <message key="years.title">
     <name lang="en" n="Years"/>
     <name lang="ru" n="Годы"/>

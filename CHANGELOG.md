@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A file named `{root}-collections` or `{root}-index` is rendered above that generated list, as `{root}-years` already
+  is.
+  A title in the file replaces the page title.
+- The flat index is titled Collections, or «Коллекции» when `lang` is Russian.
+- One root store does not install `/collections` or `/years`.
+  That store stays off the path text of its descendants.
 - The collection count line states how many documents there are.
   Missing photographs, split into empty leaves and leaves with text, and the scanned leaves of a document that has no
   transcription, stay on that line.

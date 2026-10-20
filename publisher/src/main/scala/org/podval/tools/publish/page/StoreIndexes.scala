@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.site.Path
+import org.podval.tools.publish.site.{Messages, Path}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
@@ -11,8 +11,6 @@ object StoreIndexes:
   val collectionsSuffix: String = "collections"
   val indexSuffix: String = "index"
   val yearsSuffix: String = "years"
-  val collectionsAlias: String = "collections"
-  val yearsAlias: String = "years"
 
   def isRootStore(page: Page): Boolean =
     page.store.exists(!_.isCollection) &&
@@ -23,14 +21,14 @@ object StoreIndexes:
 
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
     val spec: Language.Spec = root.site.languageSpec
-    val fromSelector: Option[String] = kind match
+    kind match
       case StoreIndexPage.Kind.Tree =>
         StoreTree.by(root).map(_.selector.pluralOrNames.toLanguageString(using spec))
+          .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
+          .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
       case StoreIndexPage.Kind.Flat =>
-        Selectors.forName("case").map(_.pluralOrNames.toLanguageString(using spec))
-    fromSelector
-      .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
-      .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
+        given Language.Spec = spec
+        Messages.text("index.title")
 
   def tree(root: Page): Xml.Element =
     treeIndex(root)
