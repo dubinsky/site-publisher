@@ -700,12 +700,22 @@ table.document-header {
     }
 }
 
-p.collection-counts {
+div.collection-counts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3);
     margin-bottom: var(--space-2);
 }
 
-details.collection-gap {
-    margin-bottom: var(--space-2);
+div.collection-counts details.collection-gap {
+    margin-bottom: 0;
+    max-width: 100%;
+}
+
+div.collection-counts details.collection-gap[open] > p {
+    margin-top: var(--space-2);
+    margin-bottom: 0;
 }
 
 .collection-scroll {

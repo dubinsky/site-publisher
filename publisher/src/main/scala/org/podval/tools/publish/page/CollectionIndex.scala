@@ -174,37 +174,36 @@ object CollectionIndex:
       case Seq(one) => one
       case many => many.reduce((left, right) => left ++ Seq(Xml.text(" ")) ++ right)
 
-  /** Document counts, then one closed disclosure per non-zero leaf count. Above the table. */
+  /** Document total and one closed disclosure per non-zero leaf count, on one line above the table. */
   private def counts(store: StoreContent, originals: Seq[Page])(using Language.Spec): Seq[Xml.Node] =
     val ordered: Seq[Page] = originals.sortBy(baseName)
     val headers: Seq[(Page, DocumentHeader)] = ordered.flatMap: document =>
       document.doc.flatMap(_.documentHeader).map(document -> _)
-    val line: Xml.Element = Xml.element(XmlElement.P).addClass("collection-counts").setText(
-      Messages.text(
-        "collection.counts",
-        "documents" -> ordered.length,
-        "transcribed" -> headers.count((_, header) => header.hasBodyText),
-        "photographed" -> headers.count((_, header) => header.pbs.exists(pb => !pb.isMissing))
-      )
-    )
     val missing: Seq[(Page, Pb)] = headers.flatMap: (document, header) =>
       header.pbs.filter(_.isMissing).map(document -> _)
-    val untranscribed: Seq[(Page, Int)] = headers.flatMap: (document, header) =>
-      val leaves: Int = header.pbs.count(pb => !pb.isMissing)
-      Option.when(!header.hasBodyText && leaves > 0)(document -> leaves)
+    val untranscribed: Seq[(Page, Pb)] = headers.flatMap: (document, header) =>
+      if header.hasBodyText then Seq.empty
+      else header.pbs.filter(pb => !pb.isMissing).map(document -> _)
     def leaves(keep: Pb => Boolean): Seq[Xml.Element] =
       missing.filter((_, pb) => keep(pb)).map((document, pb) => leafLink(store, document, pb))
-    line +: Seq(
+    val gaps: Seq[Xml.Element] = Seq(
       leafDisclosure(Messages.text("collection.missingEmpty", "n" -> leaves(_.isEmpty).length), leaves(_.isEmpty)),
       leafDisclosure(
         Messages.text("collection.missingText", "n" -> leaves(pb => !pb.isEmpty).length),
         leaves(pb => !pb.isEmpty)
       ),
       leafDisclosure(
-        Messages.text("collection.untranscribed", "n" -> untranscribed.map((_, leaves) => leaves).sum),
-        untranscribed.map((document, _) => documentLink(document, baseName(document)))
+        Messages.text("collection.untranscribed", "n" -> untranscribed.length),
+        untranscribed.map((document, pb) => leafLink(store, document, pb))
       )
     ).flatten
+    Seq(countLine(ordered.length, gaps))
+
+  private def countLine(documents: Int, gaps: Seq[Xml.Element])(using Language.Spec): Xml.Element =
+    Xml.element(XmlElement.Div).addClass("collection-counts").setChildren(
+      (Xml.text(Messages.text("collection.counts", "documents" -> documents)): Xml.Node) +:
+        gaps.map(gap => gap: Xml.Node)
+    )
 
   private def leafDisclosure(summary: String, links: Seq[Xml.Element]): Option[Xml.Element] =
     Option.when(links.nonEmpty):

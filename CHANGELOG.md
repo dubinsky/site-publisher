@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The collection count line states how many documents there are.
+  Missing photographs, split into empty leaves and leaves with text, and the scanned leaves of a document that has no
+  transcription, stay on that line.
+  Each non-zero leaf count opens one link per leaf.
+  A zero count is left off.
 - The page-break icon and folio label stay on one line.
   If they do not fit at the end of a line, both move to the next line.
 - A Markdown `<date>` with `@when`, `@from`, `@to`, `@notBefore`, or `@notAfter` gets the same calendar hover as a TEI

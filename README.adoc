@@ -764,7 +764,10 @@ There is no `repository` key in `_site_config.yml`.
 A scanned file under that directory that is not named in the includes is an error (translations are not).
 Selector hops in the href (`book/` in `books/book/derzhavin.xml`) are URL segments only — they are not pages, and `up`
 skips them.
-Missing `pb@missing` photos are listed under the table.
+Above the table, one line gives the number of documents.
+Missing photographs, split into empty leaves and leaves with text, and the scanned leaves of a document that has no
+transcription, are on that line when the count is not zero.
+Each of those counts opens one link per leaf.
 Collection **Страницы** links to `pb` ids in the transcription (`#p{n}`); in-text `pb` links to the
 <<facsimiles,facsimile viewer>> when `facsimiles-url` is set.
 

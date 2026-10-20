@@ -177,8 +177,8 @@
     <name lang="ru" n="Перевод"/>
   </message>
   <message key="collection.counts">
-    <name lang="en">Documents: {documents}. With a transcription: {transcribed}. With a photograph: {photographed}.</name>
-    <name lang="ru">Документов {documents}. С расшифровкой {transcribed}. С фотографией {photographed}.</name>
+    <name lang="en">Documents: {documents}.</name>
+    <name lang="ru">Документов {documents}.</name>
   </message>
   <message key="collection.missingEmpty">
     <name lang="en">Missing photographs, blank: {n}</name>
@@ -189,8 +189,8 @@
     <name lang="ru">Нет фотографий, с текстом: {n}</name>
   </message>
   <message key="collection.untranscribed">
-    <name lang="en">Without a transcription: {n}</name>
-    <name lang="ru">Без расшифровки: {n}</name>
+    <name lang="en">Not transcribed: {n}</name>
+    <name lang="ru">Не расшифрованы: {n}</name>
   </message>
   <message key="pb.missing">
     <name lang="en" n="No photograph."/>
