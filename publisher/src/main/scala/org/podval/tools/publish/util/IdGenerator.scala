@@ -6,3 +6,6 @@ final class IdGenerator(prefix: String):
   def generate(): String =
     number = number + 1
     s"$prefix$number"
+
+object IdGenerator:
+  def toId(text: String): String = text.trim.replace(' ', '-')

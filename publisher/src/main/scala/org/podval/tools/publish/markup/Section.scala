@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{CssClass, Xml, XmlAst, XmlElement}
+import org.podval.xml.{CssClass, Xml, XmlElement}
 
 final class Section(
   val id: String,
@@ -61,7 +61,7 @@ object Section:
     if is(result) then
       if result.getId.isEmpty then
         val title: Option[String] = heading(result).map(headingText)
-        result = result.setId(title.map(XmlAst.toId).getOrElse(ids.generate()))
+        result = result.setId(title.map(IdGenerator.toId).getOrElse(ids.generate()))
       result = addPermalink(result)
     result
 

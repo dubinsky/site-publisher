@@ -2,8 +2,8 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
-import org.podval.tools.publish.util.Icon
-import org.podval.xml.{Xml, XmlAst}
+import org.podval.tools.publish.util.{Icon, IdGenerator}
+import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
@@ -32,7 +32,7 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
 
   def tagRef(tag: String): Xml.Element = a(
     className := "page-tag",
-    href := s"$path#${XmlAst.toId(tag)}",
+    href := s"$path#${IdGenerator.toId(tag)}",
     Icon.tag.html,
     tag
   )
@@ -45,7 +45,7 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
       h2(Messages.text("pages.byTag")),
       ul(tagsAll.map(tag =>
         li(
-          h3(className := "page-tag", id := XmlAst.toId(tag), tag),
+          h3(className := "page-tag", id := IdGenerator.toId(tag), tag),
           Page.pageList(withTag(tag), cls = Some("post-link"))
         )
       ))

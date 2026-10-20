@@ -3,7 +3,8 @@ package org.podval.tools.publish.markup
 import org.podval.metadata.Language
 import org.podval.tools.publish.prose.{MarkdownProse, ProseFormatter}
 import org.podval.tools.publish.site.PageErrorReporter
-import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAst, XmlElement}
+import org.podval.tools.publish.util.IdGenerator
+import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlElement}
 import org.podval.xml.XmlNode.convertElements
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
@@ -196,7 +197,7 @@ object MarkdownMarkup extends Markup(
     val term: Xml.Element = if fromDt.isEmpty then dt else dt.setId("")
     val id: Option[String] = fromDt.orElse:
       val text: String = term.getText.trim
-      Option.when(text.nonEmpty)(XmlAst.toId(text))
+      Option.when(text.nonEmpty)(IdGenerator.toId(text))
     (id, term)
 
   // Note: without FootnotesExtension, FlexMark treats footnotes as links,

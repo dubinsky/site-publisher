@@ -3,7 +3,7 @@ package org.podval.tools.publish.markup
 import org.podval.metadata.Language
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
-import org.podval.xml.{Xml, Xml2Html, XmlAst, XmlAttribute, XmlElement}
+import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 import org.podval.xml.XmlNode.flatMapNodes
 import java.io.File
 import scala.collection.mutable
@@ -277,9 +277,6 @@ object TeiMarkup extends Markup(
       .orElse(element.get("ref"))
       .orElse(tei2Html.get(element, XmlAttribute.Target))
 
-  private def xmlId(element: Xml.Element): Option[String] =
-    element.getId.filter(_.nonEmpty).orElse(element.get(XmlAttribute.XmlId).filter(_.nonEmpty))
-
   // After Xml2Html. Only `xml:lang` becomes HTML `lang`. Bare `lang` is already `tei-lang`.
   private def copyContentLang(element: Xml.Element): Xml.Element =
     element.get(XmlAttribute.XmlLang).map(_.trim).filter(_.nonEmpty).fold(element): code =>
@@ -320,7 +317,7 @@ object TeiMarkup extends Markup(
           heads.exists(_ eq node) || (heads.isEmpty && descs.exists(_ eq node))
       val caption: Xml.Nodes = captionSource.flatMap: node =>
         node.asElement.fold(Seq(node))(_.getChildren.filterNot(_.isWhitespace).toSeq)
-      Figure.make(caption, body).setId(xmlId(element))
+      Figure.make(caption, body).setId(element.xmlId)
 
   private def isTeiCaption(node: Xml.Node): Boolean =
     node.asElement.exists(tei2Html.is(_, XmlElement.Head))
@@ -344,7 +341,7 @@ object TeiMarkup extends Markup(
       val body: Xml.Nodes = quoted.flatMap(unwrapQuoted)
       val attribution: Xml.Nodes = children.filter(isCitAttribution).flatMap(asAttribution)
       val id: Option[String] =
-        xmlId(element).orElse(quoted.flatMap(_.asElement).find(el => xmlId(el).isDefined).flatMap(xmlId))
+        element.xmlId.orElse(quoted.flatMap(_.asElement).find(el => el.xmlId.isDefined).flatMap(_.xmlId))
       Quote.make(None, attribution, body).setId(id)
 
   // listBibl in teiHeader / fileDesc is catalogue metadata, not the document bibliography.
@@ -358,7 +355,7 @@ object TeiMarkup extends Markup(
   private def entryIds(list: Xml.Element): Seq[String] = list
     .childElements
     .filter(isBibliographyEntry)
-    .flatMap(xmlId)
+    .flatMap(_.xmlId)
 
   private def listBiblIds(xml: Xml.Element, headerBiblIds: Set[String]): Set[String] =
     DialectWalk.elements(xml)(_.isNamed("listBibl"))
@@ -373,7 +370,7 @@ object TeiMarkup extends Markup(
       val children: Xml.Nodes = element.getChildren.map: node =>
         node.asElement.filter(isBibliographyEntry) match
           case Some(entry) =>
-            val withId: Xml.Element = xmlId(entry).fold(entry)(entry.setId)
+            val withId: Xml.Element = entry.xmlId.fold(entry)(entry.setId)
             withId.add(BibliographyItem.ItemClass)
           case None =>
             node
@@ -439,7 +436,7 @@ object TeiMarkup extends Markup(
   private def convertBibliographyPlaceholder(element: Xml.Element): Xml.Element =
     if Citation.isList(element) || !element.getName.qName.equalsIgnoreCase("div") then element
     else if !isTeiBibliographyPlaceholder(element) then element
-    else Citation.listPlaceholder.setId(xmlId(element))
+    else Citation.listPlaceholder.setId(element.xmlId)
 
   private def isTeiBibliographyPlaceholder(element: Xml.Element): Boolean =
     val empty: Boolean = element.getChildren.forall(_.isWhitespace)
@@ -451,7 +448,7 @@ object TeiMarkup extends Markup(
   private def convertBareQuote(element: Xml.Element): Xml.Element =
     val children: Xml.Nodes = element.getChildren.filterNot(_.isWhitespace)
     val (bibl: Xml.Nodes, body: Xml.Nodes) = children.partition(isBibl)
-    Quote.make(None, bibl.flatMap(asAttribution), body).setId(xmlId(element))
+    Quote.make(None, bibl.flatMap(asAttribution), body).setId(element.xmlId)
 
   private def isQuoted(node: Xml.Node): Boolean =
     node.asElement.exists(el => el.isNamed("quote") || el.isNamed("q") || Quote.is(el))
@@ -503,9 +500,9 @@ object TeiMarkup extends Markup(
       val dt: Xml.Element = asDt(label)
       val dd: Option[Xml.Element] = item.map(asDd)
       val id: Option[String] =
-        xmlId(label).orElse(item.flatMap(xmlId)).orElse:
+        label.xmlId.orElse(item.flatMap(_.xmlId)).orElse:
           val text: String = dt.getText.trim
-          Option.when(text.nonEmpty)(XmlAst.toId(text))
+          Option.when(text.nonEmpty)(IdGenerator.toId(text))
       result = result :+ Glossary.item(id, dt +: dd.toSeq)
 
     nodes.foreach: node =>
