@@ -8,8 +8,58 @@ export function run(cytoscape) {
   var loadFailed = status ? (status.getAttribute("data-load-failed") || "") : "";
   var statusPattern = status ? (status.getAttribute("data-status") || "") : "";
   var largeNote = status ? (status.getAttribute("data-large") || "") : "";
+  var plural = status ? (status.getAttribute("data-plural") || "") : "";
   var FORCE_MAX = 400;
   var CONCENTRIC_AFTER = 2000;
+
+  // Spec: org.podval.metadata.Language.pluralCategory
+  function pluralCategory(lang, n) {
+    if (lang === "fr") return n === 0 || n === 1 ? "one" : "other";
+    if (lang === "ru") return russianCategory(n);
+    if (lang === "pl") return polishCategory(n);
+    if (lang === "lt") return lithuanianCategory(n);
+    if (lang === "he") {
+      if (n === 1) return "one";
+      if (n === 2) return "two";
+      return "other";
+    }
+    return n === 1 ? "one" : "other";
+  }
+
+  function russianCategory(n) {
+    var mod10 = n % 10;
+    var mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return "one";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "few";
+    return "many";
+  }
+
+  function polishCategory(n) {
+    var mod10 = n % 10;
+    var mod100 = n % 100;
+    if (n === 1) return "one";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "few";
+    return "many";
+  }
+
+  function lithuanianCategory(n) {
+    var mod10 = n % 10;
+    var mod100 = n % 100;
+    var teen = mod100 >= 11 && mod100 <= 19;
+    if (mod10 === 1 && !teen) return "one";
+    if (mod10 >= 2 && mod10 <= 9 && !teen) return "few";
+    return "many";
+  }
+
+  function cardinalForm(kind, count) {
+    var category = pluralCategory(plural, count);
+    var value = status.getAttribute("data-" + kind + "-" + category);
+    if (!value) {
+      console.warn("graph status: missing data-" + kind + "-" + category);
+      value = status.getAttribute("data-" + kind + "-one") || "";
+    }
+    return value;
+  }
 
   fetch("/graph.json").then(function (response) {
     if (!response.ok) throw new Error("graph.json " + response.status);
@@ -118,7 +168,13 @@ export function run(cytoscape) {
 
     var edgeCount = cy.edges().length;
     var note = n > CONCENTRIC_AFTER && largeNote ? " " + largeNote : "";
-    if (status) status.textContent = statusPattern.replace("{n}", String(n)).replace("{e}", String(edgeCount)) + note;
+    if (status) {
+      status.textContent = statusPattern
+        .replace("{nodes}", cardinalForm("node", n))
+        .replace("{edges}", cardinalForm("edge", edgeCount))
+        .replace("{n}", String(n))
+        .replace("{e}", String(edgeCount)) + note;
+    }
 
     cy.one("layoutstop", function () {
       cy.fit(undefined, 24);

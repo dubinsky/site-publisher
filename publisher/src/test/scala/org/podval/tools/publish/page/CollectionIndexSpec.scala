@@ -143,8 +143,8 @@ final class CollectionIndexSpec extends AnyFunSuite:
       assert(countsAt >= 0 && countsAt < tableAt, index)
       val counts: String = index.substring(countsAt, index.indexOf("collection-scroll"))
       val countsClose: Int = counts.indexOf("</div>")
-      assert(countsClose > counts.indexOf("Документов 3."), counts)
-      assert(counts.contains("Документов 3."), counts)
+      assert(countsClose > counts.indexOf("Документа 3."), counts)
+      assert(counts.contains("Документа 3."), counts)
       assert(countsClose > counts.indexOf("<summary>Нет фотографий, пустые: 1</summary>"), counts)
       assert(countsClose > counts.indexOf("<summary>Нет фотографий, с текстом: 1</summary>"), counts)
       assert(!counts.contains("С расшифровкой"), counts)
@@ -178,7 +178,7 @@ final class CollectionIndexSpec extends AnyFunSuite:
           |""".stripMargin
     )): (_, target) =>
       val index: String = html(target, "col/index.html")
-      assert(index.contains("Документов 4."), index)
+      assert(index.contains("Документа 4."), index)
       assert(!index.contains("С расшифровкой"), index)
       assert(!index.contains("С фотографией"), index)
       val untranscribedAt: Int = index.indexOf("<summary>Не расшифрованы: 2</summary>")

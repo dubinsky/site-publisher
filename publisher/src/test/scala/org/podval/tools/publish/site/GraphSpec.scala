@@ -57,6 +57,24 @@ final class GraphSpec extends AnyFunSuite:
         |""".stripMargin
   )
 
+  private def assertGraphForms(
+    page: String,
+    plural: String,
+    forms: Seq[(String, String)],
+    absent: Seq[String]
+  ): Unit =
+    assert(page.contains("""id="site-graph-status""""), page)
+    assert(page.contains("""data-status="{n} {nodes}, {e} {edges}""""), page)
+    assert(page.contains("""{n}"""), page)
+    assert(page.contains("""{e}"""), page)
+    assert(page.contains("""{nodes}"""), page)
+    assert(page.contains("""{edges}"""), page)
+    assert(page.contains(s"""data-plural="$plural""""), page)
+    forms.foreach: (name, value) =>
+      assert(page.contains(s"""$name="$value""""), page)
+    absent.foreach: name =>
+      assert(!page.contains(name), page)
+
   private def html(target: File, relative: String): String =
     val file: File = File(target, relative)
     assert(file.isFile, s"missing $relative under $target")
@@ -88,6 +106,37 @@ final class GraphSpec extends AnyFunSuite:
       assert(!page.contains("cdnjs.cloudflare.com/ajax/libs/cytoscape/3.34.2/assets/css/graph.css"), page)
       assert(File(target, "assets/css/graph.css").isFile)
       assert(File(target, "assets/js/graph.js").isFile)
+      assertGraphForms(page, "en", Seq(
+        "data-node-one" -> "node",
+        "data-node-other" -> "nodes",
+        "data-edge-one" -> "edge",
+        "data-edge-other" -> "edges"
+      ), Seq(
+        "data-node-two", "data-edge-two",
+        "data-node-few", "data-edge-few",
+        "data-node-many", "data-edge-many"
+      ))
+  }
+
+  test("graph status carries Russian cardinal forms and not two") {
+    withSite(notes + ("_site_config.yml" -> config(
+      """lang: ru
+        |graph:
+        |  enabled: true
+        |""".stripMargin
+    ))): (_, target) =>
+      val page: String = html(target, "graph.html")
+      assertGraphForms(page, "ru", Seq(
+        "data-node-one" -> "узел",
+        "data-node-few" -> "узла",
+        "data-node-many" -> "узлов",
+        "data-edge-one" -> "ребро",
+        "data-edge-few" -> "ребра",
+        "data-edge-many" -> "рёбер"
+      ), Seq(
+        "data-node-two", "data-edge-two",
+        "data-node-other", "data-edge-other"
+      ))
   }
 
   test("include-transclusions false omits transclude edges") {

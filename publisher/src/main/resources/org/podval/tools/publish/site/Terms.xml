@@ -2,7 +2,7 @@
 <Terms>
   <term id="document" selector="yes">
     <name lang="en" n="document" plural="documents"/>
-    <name lang="ru" n="документ" plural="документы"/>
+    <name lang="ru" n="документ" plural="документы" few="документа" many="документов"/>
   </term>
   <term id="name" selector="yes">
     <name lang="en" n="name" plural="names"/>
@@ -190,8 +190,8 @@
     <name lang="ru" n="Перевод"/>
   </term>
   <term id="collection.counts">
-    <name lang="en">Documents: {documents}.</name>
-    <name lang="ru">Документов {documents}.</name>
+    <name lang="en" n="{documents}: {n}."/>
+    <name lang="ru" n="{documents} {n}."/>
   </term>
   <term id="collection.missingEmpty">
     <name lang="en">Missing photographs, blank: {n}</name>
@@ -333,9 +333,17 @@
     <name lang="en">Could not load the graph.</name>
     <name lang="ru">Не удалось загрузить граф.</name>
   </term>
+  <term id="graph.node">
+    <name lang="en" n="node" plural="nodes"/>
+    <name lang="ru" n="узел" few="узла" many="узлов"/>
+  </term>
+  <term id="graph.edge">
+    <name lang="en" n="edge" plural="edges"/>
+    <name lang="ru" n="ребро" few="ребра" many="рёбер"/>
+  </term>
   <term id="graph.status">
-    <name lang="en" n="{n} nodes, {e} edges"/>
-    <name lang="ru" n="{n} узлов, {e} рёбер"/>
+    <!-- Russian falls back to this string. Names rejects the same name twice. -->
+    <name lang="en" n="{n} {nodes}, {e} {edges}"/>
   </term>
   <term id="graph.large">
     <name lang="en">(large graph, simplified layout)</name>

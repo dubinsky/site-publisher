@@ -25,7 +25,7 @@ final class MessagesSpec extends AnyFunSuite:
     "map.place", "map.outside",
     "language", "year", "page", "facsimile",
     "graph.title", "graph.description", "graph.filter", "graph.filterLabel", "graph.orphans",
-    "graph.loadFailed", "graph.status", "graph.large",
+    "graph.loadFailed", "graph.node", "graph.edge", "graph.status", "graph.large",
     "pages.posts", "pages.postsAll", "pages.tags", "pages.tagsAll", "pages.byTag",
     "pages.backlinks", "pages.embedded", "pages.category", "pages.newer", "pages.older",
     "pages.pagination", "pages.rss", "pages.sitemap",
@@ -41,6 +41,7 @@ final class MessagesSpec extends AnyFunSuite:
       val langs: Seq[Option[Language]] = names.names.map(_.languageSpec.language)
       val expected: Seq[Option[Language]] =
         if key == "facsimile" then Seq(Some(Language.English), Some(Language.English), Some(Language.Russian))
+        else if key == "graph.status" then Seq(Some(Language.English))
         else Seq(Some(Language.English), Some(Language.Russian))
       assert(langs == expected, key)
 
@@ -77,3 +78,37 @@ final class MessagesSpec extends AnyFunSuite:
     assert(Messages.text("search.kind.collection")(using Language.Russian.toSpec) == "дело")
     assert(Messages.text("search.kind.collection")(using Language.English.toSpec) == "collection")
   }
+
+  test("document cardinal and the collection count line"):
+    val en: Language.Spec = Language.English.toSpec
+    val ru: Language.Spec = Language.Russian.toSpec
+    val rows: Seq[(Int, String, String, String, String)] = Seq(
+      (0, "documents", "документов", "Documents: 0.", "Документов 0."),
+      (1, "document", "документ", "Document: 1.", "Документ 1."),
+      (2, "documents", "документа", "Documents: 2.", "Документа 2."),
+      (5, "documents", "документов", "Documents: 5.", "Документов 5."),
+      (11, "documents", "документов", "Documents: 11.", "Документов 11."),
+      (21, "documents", "документ", "Documents: 21.", "Документ 21."),
+      (22, "documents", "документа", "Documents: 22.", "Документа 22.")
+    )
+    def line(n: Int)(using spec: Language.Spec): String =
+      val word: String = Terms.catalog.cardinal("document", n)
+      val shown: String = spec.language.get.sentenceCase(word)
+      Messages.text("collection.counts", "documents" -> shown, "n" -> n)
+    rows.foreach: (n, enWord, ruWord, enLine, ruLine) =>
+      assert(Terms.catalog.cardinal("document", n)(using en) == enWord, n)
+      assert(Terms.catalog.cardinal("document", n)(using ru) == ruWord, n)
+      assert(line(n)(using en) == enLine, n)
+      assert(line(n)(using ru) == ruLine, n)
+
+  test("graph status keeps the count and form holes"):
+    val expected: String = "{n} {nodes}, {e} {edges}"
+    def filled(using Language.Spec): String = Messages.text(
+      "graph.status",
+      "n" -> "{n}",
+      "e" -> "{e}",
+      "nodes" -> "{nodes}",
+      "edges" -> "{edges}"
+    )
+    assert(filled(using Language.English.toSpec) == expected)
+    assert(filled(using Language.Russian.toSpec) == expected)

@@ -41,7 +41,7 @@ object CollectionIndex:
     val scroll: Xml.Element =
       Xml.element(XmlElement.Div).addClass("collection-scroll").setChildren(Seq(table))
     TeiMarkup.finishFootnotes(
-      Xml.element(XmlElement.Div).setChildren(counts(store, originals) :+ scroll),
+      Xml.element(XmlElement.Div).setChildren(counts(page.site, store, originals) :+ scroll),
       page.source.getOrElse(PageErrorReporter.Silent)
     )
 
@@ -175,7 +175,7 @@ object CollectionIndex:
       case many => many.reduce((left, right) => left ++ Seq(Xml.text(" ")) ++ right)
 
   /** Document total and one closed disclosure per non-zero leaf count, on one line above the table. */
-  private def counts(store: StoreContent, originals: Seq[Page])(using Language.Spec): Seq[Xml.Node] =
+  private def counts(site: Site, store: StoreContent, originals: Seq[Page])(using Language.Spec): Seq[Xml.Node] =
     val ordered: Seq[Page] = originals.sortBy(baseName)
     val headers: Seq[(Page, DocumentHeader)] = ordered.flatMap: document =>
       document.doc.flatMap(_.documentHeader).map(document -> _)
@@ -197,11 +197,13 @@ object CollectionIndex:
         untranscribed.map((document, pb) => leafLink(store, document, pb))
       )
     ).flatten
-    Seq(countLine(ordered.length, gaps))
+    Seq(countLine(site, ordered.length, gaps))
 
-  private def countLine(documents: Int, gaps: Seq[Xml.Element])(using Language.Spec): Xml.Element =
+  private def countLine(site: Site, documents: Int, gaps: Seq[Xml.Element])(using Language.Spec): Xml.Element =
+    val word: String = site.terms.cardinal("document", documents)
+    val shown: String = site.languageSpec.language.get.sentenceCase(word)
     Xml.element(XmlElement.Div).addClass("collection-counts").setChildren(
-      (Xml.text(Messages.text("collection.counts", "documents" -> documents)): Xml.Node) +:
+      (Xml.text(Messages.text("collection.counts", "documents" -> shown, "n" -> documents)): Xml.Node) +:
         gaps.map(gap => gap: Xml.Node)
     )
 

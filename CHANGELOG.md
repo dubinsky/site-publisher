@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The collection count line uses the cardinal of `document` (`Document: 1.`, `Документа 22.`, `Документов 11.`).
+  The graph status keeps `{n}`, `{e}`, `{nodes}`, and `{edges}` and picks the node and edge forms in the browser.
+  A missing form uses the one form and warns.
 - One terms catalog replaces `Selector.xml` and `Messages.xml`.
   Built-in axes are `document`, `name`, and `note`.
   A site `_terms.xml` adds axes.
