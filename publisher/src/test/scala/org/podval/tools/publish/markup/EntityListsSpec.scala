@@ -1,6 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, Page, Selectors, StoreTree}
+import org.podval.store.selector
+import org.podval.tools.publish.page.{DirectoryPage, EntityListPage, Page, StoreTree}
 import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
@@ -187,7 +188,7 @@ final class EntityListsSpec extends AnyFunSuite:
       val jewsResolved = StoreTree.resolvePage(tree, "/jews").get
       assert(jewsResolved.page.path == jewsPage.path)
       assert(jewsResolved.hop.isEmpty)
-      assert(StoreTree.by(jewsResolved.page).map(_.selector) == Selectors.forName("name"))
+      assert(StoreTree.by(jewsResolved.page).map(_.selector) == Some(site.terms.selector("name")))
       assert(jewsPage.isInstanceOf[EntityListPage])
       assert(site.pages.rewriteRequest(Path.fromHref("/jews")).contains(jewsPage.path))
       assert(site.pages.rewriteRequest(Path.fromHref("/names/jews")).isEmpty)
@@ -200,7 +201,7 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(zalman.structureNames == Seq("jews", "name", "alter-rebbe"), zalman.structureNames)
       val zalmanPage = StoreTree.pageOf(zalman.last).get
       val zalmanResolved = StoreTree.resolvePage(tree, "/jews/alter-rebbe").get
-      assert(zalmanResolved.hop.map(_.selector) == Selectors.forName("name"))
+      assert(zalmanResolved.hop.map(_.selector) == Some(site.terms.selector("name")))
       assert(StoreTree.by(zalmanResolved.page).isEmpty)
       assert(site.pages.rewriteRequest(Path.fromHref("/jews/alter-rebbe")).contains(zalmanPage.path))
       val vilna = tree.resolve("/places/Вильна")

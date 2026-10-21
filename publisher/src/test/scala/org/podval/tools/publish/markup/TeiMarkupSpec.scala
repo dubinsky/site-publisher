@@ -166,6 +166,21 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(index.selector.contains("category"), index.selector)
   }
 
+  test("ref and plural decode and do not throw") {
+    val pluralOnly: StoreIndex = StoreIndex(parse("""<store plural="yes"/>""")).get
+    assert(pluralOnly.plural)
+    assert(pluralOnly.ref.isEmpty)
+    val refOnly: StoreIndex = StoreIndex(parse("""<store ref="book"/>""")).get
+    assert(refOnly.ref.contains("book"))
+    assert(!refOnly.plural)
+    val named: StoreIndex = StoreIndex(parse(
+      """<store ref="book" plural="yes"><name lang="en" n="books"/></store>"""
+    )).get
+    assert(named.ref.contains("book"))
+    assert(named.plural)
+    assert(named.names.exists(_.name == "books"))
+  }
+
   test("store and collection harvest optional alias") {
     val store: StoreIndex = StoreIndex(parse("""<store alias="rgada"><title>x</title></store>""")).get
     assert(store.alias.contains("rgada"))

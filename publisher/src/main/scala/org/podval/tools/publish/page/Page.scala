@@ -134,8 +134,10 @@ abstract class Page(
   final def listTitle: String =
     entityDisplayName.getOrElse:
       val named: Option[String] =
-        Option.when(store.isDefined)(names.doFind(site.languageSpec).name)
-          .orElse(doc.flatMap(_.listTitle))
+        Option.when(store.isDefined):
+          val raw: String = names.doFind(site.languageSpec).name
+          if store.exists(_.ref.isDefined) then site.languageSpec.language.get.sentenceCase(raw) else raw
+        .orElse(doc.flatMap(_.listTitle))
       named match
         case Some(name) =>
           val t: String = title.trim

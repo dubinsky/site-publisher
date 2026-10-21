@@ -38,7 +38,7 @@ final class YearIndexPage(
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
-    Messages.text("years.title")
+    site.terms.pluralHeading("year")
 
   override protected def iconDefault: Icon = Icon.calendar
 

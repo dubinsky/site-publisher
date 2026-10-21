@@ -5,9 +5,12 @@ import zio.blocks.schema.{Modifier, Schema}
 
 /** TEI `entityLists` catalog specs: kind + role buckets (site-wide members).
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
-  * List subpages are direct store children of the catalog; each list page is `By("name")` of its members. */
+  * List subpages are direct store children of the catalog; each list page is `By` of `name`,
+  * resolved on `site.terms`. */
 object EntityLists:
   final case class Index(
+    ref: Option[String] = None,
+    plural: Boolean = false,
     @Modifier.config(XmlCodec.Element, "title")
     @Modifier.alias("tei-title")
     title: Option[String] = None,

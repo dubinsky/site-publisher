@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.metadata.Language
+import org.podval.metadata.{Language, TermCatalog}
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, PageType, Pb, TeiMarkup}
 import org.podval.tools.publish.site.{Messages, PageError, PageErrorReporter, Path, Site}
 import org.podval.xml.{Xml, XmlElement}
@@ -13,14 +13,14 @@ object CollectionIndex:
     val cssClass: String
   )
 
-  private def columns(using Language.Spec): Seq[Column] = Seq(
+  private def columns(terms: TermCatalog)(using Language.Spec): Seq[Column] = Seq(
     Column(Messages.text("doc.description"), "description"),
     Column(Messages.text("doc.date"), "date"),
     Column(Messages.text("doc.who"), "author"),
     Column(Messages.text("doc.to"), "addressee"),
-    Column(Messages.text("doc.language"), "language"),
-    Column(Messages.text("doc.document"), "document"),
-    Column(Messages.text("doc.pages"), "pages"),
+    Column(terms.heading("language"), "language"),
+    Column(terms.heading("document"), "document"),
+    Column(terms.pluralHeading("page"), "pages"),
     Column(Messages.text("doc.transcriber"), "transcriber")
   )
 
@@ -30,7 +30,7 @@ object CollectionIndex:
       error(page, s"unknown pageType '$name'")
     val originals: Seq[Page] = listingOriginals(page)
     val parts: Seq[(Option[Xml.Element], Seq[Page])] = splitParts(page, store.parts, originals)
-    val header: Xml.Element = Xml.element(XmlElement.Tr).setChildren(columns.map: column =>
+    val header: Xml.Element = Xml.element(XmlElement.Tr).setChildren(columns(page.site.terms).map: column =>
       Xml.element(XmlElement.Th).addClass(column.cssClass).setText(column.heading): Xml.Node
     )
     val body: Xml.Nodes = parts.flatMap((title, documents) =>
@@ -231,7 +231,7 @@ object CollectionIndex:
         .setChildren(convertedNodes(page, xml.getChildren))
       Xml.element(XmlElement.Tr).setChildren(Seq(
         Xml.element(XmlElement.Td)
-          .set("colspan", columns.length.toString)
+          .set("colspan", columns(page.site.terms).length.toString)
           .setChildren(Seq(inner: Xml.Node)): Xml.Node
       ))
 

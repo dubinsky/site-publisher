@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.metadata.Name
+import org.podval.metadata.{Language, Name}
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
   TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
 import org.podval.tools.publish.site.{PageError, Path}
@@ -51,13 +51,19 @@ object Content:
   ): (Option[Xml.Element], Content) =
     if TeiMarkup.isStoreRoot(xml) then
       val store: StoreContent = StoreContent.parse(xml)
+      checkLabelRef(source, store.ref, store.index.plural, store.names.nonEmpty)
       if firstReading then
         (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
           TeiMarkup.reportSourceErrors(fragment, source, namesWithoutRef = true)
       (store.title, store)
     else xml.getName.localName match
       case "entityLists" =>
-        val lists: EntityListsContent = EntityListsContent.parse(xml)
+        val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
+        checkLabelRef(source, index.ref, index.plural, index.title.exists(_.trim.nonEmpty))
+        val fromRef: Option[String] = index.ref.map: id =>
+          given Language.Spec = source.languageSpec
+          source.page.site.terms.pluralHeading(id)
+        val lists: EntityListsContent = EntityListsContent.parse(xml, fromRef)
         (lists.title, lists)
       case "TEI" =>
         val header: DocumentHeader = DocumentHeader.harvest(xml).get
@@ -83,6 +89,26 @@ object Content:
           case None =>
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, MarkupContent(PageContent.prepareAuthored(source, processed)))
+
+  /** `ref` and `plural` are a pair. The message carries the source path; decode does not. */
+  private def checkLabelRef(
+    source: PageSource,
+    ref: Option[String],
+    plural: Boolean,
+    authored: Boolean
+  ): Unit =
+    val where: String = source.sourcePath.toString
+    if plural && ref.isEmpty then
+      throw IllegalArgumentException(s"plural without ref ($where)")
+    ref.foreach: id =>
+      if !plural then throw IllegalArgumentException(s"ref without plural ($where)")
+      if authored then throw IllegalArgumentException(s"ref with names ($where)")
+      val known: Boolean =
+        try
+          source.page.site.terms.getById(id)
+          true
+        catch case _: IllegalArgumentException => false
+      if !known then throw IllegalArgumentException(s"Unknown term: $id ($where)")
 
   private def isStableEntity(xml: Xml.Element): Boolean =
     xml.get("stable").exists(_.trim == "true")
@@ -143,6 +169,7 @@ final class MarkupContent(
 final class StoreContent(
   val index: StoreIndex
 ) extends Content:
+  def ref: Option[String] = index.ref
   def selector: Option[String] = index.selector
   def hrefs: Seq[String] = index.hrefs
   def names: Seq[Name] = index.names
@@ -258,9 +285,10 @@ final class EntityListsContent(
     Xml.element(XmlElement.Div).setChildren(heading.toSeq ++ body.toSeq :+ generated)
 
 object EntityListsContent:
-  def parse(xml: Xml.Element): EntityListsContent =
+  def parse(xml: Xml.Element, titleFromRef: Option[String] = None): EntityListsContent =
     val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
+    val text: Option[String] = titleFromRef.filter(_.nonEmpty).orElse(index.title.filter(_.nonEmpty))
     new EntityListsContent(
-      title = index.title.filter(_.nonEmpty).map(text => Xml.element(XmlElement.Title).setText(text)),
+      title = text.map(value => Xml.element(XmlElement.Title).setText(value)),
       index = index
     )

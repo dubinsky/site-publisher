@@ -80,6 +80,15 @@ final class ReadingSpec extends AnyFunSuite:
     "notes/m.md" -> "noteoriginal\n",
     "notes/m+reg.md" -> "noteregularized\n",
     "notes/z.md" -> "after note\n",
+    "_terms.xml" ->
+      """<?xml version="1.0" encoding="UTF-8"?>
+        |<Terms>
+        |  <term id="archive" selector="yes">
+        |    <name lang="en" n="archive" plural="archives"/>
+        |    <name lang="ru" n="архив" plural="архивы"/>
+        |  </term>
+        |</Terms>
+        |""".stripMargin,
     "archive.xml" ->
       """<store xmlns:xi="http://www.w3.org/2001/XInclude">
         |  <by selector="archive">

@@ -1,12 +1,12 @@
 package org.podval.tools.publish.site
 
-import org.podval.metadata.Language
+import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.JSLibrary
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.prose.ProseOptions
 import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
-import org.podval.xml.Xml
+import org.podval.xml.{Xml, XmlParser}
 import org.podval.xml.dsl.{*, given}
 import com.sun.net.httpserver.HttpServer
 import com.microsoft.playwright.{Browser, Playwright}
@@ -82,6 +82,9 @@ final class Site(options: SiteOptions) extends JSLibrary:
       if sameSiteHost(uri) then errorReporter.error(PageError.SelfLink, href)
       uri.getScheme == null
     catch case e: URISyntaxException => true
+
+  // Terms before pages: store axes and catalog titles resolve while pages load.
+  val terms: TermCatalog = Site.loadTerms(sourceDirectory)
 
   // Components
   val pages: Pages = Pages(this)
@@ -483,6 +486,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
   def siteFooter(page: MarkupPage): Xml.Element = page.withInterfaceLang(siteFooter)
 
 object Site:
+  /** Built-in catalog, plus `{source}/_terms.xml` when that file exists. A bad file throws. */
+  private[site] def loadTerms(directory: File): TermCatalog =
+    val file: File = File(directory, "_terms.xml")
+    if !file.isFile then Terms.catalog
+    else
+      val root: Xml.Element = XmlParser.parseXml(Files.read(file)).fold(error => throw error, identity)
+      val extra: Seq[Term] = Term.codec.decodeCatalog(root, "Terms").fold(error => throw error, identity)
+      Terms.catalog.merge(extra)
+
   /** `lang` from `_site_config.yml` (`en`, `ru`, `en-US`, `Russian`, …). Omitted or unknown is English. */
   def languageSpec(lang: Option[String]): Language.Spec =
     lang.map(_.trim).filter(_.nonEmpty).flatMap(parseLanguage).getOrElse(Language.English).toSpec

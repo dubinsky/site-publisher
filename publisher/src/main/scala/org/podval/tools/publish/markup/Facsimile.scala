@@ -113,7 +113,7 @@ object Facsimile:
     document.withInterfaceLang(
       Xml.element(XmlElement.Aside)
         .addClass("facsimile-aside")
-        .set("aria-label", Messages.text("format.facsimile"))
+        .set("aria-label", document.site.terms.heading("facsimile"))
         .setChildren(Seq(frame))
     )
 

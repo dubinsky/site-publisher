@@ -10,6 +10,8 @@ import zio.blocks.schema.{Modifier, Schema}
   * listings use the wrapped tree. Collection `part`s and `pageType` feed `CollectionIndex`. */
 @Modifier.config(XmlCodec.IgnoreUnknown, "")
 final case class StoreIndex(
+  ref: Option[String] = None,
+  plural: Boolean = false,
   n: Option[String] = None,
   alias: Option[String] = None,
   @Modifier.rename("pageType") pageTypeName: Option[String] = None,

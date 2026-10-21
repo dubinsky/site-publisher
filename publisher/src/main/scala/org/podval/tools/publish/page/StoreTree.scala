@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
-import org.podval.metadata.{Language, Name, Names}
-import org.podval.store.{Alias as StoreAlias, By, Path, Store, Stores}
+import org.podval.metadata.{Language, Name, Names, Term}
+import org.podval.store.{Alias as StoreAlias, By, Path, Selector, Store, Stores, selector}
 
 /** `org.podval.store` view of pages. A `PageNode` is the store; `Page` is not. */
 object StoreTree:
@@ -30,13 +30,25 @@ object StoreTree:
   def by(page: Page): Option[By[Store]] = node(page).axes.headOption
 
   def namesOf(page: Page): Names =
-    val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names)
-    if fromIndex.nonEmpty then Names(fromIndex) else Names(nameList(page))
+    page.store.flatMap(_.ref) match
+      case Some(id) =>
+        val term: Term = page.site.terms.getById(id)
+        val spec: Language.Spec = page.site.languageSpec
+        if term.plural(spec).isEmpty then
+          throw IllegalArgumentException(
+            s"No plural for term $id ($spec) in ${page.sourcePath.fold(page.path.toString)(_.toString)}"
+          )
+        val copied: Seq[Name] = term.names.names.filter(_.plural.isDefined).map: name =>
+          Name(name.plural.get, name.languageSpec)
+        Names(copied)
+      case None =>
+        val fromIndex: Seq[Name] = page.store.toSeq.flatMap(_.names)
+        if fromIndex.nonEmpty then Names(fromIndex) else Names(nameList(page))
 
   def childrenOf(page: Page): Seq[Store] =
     page match
       case list: EntityListPage =>
-        Seq(By("name", list.members.map(node)))
+        Seq(By(page.site.terms.selector("name"), list.members.map(node)))
       case _ =>
         page.store match
           case Some(content) =>
@@ -48,11 +60,12 @@ object StoreTree:
                     hop.fold(Path(Seq(node(child))))(h => Path(Seq(h, node(child))))
                   StoreAlias(Names(aliasName), target)
             content.selector match
-              case Some(selector) =>
-                val by: By[Store] = By(selector, kids.map(node))
+              case Some(axis) =>
+                val found: Selector = page.site.terms.selector(axis)
+                val by: By[Store] = By(found, kids.map(node))
                 Seq(by) ++ aliases(Some(by))
               case None if content.isCollection =>
-                val by: By[Store] = By("document", kids.map(node))
+                val by: By[Store] = By(page.site.terms.selector("document"), kids.map(node))
                 Seq(by) ++ aliases(Some(by))
               case None =>
                 kids.map(node) ++ aliases(None)
@@ -64,7 +77,7 @@ object StoreTree:
                   case p: EntityListPage if p.path.path.init == prefix => p.spec.id -> p
                 .toMap
               val ordered: Seq[EntityListPage] = lists.index.lists.flatMap(spec => byId.get(spec.id))
-              // No `names` axis: list pages are the catalog's own children. Each list is `By("name")`.
+              // No `names` axis: list pages are the catalog's own children. Each list is `By` of `name` on `site.terms`.
               ordered.map(node)
             .getOrElse(Seq.empty)
 

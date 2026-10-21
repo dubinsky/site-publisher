@@ -111,6 +111,15 @@ final class PrettyPrintSpec extends AnyFunSuite:
           |</person>
           |""".stripMargin,
       "prefixed.xml" -> prefixedSource,
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |    <name lang="ru" n="архив" plural="архивы"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
       "archive.xml" ->
         """<store xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
           |<by selector="archive">

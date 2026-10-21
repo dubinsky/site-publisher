@@ -61,7 +61,9 @@ object StoreIndexes:
   private def treeLabel(page: Page): String =
     page.store match
       case Some(store) =>
-        val name: String = page.names.doFind(page.site.languageSpec).name
+        val raw: String = page.names.doFind(page.site.languageSpec).name
+        val name: String =
+          if store.ref.isDefined then page.site.languageSpec.language.get.sentenceCase(raw) else raw
         val title: String = store.title.map(_.getText.trim).filter(_.nonEmpty).getOrElse("")
         if title.isEmpty then s"$name:" else s"$name: $title"
       case None =>

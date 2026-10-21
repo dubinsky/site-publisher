@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- One terms catalog replaces `Selector.xml` and `Messages.xml`.
+  Built-in axes are `document`, `name`, and `note`.
+  A site `_terms.xml` adds axes.
+  `ref` and `plural="yes"` on a store or an `entityLists` catalog name it from the lexicon plural.
+  The heading is that plural in sentence case.
+  An authored name stays as written.
+  Pin xml 0.7.0.
 - The tree index is titled Tree, or «Дерево» when `lang` is Russian.
   It no longer uses the root store’s `by/@selector` plural.
 - The place map is `/map.html`, with leaf alias `/map`, when any place has a `geo`.

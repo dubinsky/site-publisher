@@ -115,7 +115,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         formatLink(
           viewer.publishedPath.toString,
           Icon.images,
-          Messages.text("format.facsimile"),
+          site.terms.heading("facsimile"),
           NamedWindows.targetAttr(viewer).orElse(Some(Facsimile.facsimileTarget))
         )
     ).flatten

@@ -342,8 +342,8 @@ Useful fields:
 - `bibliography` / `csl` / `lang` — see <<bibliography>>
 - `toc-depth`
 - `description`, `author`, `lang` — page `<head>` (<<seo>>); site values in `_site_config.yml` are the fallback.
-  Site `lang` also selects store and selector display names (publisher `Selector.xml`, TEI `<name lang>`); omitted is
-  `en`.
+  Site `lang` also selects store and selector display names (built-in terms, optional `_terms.xml`, TEI `<name lang>`);
+  omitted is `en`.
   Generated chrome follows that `lang` in `_site_config.yml`, and English when it is omitted.
   That is the gear, the collection table, and the search page.
 - `tags`, `categories` (<<categories>>), `aliases`
@@ -456,6 +456,8 @@ Each `listPerson`, `listPlace`, or `listOrg` is a bucket:
 - `<head>` on the list is the list page title (`<title>` is still accepted).
   The heading is that title alone: no `name` selector word, and no axis line under it.
   A direct child `<title>` of `entityLists` is the catalog page title.
+  `ref` and `plural="yes"` on `entityLists` name that title from the term's plural instead of `<title>`.
+  The two attributes are a pair, and they are not combined with a `<title>`.
 
 Empty lists are omitted.
 Members are every matching entity on the site, sorted by file name; the link text is the first `persName` / `placeName`
@@ -564,6 +566,17 @@ There is no synthetic `/name.html` dump.
 </entityLists>
 ----
 
+The same catalog titled from the built-in `name` term.
+On a Russian site the title is Имена.
+Each list keeps its `<head>`.
+
+[source,xml]
+----
+<entityLists ref="name" plural="yes">
+  <listPerson n="jews" role="jew"><head>Жиды (они же Евреи)</head></listPerson>
+</entityLists>
+----
+
 [#directories]
 == Directories
 
@@ -609,8 +622,10 @@ A TEI `store` file in the source root (`archive.xml` next to `archive/`) also ge
 file: `{name}-collections.html` (nested tree of child stores and collections) and `{name}-index.html` (flat list of
 descendant collections).
 The tree is titled Tree, or «Дерево» when `lang` is Russian.
-The nested list still labels each level with that store’s `by/@selector` (`archive` is архив when `lang` is `ru` and
-archive otherwise).
+The nested list still labels each level with that store’s `by/@selector` word from the term (`archive` is архив when
+`lang` is `ru`, and archive otherwise).
+A store with `ref` and `plural="yes"` is headed by the sentence-cased lexicon plural (`Books`, `Книги`).
+The name stored for the URL is the lexicon plural (`books`, `книги`), not that heading.
 The flat list is titled Collections, or «Коллекции» when `lang` is Russian.
 A file at either path is rendered above the generated list.
 A title in that file, an `h1` or front matter `title`, replaces the page title.
@@ -743,7 +758,16 @@ An endnote in `teiHeader` is not an article footnote.
 A `note` in `abstract`, in the `date`, or in the addressee `persName` is a footnote on that header cell, and on the same
 cell of the collection index.
 The Дата cell (and in-text dates) get calendar hover tables; see <<tei-dates>>.
-Selector labels (`category` → `разряд` when site `lang` is `ru`) come from this project's `Selector.xml` (`page.Selectors`).
+Selector words (`document` → `документ` when site `lang` is `ru`) come from the built-in terms.
+A site adds axes in `_terms.xml` at the source root: a `<Terms>` file of `<term id="..." selector="yes">`.
+`by/@selector` is that id.
+An unknown id fails generation.
+It is not an Errors-page warning.
+A store or collection with `ref` and `plural="yes"` takes its name from that term's plural.
+Do not also write `<name>` or a root `n`.
+`<title>`, `<abstract>`, and `<body>` stay.
+The heading capitalizes that plural.
+An authored `<name>` is shown as stored.
 Documents under a store or collection use the same header.
 Each TEI document is also written as XML beside the HTML (`/rgia529/071.xml`, and the same stem for a `{base}-{xx}`
 translation).

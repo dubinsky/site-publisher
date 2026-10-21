@@ -1,35 +1,29 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
+import org.podval.store.selector
+import org.podval.tools.publish.site.Terms
 import org.scalatest.funsuite.AnyFunSuite
 
 final class SelectorSpec extends AnyFunSuite:
-  test("selectorDisplayName follows Language.Spec; unknown selector is unchanged") {
+  test("built-in document and name resolve; an unknown string is not a selector") {
     val ru: Language.Spec = Language.Russian.toSpec
     val en: Language.Spec = Language.English.toSpec
-    assert(PageHeader.selectorDisplayName("category", ru) == "разряд")
-    assert(PageHeader.selectorDisplayName("archive", ru) == "архив")
-    assert(PageHeader.selectorDisplayName("document", ru) == "документ")
-    assert(PageHeader.selectorDisplayName("case", ru) == "дело")
-    assert(PageHeader.selectorDisplayName("category", en) == "category")
-    assert(PageHeader.selectorDisplayName("archive", en) == "archive")
-    assert(PageHeader.selectorDisplayName("document", en) == "document")
-    assert(PageHeader.selectorDisplayName("case", en) == "case")
-    assert(PageHeader.selectorDisplayName("item", ru) == "item")
-    assert(PageHeader.selectorDisplayName("item", en) == "item")
-    assert(Selectors.getForName("archive").plural.exists(_.hasName("Archives")))
-    assert(Selectors.getForName("archive").plural.exists(_.hasName("Архивы")))
-    assert(Selectors.getForName("case").plural.exists(_.hasName("Cases")))
-    assert(Selectors.getForName("name").plural.exists(_.hasName("Names")))
-    assert(Selectors.getForName("name").plural.exists(_.hasName("Имена")))
-    assert(Selectors.forName("names").isEmpty)
-    assert(Selectors.forName("имена").isEmpty)
-  }
-
-  test("forName matches any language name") {
-    assert(Selectors.forName("разряд").isDefined)
-    assert(Selectors.forName("category").isDefined)
-    assert(Selectors.forName("book").isDefined)
-    assert(Selectors.forName("книга").isDefined)
-    assert(Selectors.forName("item").isEmpty)
+    val terms = Terms.catalog
+    assert(terms.selector("document").id == "document")
+    assert(terms.selector("name").id == "name")
+    assert(terms.selector("note").id == "note")
+    assert(terms.word("document")(using ru) == "документ")
+    assert(terms.word("document")(using en) == "document")
+    assert(terms.word("name")(using ru) == "имя")
+    assert(terms.word("name")(using en) == "name")
+    val name = terms.getById("name")
+    assert(name.plural(en).contains("names"))
+    assert(name.plural(ru).contains("имена"))
+    assert(terms.forName("name").exists(_.id == "name"))
+    assert(terms.forName("имя").exists(_.id == "name"))
+    assert(terms.forName("names").isEmpty)
+    assert(terms.forName("имена").isEmpty)
+    assert(terms.forName("item").isEmpty)
+    assert(terms.forName("document").exists(_.id == "document"))
   }

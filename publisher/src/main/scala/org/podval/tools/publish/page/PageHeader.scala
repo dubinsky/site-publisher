@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.metadata.{Language, Name}
+import org.podval.metadata.{Language, Name, Term, TermCatalog}
 import org.podval.store.Selector
 import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
 import org.podval.tools.publish.site.{Messages, PageErrorReporter, Seo}
@@ -127,8 +127,8 @@ object PageHeader:
         if parent.store.isDefined then rest :+ parent else rest
     loop(page.parent)
 
-  /** One wrapping line. A nameless store whose file name is a selector uses that selector's plural
-    * (`archive` → Архивы), so the raw id is not the crumb.
+  /** One wrapping line. A store with `ref` and `plural="yes"` uses the sentence-cased lexicon plural.
+    * A nameless store whose file name is a selector id does not.
     * `current` is the document itself: not a link, `aria-current="page"`. */
   private def ancestorPath(pages: Seq[Page], current: Option[String])(using Language.Spec): Option[Xml.Element] =
     val linked: Seq[Xml.Node] = pages match
@@ -176,40 +176,42 @@ object PageHeader:
 
   private def crumbLabel(page: Page): String =
     val spec: Language.Spec = page.site.languageSpec
+    val raw: String = page.names.doFind(spec).name
     val short: String = pageDisplayName(page)
     val selectorId: Option[String] = selectorName(page)
-    val selectorWord: Option[String] = selectorId.map(selectorDisplayName(_, spec))
+    val selectorWord: Option[String] = selectorId.map(id => page.site.terms.word(id)(using spec))
     val redundant: Boolean = selectorId.exists: id =>
-      Selectors.forName(id).exists: sel =>
-        sel.names.hasName(short) || sel.plural.exists(_.hasName(short))
-    val bareFile: Boolean =
-      page.store.exists(_.names.isEmpty) && Selectors.forName(short).isDefined
-    if selectorWord.isEmpty && bareFile then
-      StoreTree.by(page).flatMap(_.selector.plural).map(_.toLanguageString(using spec)).getOrElse(short)
-    else
-      val parts: Seq[String] = selectorWord.toSeq ++ Option.unless(redundant)(short).toSeq
-      if parts.nonEmpty then parts.mkString(" ") else short
+      val term: Term = page.site.terms.getById(id)
+      term.names.hasName(raw) || term.plural(spec).contains(raw)
+    val parts: Seq[String] = selectorWord.toSeq ++ Option.unless(redundant)(short).toSeq
+    if parts.nonEmpty then parts.mkString(" ") else short
 
   private def currentHead(page: MarkupPage): Xml.Element =
-    val nameFromTree: Option[Xml.Element] = page.store.flatMap: _ =>
+    val nameFromTree: Option[Xml.Element] = page.store.flatMap: store =>
       val names = page.names
-      names.find(page.site.languageSpec).orElse(names.names.headOption).map(storeNameXml)
+      names.find(page.site.languageSpec).orElse(names.names.headOption).map: found =>
+        val shown: String =
+          if store.ref.isDefined then page.site.languageSpec.language.get.sentenceCase(found.name)
+          else found.name
+        storeNameXml(found, shown)
     val name: Xml.Nodes = nameFromTree.fold(Seq(Xml.text(pageDisplayName(page))))(n => Seq(n))
     headingLine(
       selector = selectorName(page),
       name = name,
       title = storeTitleInner(page),
-      spec = page.site.languageSpec
+      spec = page.site.languageSpec,
+      terms = page.site.terms
     ).addClass("store-current")
 
   private def headingLine(
     selector: Option[String],
     name: Xml.Nodes,
     title: Xml.Nodes,
-    spec: Language.Spec
+    spec: Language.Spec,
+    terms: TermCatalog
   ): Xml.Element =
-    val sel: Xml.Nodes = selector.fold(Seq.empty[Xml.Node]): s =>
-      Seq(Xml.text(selectorDisplayName(s, spec)), Xml.text(" "))
+    val sel: Xml.Nodes = selector.fold(Seq.empty[Xml.Node]): id =>
+      Seq(Xml.text(terms.word(id)(using spec)), Xml.text(" "))
     val colon: Xml.Nodes =
       if name.nonEmpty && title.nonEmpty then Seq(Xml.text(": ")) else Seq.empty
     Xml.element("l").setChildren(sel ++ name ++ colon ++ title)
@@ -221,7 +223,7 @@ object PageHeader:
     if page.isInstanceOf[EntityListPage] then None
     else page.parent.flatMap: parent =>
       val parentIndex: Option[StoreContent] = parent.store
-      StoreTree.by(parent).map(_.selector).map(_.names.doFind(Language.English.toSpec).name)
+      StoreTree.by(parent).map(_.selector.id)
         .orElse:
           Option.when(
             parentIndex.exists(_.isCollection) && page.store.isEmpty
@@ -233,17 +235,17 @@ object PageHeader:
       if parent.isDirectory && parent.path.path.length > 1
       then parent.path.path.init.last
       else parent.path.fileName
-    Option.when(Selectors.forName(segment).isDefined)(segment)
-
-  private[page] def selectorDisplayName(n: String, spec: Language.Spec): String =
-    Selectors.forName(n).map(selectorDisplayName(_, spec)).getOrElse(n)
+    parent.site.terms.forName(segment).map(_.id)
 
   def selectorDisplayName(selector: Selector, spec: Language.Spec): String =
     selector.toLanguageString(using spec)
 
   private[page] def pageDisplayName(page: Page): String =
-    page.store.map(_ => page.names.doFind(page.site.languageSpec).name)
-      .getOrElse:
+    page.store match
+      case Some(store) =>
+        val raw: String = page.names.doFind(page.site.languageSpec).name
+        if store.ref.isDefined then page.site.languageSpec.language.get.sentenceCase(raw) else raw
+      case None =>
         page match
           case _: EntityListPage => page.title
           case _ => page.titleFromPath
@@ -273,8 +275,8 @@ object PageHeader:
     )
     page.content.fold(converted)(_.resolveConverted(converted))
 
-  private def storeNameXml(name: Name): Xml.Element =
-    var result: Xml.Element = Xml.element(XmlElement.Span).addClass("store-name").setText(name.name)
+  private def storeNameXml(name: Name, text: String): Xml.Element =
+    var result: Xml.Element = Xml.element(XmlElement.Span).addClass("store-name").setText(text)
     name.languageSpec.language.foreach(lang => result = result.set(XmlAttribute.Lang, lang.name))
     result
 

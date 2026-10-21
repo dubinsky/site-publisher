@@ -250,6 +250,19 @@ final class PlaceMapSpec extends AnyFunSuite:
         |  <location><geo>53.66935 23.81313</geo></location>
         |</place>
         |""".stripMargin,
+    "_terms.xml" ->
+      """<?xml version="1.0" encoding="UTF-8"?>
+        |<Terms>
+        |  <term id="case" selector="yes">
+        |    <name lang="en" n="case" plural="cases"/>
+        |    <name lang="ru" n="дело" plural="дела"/>
+        |  </term>
+        |  <term id="book" selector="yes">
+        |    <name lang="en" n="book" plural="books"/>
+        |    <name lang="ru" n="книга" plural="книги"/>
+        |  </term>
+        |</Terms>
+        |""".stripMargin,
     "inv.xml" ->
       """<store xmlns:xi="http://www.w3.org/2001/XInclude">
         |  <by selector="case">
