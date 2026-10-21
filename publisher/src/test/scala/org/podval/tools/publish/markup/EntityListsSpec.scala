@@ -288,6 +288,140 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(!other.contains("Жиды"), other)
   }
 
+  test("list prose sits above the list and keeps the head when the file has no title") {
+    withSite(Map(
+      "name/places.md" -> "Рядом со списком.\n",
+      "note.md" -> "Смотри [места](/name/places#places).\n"
+    )): (_, target) =>
+      val places: String = html(target, "name/places.html")
+      val proseAt: Int = places.indexOf("Рядом со списком.")
+      val memberAt: Int = places.indexOf("Вильна")
+      assert(proseAt >= 0 && memberAt > proseAt, places)
+      assert(places.contains("""class="store-current">Места<"""), places)
+      assert(places.contains("""<title>Места | Names Fixture</title>"""), places)
+      val note: String = html(target, "note.html")
+      assert(note.contains("""href="/name/places.html#places""""), note)
+  }
+
+  test("an h1 replaces the list heading and the catalog TOC stays the head") {
+    withSite(Map(
+      "name/places.md" ->
+        """# Города
+          |
+          |Смотри список.
+          |""".stripMargin
+    )): (_, target) =>
+      val places: String = html(target, "name/places.html")
+      assert(places.contains("""class="store-current">Города<"""), places)
+      assert(places.contains("""<title>Города | Names Fixture</title>"""), places)
+      assert(!places.contains("""class="store-current">Места<"""), places)
+      val catalog: String = html(target, "name/index.html")
+      assert(catalog.contains("""href="/name/places.html""""), catalog)
+      assert(catalog.contains(">Места<"), catalog)
+      assert(!catalog.contains("Города"), catalog)
+  }
+
+  test("a place file at the list path is not absorbed") {
+    withSite(Map(
+      "name/places.xml" ->
+        """<place>
+          |  <placeName>Не список</placeName>
+          |</place>
+          |""".stripMargin
+    )): (_, target) =>
+      val errors: String = html(target, "errors.html")
+      assert(errors.split("entity list 'places' collides").length - 1 == 1, errors)
+      val page: String = html(target, "name/places.html")
+      assert(page.contains("Не список"), page)
+      assert(!page.contains("Вильна"), page)
+      assert(!page.contains("""id="places""""), page)
+  }
+
+  test("one non-empty list takes prose on the catalog and keeps the fragment") {
+    withSite(Map(
+      "other.xml" ->
+        """<entityLists>
+          |  <title>Other</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |  <listOrg n="empty"><title>Empty</title></listOrg>
+          |</entityLists>
+          |""".stripMargin,
+      "other/rome.xml" ->
+        """<place>
+          |  <placeName>Rome</placeName>
+          |</place>
+          |""".stripMargin,
+      "other/cities.md" ->
+        """Города рядом.
+          |
+          |[каталог](index.html)
+          |""".stripMargin,
+      "note.md" -> "Смотри [города](/other#cities).\n"
+    )): (_, target) =>
+      val page: String = html(target, "other/index.html")
+      val proseAt: Int = page.indexOf("Города рядом.")
+      val romeAt: Int = page.indexOf("Rome")
+      assert(proseAt >= 0 && romeAt > proseAt, page)
+      assert(page.contains("""href="/other.html""""), page)
+      assert(page.contains("""<title>Other | Names Fixture</title>"""), page)
+      assert(!File(target, "other/cities.html").exists)
+      val note: String = html(target, "note.html")
+      assert(note.contains("""href="/other.html#cities""""), note)
+  }
+
+  test("a catalog file beside its directory absorbs list prose and resolves from the published page") {
+    withSite(Map(
+      "lists.xml" ->
+        """<entityLists>
+          |  <title>Catalog</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "lists/rome.xml" ->
+        """<place>
+          |  <placeName>Rome</placeName>
+          |</place>
+          |""".stripMargin,
+      "lists/cities.md" ->
+        """---
+          |title: Cities
+          |---
+          |# Towns
+          |
+          |[Рим](rome.html)
+          |
+          |[список](cities.html)
+          |""".stripMargin
+    )): (_, target) =>
+      assert(!File(target, "lists/cities.html").exists)
+      val page: String = html(target, "lists/index.html")
+      assert(page.contains("""<title>Catalog | Names Fixture</title>"""), page)
+      assert(page.contains("Towns"), page)
+      assert(!page.contains("""<title>Towns"""), page)
+      assert(!page.contains("""<title>Cities"""), page)
+      assert(page.contains("Rome"), page)
+      assert(page.contains("""href="/lists/rome.html""""), page)
+      assert(page.contains("""href="cities.html""""), page)
+      assert(!page.contains("lists/cities.html"), page)
+      val romeLink: Int = page.indexOf(">Рим<")
+      assert(romeLink >= 0, page)
+      val around: String = page.substring((romeLink - 250).max(0), romeLink)
+      assert(around.contains("""href="/lists/rome.html""""), around)
+      val errors: String = html(target, "errors.html")
+      val items: Seq[String] = kindItems(errors, "ambiguous-title")
+      assert(items.length == 1, errors)
+      val item: String = items.mkString
+      assert(item.contains("ambiguous title"), item)
+      assert(item.contains("lists/cities.md"), item)
+  }
+
+  private def kindItems(errors: String, id: String): Seq[String] =
+    val start: Int = errors.indexOf(s"""id="$id"""")
+    assert(start >= 0, errors)
+    val ul: Int = errors.indexOf("<ul", start)
+    val end: Int = errors.indexOf("</ul>", ul)
+    errors.substring(ul, end).split("<li>").drop(1).toSeq
+
   test("entity page keeps document backlinks and does not list the names index") {
     withSite(): (_, target) =>
       val page: String = html(target, "name/alter-rebbe.html")

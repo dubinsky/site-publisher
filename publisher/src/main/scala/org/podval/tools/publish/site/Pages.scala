@@ -5,9 +5,9 @@ import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMarkup, Link, LinkKind, Markup, TeiMarkup,
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, Alternates, AssetWithSourcePath, CollectionIndex, DirectoryPage,
-  EmbeddedAsset, EntityListPage, EntityLists, FacsimilePage, FrontMatter, MarkupPage, Page, PageContent, PageSource,
-  PdfPage, SimpleMarkupPage, StoreContent, StoreIndexPage, StoreIndexes, StoreTree, TeiDocumentPage,
-  YearIndexPage}
+  EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, FrontMatter, MapPage, MarkupContent,
+  MarkupPage, Page, PageContent, PageSource, PdfPage, PlaceMap, SimpleMarkupPage, StoreContent, StoreIndexPage,
+  StoreIndexes, StoreTree, TeiDocumentPage, YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -95,6 +95,7 @@ final class Pages(site: Site):
 
     resolveStores()
     addStoreIndexes()
+    addMapPage()
     installSearchAlias()
     installHome()
     headerPagesVar = resolveHeaderPages()
@@ -195,7 +196,8 @@ final class Pages(site: Site):
   private def isLeafIndex(page: Page): Boolean =
     page.isInstanceOf[StoreIndexPage] ||
       page.isInstanceOf[YearIndexPage] ||
-      page.isInstanceOf[SearchPage]
+      page.isInstanceOf[SearchPage] ||
+      page.isInstanceOf[MapPage]
 
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)
@@ -554,6 +556,16 @@ final class Pages(site: Site):
     takeAuthored(page)
     add(page)
 
+  // After the scan, before aliases. `located` is the emit check; case counts wait until write.
+  private def addMapPage(): Unit =
+    val located: Seq[Page] = PlaceMap.located(pages)
+    if located.nonEmpty then
+      val places: Seq[Page] = pages.filter(_.entityKind.contains(EntityKind.Place))
+      val page: MapPage = MapPage(site, places)
+      if takeProse(page) then
+        add(page)
+        installLeafAlias("map", page)
+
   // The scan already created a page for `{root}-collections`, `{root}-index`, or `{root}-years`.
   // That file is the text above the list.
   private def takeAuthored(page: MarkupPage): Unit =
@@ -569,6 +581,40 @@ final class Pages(site: Site):
         removeWhere(_ eq existing)
       case _ =>
         ()
+
+  /** Markup at this path is prose above the generated page. An entity file stays, and the page is not added. */
+  private def takeProse(page: MarkupPage): Boolean =
+    get(page.path) match
+      case None =>
+        true
+      case Some(existing: MarkupPage) if isMarkupProse(existing) =>
+        existing.source.foreach: source =>
+          page.setSource(proseSource(page, source))
+        removeWhere(_ eq existing)
+        true
+      case Some(existing) =>
+        val what: String = page match
+          case _: MapPage => "map"
+          case list: EntityListPage => s"entity list '${list.spec.id}'"
+          case _ => page.path.toString
+        site.error(
+          existing.sourcePath.getOrElse(page.path),
+          PageError.Duplicate,
+          s"$what collides with $existing"
+        )
+        false
+
+  private def isMarkupProse(page: MarkupPage): Boolean =
+    page.doc.exists(_.isInstanceOf[MarkupContent])
+
+  private def proseSource(page: MarkupPage, source: PageSource): PageSource =
+    PageSource(
+      page = page,
+      markup = source.markup,
+      sourcePath = source.sourcePath,
+      frontMatterStandAlone = source.frontMatterStandAlone,
+      recordParseErrors = false
+    )
 
   private def installSearchAlias(): Unit =
     if site.config.search.enabled then
@@ -750,9 +796,14 @@ final class Pages(site: Site):
           else content.flatMap(_.ids.resolve(fragment)).orElse(
             content.map(_.toc).flatMap(_.resolveSection(names = Seq(fragment.trim)))
           )
-        // A generated page has no authored ids. The year index keeps its ids on the
-        // generated list even when a file is rendered above that list.
-        val generated: Boolean = content.isEmpty || to.real.isInstanceOf[YearIndexPage]
+        // A generated page has no authored ids, except where the file supplies them.
+        // The year index, a name-list page, and a catalog that inlines one list keep
+        // the generated ids even when a file is rendered above that list.
+        val generated: Boolean =
+          content.isEmpty ||
+            to.real.isInstanceOf[YearIndexPage] ||
+            to.real.isInstanceOf[EntityListPage] ||
+            inlinesOneList(to.real)
         resolved.orElse(Option.when(generated)(Link.ToId(fragment)))
 
       Link(
@@ -805,12 +856,33 @@ final class Pages(site: Site):
           case Seq(one) => Some(one)
           case _ => None
 
+  private def inlinesOneList(page: Page): Boolean =
+    page.doc.flatMap(_.asEntityLists).exists: lists =>
+      EntityLists.kept(lists.index, page.site.pages.pages).length == 1
+
   private def resolveEntityLists(): Unit =
     pages.foreach: page =>
       page.doc.flatMap(_.asEntityLists).foreach: lists =>
-        val listPages: List[EntityListPage] = EntityLists.listPages(page, lists.index, get)
-        listPages.foreach(add)
-        listPages.foreach(_.setSiblings(listPages))
+        absorbInlineList(page, lists)
+        val built: List[EntityListPage] = EntityLists.listPages(page, lists.index, get)
+        val keptPages: List[EntityListPage] = built.filter(takeProse)
+        keptPages.foreach(add)
+        keptPages.foreach(_.setSiblings(keptPages))
+
+  private def absorbInlineList(catalog: Page, lists: EntityListsContent): Unit =
+    catalog match
+      case markup: MarkupPage =>
+        EntityLists.kept(lists.index, pages) match
+          case Seq((spec, _)) =>
+            val path: Path = EntityLists.listPath(catalog, spec)
+            get(path) match
+              case Some(existing: MarkupPage) if isMarkupProse(existing) =>
+                existing.source.foreach: source =>
+                  markup.setInlineListProse(proseSource(markup, source))
+                removeWhere(_ eq existing)
+              case _ =>
+          case _ =>
+      case _ =>
 
   def findByFileName(fileName: String, extension: Option[String]): Seq[Page] =
     pages.filter(page => page.path.fileName == fileName && page.path.extension == extension)

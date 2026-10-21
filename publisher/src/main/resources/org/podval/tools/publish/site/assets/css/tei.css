@@ -547,7 +547,7 @@ org > orgName, org > a.orgName {
     color: var(--link-base-color);
 }
 
-/* Coordinates stay in the file for the place-list map. The biography page does not print them. */
+/* Coordinates stay in the file for the map page. The biography page does not print them. */
 place > location,
 place > idno {
     display: none;

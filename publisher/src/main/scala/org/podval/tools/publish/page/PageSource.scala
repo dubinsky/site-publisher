@@ -10,19 +10,24 @@ final class PageSource(
   val page: MarkupPage,
   val markup: Markup,
   val sourcePath: Path,
-  val frontMatterStandAlone: Option[Path]
+  val frontMatterStandAlone: Option[Path],
+  val recordParseErrors: Boolean = true
 ) extends PageErrorReporter:
-  
+  // A nested `content` read must not clear this before the outer parse finishes.
+  private var quietDepth: Int = 0
+
   override def error(
     kind: PageError.Kind,
     message: String,
     cause: Option[Throwable] = None
-  ): Unit = page.site.error(
-    sourcePath,
-    kind,
-    message,
-    cause
-  )
+  ): Unit =
+    if quietDepth > 0 then ()
+    else page.site.error(
+      sourcePath,
+      kind,
+      message,
+      cause
+    )
 
   override def languageSpec: Language.Spec = page.site.languageSpec
 
@@ -64,19 +69,26 @@ final class PageSource(
     result
 
   def content: PageContent =
+    val quiet: Boolean = !recordParseErrors
+    if quiet then quietDepth += 1
+    try loadContent()
+    finally if quiet then quietDepth -= 1
+
+  private def loadContent(): PageContent =
     def readParseAndCache(message: String, firstReading: Boolean): PageContent =
       val (frontMatter: FrontMatter, xml: Xml.Element) = markup.readAndParse(
         site = page.site,
         sourcePath = sourcePath,
         frontMatterStandAlone = frontMatterStandAlone,
         message = message,
-        firstReading = firstReading
+        firstReading = firstReading,
+        recordErrors = recordParseErrors
       )
 
       cache(frontMatter, xml, firstReading)
-    
+
     contentVar match
-      case None => readParseAndCache("Reading", firstReading = true)
+      case None => readParseAndCache("Reading", firstReading = recordParseErrors)
       case Some(reference) => reference.get match
         case None => readParseAndCache("Re-reading evicted", firstReading = false)
         case Some(cached) => cached

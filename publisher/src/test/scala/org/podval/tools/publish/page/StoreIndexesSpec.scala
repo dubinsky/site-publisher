@@ -150,7 +150,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
       assert(File(target, "archive-collections.html").isFile)
       assert(File(target, "archive-index.html").isFile)
       val tree: String = html(target, "archive-collections.html")
-      assert(tree.contains("<title>Архивы | Archive Fixture</title>"), tree)
+      assert(tree.contains("<title>Дерево | Archive Fixture</title>"), tree)
       assert(tree.contains("""class="tree-index""""), tree)
       assert(tree.contains("<em>архив</em>"), tree)
       assert(tree.contains("книги:"), tree)
@@ -209,7 +209,7 @@ final class StoreIndexesSpec extends AnyFunSuite:
     assert(start >= 0, doc)
     doc.substring(start, doc.indexOf("</nav>", start))
 
-  test("home refreshes to archive-index; header lists Архивы after Имена") {
+  test("home refreshes to archive-index; header lists Дерево after Имена") {
     withSite(): (_, target) =>
       val index: String = html(target, "index.html")
       assert(index.toLowerCase.contains("refresh"), index)
@@ -221,14 +221,14 @@ final class StoreIndexesSpec extends AnyFunSuite:
       val aboutHref: Int = nav.indexOf("""href="/about.html"""")
       assert(namesHref >= 0 && collectionsHref > namesHref && aboutHref > collectionsHref, nav)
       assert(tree.contains("""class="page-title"""), tree)
-      assert(tree.contains("Архивы"), tree)
+      assert(tree.contains("Дерево"), tree)
   }
 
   test("store and selector names follow site lang") {
     val english: String = siteConfig.replace("lang: ru", "lang: en")
     withSite(Map("_site_config.yml" -> english)): (_, target) =>
       val tree: String = html(target, "archive-collections.html")
-      assert(tree.contains("<title>Archives | Archive Fixture</title>"), tree)
+      assert(tree.contains("<title>Tree | Archive Fixture</title>"), tree)
       assert(tree.contains("<em>archive</em>"), tree)
       assert(tree.contains("books:"), tree)
       assert(tree.contains("<em>book</em>"), tree)

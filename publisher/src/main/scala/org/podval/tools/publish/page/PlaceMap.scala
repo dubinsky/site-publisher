@@ -1,6 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
+import org.podval.tools.publish.markup.EntityKind
 import org.podval.tools.publish.site.Messages
 import org.podval.tools.publish.util.Files
 import org.podval.xml.{Xml, XmlElement}
@@ -9,7 +10,7 @@ import java.text.Collator
 import java.util.Locale
 import scala.annotation.tailrec
 
-/** A place list draws this when a member has a TEI `geo` (latitude, then longitude).
+/** The `/map` page draws this when any place has a TEI `geo` (latitude, then longitude).
   * Circle area follows how many cases name the place. A case is a collection whose parent
   * groups by `case` or `дело`; leaves of one case count once. */
 object PlaceMap:
@@ -50,6 +51,10 @@ object PlaceMap:
   def partition(places: Seq[Place]): (Seq[Place], Seq[Place]) =
     val inside: Seq[Place] = keep(places)
     (inside, places.filterNot(inside.contains))
+
+  /** Places with a parseable `geo`. The emit check; case counts stay in [[render]]. */
+  def located(pages: Seq[Page]): Seq[Page] =
+    pages.filter(page => page.entityKind.contains(EntityKind.Place) && geoOf(page).isDefined)
 
   def render(members: Seq[Page]): Option[Xml.Element] =
     val places: Seq[Place] = placesOf(members)

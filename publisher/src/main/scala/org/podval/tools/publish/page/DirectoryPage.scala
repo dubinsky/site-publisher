@@ -101,6 +101,7 @@ final class DirectoryPage(site: Site, path: Path) extends FullMarkupPage(site, p
     .filterNot(_.isInstanceOf[StoreIndexPage])
     .filterNot(_.isInstanceOf[YearIndexPage])
     .filterNot(_.isInstanceOf[SearchPage])
+    .filterNot(_.isInstanceOf[MapPage])
 
   private def directories: List[Page] =
     filesystemChildren.filter(_.isDirectory).sortBy(_.title)

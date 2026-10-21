@@ -39,8 +39,12 @@ abstract class Markup(
     frontMatterStandAlone: Option[Path],
     message: String,
     firstReading: Boolean,
+    recordErrors: Boolean = true
   ): (FrontMatter, Xml.Element) =
     site.log.debug(s"$message: $sourcePath")
+
+    def record(kind: PageError.Kind, message: String, cause: Option[Throwable] = None): Unit =
+      if recordErrors then site.error(sourcePath, kind, message, cause)
 
     val sourceFile: File = site.sourceFile(sourcePath)
     val sourceContent: String = Files.read(sourceFile)
@@ -48,10 +52,9 @@ abstract class Markup(
     val frontMatterStandAloneContent: Option[String] = frontMatterStandAlone.map(site.sourceFile).map(Files.read)
 
     if frontMatterInternalContent.isDefined && frontMatterStandAloneContent.isDefined then
-      site.error(
-        sourcePath = sourcePath,
-        kind = PageError.AmbiguousFrontMatter,
-        message = s"Ambiguous FrontMatter: both internal [$frontMatterInternalContent] and standalone [$frontMatterStandAloneContent] found"
+      record(
+        PageError.AmbiguousFrontMatter,
+        s"Ambiguous FrontMatter: both internal [$frontMatterInternalContent] and standalone [$frontMatterStandAloneContent] found"
       )
 
     val frontMatterContent: Option[String] = frontMatterInternalContent.orElse(frontMatterStandAloneContent)
@@ -59,19 +62,17 @@ abstract class Markup(
     val frontMatter: FrontMatter = FrontMatter.parse(frontMatterContent) match
       case Right(frontMatter) =>
         if firstReading && frontMatter.asset && frontMatterInternalContent.isDefined then
-          site.error(
-            sourcePath = sourcePath,
-            kind = PageError.InvalidAsset,
-            message = "asset: true is only valid in standalone front matter"
+          record(
+            PageError.InvalidAsset,
+            "asset: true is only valid in standalone front matter"
           )
         frontMatter
       case Left(error) =>
         if firstReading then
-          site.error(
-            sourcePath = sourcePath,
-            kind = PageError.MalformedFrontMatter,
-            message = s"Malformed FrontMatter: [$frontMatterContent]",
-            cause = Some(error)
+          record(
+            PageError.MalformedFrontMatter,
+            s"Malformed FrontMatter: [$frontMatterContent]",
+            Some(error)
           )
 
         FrontMatter.empty
@@ -83,11 +84,10 @@ abstract class Markup(
         xml
       case Left(error) =>
         if firstReading then
-          site.error(
-            sourcePath = sourcePath,
-            kind = PageError.MalformedXml,
-            message = s"malformed XML ($name)",
-            cause = Some(error)
+          record(
+            PageError.MalformedXml,
+            s"malformed XML ($name)",
+            Some(error)
           )
 
         Xml

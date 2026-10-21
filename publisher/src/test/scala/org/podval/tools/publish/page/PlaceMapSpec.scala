@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.Site
+import org.podval.tools.publish.site.{CollectionAliases, Path, Site}
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
@@ -45,31 +45,46 @@ final class PlaceMapSpec extends AnyFunSuite:
     PlaceMap.Place(name, s"/$name", None, lat, lon, 1)
 
   test("the map counts a case once, draws a ring, and tables an outlier") {
-    withSite(): (_, target) =>
-      val page: String = html(target, "name/places.html")
+    withSite(): (site, target) =>
+      val page: String = html(target, "map.html")
       val svgEnd: Int = page.indexOf("</svg>")
       assert(svgEnd > 0, page)
       val svg: String = page.substring(0, svgEnd)
       val rest: String = page.substring(svgEnd)
+      assert(page.contains("""<h1 class="page-title">Карта</h1>"""), page)
+      assert(svg.contains("Места, названные в делах"), svg)
       assert(svg.contains("place-map-dot"), svg)
       assert(svg.contains("place-map-ring"), svg)
       assert(svg.contains("place-map-river"), svg)
       assert(svg.contains("place-map-coast"), svg)
       assert(svg.contains("""href="/name/Вильна.html""""), svg)
       assert(svg.contains("""href="/name/Рига.html""""), svg)
+      assert(svg.contains("""href="/name/Гродно.html""""), svg)
       assert(svg.contains("Вильна, 2"), svg)
       assert(svg.contains("Рига, 0"), svg)
       assert(!svg.contains("Иерусалим"), svg)
+      assert(!svg.contains("Литва"), svg)
       assert(!svg.contains("target="), svg)
       assert(rest.contains("Иерусалим"), rest)
       assert(rest.contains("за рамкой"), rest)
       assert(rest.contains("берег"), rest)
+      assert(!rest.contains("Литва"), rest)
       assert(!File(target, "_place-map-base.txt").exists)
+      val places: String = html(target, "name/places.html")
+      assert(places.contains("Вильна"), places)
+      assert(places.contains("Литва"), places)
+      assert(!places.contains("Гродно"), places)
+      assert(!places.contains("<svg"), places)
+      assert(!places.contains("place-map"), places)
+      assert(site.pages.rewriteRequest(Path.fromHref("/map")).exists(_.toString == "/map.html"))
+      val alias = CollectionAliases.entries(site.pages).find(_.from == Seq("map")).get
+      assert(alias.to == Seq("map"), alias.to)
+      assert(alias.index.toString == "/map.html", alias.index.toString)
   }
 
   test("a site without a base file still draws the map") {
     withSite(includeBase = false): (_, target) =>
-      val page: String = html(target, "name/places.html")
+      val page: String = html(target, "map.html")
       assert(page.contains("place-map-dot"), page)
       assert(page.contains("Вильна, 2"), page)
       assert(!page.contains("place-map-river"), page)
@@ -77,12 +92,77 @@ final class PlaceMapSpec extends AnyFunSuite:
       assert(!page.contains("берег"), page)
   }
 
-  private def withSite(includeBase: Boolean = true)(body: (Site, File) => Unit): Unit =
+  test("root listing does not link the map") {
+    withSite(): (_, target) =>
+      val index: String = html(target, "index.html")
+      assert(index.contains("Home."), index)
+      assert(index.contains("""class="page-list""""), index)
+      assert(!index.contains("map.html"), index)
+      assert(!index.contains("""href="/map""""), index)
+      assert(!index.contains(">Карта<"), index)
+
+    withSite(source = files - "index.md"): (_, target) =>
+      val index: String = html(target, "index.html")
+      assert(index.contains("""class="page-list""""), index)
+      assert(index.contains("Имена"), index)
+      assert(!index.contains("map.html"), index)
+      assert(!index.contains(">Карта<"), index)
+  }
+
+  test("no parseable geo omits the map and the alias") {
+    val bare: Map[String, String] = files.map: (name, content) =>
+      name -> content.replaceAll("(?s)\\s*<location>.*?</location>", "")
+    withSite(source = bare): (site, target) =>
+      assert(!File(target, "map.html").isFile)
+      assert(site.pages.rewriteRequest(Path.fromHref("/map")).isEmpty)
+      assert(!CollectionAliases.entries(site.pages).exists(_.from == Seq("map")))
+  }
+
+  test("a site with no listPlace still writes the map") {
+    val peopleOnly: Map[String, String] = files.updated(
+      "name.xml",
+      """<entityLists>
+        |  <title>Имена</title>
+        |  <listPerson n="people"><title>Люди</title></listPerson>
+        |</entityLists>
+        |""".stripMargin
+    )
+    withSite(source = peopleOnly): (_, target) =>
+      val page: String = html(target, "map.html")
+      assert(page.contains("""href="/name/Вильна.html""""), page)
+      assert(!File(target, "name/places.html").isFile)
+  }
+
+  test("map.md is prose above the figure and its h1 replaces Карта") {
+    val prose: Map[String, String] = files + (
+      "map.md" ->
+        """# Край
+          |
+          |Смотри реки.
+          |""".stripMargin
+    )
+    withSite(source = prose): (_, target) =>
+      val page: String = html(target, "map.html")
+      val proseAt: Int = page.indexOf("Смотри реки.")
+      val svgAt: Int = page.indexOf("<svg")
+      assert(proseAt >= 0 && svgAt > proseAt, page)
+      assert(page.contains("""<h1 class="page-title">Край</h1>"""), page)
+      assert(page.contains("""<title>Край | Place Map Fixture</title>"""), page)
+      assert(!page.contains("""<h1 class="page-title">Карта</h1>"""), page)
+      val svgEnd: Int = page.indexOf("</svg>")
+      assert(page.substring(svgAt, svgEnd).contains("Места, названные в делах"), page)
+  }
+
+  private def withSite(
+    includeBase: Boolean = true,
+    source: Map[String, String] = Map.empty
+  )(body: (Site, File) => Unit): Unit =
     val path: NioPath = NioFiles.createTempDirectory("site-publisher-place-map")
     try
       val dir: File = path.toFile
+      val chosen: Map[String, String] = if source.isEmpty then files else source
       val written: Map[String, String] =
-        if includeBase then files + ("_place-map-base.txt" -> baseText) else files
+        if includeBase then chosen + ("_place-map-base.txt" -> baseText) else chosen
       written.foreach: (relative, content) =>
         Files.write(File(dir, relative), content)
       val target: File = File(dir, "_site")
@@ -157,6 +237,17 @@ final class PlaceMapSpec extends AnyFunSuite:
       """<place>
         |  <placeName>Иерусалим</placeName>
         |  <location><geo>31.77668 35.23416</geo></location>
+        |</place>
+        |""".stripMargin,
+    "name/Литва.xml" ->
+      """<place>
+        |  <placeName>Литва</placeName>
+        |</place>
+        |""".stripMargin,
+    "name/Гродно.xml" ->
+      """<place role="town">
+        |  <placeName>Гродно</placeName>
+        |  <location><geo>53.66935 23.81313</geo></location>
         |</place>
         |""".stripMargin,
     "inv.xml" ->

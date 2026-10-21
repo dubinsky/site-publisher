@@ -470,14 +470,23 @@ A mention that exists only in `teiHeader` leaves that row on the document, becau
 those anchors.
 The catalog itself is not a backlink source.
 
-A `place` with `location/geo` is a point on the place-list map.
+A `place` with `location/geo` is a point on `/map.html`.
+The page exists when any place has a parseable `geo`, including a site with no `listPlace`.
 The text is the latitude, then the longitude, separated by a space.
 `idno` with `type="wikidata"` may name the same place.
+The body is the figure: the drawing, its caption, and a table of the places that have a coordinate.
+A place without a coordinate is not on the page.
 The area of a circle is the number of cases that mention the place.
 A case is a collection whose parent groups by `case` or `дело`, and a case counts once.
 A place with a coordinate and no such case is a ring.
-A place too far from the others is listed under the map and is not drawn.
+A place too far from the others is listed in that table and is not drawn.
 A province, a country, or a part of a city is left without a coordinate.
+The place list does not draw the map, and the publisher does not link the list to the map.
+An optional markup file at `map` is prose above the figure.
+Its `h1` or front-matter `title` replaces the page heading, Map or «Карта».
+The SVG accessible name stays the `map.title` string.
+The page is not a header link and not a directory-listing entry.
+`/map` is a leaf alias of `/map.html`.
 Rivers and the coast come from `_place-map-base.txt` at the site root.
 The publisher does not supply them, and it does not check that the file exists.
 Without the file, the map is drawn with no such lines.
@@ -532,7 +541,13 @@ Do not add a key to `_site_config.yml`.
 
 When two or more lists are non-empty, the catalog page is a TOC of those lists (links to the list pages; members are not
 inlined).
+A markup file at `{n}` is prose above that name-list page, for every kind.
+Its `h1` or front-matter `title` replaces that page's heading (`<title>` and `l.store-current`).
+The catalog TOC and the store-tree name stay the list `<head>`.
+Without that file, the `<head>` stays the heading.
 A catalog with a single non-empty list *is* that list (no `{n}` subpage).
+That same file is prose above the inlined list, and `{n}.html` is still not published.
+The catalog `<title>` stays the catalog title.
 Several `entityLists` files are independent catalogs.
 
 The catalog directory is an identity prefix in `collection-aliases.json` (`/name` → `/name/index.html`, `/name/{id}` →
@@ -593,9 +608,9 @@ directory, and emitted hrefs use the short path.
 A TEI `store` file in the source root (`archive.xml` next to `archive/`) also gets two synthetic indexes, named from the
 file: `{name}-collections.html` (nested tree of child stores and collections) and `{name}-index.html` (flat list of
 descendant collections).
-The tree title is that store’s `by/@selector` plural from this project’s `Selector.xml` catalog, in the site `lang`
-(omitted `lang` is `en`): `archive` is Архивы when `lang` is `ru` and Archives otherwise.
-If that selector is missing, the store’s `<title>` is used, then the file name.
+The tree is titled Tree, or «Дерево» when `lang` is Russian.
+The nested list still labels each level with that store’s `by/@selector` (`archive` is архив when `lang` is `ru` and
+archive otherwise).
 The flat list is titled Collections, or «Коллекции» when `lang` is Russian.
 A file at either path is rendered above the generated list.
 A title in that file, an `h1` or front matter `title`, replaces the page title.

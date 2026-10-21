@@ -70,6 +70,8 @@ object EntityLists:
       keptLists.toList.flatMap: (spec, mem) =>
         val path: Path = listPath(catalog, spec)
         existing(path) match
+          case Some(markup: MarkupPage) if markup.doc.exists(_.isInstanceOf[MarkupContent]) =>
+            Some(EntityListPage(catalog.site, path, spec, mem))
           case Some(existingPage) =>
             catalog.site.error(
               path,
@@ -84,11 +86,7 @@ object EntityLists:
     val lines: Xml.Nodes = members.map(member =>
       Xml.element("l").setChildren(Seq(memberLink(member, spec.kind)))
     )
-    val list: Xml.Element = Xml.element(spec.kind.listElement).setId(spec.id).setChildren(lines)
-    if spec.kind != EntityKind.Place then list
-    else PlaceMap.render(members).fold(list)(map =>
-      Xml.element("div").addClass("place-map-block").setChildren(Seq(map, list))
-    )
+    Xml.element(spec.kind.listElement).setId(spec.id).setChildren(lines)
 
   def displayName(page: Page): String =
     page.entityDisplayName.getOrElse(page.title)

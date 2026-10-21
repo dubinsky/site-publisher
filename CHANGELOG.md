@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The tree index is titled Tree, or «Дерево» when `lang` is Russian.
+  It no longer uses the root store’s `by/@selector` plural.
+- The place map is `/map.html`, with leaf alias `/map`, when any place has a `geo`.
+  It is not drawn on the place list.
+  The list does not link to it.
+- A markup file at a name-list path, or at `map`, is rendered above that generated page.
+  An `h1` or front-matter title replaces that page's heading.
+  The catalog TOC stays the list `<head>`.
+  A catalog with one non-empty list takes the file on the catalog page and still does not publish `{n}.html`.
 - A file named `{root}-collections` or `{root}-index` is rendered above that generated list, as `{root}-years` already
   is.
   A title in the file replaces the page title.

@@ -20,14 +20,11 @@ object StoreIndexes:
     Path(Seq(s"${root.sourcePath.get.fileName}-$suffix")).html
 
   def pageTitle(root: Page, kind: StoreIndexPage.Kind): String =
-    val spec: Language.Spec = root.site.languageSpec
+    given Language.Spec = root.site.languageSpec
     kind match
       case StoreIndexPage.Kind.Tree =>
-        StoreTree.by(root).map(_.selector.pluralOrNames.toLanguageString(using spec))
-          .orElse(root.store.flatMap(_.title).map(_.getText.trim).filter(_.nonEmpty))
-          .getOrElse(root.sourcePath.map(_.fileName).getOrElse(root.path.fileName))
+        Messages.text("tree.title")
       case StoreIndexPage.Kind.Flat =>
-        given Language.Spec = spec
         Messages.text("index.title")
 
   def tree(root: Page): Xml.Element =

@@ -244,8 +244,18 @@ final class EntityListsContent(
     sectionId: Option[String],
     isTerminal: Boolean
   ): Option[Xml.Element] =
-    // Hrefs are already published paths; do not mark-and-resolve.
-    Some(EntityLists.generate(pageContent.source.page, index))
+    val generated: Xml.Element = EntityLists.generate(pageContent.source.page, index)
+    pageContent.source.page.inlineListProse match
+      case None => Some(generated)
+      case Some(detached) => Some(proseThenList(detached, generated))
+
+  /** List hrefs are already published paths. The file is resolved here, at write, from the catalog page. */
+  private def proseThenList(detached: PageSource, generated: Xml.Element): Xml.Element =
+    val prose: PageContent = detached.content
+    val heading: Option[Xml.Element] =
+      prose.title.orElse(prose.frontMatter.title.map(text => Xml.element(XmlElement.H1).setText(text)))
+    val body: Option[Xml.Element] = prose.markupContent(sectionId = None, isTerminal = true)
+    Xml.element(XmlElement.Div).setChildren(heading.toSeq ++ body.toSeq :+ generated)
 
 object EntityListsContent:
   def parse(xml: Xml.Element): EntityListsContent =

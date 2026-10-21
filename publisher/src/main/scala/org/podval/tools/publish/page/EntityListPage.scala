@@ -17,6 +17,9 @@ final class EntityListPage(
 
   override def titleDefault: String = spec.title
 
+  override def markupContent: Option[Xml.Element] =
+    markupContent(sectionId = None, isTerminal = true)
+
   override protected def iconDefault: Icon = Icon.note
 
   override def pageHeader: Option[Xml.Element] = Some(PageHeader.of(this))
