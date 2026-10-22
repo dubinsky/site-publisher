@@ -2,11 +2,11 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
 import org.podval.tools.publish.prose.ProseOptions
-import org.podval.tools.publish.page.{EmbeddedAsset, MarkupPage, NamedWindows, PdfPage}
+import org.podval.tools.publish.page.{EmbeddedAsset, FullMarkupPage, MarkupPage, NamedWindows, PageContent, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
-import org.podval.xml.{Xml, XmlParser}
+import org.podval.xml.{Xml, XmlElement, XmlParser}
 import org.podval.xml.dsl.{*, given}
 import com.sun.net.httpserver.HttpServer
 import com.microsoft.playwright.{Browser, Playwright}
@@ -99,6 +99,10 @@ final class Site(options: SiteOptions) extends JSLibrary:
 
   // Errors
   val errors: Errors = Errors(this, treatErrorsAsWarnings = options.treatErrorsAsWarnings)
+
+  // One pass at the end of load. siteHeader and the html attribute both read it.
+  private var readerFeaturesVar: ReaderFeatures = ReaderFeatures.empty
+  private[publish] def readerFeatures: ReaderFeatures = readerFeaturesVar
 
   def error(
     sourcePath: Path,
@@ -223,6 +227,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
     do
       transclusions.add(transclusions.harvest(page))
 
+    val detected: ReaderFeatures = detectReaderFeatures()
+    readerFeaturesVar = detected
+    log.debug(
+      s"reader features: glossary=${detected.glossary} citation=${detected.citation} " +
+      s"choice=${detected.choice} transclusion=${detected.transclusion} facsimile=${detected.facsimile} " +
+      s"add=${detected.apparatusAdd} del=${detected.apparatusDel} see=${detected.apparatusSee} " +
+      s"kinds=${detected.apparatus.mkString(" ")}"
+    )
+
   private var playwrightVar: Option[Playwright] = None
   def playwright: Playwright = synchronized:
     playwrightVar.getOrElse:
@@ -261,8 +274,79 @@ final class Site(options: SiteOptions) extends JSLibrary:
   private def stopHttpServer(): Unit =
     httpServerVar.foreach(_.stop(0))
 
+  private def detectReaderFeatures(): ReaderFeatures =
+    var glossary: Boolean = false
+    var citation: Boolean = false
+    var choice: Boolean = false
+    var transclusion: Boolean = transclusions.all.exists(_.toPage.isDefined)
+    var facsimile: Boolean = false
+    var apparatusAdd: Boolean = false
+    var apparatusDel: Boolean = false
+    var apparatusSee: Boolean = false
+
+    def visitTree(
+      xml: Xml.Element,
+      from: MarkupPage,
+      host: Option[PageContent],
+      transclusionsToo: Boolean,
+      dropHeader: Boolean
+    ): Unit =
+      // Same drop as DocumentContent.selectedXml: a collection document does not publish teiHeader.
+      val dropDirectHeader: Boolean =
+        dropHeader && from.parent.exists(_.store.exists(_.isCollection)) && xml.isNamed("TEI")
+      def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
+        if !element.isNamed(XmlElement.Code.localName) then
+          if element.isNamed("choice") then choice = true
+          if element.isElement(XmlElement.Span) then element.get("data-apparatus") match
+            case Some("add") => apparatusAdd = true
+            case Some("del") => apparatusDel = true
+            case Some("see") => apparatusSee = true
+            case _ =>
+          if !citation && host.nonEmpty && Link.isInternal(element) && !WikiLink.isTranscluded(element) then
+            element.getHref.foreach: href =>
+              pages.resolve(href, LinkKind.of(element), from).foreach: link =>
+                val contentOf: Option[PageContent] =
+                  if link.isIntrapage then host else link.page.content
+                val gloss: Boolean = link.fragment.exists: fragment =>
+                  contentOf.exists(_.glossaryDefinitions.contains(fragment.id))
+                val bibl: Boolean = link.fragment.exists: fragment =>
+                  contentOf.exists(_.bibliographyDefinitions.contains(fragment.id))
+                if !gloss && bibl then citation = true
+          if transclusionsToo && !transclusion && WikiLink.isTranscluded(element) then
+            element.getHref.filterNot(Transclusion.isObsidianBase).foreach: href =>
+              pages.resolve(href, LinkKind.of(element), from).foreach: link =>
+                Transclusion.authoredSource(link, href) match
+                  case Transclusion.Source.Ok(_, _, _) => transclusion = true
+                  case _ =>
+          element.childElements.foreach: child =>
+            if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
+      visit(xml, dropDirectHeader)
+
+    def scanPage(page: MarkupPage, transclusionsToo: Boolean): Unit =
+      page.content.foreach: content =>
+        if content.glossaryDefinitions.nonEmpty then glossary = true
+        visitTree(content.xml, page, Some(content), transclusionsToo, dropHeader = true)
+      page.inlineListProse.foreach: source =>
+        val content: PageContent = source.content
+        if content.glossaryDefinitions.nonEmpty then glossary = true
+        visitTree(content.xml, source.page, Some(content), transclusionsToo = true, dropHeader = true)
+      page.store.foreach: store =>
+        (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
+          visitTree(fragment, page, None, transclusionsToo = false, dropHeader = false)
+
+    pages.pages.foreach:
+      case page: FullMarkupPage =>
+        if Facsimile.needed(page) then facsimile = true
+        scanPage(page, transclusionsToo = false)
+      case page: MarkupPage =>
+        scanPage(page, transclusionsToo = true)
+      case _ =>
+
+    ReaderFeatures(glossary, citation, choice, transclusion, facsimile, apparatusAdd, apparatusDel, apparatusSee)
+
   def siteHeader(page: MarkupPage): Xml.Element =
     given Language.Spec = languageSpec
+    val features: ReaderFeatures = readerFeatures
     val browse: Seq[Xml.Element] = Seq(
       page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
       page.prev.map(_.navRef(Icon.arrowLeft)),
@@ -300,57 +384,68 @@ final class Site(options: SiteOptions) extends JSLibrary:
           ),
           div(className := "site-settings-menu", role := "group", aria("label") := Messages.text("nav.settings"),
             div(className := "site-settings-section", colorSchemeSetting),
-            div(
-              className := "site-settings-section",
-              role := "group",
-              aria("labelledby") := "setting-in-text-label",
+            Option.when(features.inText)(
               div(
-                className := "site-settings-heading",
-                id := "setting-in-text-label",
-                Messages.text("settings.in-text")
-              ),
-              label(className := "site-settings-item",
-                input(
-                  `type` := "checkbox",
-                  id := "setting-glossary-expand",
-                  attr("data-setting") := "glossary-expand"
+                className := "site-settings-section",
+                role := "group",
+                aria("labelledby") := "setting-in-text-label",
+                div(
+                  className := "site-settings-heading",
+                  id := "setting-in-text-label",
+                  Messages.text("settings.in-text")
                 ),
-                Messages.text("settings.glossary")
-              ),
-              label(className := "site-settings-item",
-                input(
-                  `type` := "checkbox",
-                  id := "setting-abbr-expand",
-                  attr("data-setting") := "abbr-expand",
-                  attr("checked") := "checked"
+                Option.when(features.terms)(
+                  label(className := "site-settings-item",
+                    input(
+                      `type` := "checkbox",
+                      id := "setting-glossary-expand",
+                      attr("data-setting") := "glossary-expand"
+                    ),
+                    Messages.text("settings.glossary")
+                  )
                 ),
-                Messages.text("settings.editorial")
+                Option.when(features.choice)(
+                  label(className := "site-settings-item",
+                    input(
+                      `type` := "checkbox",
+                      id := "setting-abbr-expand",
+                      attr("data-setting") := "abbr-expand",
+                      attr("checked") := "checked"
+                    ),
+                    Messages.text("settings.editorial")
+                  )
+                )
               )
             ),
-            div(className := "site-settings-section",
-              label(className := "site-settings-item",
-                input(
-                  `type` := "checkbox",
-                  id := "setting-transclusion-clean",
-                  attr("data-setting") := "transclusion-clean"
-                ),
-                Messages.text("settings.transclusion")
-              ),
-              label(className := "site-settings-item",
-                input(
-                  `type` := "checkbox",
-                  id := "setting-facsimile-aside",
-                  attr("data-setting") := "facsimile-aside",
-                  attr("checked") := "checked"
-                ),
-                Messages.text("settings.facsimile")
-              )
-            ),
-            Option.when(config.apparatus)(
+            Option.when(features.layout)(
               div(className := "site-settings-section",
-                apparatusSetting("add", Messages.text("settings.add")),
-                apparatusSetting("del", Messages.text("settings.del")),
-                apparatusSetting("see", Messages.text("settings.see"))
+                Option.when(features.transclusion)(
+                  label(className := "site-settings-item",
+                    input(
+                      `type` := "checkbox",
+                      id := "setting-transclusion-clean",
+                      attr("data-setting") := "transclusion-clean"
+                    ),
+                    Messages.text("settings.transclusion")
+                  )
+                ),
+                Option.when(features.facsimile)(
+                  label(className := "site-settings-item",
+                    input(
+                      `type` := "checkbox",
+                      id := "setting-facsimile-aside",
+                      attr("data-setting") := "facsimile-aside",
+                      attr("checked") := "checked"
+                    ),
+                    Messages.text("settings.facsimile")
+                  )
+                )
+              )
+            ),
+            Option.when(features.apparatus.nonEmpty)(
+              div(
+                className := "site-settings-section",
+                features.apparatus.map(kind => apparatusSetting(kind, Messages.text(s"settings.$kind")))
               )
             )
           )
@@ -527,4 +622,29 @@ object Site:
   def rejectPrettyPrintWithServe(options: SiteOptions): Unit =
     if options.prettyPrint && options.serve then
       throw IllegalArgumentException("--pretty-print does not generate or serve")
+
+private[publish] final class ReaderFeatures(
+  val glossary: Boolean,
+  val citation: Boolean,
+  val choice: Boolean,
+  val transclusion: Boolean,
+  val facsimile: Boolean,
+  val apparatusAdd: Boolean,
+  val apparatusDel: Boolean,
+  val apparatusSee: Boolean
+):
+  def terms: Boolean = glossary || citation
+  def inText: Boolean = terms || choice
+  def layout: Boolean = transclusion || facsimile
+  /** Menu order. Also the data-apparatus-kinds token list. Not data-apparatus. */
+  def apparatus: List[String] =
+    List(
+      Option.when(apparatusAdd)("add"),
+      Option.when(apparatusDel)("del"),
+      Option.when(apparatusSee)("see")
+    ).flatten
+
+private[publish] object ReaderFeatures:
+  val empty: ReaderFeatures =
+    ReaderFeatures(false, false, false, false, false, false, false, false)
 

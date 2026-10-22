@@ -8,4 +8,3 @@ paginate-posts: 2
 header-pages:
   - about.html
   - posts
-apparatus: true

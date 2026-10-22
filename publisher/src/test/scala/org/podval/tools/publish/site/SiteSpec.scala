@@ -6,6 +6,7 @@ import org.podval.tools.publish.util.{Files, PdfNamedDestinations, SiteOptions}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File
+import java.nio.file.{Files as NioFiles, Path as NioPath}
 
 final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
   private val repositoryRoot: File =
@@ -43,6 +44,108 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val end: Int = page.indexOf(">", start)
     assert(end >= 0, page)
     page.substring(start, end + 1)
+
+  private def tagAt(page: String, id: String): String =
+    val at: Int = page.indexOf(id)
+    assert(at >= 0, page)
+    val start: Int = page.lastIndexOf("<", at)
+    val end: Int = page.indexOf(">", at)
+    page.substring(start, end + 1)
+
+  private val readerConfig: String =
+    """title: T
+      |description: D
+      |url: http://t.test
+      |author: A
+      |email: a@t.test
+      |""".stripMargin
+
+  private val choiceHtml: String =
+    "<p><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></p>\n"
+
+  private def choiceTei(body: String): String =
+    s"""<TEI>
+       |  <teiHeader><fileDesc><titleStmt><title>t</title></titleStmt></fileDesc></teiHeader>
+       |  <text><body><p>$body</p></body></text>
+       |</TEI>
+       |""".stripMargin
+
+  private def headerChoiceTei: String =
+    """<TEI>
+      |  <teiHeader>
+      |    <fileDesc><titleStmt><title>t</title></titleStmt></fileDesc>
+      |    <profileDesc>
+      |      <abstract><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></abstract>
+      |    </profileDesc>
+      |  </teiHeader>
+      |  <text><body><p>hello</p></body></text>
+      |</TEI>
+      |""".stripMargin
+
+  private def rootStore(extra: Map[String, String]): Map[String, String] =
+    Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/rgada.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/rgada.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/rgada/900.xml" -> choiceTei("hello")
+    ) ++ extra
+
+  private def withReaderSite(files: Map[String, String])(body: File => Unit): Unit =
+    val path: NioPath = NioFiles.createTempDirectory("site-publisher-reader")
+    try
+      val dir: File = path.toFile
+      files.foreach: (relative, content) =>
+        Files.write(File(dir, relative), content)
+      val target: File = File(dir, "_site")
+      Site(SiteOptions(
+        sourceDirectoryPath = dir.getAbsolutePath,
+        targetDirectoryNameOpt = Some(target.getAbsolutePath),
+        treatErrorsAsWarnings = true,
+        logLevelOpt = Some("WARN")
+      )).generate()
+      body(target)
+    finally
+      NioFiles.walk(path).sorted(java.util.Comparator.reverseOrder()).forEach(NioFiles.delete(_))
+
+  private def readerHtml(target: File, relative: String): String =
+    val file: File = File(target, relative)
+    assert(file.isFile, s"missing $relative under $target")
+    Files.read(file).replaceAll("\\s+", " ").replace("= ", "=")
+
+  private def assertExpansions(page: String): Unit =
+    val tag: String = tagAt(page, """id="setting-abbr-expand"""")
+    assert(tag.contains("""checked="checked""""), tag)
+
+  private def assertNoExpansions(page: String): Unit =
+    assert(!page.contains("""id="setting-abbr-expand""""), page)
+
+  private def assertAbsorbedChoice(target: File, relative: String, marker: String): Unit =
+    val page: String = readerHtml(target, relative)
+    assert(page.contains(marker), page)
+    assert(page.contains("ChoiceMarker"), page)
+    assertExpansions(page)
+    val home: String = readerHtml(target, "index.html")
+    assert(!home.contains("ChoiceMarker"), home)
+    assertExpansions(home)
 
   private def exists(relative: String): Unit =
     assert(File(targetDirectory, relative).isFile, s"missing $relative under $targetDirectory")
@@ -84,12 +187,9 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(home.contains("""data-setting="glossary-expand""""), home)
     assert(home.contains("Term definitions and citations"), home)
     assert(!home.contains("Show glossary definitions in the text"), home)
-    assert(home.contains("""id="setting-abbr-expand""""), home)
-    assert(home.contains("""data-setting="abbr-expand""""), home)
-    val abbrAt: Int = home.indexOf("""id="setting-abbr-expand"""")
-    val abbrTag: String = home.slice((abbrAt - 40).max(0), abbrAt + 180)
-    assert(abbrTag.contains("""checked="checked""""), abbrTag)
-    assert(home.contains("Abbreviation expansions and corrections"), home)
+    assert(!tagAt(home, """id="setting-glossary-expand"""").contains("checked"), home)
+    assert(!home.contains("""id="setting-abbr-expand""""), home)
+    assert(!home.contains("Abbreviation expansions and corrections"), home)
     assert(!home.contains("Show expansions and corrections in the text"), home)
     assert(home.contains("""class="site-settings-heading""""), home)
     assert(home.contains("""id="setting-in-text-label""""), home)
@@ -107,19 +207,15 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(inTextBefore.contains("""role="group""""), inTextBefore)
     assert(home.contains("""id="setting-transclusion-clean""""), home)
     assert(home.contains("""data-setting="transclusion-clean""""), home)
+    assert(!tagAt(home, """id="setting-transclusion-clean"""").contains("checked"), home)
     assert(home.contains("Seamless transclusions"), home)
-    assert(home.contains("""id="setting-facsimile-aside""""), home)
-    assert(home.contains("""data-setting="facsimile-aside""""), home)
-    assert(home.contains("Show the facsimile beside the text"), home)
+    assert(!home.contains("""id="setting-facsimile-aside""""), home)
+    assert(!home.contains("Show the facsimile beside the text"), home)
     val colorAt: Int = home.indexOf("""id="setting-color-scheme-label"""")
     val glossaryAt: Int = home.indexOf("""id="setting-glossary-expand"""")
-    val facsimileAt: Int = home.indexOf("""id="setting-facsimile-aside"""")
     val transclusionAt: Int = home.indexOf("""id="setting-transclusion-clean"""")
-    assert(colorAt >= 0 && colorAt < headingAt && headingAt < glossaryAt && glossaryAt < abbrAt, home)
-    assert(abbrAt < transclusionAt && transclusionAt < facsimileAt, home)
-    assert(home.split("""class="site-settings-section"""").length - 1 == 4, home)
-    val facsimileTag: String = home.slice((facsimileAt - 80).max(0), facsimileAt + 160)
-    assert(facsimileTag.contains("""checked="checked""""), facsimileTag)
+    assert(colorAt >= 0 && colorAt < headingAt && headingAt < glossaryAt && glossaryAt < transclusionAt, home)
+    assert(home.split("""class="site-settings-section"""").length - 1 == 3, home)
     assert(!home.contains("glossary-expand-toggle"), home)
     assert(home.contains("""id="setting-color-scheme-label""""), home)
     assert(home.contains("Color scheme"), home)
@@ -149,38 +245,16 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(graph.contains("site-color-scheme"), graph)
   }
 
-  test("apparatus settings are on the page when the site opts in") {
+  test("fixture home has no apparatus menu and no data-apparatus attribute") {
     val home: String = html("index.html")
-    assert(htmlOpen(home).contains("""data-apparatus-enabled="true""""), htmlOpen(home))
-    assert(home.contains("""name="apparatus-add" value="distinct" checked="checked""""), home)
-    assert(home.contains("""name="apparatus-add" value="plain""""), home)
-    assert(home.contains("""name="apparatus-add" value="hidden""""), home)
-    assert(home.contains("""name="apparatus-see" value="distinct" checked="checked""""), home)
-    assert(home.contains("""name="apparatus-see" value="plain""""), home)
-    assert(home.contains("""name="apparatus-see" value="hidden""""), home)
-    assert(home.contains("""name="apparatus-del" value="distinct" checked="checked""""), home)
-    assert(home.contains("""name="apparatus-del" value="plain""""), home)
-    assert(home.contains("""name="apparatus-del" value="hidden""""), home)
-    assert(home.contains("site-settings-section"), home)
-    assert(home.contains("[Marked]"), home)
-    assert(!home.contains("(Marked)"), home)
-    assert(!home.contains("[Distinct]"), home)
-    assert(!home.contains("&lt;Distinct>"), home)
-    assert(home.contains("&lt;Marked>"), home)
-    val delDistinct: Int = home.indexOf("""name="apparatus-del" value="distinct"""")
-    val delSlice: String = home.slice(delDistinct, (delDistinct + 180).min(home.length)).replace(" ", "")
-    assert(delSlice.contains(">Marked<"), delSlice)
-    val facsimileAt: Int = home.indexOf("""id="setting-facsimile-aside"""")
-    val addAt: Int = home.indexOf("""name="apparatus-add"""")
-    val delAt: Int = home.indexOf("""name="apparatus-del"""")
-    val seeAt: Int = home.indexOf("""name="apparatus-see"""")
-    assert(facsimileAt >= 0 && facsimileAt < addAt && addAt < delAt && delAt < seeAt, home)
-    assert(home.contains("""data-apparatus-kind="add""""), home)
-    assert(home.contains("""data-apparatus-kind="del""""), home)
-    assert(home.contains("""data-apparatus-kind="see""""), home)
+    assert(!home.contains("""name="apparatus-add""""), home)
+    assert(!home.contains("""name="apparatus-del""""), home)
+    assert(!home.contains("""name="apparatus-see""""), home)
+    assert(!home.contains("data-apparatus-enabled"), home)
     assert(!home.contains("""data-apparatus=""""), home)
+    assert(!htmlOpen(home).contains("data-apparatus-kinds"), htmlOpen(home))
     val head: String = home.substring(0, home.indexOf("</head>"))
-    assert(head.contains("data-apparatus-enabled"), head)
+    assert(head.contains("data-apparatus-kinds"), head)
     assert(head.contains("apparatus-add"), head)
     val prose: String = html("assets/css/prose.css")
     assert(prose.contains("html.apparatus-add-hidden"), prose)
@@ -935,4 +1009,269 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val target: String = html("embed-target.html")
     assert(target.contains("Embedded in"), target)
     assert(target.contains("Embed Host"), target)
+  }
+
+  test("only [.add] shows Additions on a page that has no role") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "marked.adoc" -> "[.add]#added words#\n"
+    )): target =>
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("added words"), home)
+      assert(home.contains("Additions"), home)
+      assert(!home.contains("Deletions"), home)
+      assert(!home.contains("Sources"), home)
+      assert(home.contains("""name="apparatus-add" value="distinct" checked="checked""""), home)
+      assert(home.contains("[Marked]"), home)
+      assert(!home.contains("""name="apparatus-del""""), home)
+      assert(!home.contains("""name="apparatus-see""""), home)
+      val open: String = htmlOpen(home)
+      assert(open.contains("""data-apparatus-kinds="add""""), open)
+      assert(!open.contains("""name="apparatus-add""""), open)
+      assert(
+        !open.split("\\s+").exists(token => token == "data-apparatus" || token.startsWith("data-apparatus=")),
+        open
+      )
+      assert(home.contains("""name="apparatus-add""""), home)
+  }
+
+  test("supplied without [.add] has no apparatus group") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "doc.xml" -> choiceTei("<supplied>added words</supplied>")
+    )): target =>
+      val doc: String = readerHtml(target, "doc.html")
+      assert(doc.contains("<supplied>"), doc)
+      assert(!doc.contains("""name="apparatus-add""""), doc)
+      assert(!doc.contains("Additions"), doc)
+      assert(!htmlOpen(doc).contains("data-apparatus-kinds"), htmlOpen(doc))
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("""name="apparatus-add""""), home)
+      assert(!htmlOpen(home).contains("data-apparatus-kinds"), htmlOpen(home))
+  }
+
+  test("a choice inside code does not show expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "doc.xml" -> choiceTei("<code><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></code>")
+    )): target =>
+      val doc: String = readerHtml(target, "doc.html")
+      val codeAt: Int = doc.indexOf("<code>")
+      val choiceAt: Int = doc.indexOf("<choice>")
+      assert(codeAt >= 0 && choiceAt > codeAt, doc)
+      assertNoExpansions(doc)
+      assertNoExpansions(readerHtml(target, "index.html"))
+  }
+
+  test("a choice on one document shows expansions on another") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "one.xml" -> choiceTei("<choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice>"),
+      "two.md" -> "Plain page.\n"
+    )): target =>
+      val one: String = readerHtml(target, "one.html")
+      assert(one.contains("ChoiceMarker"), one)
+      val two: String = readerHtml(target, "two.html")
+      assert(!two.contains("ChoiceMarker"), two)
+      assertExpansions(two)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+  }
+
+  test("a choice in an absorbed years file shows expansions") {
+    withReaderSite(rootStore(Map("archive-years.html" -> choiceHtml))): target =>
+      assertAbsorbedChoice(target, "archive-years.html", """class="year-index"""")
+  }
+
+  test("a choice in an absorbed collections file shows expansions") {
+    withReaderSite(rootStore(Map("archive-collections.html" -> choiceHtml))): target =>
+      assertAbsorbedChoice(target, "archive-collections.html", """class="tree-index"""")
+  }
+
+  test("a choice in an absorbed flat index file shows expansions") {
+    withReaderSite(rootStore(Map("archive-index.html" -> choiceHtml))): target =>
+      assertAbsorbedChoice(target, "archive-index.html", """<h1 class="page-title">Collections</h1>""")
+  }
+
+  test("a choice in absorbed map prose shows expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="case" selector="yes">
+          |    <name lang="en" n="case" plural="cases"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "name.xml" ->
+        """<entityLists>
+          |  <title>Names</title>
+          |  <listPlace n="places"><title>Places</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "name/Riga.xml" ->
+        """<place>
+          |  <placeName>Riga</placeName>
+          |  <location><geo>56.94750 24.10694</geo></location>
+          |</place>
+          |""".stripMargin,
+      "map.html" -> choiceHtml
+    )): target =>
+      assertAbsorbedChoice(target, "map.html", "<svg")
+  }
+
+  test("a choice in absorbed multi-list prose shows expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "name.xml" ->
+        """<entityLists>
+          |  <title>Names</title>
+          |  <listPerson n="people"><title>People</title></listPerson>
+          |  <listPlace n="places"><title>Places</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "name/Ann.xml" ->
+        """<person>
+          |  <persName>Ann</persName>
+          |</person>
+          |""".stripMargin,
+      "name/Riga.xml" ->
+        """<place>
+          |  <placeName>Riga</placeName>
+          |</place>
+          |""".stripMargin,
+      "name/places.html" -> choiceHtml
+    )): target =>
+      val page: String = readerHtml(target, "name/places.html")
+      assert(page.contains("Riga"), page)
+      assert(page.contains("ChoiceMarker"), page)
+      assertExpansions(page)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+  }
+
+  test("a choice in inline list prose shows expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "lists.xml" ->
+        """<entityLists>
+          |  <title>Catalog</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "lists/Riga.xml" ->
+        """<place>
+          |  <placeName>Riga</placeName>
+          |</place>
+          |""".stripMargin,
+      "lists/cities.html" -> choiceHtml
+    )): target =>
+      assert(!File(target, "lists/cities.html").exists)
+      val page: String = readerHtml(target, "lists/index.html")
+      assert(page.contains("Riga"), page)
+      assert(page.contains("ChoiceMarker"), page)
+      assertExpansions(page)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+  }
+
+  test("a choice in a collection abstract shows expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "col.xml" ->
+        """<collection n="1" alias="col">
+          |  <title>Case</title>
+          |  <abstract><p><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></p></abstract>
+          |</collection>
+          |""".stripMargin,
+      "col/000.xml" -> choiceTei("hello")
+    )): target =>
+      val index: String = readerHtml(target, "col/index.html")
+      assert(index.contains("ChoiceMarker"), index)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+      assertExpansions(index)
+  }
+
+  test("a choice only in a collection teiHeader does not show expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "col.xml" ->
+        """<collection n="1" alias="col">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "col/000.xml" -> headerChoiceTei
+    )): target =>
+      val doc: String = readerHtml(target, "col/000.html")
+      assert(doc.contains("hello"), doc)
+      assertNoExpansions(doc)
+      assertNoExpansions(readerHtml(target, "index.html"))
+      assertNoExpansions(readerHtml(target, "col/index.html"))
+  }
+
+  test("a choice in a standalone TEI teiHeader shows expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "doc.xml" -> headerChoiceTei
+    )): target =>
+      val doc: String = readerHtml(target, "doc.html")
+      assert(doc.contains("<choice>"), doc)
+      assert(doc.contains("ChoiceMarker"), doc)
+      assertExpansions(doc)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+  }
+
+  test("cite:[key] with no glossary and no bibliography link has no terms row") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "cite.adoc" ->
+        """cite:[knuth79]
+
+          |bibliography::[]
+          |""".stripMargin
+    )): target =>
+      val cite: String = readerHtml(target, "cite.html")
+      assert(cite.contains("knuth79"), cite)
+      assert(!cite.contains("""id="setting-glossary-expand""""), cite)
+      assert(!readerHtml(target, "index.html").contains("""id="setting-glossary-expand""""))
+  }
+
+  test("a glossary list with no refs still has the terms row") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "gloss.md" ->
+        """posuk
+          |: a verse
+          |
+          |{:.glossary}
+          |""".stripMargin
+    )): target =>
+      val gloss: String = readerHtml(target, "gloss.html")
+      assert(gloss.contains("posuk"), gloss)
+      assert(!tagAt(gloss, """id="setting-glossary-expand"""").contains("checked"), gloss)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("posuk"), home)
+      assert(home.contains("""id="setting-glossary-expand""""), home)
+      assert(!tagAt(home, """id="setting-glossary-expand"""").contains("checked"), home)
+      assertNoExpansions(home)
   }

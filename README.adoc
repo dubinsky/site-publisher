@@ -270,7 +270,7 @@ It:
 - supports TEI <<facsimiles>>;
 - writes <<seo>> tags in each page `<head>`;
 - can emit an interactive <<graph>> of pages;
-- has reader <<settings>> for color scheme, glossary, transclusions, and <<apparatus>>;
+- has reader <<settings>> for color scheme, glossary, expansions, transclusions, facsimiles, and <<apparatus>>;
 - checks <<external-links>> when `check-links` is set;
 
 Supported markup constructs:
@@ -921,7 +921,8 @@ A dotted underline marks an abbreviation that has no titlo.
 It does not gain a dotted underline.
 A titlo stays the overline.
 Print and PDF show the expansion, the correction, and the regularization.
-The checkbox is on every page.
+The checkbox is on every page when the site has a `choice`, and on none otherwise.
+See <<settings>>.
 It is not the apparatus menu below.
 
 A titlo:
@@ -967,7 +968,9 @@ Hovering it shows that same sentence.
 
 On a wide window the transcription shows the current scan to the right of the text.
 The text column stays the same width.
-The gear item "Show the facsimile beside the text" hides it.
+The gear row "Show the facsimile beside the text" is present when the site has a companion pane, including on pages that
+do not.
+See <<settings>>.
 It is on unless the reader turns it off.
 A page-break icon selects that scan while the pane is open.
 It opens the viewer when the pane is closed.
@@ -1119,6 +1122,7 @@ search:
 == Settings
 
 The gear menu on each page stores choices in the browser.
+A row is on every page of the site, or on none.
 
 **Color scheme** is System, Light, or Dark.
 Nothing saved, and System, follow the operating system.
@@ -1127,7 +1131,8 @@ Print and PDF stay on the light palette.
 When the scheme resolves to dark, code blocks use the highlight.js dark theme and Mermaid uses its dark theme.
 The page graph uses the same colors.
 
-**In the text** is the heading for the next two choices.
+**In the text** is the heading for term definitions and expansions.
+The heading is omitted when the site has neither.
 
 **Term definitions and citations** inlines glossary and citation definitions.
 
@@ -1136,6 +1141,12 @@ See <<tei-choice>>.
 
 **Seamless transclusions** hides the box and header around a transcluded region.
 See <<page-names>>.
+
+**Show the facsimile beside the text** hides the companion pane.
+See <<facsimiles>>.
+
+Transclusions and the facsimile row stay ungrouped.
+That section is omitted when the site has neither.
 
 [#apparatus]
 == Apparatus
@@ -1165,15 +1176,9 @@ A TEI `del` is the scribe's own strikeout and is not this role.
 `[.see]` is a source.
 The role names and the TEI names both stay.
 
-The page stays Marked unless `_site_config.yml` opts in:
-
-[source,yaml]
-----
-apparatus: true
-----
-
-The default is false.
-When it is false there is no menu, and a mode stored in the browser is not applied.
+Each group appears only when that role is used anywhere in the site.
+A site with `[.add]` and no `[.del]` or `[.see]` shows only Additions.
+See <<settings>>.
 
 Nesting two kinds needs the inner span unconstrained:
 

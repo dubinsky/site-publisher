@@ -4,6 +4,10 @@
   /* Checked unless the browser stored "0". The off state is a class, so no script still expands. */
   var defaultOn = ["abbr-expand", "facsimile-aside"];
   var apparatusNames = ["apparatus-add", "apparatus-see", "apparatus-del"];
+  var apparatusPresent = (html.getAttribute("data-apparatus-kinds") || "").split(/\s+/).filter(Boolean);
+  function apparatusOn(name) {
+    return apparatusPresent.indexOf(name.replace("apparatus-", "")) !== -1;
+  }
   var schemeKey = "color-scheme";
 
   function storageGet(key) {
@@ -50,11 +54,9 @@
       if (storageGet(k) === "0") html.classList.add(k + "-off");
     });
   } catch (e) {}
-  if (html.getAttribute("data-apparatus-enabled") === "true") {
-    apparatusNames.forEach(function (name) {
-      applyApparatus(name, storageGet(name));
-    });
-  }
+  apparatusNames.forEach(function (name) {
+    if (apparatusOn(name)) applyApparatus(name, storageGet(name));
+  });
   applyScheme(false);
 
   var schemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -97,21 +99,20 @@
       });
     });
 
-    if (html.getAttribute("data-apparatus-enabled") === "true") {
-      apparatusNames.forEach(function (name) {
-        var radios = document.querySelectorAll('input[name="' + name + '"]');
-        if (!radios.length) return;
-        var mode = apparatusMode(storageGet(name));
-        radios.forEach(function (radio) {
-          radio.checked = radio.value === mode;
-          radio.addEventListener("change", function () {
-            if (!radio.checked) return;
-            storageSet(name, radio.value);
-            applyApparatus(name, radio.value);
-          });
+    apparatusNames.forEach(function (name) {
+      if (!apparatusOn(name)) return;
+      var radios = document.querySelectorAll('input[name="' + name + '"]');
+      if (!radios.length) return;
+      var mode = apparatusMode(storageGet(name));
+      radios.forEach(function (radio) {
+        radio.checked = radio.value === mode;
+        radio.addEventListener("change", function () {
+          if (!radio.checked) return;
+          storageSet(name, radio.value);
+          applyApparatus(name, radio.value);
         });
       });
-    }
+    });
 
     var settings = document.querySelector(".site-settings");
     var header = document.querySelector(".site-header");

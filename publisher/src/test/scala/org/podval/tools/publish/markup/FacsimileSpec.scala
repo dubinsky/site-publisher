@@ -173,6 +173,12 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(!html(target, "index.html").contains("/assets/js/facsimile-aside.js"))
       assert(transcription.contains("""title="Факсимиле""""), transcription)
       assert(openTag(transcription, "<html").contains("""class="facsimile-aside""""), transcription)
+      assert(transcription.contains("""id="setting-facsimile-aside""""), transcription)
+      val collectionIndex: String = html(target, "col/index.html")
+      assert(collectionIndex.contains("""id="setting-facsimile-aside""""), collectionIndex)
+      assert(!collectionIndex.contains("""<aside class="facsimile-aside""""), collectionIndex)
+      assert(!collectionIndex.contains("/assets/js/facsimile-aside.js"), collectionIndex)
+      assert(viewer.contains("""id="setting-facsimile-aside""""), viewer)
       val mainStart: Int = transcription.indexOf("""<main class="page-content"""")
       val mainEnd: Int = transcription.indexOf("</main>", mainStart)
       val main: String = transcription.substring(mainStart, mainEnd)
@@ -305,6 +311,9 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(!openTag(transcription, "<html").contains("facsimile-aside"), transcription)
       assert(!transcription.contains("""<aside class="facsimile-aside""""), transcription)
       assert(!transcription.contains("/assets/js/facsimile-aside.js"), transcription)
+      assert(!transcription.contains("""id="setting-facsimile-aside""""), transcription)
+      assert(!html(target, "index.html").contains("""id="setting-facsimile-aside""""))
+      assert(!html(target, "col/index.html").contains("""id="setting-facsimile-aside""""))
   }
 
   test("pb@facs is the image src") {
@@ -398,6 +407,8 @@ final class FacsimileSpec extends AnyFunSuite:
       assert(full.contains("""<aside class="facsimile-aside""""), full)
       assert(openTag(full, """id="p010-1"""").contains("data-facsimile-src"), full)
       val chunk: String = html(target, "col/010/Alpha.html")
+      assert(full.contains("""id="setting-facsimile-aside""""), full)
+      assert(chunk.contains("""id="setting-facsimile-aside""""), chunk)
       assert(!openTag(chunk, "<html").contains("facsimile-aside"), chunk)
       assert(!chunk.contains("""<aside class="facsimile-aside""""), chunk)
       assert(!chunk.contains("data-facsimile-src"), chunk)

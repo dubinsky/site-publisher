@@ -193,6 +193,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         site.googleAnalytics.map(js.GoogleAnalytics(_))
       ).flatten ++ extraLibraries :+ site
 
+    val apparatusKinds: List[String] = site.readerFeatures.apparatus
     html(
       langAttr := lang,
       attr("dir") := interfaceDir,
@@ -230,7 +231,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
       )
     ).when(htmlClass.nonEmpty)(className := htmlClass)
      .when(site.config.namedWindows)(attr("data-window-name") := NamedWindows.of(this))
-     .when(site.config.apparatus)(attr("data-apparatus-enabled") := "true")
+     .when(apparatusKinds.nonEmpty)(attr("data-apparatus-kinds") := apparatusKinds.mkString(" "))
 
   private def isCollectionIndex: Boolean =
     doc.exists(_.wide)

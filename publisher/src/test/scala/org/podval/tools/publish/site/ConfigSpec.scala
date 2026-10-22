@@ -57,16 +57,14 @@ final class ConfigSpec extends AnyFunSuite:
     assert(decode(required + "check-links: true\n").checkLinks)
   }
 
-  test("apparatus defaults to false") {
-    assert(!decode(required).apparatus)
+  test("apparatus is an unknown key") {
+    val message: String = reject(required + "apparatus: true\n")
+    assert(message.contains("Unknown config keys: apparatus"), message)
   }
 
-  test("apparatus true maps to true") {
-    assert(decode(required + "apparatus: true\n").apparatus)
-  }
-
-  test("apparatus hidden is not a boolean") {
-    assert(Config.decode(required + "apparatus: hidden\n").isLeft)
+  test("apparatus hidden is an unknown key") {
+    val message: String = reject(required + "apparatus: hidden\n")
+    assert(message.contains("Unknown config keys: apparatus"), message)
   }
 
   test("graph defaults to off") {

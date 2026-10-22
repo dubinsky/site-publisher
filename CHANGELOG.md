@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A gear row is on every page when the site uses it, and on none otherwise, and `apparatus` is no longer a config key.
 - The expansions checkbox hides a regularization (`choice`/`reg`) the same way it hides an expansion.
   Print and PDF still show it.
 - The gear groups term definitions and expansions under an In the text heading, and the marked apparatus choice is
