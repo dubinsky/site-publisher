@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Glossary, Link, LinkKind, TeiDate, Transclusion, WikiLink}
 import org.podval.tools.publish.prose.ProseOptions
 import org.podval.tools.publish.page.{EmbeddedAsset, FullMarkupPage, MarkupPage, NamedWindows, PageContent, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
@@ -322,14 +322,27 @@ final class Site(options: SiteOptions) extends JSLibrary:
             if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
       visit(xml, dropDirectHeader)
 
+    // Harvest strips footnote bodies from the tree; render appends them.
+    // A collection document drops teiHeader and publishes these cells instead.
+    def scanPrepared(content: PageContent, from: MarkupPage, transclusionsToo: Boolean): Unit =
+      if content.glossaryDefinitions.nonEmpty then glossary = true
+      visitTree(content.xml, from, Some(content), transclusionsToo, dropHeader = true)
+      content.footnotes.values.foreach: footnote =>
+        footnote.nodes.foreach: node =>
+          node.asElement.foreach: element =>
+            if Glossary.definitions(element).nonEmpty then glossary = true
+            visitTree(element, from, Some(content), transclusionsToo = false, dropHeader = false)
+      if from.parent.exists(_.store.exists(_.isCollection)) then
+        content.doc.documentHeader.foreach: header =>
+          (header.description.toSeq ++ header.authors ++ header.addressee.toSeq ++
+            header.transcribers ++ header.translators).foreach: element =>
+            visitTree(element, from, None, transclusionsToo = false, dropHeader = false)
+
     def scanPage(page: MarkupPage, transclusionsToo: Boolean): Unit =
       page.content.foreach: content =>
-        if content.glossaryDefinitions.nonEmpty then glossary = true
-        visitTree(content.xml, page, Some(content), transclusionsToo, dropHeader = true)
+        scanPrepared(content, page, transclusionsToo)
       page.inlineListProse.foreach: source =>
-        val content: PageContent = source.content
-        if content.glossaryDefinitions.nonEmpty then glossary = true
-        visitTree(content.xml, source.page, Some(content), transclusionsToo = true, dropHeader = true)
+        scanPrepared(source.content, source.page, transclusionsToo = true)
       page.store.foreach: store =>
         (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
           visitTree(fragment, page, None, transclusionsToo = false, dropHeader = false)

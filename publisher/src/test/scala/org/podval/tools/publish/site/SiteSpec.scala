@@ -1206,7 +1206,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
       assertExpansions(index)
   }
 
-  test("a choice only in a collection teiHeader does not show expansions") {
+  test("a choice in a collection document abstract shows expansions") {
     withReaderSite(Map(
       "_site_config.yml" -> readerConfig,
       "index.md" -> "Home.\n",
@@ -1219,9 +1219,93 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     )): target =>
       val doc: String = readerHtml(target, "col/000.html")
       assert(doc.contains("hello"), doc)
+      assert(doc.contains("ChoiceMarker"), doc)
+      assertExpansions(doc)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+      assertExpansions(readerHtml(target, "col/index.html"))
+  }
+
+  test("a choice only in a collection encodingDesc does not show expansions") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "col.xml" ->
+        """<collection n="1" alias="col">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "col/000.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><title>t</title></titleStmt></fileDesc>
+          |    <encodingDesc>
+          |      <p><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></p>
+          |    </encodingDesc>
+          |  </teiHeader>
+          |  <text><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): target =>
+      val doc: String = readerHtml(target, "col/000.html")
+      assert(doc.contains("hello"), doc)
+      assert(!doc.contains("ChoiceMarker"), doc)
       assertNoExpansions(doc)
-      assertNoExpansions(readerHtml(target, "index.html"))
-      assertNoExpansions(readerHtml(target, "col/index.html"))
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertNoExpansions(home)
+      val index: String = readerHtml(target, "col/index.html")
+      assert(!index.contains("ChoiceMarker"), index)
+      assertNoExpansions(index)
+  }
+
+  test("a choice only in a note shows expansions on a page without the note") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "doc.xml" -> choiceTei(
+        """See <note place="end"><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></note>"""
+      )
+    )): target =>
+      val doc: String = readerHtml(target, "doc.html")
+      assert(doc.contains("ChoiceMarker"), doc)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("ChoiceMarker"), home)
+      assertExpansions(home)
+  }
+
+  test("an [.add] only in a note shows Additions on a page without the note") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "marked.adoc" -> "See footnote:[ [.add]#added words# ].\n"
+    )): target =>
+      val marked: String = readerHtml(target, "marked.html")
+      assert(marked.contains("added words"), marked)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("added words"), home)
+      assert(home.contains("Additions"), home)
+      assert(home.contains("""name="apparatus-add" value="distinct" checked="checked""""), home)
+      assert(htmlOpen(home).contains("""data-apparatus-kinds="add""""), htmlOpen(home))
+  }
+
+  test("a bibliography link only in a note shows the terms row on a page without the note") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "note.adoc" ->
+        """See footnote:[<<knuth-book>>].
+
+          |[bibliography]
+          |* [[[knuth-book]]] Knuth, Donald E. The Art of Computer Programming. 1968.
+          |""".stripMargin
+    )): target =>
+      val note: String = readerHtml(target, "note.html")
+      assert(note.contains("knuth-book"), note)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("knuth-book"), home)
+      assert(home.contains("""id="setting-glossary-expand""""), home)
   }
 
   test("a choice in a standalone TEI teiHeader shows expansions") {

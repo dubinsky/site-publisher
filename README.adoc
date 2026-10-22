@@ -921,7 +921,7 @@ A dotted underline marks an abbreviation that has no titlo.
 It does not gain a dotted underline.
 A titlo stays the overline.
 Print and PDF show the expansion, the correction, and the regularization.
-The checkbox is on every page when the site has a `choice`, and on none otherwise.
+The checkbox appears when the site has a `choice`.
 See <<settings>>.
 It is not the apparatus menu below.
 
@@ -968,8 +968,7 @@ Hovering it shows that same sentence.
 
 On a wide window the transcription shows the current scan to the right of the text.
 The text column stays the same width.
-The gear row "Show the facsimile beside the text" is present when the site has a companion pane, including on pages that
-do not.
+The gear row "Show the facsimile beside the text" is present when the site has a companion pane.
 See <<settings>>.
 It is on unless the reader turns it off.
 A page-break icon selects that scan while the pane is open.
