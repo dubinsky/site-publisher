@@ -1165,7 +1165,7 @@ A TEI `del` is the scribe's own strikeout and is not this role.
 `[.see]` is a source.
 The role names and the TEI names both stay.
 
-The page stays distinct unless `_site_config.yml` opts in:
+The page stays Marked unless `_site_config.yml` opts in:
 
 [source,yaml]
 ----
