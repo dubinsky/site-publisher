@@ -7,7 +7,7 @@ final class MessagesSpec extends AnyFunSuite:
   private val keys: Set[String] = Set(
     "nav.menu", "nav.search", "nav.settings", "nav.content", "nav.path",
     "settings.color", "settings.system", "settings.light", "settings.dark",
-    "settings.glossary", "settings.editorial", "settings.transclusion", "settings.facsimile",
+    "settings.in-text", "settings.glossary", "settings.editorial", "settings.transclusion", "settings.facsimile",
     "settings.add", "settings.del", "settings.see", "settings.plain", "settings.hidden",
     "settings.distinct.add", "settings.distinct.del", "settings.distinct.see",
     "format.transcription", "format.onePage", "format.chunked",
@@ -49,8 +49,15 @@ final class MessagesSpec extends AnyFunSuite:
     given Language.Spec = Language.English.toSpec
     assert(Messages.text("nav.menu") == "Menu")
     assert(Messages.text("nav.menu", "extra" -> "ignored") == "Menu")
-    assert(Messages.text("settings.editorial") == "Show expansions and corrections in the text")
-    assert(Messages.text("settings.distinct.see") == "<Distinct>")
+    assert(Messages.text("settings.in-text") == "In the text")
+    assert(Messages.text("settings.glossary") == "Term definitions and citations")
+    assert(Messages.text("settings.editorial") == "Abbreviation expansions and corrections")
+    assert(Messages.text("settings.distinct.add") == "[Marked]")
+    assert(Messages.text("settings.distinct.del") == "Marked")
+    assert(Messages.text("settings.distinct.see") == "<Marked>")
+    assert(Messages.text("settings.in-text")(using Language.Russian.toSpec) == "В тексте")
+    assert(Messages.text("settings.glossary")(using Language.Russian.toSpec) == "Определения терминов и ссылки на литературу")
+    assert(Messages.text("settings.editorial")(using Language.Russian.toSpec) == "Раскрытия сокращений и исправления")
     assert(Messages.text("search.overflow", "n" -> 12) == "100 of 12")
     assert(Messages.text("map.km", "km" -> "3", "unused" -> "x") == "3 km")
     assert(Messages.text("search.kind.collection") == "collection")

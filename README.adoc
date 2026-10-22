@@ -911,7 +911,7 @@ The parentheses stay roman.
 The publisher does not reorder.
 Reverse order would show the expansion as the main text.
 
-**Show expansions and corrections in the text** is on unless the reader turns it off.
+**Abbreviation expansions and corrections** is on unless the reader turns it off.
 Off, the expansion is hidden, a dotted underline marks an abbreviation that has no titlo, and the expansion is a hover
 tip.
 The same off state hides `corr` and shows it as a hover tip.
@@ -1125,9 +1125,11 @@ Print and PDF stay on the light palette.
 When the scheme resolves to dark, code blocks use the highlight.js dark theme and Mermaid uses its dark theme.
 The page graph uses the same colors.
 
-**Show glossary definitions in the text** inlines glossary and citation definitions.
+**In the text** is the heading for the next two choices.
 
-**Show expansions and corrections in the text** is on unless turned off.
+**Term definitions and citations** inlines glossary and citation definitions.
+
+**Abbreviation expansions and corrections** is on unless turned off.
 It covers a correction inside `choice` as well as an abbreviation expansion.
 Print and PDF still show the correction.
 See <<tei-choice>>.
@@ -1148,13 +1150,12 @@ Each kind is independent and stored in the browser gear menu.
 [.del]#removed words#
 ----
 
-**Distinct** is the default: additions in brackets, sources in angle brackets at the small size, deletions struck
-through.
+**Marked** is the default: additions in brackets, sources in angle brackets at the small size, deletions struck through.
 **Plain** shows the words with no chrome.
 **Hidden** sets `display: none`.
 The words stay in the HTML.
 The gear lists Additions, then Deletions, then Sources.
-Distinct is labeled `[Distinct]`, a struck-through Distinct, and `<Distinct>`.
+Marked is labeled `[Marked]`, a struck-through Marked, and `<Marked>`.
 The Sources label stays at the small size.
 
 `[.add]` is words the editor added, the same kind of words as a TEI `supplied`.

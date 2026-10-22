@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- The gear groups term definitions and expansions under an In the text heading, and the marked apparatus choice is
+  labeled Marked.
 - The collection count line uses the cardinal of `document` (`Document: 1.`, `Документа 22.`, `Документов 11.`).
   The graph status keeps `{n}`, `{e}`, `{nodes}`, and `{edges}` and picks the node and edge forms in the browser.
   A missing form uses the one form and warns.

@@ -65,13 +65,17 @@
     <name lang="en" n="Dark"/>
     <name lang="ru" n="Тёмная"/>
   </term>
+  <term id="settings.in-text">
+    <name lang="en" n="In the text"/>
+    <name lang="ru" n="В тексте"/>
+  </term>
   <term id="settings.glossary">
-    <name lang="en">Show glossary definitions in the text</name>
-    <name lang="ru">Показывать определения глоссария в тексте</name>
+    <name lang="en">Term definitions and citations</name>
+    <name lang="ru">Определения терминов и ссылки на литературу</name>
   </term>
   <term id="settings.editorial">
-    <name lang="en">Show expansions and corrections in the text</name>
-    <name lang="ru">Показывать раскрытия и исправления в тексте</name>
+    <name lang="en">Abbreviation expansions and corrections</name>
+    <name lang="ru">Раскрытия сокращений и исправления</name>
   </term>
   <term id="settings.transclusion">
     <name lang="en" n="Seamless transclusions"/>
@@ -102,16 +106,16 @@
     <name lang="ru" n="Скрыть"/>
   </term>
   <term id="settings.distinct.add">
-    <name lang="en" n="[Distinct]"/>
-    <name lang="ru" n="[Как в тексте]"/>
+    <name lang="en" n="[Marked]"/>
+    <name lang="ru" n="[С пометой]"/>
   </term>
   <term id="settings.distinct.del">
-    <name lang="en" n="Distinct"/>
-    <name lang="ru" n="Как в тексте"/>
+    <name lang="en" n="Marked"/>
+    <name lang="ru" n="С пометой"/>
   </term>
   <term id="settings.distinct.see">
-    <name lang="en">&lt;Distinct&gt;</name>
-    <name lang="ru">&lt;Как в тексте&gt;</name>
+    <name lang="en">&lt;Marked&gt;</name>
+    <name lang="ru">&lt;С пометой&gt;</name>
   </term>
   <term id="format.transcription">
     <name lang="en" n="Transcription"/>

@@ -300,7 +300,15 @@ final class Site(options: SiteOptions) extends JSLibrary:
           ),
           div(className := "site-settings-menu", role := "group", aria("label") := Messages.text("nav.settings"),
             div(className := "site-settings-section", colorSchemeSetting),
-            div(className := "site-settings-section",
+            div(
+              className := "site-settings-section",
+              role := "group",
+              aria("labelledby") := "setting-in-text-label",
+              div(
+                className := "site-settings-heading",
+                id := "setting-in-text-label",
+                Messages.text("settings.in-text")
+              ),
               label(className := "site-settings-item",
                 input(
                   `type` := "checkbox",
@@ -317,7 +325,9 @@ final class Site(options: SiteOptions) extends JSLibrary:
                   attr("checked") := "checked"
                 ),
                 Messages.text("settings.editorial")
-              ),
+              )
+            ),
+            div(className := "site-settings-section",
               label(className := "site-settings-item",
                 input(
                   `type` := "checkbox",
