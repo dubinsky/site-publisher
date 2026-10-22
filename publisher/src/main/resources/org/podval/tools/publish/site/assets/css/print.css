@@ -82,9 +82,10 @@
         white-space: inherit;
     }
 
-    /* A stored off choice is screen-only. Print keeps the expansion and the correction. */
+    /* A stored off choice is screen-only. Print keeps the expansion, the correction, and the regularization. */
     html.abbr-expand-off choice > expan,
-    html.abbr-expand-off choice > corr {
+    html.abbr-expand-off choice > corr,
+    html.abbr-expand-off choice > reg {
         display: inline;
         position: static;
         left: auto;
@@ -106,7 +107,9 @@
     html.abbr-expand-off choice abbr + expan:before,
     html.abbr-expand-off choice expan + abbr:before,
     html.abbr-expand-off choice sic + corr:before,
-    html.abbr-expand-off choice corr + sic:before {
+    html.abbr-expand-off choice corr + sic:before,
+    html.abbr-expand-off choice orig + reg:before,
+    html.abbr-expand-off choice reg + orig:before {
         content: " (";
         font-style: normal;
     }
@@ -114,7 +117,9 @@
     html.abbr-expand-off choice abbr + expan:after,
     html.abbr-expand-off choice expan + abbr:after,
     html.abbr-expand-off choice sic + corr:after,
-    html.abbr-expand-off choice corr + sic:after {
+    html.abbr-expand-off choice corr + sic:after,
+    html.abbr-expand-off choice orig + reg:after,
+    html.abbr-expand-off choice reg + orig:after {
         content: ")";
         font-style: normal;
     }

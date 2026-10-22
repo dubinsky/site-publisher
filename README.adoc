@@ -903,6 +903,8 @@ Author an abbreviation as `abbr` then `expan`:
 ----
 
 The published tags are the same.
+There is no new element.
+`orig` and `reg` stay those names.
 The existing CSS draws `` (`` before the second child and `)` after it, so the line reads Wilen with `ch` superscript,
 then `` (Wilenskich)``.
 The expansion is italic.
@@ -912,13 +914,13 @@ The publisher does not reorder.
 Reverse order would show the expansion as the main text.
 
 **Abbreviation expansions and corrections** is on unless the reader turns it off.
-Off, the expansion is hidden, a dotted underline marks an abbreviation that has no titlo, and the expansion is a hover
-tip.
-The same off state hides `corr` and shows it as a hover tip.
+Off hides `expan`, `corr`, and `reg` the same way: each leaves the line and comes back as a hover tip.
+A dotted underline marks an abbreviation that has no titlo.
+`orig` stays in the line, as `abbr` and `sic` do.
 `sic` keeps its editorial underline.
 It does not gain a dotted underline.
 A titlo stays the overline.
-Print and PDF always show the expansion and the correction.
+Print and PDF show the expansion, the correction, and the regularization.
 The checkbox is on every page.
 It is not the apparatus menu below.
 
@@ -1130,8 +1132,6 @@ The page graph uses the same colors.
 **Term definitions and citations** inlines glossary and citation definitions.
 
 **Abbreviation expansions and corrections** is on unless turned off.
-It covers a correction inside `choice` as well as an abbreviation expansion.
-Print and PDF still show the correction.
 See <<tei-choice>>.
 
 **Seamless transclusions** hides the box and header around a transcluded region.

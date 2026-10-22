@@ -104,7 +104,7 @@ choice expan + abbr:after {
 }
 
 /* Off: the abbreviation stays, with a cue, and the expansion is a tip.
-   A correction uses the same tip. sic keeps its editorial underline.
+   A correction and a regularization use the same tip. sic keeps its editorial underline.
    No class is the default, so a browser with no script still shows both. */
 html.abbr-expand-off choice {
     position: relative;
@@ -116,7 +116,8 @@ html.abbr-expand-off choice > abbr:not([rend~="titlo"]) {
 }
 
 html.abbr-expand-off choice > expan,
-html.abbr-expand-off choice > corr {
+html.abbr-expand-off choice > corr,
+html.abbr-expand-off choice > reg {
     display: none;
     position: absolute;
     left: 0;
@@ -143,19 +144,25 @@ html.abbr-expand-off choice > abbr:after,
 html.abbr-expand-off choice > corr:before,
 html.abbr-expand-off choice > corr:after,
 html.abbr-expand-off choice > sic:before,
-html.abbr-expand-off choice > sic:after {
+html.abbr-expand-off choice > sic:after,
+html.abbr-expand-off choice orig + reg:before,
+html.abbr-expand-off choice orig + reg:after,
+html.abbr-expand-off choice reg + orig:before,
+html.abbr-expand-off choice reg + orig:after {
     content: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
     html.abbr-expand-off choice:hover > expan,
-    html.abbr-expand-off choice:hover > corr {
+    html.abbr-expand-off choice:hover > corr,
+    html.abbr-expand-off choice:hover > reg {
         display: block;
     }
 }
 
 html.abbr-expand-off choice:focus-within > expan,
-html.abbr-expand-off choice:focus-within > corr {
+html.abbr-expand-off choice:focus-within > corr,
+html.abbr-expand-off choice:focus-within > reg {
     display: block;
 }
 
