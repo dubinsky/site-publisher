@@ -47,7 +47,7 @@ object Highlights:
   // No CDN grammar (or handled by another library).
   private val unsupported: Set[String] = Set(
     "liquid",   // not in highlight.js
-    "mermaid"   // rendered by Mermaid, not highlight.js
+    "mermaid"   // rendered by Pele, not highlight.js
   )
 
   private val aliases: Map[String, String] = Map(

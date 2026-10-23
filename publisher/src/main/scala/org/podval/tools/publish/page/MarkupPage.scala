@@ -189,7 +189,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         Option.when(languagesToHighlight.nonEmpty)(js.Highlights(languagesToHighlight)),
         Some(js.MathJax),
         Some(js.FontAwesome),
-        Option.when(languages.contains("mermaid"))(js.Mermaid),
+        Option.when(languages.contains("mermaid"))(js.Pele),
         site.googleAnalytics.map(js.GoogleAnalytics(_))
       ).flatten ++ extraLibraries :+ site
 

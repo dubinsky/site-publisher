@@ -186,6 +186,30 @@ pre code {
     padding: var(--space-4);
 }
 
+/* A mermaid fence is a diagram, not a listing. Pele reads these variables off the code element. */
+pre:has(> code.language-mermaid) {
+    border: 0;
+    background-color: var(--background-color);
+    overflow: visible;
+}
+
+code.language-mermaid {
+    overflow: visible;
+    background-color: transparent;
+    --pele-bg: var(--background-color);
+    --pele-fg: var(--text-color);
+    --pele-line: var(--text-color);
+    --pele-muted: var(--pencil-color);
+    --pele-surface: var(--table-header-bg-color);
+    --pele-surface-alt: var(--table-zebra-color);
+    --pele-border: var(--border-color-02);
+    --pele-accent: var(--link-base-color);
+    --pele-critical: var(--danger);
+    --pele-error: var(--danger);
+    --pele-font: var(--base-font-family);
+    --pele-font-mono: var(--code-font-family);
+}
+
 code {
     font-family: var(--code-font-family);
     background-color: var(--code-background-color);

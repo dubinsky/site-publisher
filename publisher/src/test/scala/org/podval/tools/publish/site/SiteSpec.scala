@@ -505,20 +505,24 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(errors.contains("missing.png"), errors)
   }
 
-  test("fenced mermaid loads Mermaid and keeps the inline module raw") {
+  test("fenced mermaid loads Pele and keeps the inline module raw") {
     val page: String = htmlRaw("mermaid.html")
     assert(page.contains("language-mermaid"), page)
     assert(page.contains("flowchart LR"), page)
-    assert(page.contains("cdnjs.cloudflare.com/ajax/libs/mermaid/11.13.0/mermaid.esm.min.mjs"), page)
-    assert(page.contains("mermaid.initialize({ startOnLoad: false, theme: dark ? \"dark\" : \"default\" })"), page)
-    assert(page.contains("site-color-scheme"), page)
-    val at: Int = page.indexOf("mermaid.initialize")
+    assert(page.contains("cdn.jsdelivr.net/npm/pele@1.8.0/dist/pele.js"), page)
+    assert(page.contains("mount(el, el.textContent)"), page)
+    assert(!page.contains("mermaid.esm.min.mjs"), page)
+    assert(!page.contains("mermaid.initialize"), page)
+    val at: Int = page.indexOf("mount(el, el.textContent)")
     assert(at >= 0, page)
     val script: String = page.substring(page.lastIndexOf("<script", at), page.indexOf("</script>", at))
     assert(!script.contains("&lt;"), script)
     assert(!script.contains("&amp;"), script)
     val notes: String = htmlRaw("notes.html")
+    assert(!notes.contains("pele.js"), notes)
     assert(!notes.contains("mermaid.esm.min.mjs"), notes)
+    val base: String = html("assets/css/base.css")
+    assert(base.contains("--pele-font: var(--base-font-family)"), base)
   }
 
   test("permalink prefix /short/child resolves under the aliased directory") {

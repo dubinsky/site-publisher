@@ -1127,7 +1127,8 @@ A row is on every page of the site, or on none.
 Nothing saved, and System, follow the operating system.
 Light and Dark stay as chosen.
 Print and PDF stay on the light palette.
-When the scheme resolves to dark, code blocks use the highlight.js dark theme and Mermaid uses its dark theme.
+When the scheme resolves to dark, code blocks use the highlight.js dark theme and a mermaid diagram uses the same tokens
+as the page.
 The page graph uses the same colors.
 
 **In the text** is the heading for term definitions and expansions.
@@ -1698,11 +1699,11 @@ Markdown has no native in-document bibliography list.
 
 Inline code and fenced blocks.
 A language class on `<code>` (`language-scala`, …)
-loads highlight.js; `language-mermaid` loads Mermaid instead.
+loads highlight.js; `language-mermaid` loads Pele instead.
 
 Markdown:: CommonMark inline `` `code` `` and fenced blocks.
            Obsidian supports both natively, including a language identifier (https://help.obsidian.md/syntax#Code[Help: Code]).
-           Fenced `+++```mermaid+++` diagrams are native in Obsidian too (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Mermaid for `language-mermaid`.
+           Fenced `+++```mermaid+++` diagrams are native in Obsidian too (https://help.obsidian.md/syntax#Diagram[Help: Diagram]); this publisher loads Pele for `language-mermaid`.
 +
 [source,markdown]
 ----

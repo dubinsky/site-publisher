@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Fenced mermaid diagrams render with Pele 1.8.0 and take their colors from the site tokens.
 - A gear row is on every page when the site uses it, and on none otherwise, and `apparatus` is no longer a config key.
 - The expansions checkbox hides a regularization (`choice`/`reg`) the same way it hides an expansion.
   Print and PDF still show it.
