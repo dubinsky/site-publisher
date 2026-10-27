@@ -23,6 +23,9 @@ final class Errors(
     then site.log.warn(pageError.getMessage)
     else site.log.error(pageError.getMessage)
 
+  def hasBadLabel(sourcePath: Path): Boolean =
+    errorsVar.exists(error => (error.kind eq PageError.BadLabel) && error.sourcePath == sourcePath)
+
   def throwIfErrors(): Unit =
     if !treatErrorsAsWarnings && errorsVar.nonEmpty then
       throw new IllegalStateException("There were errors")

@@ -69,6 +69,13 @@ final class StoreIndexesSpec extends AnyFunSuite:
   private def html(target: File, relative: String): String =
     Files.read(File(target, relative)).replaceAll("\\s+", " ").replace("= ", "=")
 
+  private def badLabelItems(errors: String): Seq[String] =
+    val start: Int = errors.indexOf("""id="bad-label"""")
+    assert(start >= 0, errors)
+    val ul: Int = errors.indexOf("<ul", start)
+    val end: Int = errors.indexOf("</ul>", ul)
+    errors.substring(ul, end).split("<li>").toSeq.drop(1)
+
   private val archiveTerms: String =
     """<?xml version="1.0" encoding="UTF-8"?>
       |<Terms>
@@ -361,14 +368,15 @@ final class StoreIndexesSpec extends AnyFunSuite:
 
   test("ref and plural are a pair and the message names the source") {
     def fails(file: String, xml: String, phrase: String): Unit =
-      val caught: IllegalArgumentException = intercept[IllegalArgumentException] {
-        openSite(Map(
-          "_site_config.yml" -> refConfig,
-          file -> xml
-        ))(_.generate())
-      }
-      assert(caught.getMessage.contains(phrase), caught.getMessage)
-      assert(caught.getMessage.contains(s"/$file"), caught.getMessage)
+      openSite(Map(
+        "_site_config.yml" -> refConfig,
+        file -> xml
+      )): site =>
+        site.generate()
+        val items: Seq[String] = badLabelItems(html(site.targetDirectory, "errors.html"))
+        val hits: Seq[String] = items.filter(item => item.contains(phrase) && item.contains(s"/$file"))
+        assert(hits.length == 1, items.mkString("\n"))
+        assert(hits.head.contains(s"bad label: $phrase"), hits.head)
 
     fails("plural.xml", """<store plural="yes"/>""", "plural without ref")
     fails("ref-only.xml", """<store ref="book"/>""", "ref without plural")
@@ -379,6 +387,35 @@ final class StoreIndexesSpec extends AnyFunSuite:
     )
     fails("missing.xml", """<store ref="nope" plural="yes"/>""", "Unknown term: nope")
     fails("rooted.xml", """<store ref="book" plural="yes" n="books"/>""", "ref with names")
+  }
+
+  test("a year, tree, and flat re-home does not add a second bad label") {
+    withSite(Map(
+      "archive/rgada/900.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><title>t</title></titleStmt></fileDesc>
+          |    <profileDesc>
+          |      <creation><date when="1798-08-11">11 августа 1798</date></creation>
+          |    </profileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="ru"><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin,
+      "archive-collections.xml" -> """<store plural="yes"/>""",
+      "archive-index.xml" -> """<store ref="book"/>""",
+      "archive-years.xml" -> """<store ref="nope" plural="yes"/>"""
+    )): (_, target) =>
+      assert(html(target, "archive-collections.html").contains("""class="tree-index""""))
+      assert(html(target, "archive-index.html").contains("Державин"))
+      assert(html(target, "archive-years.html").contains("""class="year-index""""))
+      val items: Seq[String] = badLabelItems(html(target, "errors.html"))
+      assert(items.count(_.contains("/archive-collections.xml")) == 1, items.mkString("\n"))
+      assert(items.count(_.contains("plural without ref")) == 1, items.mkString("\n"))
+      assert(items.count(_.contains("/archive-index.xml")) == 1, items.mkString("\n"))
+      assert(items.count(_.contains("ref without plural")) == 1, items.mkString("\n"))
+      assert(items.count(_.contains("/archive-years.xml")) == 1, items.mkString("\n"))
+      assert(items.count(_.contains("Unknown term: nope")) == 1, items.mkString("\n"))
   }
 
   test("a ref with no plural in the site language fails in namesOf") {

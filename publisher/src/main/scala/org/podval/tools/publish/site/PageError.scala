@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 final class PageError(
-  sourcePath: Path,
+  val sourcePath: Path,
   val kind: PageError.Kind,
   message: String,
   cause: Option[Throwable]
@@ -38,6 +38,7 @@ object PageError:
   case object UnknownCitation extends Kind("unknown citation")
   case object InvalidDate extends Kind("invalid date")
   case object NoRef extends Kind("name without @ref")
+  case object BadLabel extends Kind("bad label")
   case object UnresolvedHand extends Kind("unresolved hand")
   case object Unclear extends Kind("unclear")
   case object MisnamedEntity extends Kind("misnamed entity")
@@ -70,6 +71,7 @@ object PageError:
     UnknownCitation,
     InvalidDate,
     NoRef,
+    BadLabel,
     UnresolvedHand,
     Unclear,
     MisnamedEntity,

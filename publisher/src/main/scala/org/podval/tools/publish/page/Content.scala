@@ -50,20 +50,30 @@ object Content:
     firstReading: Boolean
   ): (Option[Xml.Element], Content) =
     if TeiMarkup.isStoreRoot(xml) then
-      val store: StoreContent = StoreContent.parse(xml)
-      checkLabelRef(source, store.ref, store.index.plural, store.names.nonEmpty)
+      val merged: StoreIndex = StoreIndex(xml).get
+      val accepted: Boolean = checkLabelRef(source, merged.ref, merged.plural, merged.names.nonEmpty)
+      val index: StoreIndex =
+        if accepted then merged else merged.copy(ref = None, plural = false)
+      val store: StoreContent = new StoreContent(index)
       if firstReading then
         (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
           TeiMarkup.reportSourceErrors(fragment, source, namesWithoutRef = true)
       (store.title, store)
     else xml.getName.localName match
       case "entityLists" =>
-        val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
-        checkLabelRef(source, index.ref, index.plural, index.title.exists(_.trim.nonEmpty))
+        val harvested: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
+        val accepted: Boolean =
+          checkLabelRef(source, harvested.ref, harvested.plural, harvested.title.exists(_.trim.nonEmpty))
+        val index: EntityListSpecs.Index =
+          if accepted then harvested else harvested.copy(ref = None, plural = false)
         val fromRef: Option[String] = index.ref.map: id =>
           given Language.Spec = source.languageSpec
           source.page.site.terms.pluralHeading(id)
-        val lists: EntityListsContent = EntityListsContent.parse(xml, fromRef)
+        val text: Option[String] = fromRef.filter(_.nonEmpty).orElse(index.title.filter(_.nonEmpty))
+        val lists: EntityListsContent = new EntityListsContent(
+          title = text.map(value => Xml.element(XmlElement.Title).setText(value)),
+          index = index
+        )
         (lists.title, lists)
       case "TEI" =>
         val header: DocumentHeader = DocumentHeader.harvest(xml).get
@@ -90,25 +100,33 @@ object Content:
             val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
             (title, MarkupContent(PageContent.prepareAuthored(source, processed)))
 
-  /** `ref` and `plural` are a pair. The message carries the source path; decode does not. */
+  /** `ref` and `plural` are a pair. Decode has no source path, so the page error carries it. */
   private def checkLabelRef(
     source: PageSource,
     ref: Option[String],
     plural: Boolean,
     authored: Boolean
-  ): Unit =
-    val where: String = source.sourcePath.toString
-    if plural && ref.isEmpty then
-      throw IllegalArgumentException(s"plural without ref ($where)")
-    ref.foreach: id =>
-      if !plural then throw IllegalArgumentException(s"ref without plural ($where)")
-      if authored then throw IllegalArgumentException(s"ref with names ($where)")
-      val known: Boolean =
-        try
-          source.page.site.terms.getById(id)
-          true
-        catch case _: IllegalArgumentException => false
-      if !known then throw IllegalArgumentException(s"Unknown term: $id ($where)")
+  ): Boolean =
+    val message: Option[String] =
+      if plural && ref.isEmpty then Some("plural without ref")
+      else ref match
+        case None => None
+        case Some(_) if !plural => Some("ref without plural")
+        case Some(_) if authored => Some("ref with names")
+        case Some(id) =>
+          val known: Boolean =
+            try
+              source.page.site.terms.getById(id)
+              true
+            catch case _: IllegalArgumentException => false
+          if known then None else Some(s"Unknown term: $id")
+    message match
+      case None => true
+      case Some(text) =>
+        // A year/tree/flat re-home parses this file again. Keep the scan's row.
+        if !source.page.site.errors.hasBadLabel(source.sourcePath) then
+          source.error(PageError.BadLabel, text)
+        false
 
   private def isStableEntity(xml: Xml.Element): Boolean =
     xml.get("stable").exists(_.trim == "true")
