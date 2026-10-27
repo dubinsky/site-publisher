@@ -301,12 +301,3 @@ final class EntityListsContent(
       prose.title.orElse(prose.frontMatter.title.map(text => Xml.element(XmlElement.H1).setText(text)))
     val body: Option[Xml.Element] = prose.markupContent(sectionId = None, isTerminal = true)
     Xml.element(XmlElement.Div).setChildren(heading.toSeq ++ body.toSeq :+ generated)
-
-object EntityListsContent:
-  def parse(xml: Xml.Element, titleFromRef: Option[String] = None): EntityListsContent =
-    val index: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
-    val text: Option[String] = titleFromRef.filter(_.nonEmpty).orElse(index.title.filter(_.nonEmpty))
-    new EntityListsContent(
-      title = text.map(value => Xml.element(XmlElement.Title).setText(value)),
-      index = index
-    )
