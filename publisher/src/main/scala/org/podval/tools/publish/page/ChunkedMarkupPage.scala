@@ -15,6 +15,8 @@ final class ChunkedMarkupPage(
   markupPage.site,
   markupPage.path.add(name).html
 ):
+  override def listedInDirectory: Boolean = true
+
   override def markupContent: Option[Xml.Element] = markupPage.markupContent(
     sectionId = sectionId,
     isTerminal = isTerminal

@@ -12,6 +12,8 @@ final class MapPage(
   site: Site,
   places: Seq[Page]
 ) extends SyntheticMarkupPage(site, Path("map").html):
+  override def leafIndex: Boolean = true
+
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
     Messages.text("map.page")

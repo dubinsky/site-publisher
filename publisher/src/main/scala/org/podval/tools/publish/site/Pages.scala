@@ -191,13 +191,7 @@ final class Pages(site: Site):
 
   private def aliasTargetDirectory(page: Page): Option[Seq[String]] =
     aliasDirectory(page).orElse:
-      Option.when(isLeafIndex(page))(page.path.withoutHtml.path)
-
-  private def isLeafIndex(page: Page): Boolean =
-    page.isInstanceOf[StoreIndexPage] ||
-      page.isInstanceOf[YearIndexPage] ||
-      page.isInstanceOf[SearchPage] ||
-      page.isInstanceOf[MapPage]
+      Option.when(page.leafIndex)(page.path.withoutHtml.path)
 
   /** Public href for `page`: longest directory/store alias prefix, else the written path. */
   def publishedPath(page: Page): Path = publishedPath(page.real.path)

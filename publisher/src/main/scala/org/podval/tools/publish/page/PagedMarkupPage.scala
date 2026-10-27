@@ -13,6 +13,8 @@ final class PagedMarkupPage(
   postsPage.site,
   postsPage.path.add(name).html
 ):
+  override def listedInDirectory: Boolean = true
+
   override def markupContent: Option[Xml.Element] = postsPage.markupContent
 
   override def titleDefault: String = s"${postsPage.title} (page $batchIndex)"

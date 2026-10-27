@@ -406,3 +406,181 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(year.contains("""id="y1798""""), year)
       assert(!year.contains("""id="undated""""), year)
   }
+
+  test("directory listing uses the flags, and a root collection keeps a leaf index") {
+    val listing: Map[String, String] = Map(
+      "_site_config.yml" ->
+        """title: Listing Fixture
+          |description: directory listing flags
+          |url: http://listing.test
+          |author: Test
+          |email: test@listing.test
+          |lang: en
+          |facsimiles-url: https://facsimiles.test/
+          |search:
+          |  enabled: true
+          |""".stripMargin,
+      "index.md" ->
+        """---
+          |title: Home
+          |---
+          |Home.
+          |""".stripMargin,
+      "note.md" ->
+        """---
+          |title: A note
+          |pdf: true
+          |---
+          |A note.
+          |""".stripMargin,
+      "long.md" ->
+        """---
+          |title: Long
+          |chunk: true
+          |---
+          |Preamble.
+          |
+          |## Alpha
+          |
+          |Leaf.
+          |""".stripMargin,
+      "photo.png" -> "png",
+      "scan.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt><title>Scan</title></titleStmt></fileDesc>
+          |  </teiHeader>
+          |  <text xml:lang="en"><body><pb n="000-1"/><p>scan</p></body></text>
+          |</TEI>
+          |""".stripMargin,
+      "Town.xml" ->
+        """<place>
+          |  <placeName>Town</placeName>
+          |  <location><geo>54.68722 25.28000</geo></location>
+          |</place>
+          |""".stripMargin,
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |  </term>
+          |  <term id="case" selector="yes">
+          |    <name lang="en" n="case" plural="cases"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/case.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/case.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/case/leaf.xml" -> tei("Leaf", """<date when="1798-08-11">11 August 1798</date>""", lang = "en")
+    )
+    withSite(listing): (site, target) =>
+      def pageList(relative: String): String =
+        val page: String = html(target, relative)
+        val start: Int = page.indexOf("""<ul class="page-list"""")
+        assert(start >= 0, page)
+        val end: Int = page.indexOf("</ul>", start)
+        assert(end >= 0, page)
+        page.substring(start, end)
+      def linked(list: String, href: String): Boolean =
+        list.contains(s"""href="$href"""")
+
+      val rootList: String = pageList("index.html")
+      val root: DirectoryPage = site.pages.pages.collectFirst:
+        case directory: DirectoryPage if directory.path == Path("index").html => directory
+      .get
+      assert(root.listedInDirectory)
+      assert(!root.leafIndex)
+      assert(root.publishedPath.toString == "/index.html", root.publishedPath)
+      assert(!linked(rootList, root.publishedPath.toString), rootList)
+      assert(linked(rootList, "/note.html"), rootList)
+      assert(linked(rootList, "/errors.html"), rootList)
+      assert(linked(rootList, "/tags.html"), rootList)
+      assert(linked(rootList, "/photo.png"), rootList)
+      assert(!linked(rootList, "/map.html"), rootList)
+      assert(!linked(rootList, "/search.html"), rootList)
+      assert(!linked(rootList, "/archive-years.html"), rootList)
+      assert(!linked(rootList, "/note.pdf"), rootList)
+      assert(!linked(rootList, "/scan.xml"), rootList)
+      val facsimile: FacsimilePage = site.pages.pages.collectFirst:
+        case viewer: FacsimilePage if viewer.document.path.toString == "/scan.html" => viewer
+      .get
+      assert(!facsimile.listedInDirectory)
+      assert(!facsimile.leafIndex)
+      assert(!linked(rootList, facsimile.publishedPath.toString), rootList)
+      val chunks: List[ChunkedMarkupPage] = site.pages.pages.collect:
+        case chunk: ChunkedMarkupPage => chunk
+      assert(chunks.nonEmpty, site.pages.pages.map(_.path))
+      assert(chunks.forall(_.listedInDirectory))
+      assert(chunks.forall(chunk => !linked(rootList, chunk.publishedPath.toString)), rootList)
+      assert(site.pages.pages.exists(page => page.path.toString == "/note.pdf" && !page.listedInDirectory && !page.leafIndex))
+      assert(site.pages.pages.exists(page => page.path.toString == "/scan.xml" && !page.listedInDirectory && !page.leafIndex))
+      assert(site.pages.pages.exists(page =>
+        page.path.toString == "/archive-years.html" && !page.listedInDirectory && page.leafIndex
+      ))
+      assert(site.pages.pages.exists(page => page.path.toString == "/search.html" && !page.listedInDirectory && page.leafIndex))
+      assert(site.pages.pages.exists(page => page.path.toString == "/map.html" && !page.listedInDirectory && page.leafIndex))
+      assert(site.pages.pages.exists(page => page.path.toString == "/photo.png" && page.listedInDirectory))
+
+    val rootCollection: Map[String, String] = Map(
+      "_site_config.yml" ->
+        """title: Root Collection
+          |description: originals under the site root
+          |url: http://root-collection.test
+          |author: Test
+          |email: test@root-collection.test
+          |lang: ru
+          |""".stripMargin,
+      "index.xml" ->
+        """<collection n="1">
+          |  <title>Root</title>
+          |</collection>
+          |""".stripMargin,
+      "doc.xml" -> tei("Original", ""),
+      "doc-ru.xml" -> tei("Translation", ""),
+      "doc+reg.xml" -> tei("Reading", ""),
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |    <name lang="ru" n="архив" plural="архивы"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/case.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/case.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/case/leaf.xml" -> tei("Leaf", """<date when="1798-08-11">11 августа 1798</date>""")
+    )
+    withSite(rootCollection): (site, _) =>
+      val root: DirectoryPage = site.pages.pages.collectFirst:
+        case directory: DirectoryPage if directory.path == Path("index").html => directory
+      .get
+      val originals: List[Page] = CollectionIndex.originalsUnder(root)
+      assert(originals.exists(_.isInstanceOf[YearIndexPage]), originals.map(_.path))
+      assert(site.pages.pages.exists(_.path.toString == "/doc-ru.html"))
+      assert(site.pages.pages.exists(_.path.toString == "/doc+reg.html"))
+      assert(!originals.exists(_.path.toString == "/doc-ru.html"), originals.map(_.path))
+      assert(!originals.exists(_.path.toString == "/doc+reg.html"), originals.map(_.path))
+      assert(!originals.exists(_.path == root.path), originals.map(_.path))
+  }

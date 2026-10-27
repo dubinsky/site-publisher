@@ -13,6 +13,8 @@ final class StoreIndexPage(
   val root: Page,
   val kind: StoreIndexPage.Kind
 ) extends SyntheticMarkupPage(site, path):
+  override def leafIndex: Boolean = true
+
   override def titleDefault: String = StoreIndexes.pageTitle(root, kind)
 
   override protected def iconDefault: Icon = kind match

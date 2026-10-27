@@ -11,6 +11,8 @@ final class EntityListPage(
   val spec: EntityList,
   val members: Seq[Page]
 ) extends SyntheticMarkupPage(site, path):
+  override def listedInDirectory: Boolean = true
+
   private var siblingsVar: Seq[EntityListPage] = Seq(this)
 
   def setSiblings(siblings: Seq[EntityListPage]): Unit = siblingsVar = siblings

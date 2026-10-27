@@ -76,6 +76,10 @@ abstract class Page(
 
   def real: Page = this
 
+  def listedInDirectory: Boolean = false
+
+  def leafIndex: Boolean = false
+
   final def asFullMarkupPage: Option[FullMarkupPage] = this match
     case page: FullMarkupPage => Some(page)
     case _ => None

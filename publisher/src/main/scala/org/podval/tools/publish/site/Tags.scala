@@ -7,6 +7,8 @@ import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
+  override def listedInDirectory: Boolean = true
+
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
     Messages.text("pages.tags")

@@ -11,6 +11,8 @@ final class Alias(
   site,
   path
 ) with PageWithContent:
+  override def listedInDirectory: Boolean = true
+
   override def isAlias: Boolean = true
 
   override def real: Page = page.real

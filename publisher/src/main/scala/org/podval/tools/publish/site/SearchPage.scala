@@ -8,6 +8,8 @@ import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("search").html):
+  override def leafIndex: Boolean = true
+
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
     Messages.text("nav.search")

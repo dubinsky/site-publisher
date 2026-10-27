@@ -53,9 +53,7 @@ object CollectionIndex:
   def originalsUnder(directory: DirectoryPage): List[Page] =
     directory.site.pages.pages
       .filterNot(_.isDirectory)
-      .filterNot(_.isInstanceOf[PdfPage])
-      .filterNot(_.isInstanceOf[TeiDocumentPage])
-      .filterNot(_.isInstanceOf[FacsimilePage])
+      .filter(page => page.listedInDirectory || page.leafIndex)
       .filter(_.path.path.init == directory.path.path.init)
       .filterNot(isTranslation)
       .filterNot(isReading)

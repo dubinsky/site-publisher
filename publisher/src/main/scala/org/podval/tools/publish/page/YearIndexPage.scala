@@ -18,6 +18,8 @@ final class YearIndexPage(
   root: Page,
   documents: Seq[Page]
 ) extends SyntheticMarkupPage(site, StoreIndexes.pagePath(root, StoreIndexes.yearsSuffix)):
+  override def leafIndex: Boolean = true
+
   private val DayHeadingMinimum: Int = 3
 
   // Calendar month names are nominative. A Russian day line needs the genitive.

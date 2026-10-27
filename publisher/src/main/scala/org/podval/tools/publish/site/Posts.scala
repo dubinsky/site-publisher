@@ -22,6 +22,8 @@ object Posts:
     catch case e: DateTimeParseException => None
 
 final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html):
+  override def listedInDirectory: Boolean = true
+
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
     Messages.text("pages.posts")

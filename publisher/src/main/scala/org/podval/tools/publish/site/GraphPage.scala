@@ -10,6 +10,8 @@ import org.podval.xml.dsl.{*, given}
 import java.util.Locale
 
 final class GraphPage(site: Site) extends SyntheticMarkupPage(site, Path("graph").html):
+  override def listedInDirectory: Boolean = true
+
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
     Messages.text("graph.title")

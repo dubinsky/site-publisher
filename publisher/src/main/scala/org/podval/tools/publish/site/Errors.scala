@@ -9,6 +9,8 @@ final class Errors(
   site: Site,
   treatErrorsAsWarnings: Boolean
 ) extends SyntheticMarkupPage(site, Path("errors").html):
+  override def listedInDirectory: Boolean = true
+
   override def titleDefault: String = "Errors"
   override protected def descriptionDefault: Option[String] = Some("Site errors by kind")
   override protected def iconDefault: Icon = Icon.errors
