@@ -5,7 +5,7 @@ import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMarkup, Link, LinkKind, Markup, TeiMarkup,
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, Alternates, AssetWithSourcePath, CollectionIndex, DirectoryPage,
-  EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, FrontMatter, MapPage, MarkupContent,
+  EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, FrontMatter, MapPage,
   MarkupPage, Page, PageContent, PageSource, PdfPage, PlaceMap, SimpleMarkupPage, StoreContent, StoreIndexPage,
   StoreIndexes, StoreTree, TeiDocumentPage, YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
@@ -227,7 +227,7 @@ final class Pages(site: Site):
       page.aliases.foreach(add)
       if page.chunk then page.chunks.foreach(add)
       if page.pdf then add(PdfPage(page))
-      if page.doc.exists(_.documentHeader.isDefined) then add(TeiDocumentPage(page))
+      if page.doc.exists(_.publishesTei) then add(TeiDocumentPage(page))
       if Facsimile.needed(page) then add(FacsimilePage(page))
       
   private var selectorHopsVar: Set[Seq[String]] = Set.empty
@@ -599,7 +599,7 @@ final class Pages(site: Site):
         false
 
   private def isMarkupProse(page: MarkupPage): Boolean =
-    page.doc.exists(_.isInstanceOf[MarkupContent])
+    page.doc.exists(_.asMarkup.isDefined)
 
   private def proseSource(page: MarkupPage, source: PageSource): PageSource =
     PageSource(

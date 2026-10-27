@@ -26,6 +26,10 @@ sealed abstract class Content:
 
   def asStore: Option[StoreContent] = None
   def asEntityLists: Option[EntityListsContent] = None
+  def asDocument: Option[DocumentContent] = None
+  def asEntity: Option[EntityContent] = None
+  def asMarkup: Option[MarkupContent] = None
+  def publishesTei: Boolean = false
 
   def markupBody(
     pageContent: PageContent,
@@ -162,6 +166,8 @@ final class DocumentContent(
   prepared: Content.Prepared
 ) extends AuthoredContent(prepared):
   override def documentHeader: Option[DocumentHeader] = Some(header)
+  override def asDocument: Option[DocumentContent] = Some(this)
+  override def publishesTei: Boolean = documentHeader.isDefined
 
   override def selectedXml(selected: Xml.Element, page: Page): Xml.Element =
     if !page.parent.exists(_.store.exists(_.isCollection)) then selected
@@ -179,10 +185,12 @@ final class EntityContent(
   override def entityKind: Option[EntityKind] = Some(kind)
   override def entityRole: Option[String] = role
   override def entityDisplayName: Option[String] = displayName
+  override def asEntity: Option[EntityContent] = Some(this)
 
 final class MarkupContent(
   prepared: Content.Prepared
-) extends AuthoredContent(prepared)
+) extends AuthoredContent(prepared):
+  override def asMarkup: Option[MarkupContent] = Some(this)
 
 final class StoreContent(
   val index: StoreIndex

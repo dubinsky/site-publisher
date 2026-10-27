@@ -70,7 +70,7 @@ object EntityLists:
       keptLists.toList.flatMap: (spec, mem) =>
         val path: Path = listPath(catalog, spec)
         existing(path) match
-          case Some(markup: MarkupPage) if markup.doc.exists(_.isInstanceOf[MarkupContent]) =>
+          case Some(markup: MarkupPage) if markup.doc.exists(_.asMarkup.isDefined) =>
             Some(EntityListPage(catalog.site, path, spec, mem))
           case Some(existingPage) =>
             catalog.site.error(

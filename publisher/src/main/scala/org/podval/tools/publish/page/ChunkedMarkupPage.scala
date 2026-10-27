@@ -37,7 +37,7 @@ final class ChunkedMarkupPage(
   override def pageHeader: Option[Xml.Element] = markupPage.pageHeader
 
   override protected def extraLibraries: List[js.JSLibrary] =
-    Option.when(markupPage.doc.exists(_.documentHeader.isDefined))(js.CitationCopy).toList
+    Option.when(markupPage.doc.exists(_.publishesTei))(js.CitationCopy).toList
 
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(markupPage)
   override protected def formatIsChunked: Boolean = true

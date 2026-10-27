@@ -22,7 +22,7 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
 
   override protected def extraLibraries: List[js.JSLibrary] =
     Option.when(Facsimile.needed(this))(js.FacsimileAside).toList ++
-      Option.when(doc.exists(_.documentHeader.isDefined))(js.CitationCopy).toList
+      Option.when(doc.exists(_.publishesTei))(js.CitationCopy).toList
 
   final def aliases: Seq[Alias] =
     (postPath.toSeq ++ permalinkAlias.toSeq ++ frontMatter.aliases).map(Alias(site, this, _))

@@ -60,7 +60,7 @@ object SearchJson:
         else textOf(page, kind).map(text => build(page, kind, text))
 
   private def kindOf(page: FullMarkupPage): Option[String] =
-    if page.doc.exists(_.documentHeader.isDefined) then Some("document")
+    if page.doc.exists(_.publishesTei) then Some("document")
     else if page.entityKind.isDefined then Some("name")
     else if page.store.exists(_.isCollection) then Some("collection")
     else if page.store.isDefined || page.doc.exists(_.asEntityLists.isDefined) then None

@@ -283,7 +283,7 @@ object PageHeader:
   /** GitHub blob link in `page-meta` for a note or entity.
     * A TEI document and a collector page carry it in the utilities row instead. */
   private def metaSourceLink(page: MarkupPage): Seq[Xml.Element] =
-    if page.doc.exists(_.documentHeader.isDefined) || isCollector(page) then Seq.empty
+    if page.doc.exists(_.publishesTei) || isCollector(page) then Seq.empty
     else sourceLink(page).toSeq
 
   /** Crumbs on the left. TEI, GitHub, and Cite on the right. */
@@ -304,11 +304,11 @@ object PageHeader:
 
   /** Utilities row: a collector page, or a TEI document (including one that is not under a store). */
   private def headerSourceLink(page: MarkupPage): Option[Xml.Element] =
-    if page.doc.exists(_.documentHeader.isDefined) || isCollector(page) then sourceLink(page) else None
+    if page.doc.exists(_.publishesTei) || isCollector(page) then sourceLink(page) else None
 
   private def teiLink(page: Page): Option[Xml.Element] =
     given Language.Spec = page.site.languageSpec
-    Option.when(page.doc.exists(_.documentHeader.isDefined))(
+    Option.when(page.doc.exists(_.publishesTei))(
       a(
         href := page.publishedPath.withExtension(TeiDocumentPage.extension).toString,
         titleAttr := Messages.text("meta.publishedTei"),
@@ -322,7 +322,7 @@ object PageHeader:
 
   private def copyButton(page: MarkupPage): Option[Xml.Element] =
     given Language.Spec = page.site.languageSpec
-    Option.when(page.doc.exists(_.documentHeader.isDefined))(
+    Option.when(page.doc.exists(_.publishesTei))(
       Xml.element("button").addClass("citation-copy").set("type", "button")
         .set(XmlAttribute.Title, Messages.text("meta.citeTip"))
         .set("data-citation", clipboardCitation(page))

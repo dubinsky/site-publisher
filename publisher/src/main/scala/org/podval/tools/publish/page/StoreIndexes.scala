@@ -109,7 +109,7 @@ object StoreIndexes:
   def documentsUnder(root: Page, pages: Seq[Page]): Seq[Page] =
     pages.filter: page =>
       page.isInstanceOf[FullMarkupPage] &&
-        page.doc.exists(_.documentHeader.isDefined) &&
+        page.doc.exists(_.publishesTei) &&
         !CollectionIndex.isTranslation(page) &&
         !CollectionIndex.isReading(page) &&
         PageHeader.collectorAncestors(page).exists(_.path == root.path)
