@@ -107,56 +107,42 @@ object TeiMarkup extends Markup(
     val converted: Xml.Element = copyContentLang(convertSpecial(tei2Html.convert(element), errorReporter))
     // `teiHeader` endnotes are rendered later, on the document-header cells, not as article footnotes.
     val headerHere: Boolean = inHeader || element.isNamed("teiHeader")
-    val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
-      node.asElement match
-        case Some(child) =>
-          walk(
-            child,
-            Some(converted),
-            headerHere,
-            footnoteCorrelationIds,
-            headerBiblIds,
-            biblIds,
-            hands,
-            reportedHands,
-            errorReporter,
-            blankPages
-          ) match
-            case Xml.Rewrite.Keep(result) => Seq(result)
-            case Xml.Rewrite.Emit(nodes) => nodes
-            case Xml.Rewrite.Replace(nodes) => nodes
-        case None =>
-          Seq(node)
-    val ready: Xml.Element = converted.setChildren(children)
-    val asFootnote: Option[Xml.Nodes] =
-      if headerHere || Footnote.inVerbatim(parent) then None
-      else convertFootnote(ready, footnoteCorrelationIds)
-    asFootnote match
-      case Some(nodes) =>
-        Xml.Rewrite.Emit(nodes)
-      case None =>
-        val steps: Seq[Xml.Element => Xml.Element] = Seq(
-          el => convertGlossary(el).getOrElse(el),
-          el => convertListBibl(el, headerBiblIds),
-          el => convertCite(el, biblIds),
-          el => fillEmptyPointer(el, biblIds),
-          convertBibliographyPlaceholder,
-          convertQuote,
-          convertFigure,
-          el => convertPb(el, blankPages, errorReporter),
-          el => TeiDate.convert(el, errorReporter),
-          TeiGap.convert,
-          el => TeiUnclear.convert(el, hands, errorReporter, reportedHands),
-          el => TeiHand.convert(el, hands, errorReporter, reportedHands)
-        )
-        val result: Xml.Element = steps.foldLeft(ready)((el, step) => step(el))
-        // Children are already finished. A `pre` wrapper is emitted as-is;
-        // `code` inside an existing `pre` is not wrapped again.
-        // Those two paths do not lift a facsimile anchor out of a link.
-        if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Emit(Seq(result))
-        else convertCode(ready) match
-          case Some(nodes) => Xml.Rewrite.Emit(nodes)
-          case None => Xml.Rewrite.Emit(AnchorPbSplit.lift(result))
+    DialectRewrite.walk(
+      converted,
+      parent,
+      child =>
+        walk(
+          child,
+          Some(converted),
+          headerHere,
+          footnoteCorrelationIds,
+          headerBiblIds,
+          biblIds,
+          hands,
+          reportedHands,
+          errorReporter,
+          blankPages
+        ),
+      ready =>
+        if headerHere || Footnote.inVerbatim(parent) then None
+        else convertFootnote(ready, footnoteCorrelationIds),
+      Seq(
+        el => convertGlossary(el).getOrElse(el),
+        el => convertListBibl(el, headerBiblIds),
+        el => convertCite(el, biblIds),
+        el => fillEmptyPointer(el, biblIds),
+        convertBibliographyPlaceholder,
+        convertQuote,
+        convertFigure,
+        el => convertPb(el, blankPages, errorReporter),
+        el => TeiDate.convert(el, errorReporter),
+        TeiGap.convert,
+        el => TeiUnclear.convert(el, hands, errorReporter, reportedHands),
+        el => TeiHand.convert(el, hands, errorReporter, reportedHands)
+      ),
+      convertCode,
+      AnchorPbSplit.lift
+    )
 
   private def isTeiTitle(element: Xml.Element): Boolean =
     tei2Html.is(element, XmlElement.Title)

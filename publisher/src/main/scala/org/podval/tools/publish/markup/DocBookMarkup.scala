@@ -81,50 +81,40 @@ object DocBookMarkup extends Markup(
   )(using Language.Spec): Xml.Rewrite =
     val renameSections: Boolean = !isRoot || !element.getName.localNameIn(rootElements)
     val converted: Xml.Element = convertSpecial(db2Html.convert(element), renameSections)
-    val children: Xml.Nodes = converted.getChildren.flatMapNodes: node =>
-      node.asElement match
-        case Some(child) =>
-          walk(
-            child,
-            Some(converted),
-            isRoot = false,
-            footnoteCorrelationIds,
-            coNumbers,
-            footnoteIds,
-            biblIds
-          ) match
-            case Xml.Rewrite.Keep(result) => Seq(result)
-            case Xml.Rewrite.Emit(nodes) => nodes
-            case Xml.Rewrite.Replace(nodes) => nodes
-        case None =>
-          Seq(node)
-    val ready: Xml.Element = converted.setChildren(children)
-    val asFootnote: Option[Xml.Nodes] =
-      if Footnote.inVerbatim(parent) then None else convertFootnote(ready, footnoteCorrelationIds)
-    asFootnote
-      .orElse(convertFootnoteRef(ready, footnoteIds))
-      .orElse(convertCo(ready, coNumbers)) match
-      case Some(nodes) =>
-        Xml.Rewrite.Emit(nodes)
-      case None =>
-        val steps: Seq[Xml.Element => Xml.Element] = Seq(
-          convertGlossary,
-          convertVariableList,
-          convertAdmonition,
-          convertAside,
-          convertQuote,
-          convertFigure,
-          convertVideo,
-          convertCalloutList,
-          convertBibliography,
-          convertCitation,
-          el => convertCiteLink(el, biblIds)
-        )
-        val result: Xml.Element = steps.foldLeft(ready)((el, step) => step(el))
-        if parent.exists(_.isNamed("pre")) then Xml.Rewrite.Emit(Seq(result))
-        else convertCode(ready) match
-          case Some(nodes) => Xml.Rewrite.Emit(nodes)
-          case None => Xml.Rewrite.Emit(Seq(result))
+    DialectRewrite.walk(
+      converted,
+      parent,
+      child =>
+        walk(
+          child,
+          Some(converted),
+          isRoot = false,
+          footnoteCorrelationIds,
+          coNumbers,
+          footnoteIds,
+          biblIds
+        ),
+      ready =>
+        val footnote: Option[Xml.Nodes] =
+          if Footnote.inVerbatim(parent) then None
+          else convertFootnote(ready, footnoteCorrelationIds)
+        footnote.orElse(convertFootnoteRef(ready, footnoteIds)).orElse(convertCo(ready, coNumbers)),
+      Seq(
+        convertGlossary,
+        convertVariableList,
+        convertAdmonition,
+        convertAside,
+        convertQuote,
+        convertFigure,
+        convertVideo,
+        convertCalloutList,
+        convertBibliography,
+        convertCitation,
+        el => convertCiteLink(el, biblIds)
+      ),
+      convertCode,
+      Seq(_)
+    )
 
   // Transform is parent-first, so this is a second pass after convert.
   private def markHeadedDivs(xml: Xml.Element): Xml.Element =
