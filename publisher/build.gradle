@@ -42,7 +42,7 @@ dependencies {
   implementation 'org.apache.pdfbox:pdfbox:3.0.8'
   implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
   implementation 'org.slf4j:slf4j-api:2.0.20'
-  implementation 'ch.qos.logback:logback-classic:1.6.5'
+  implementation 'ch.qos.logback:logback-classic:1.6.6'
   implementation 'de.undercouch:citeproc-java:3.5.2'
   implementation 'org.citationstyles:styles:26.8'
   implementation 'org.citationstyles:locales:26.8'

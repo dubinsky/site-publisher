@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A bad `ref` and `plural="yes"` on a store or an `entityLists` catalog is a `bad label` error (`/errors.html#bad-label`).
+  The messages are `plural without ref`, `ref without plural`, `ref with names`, and `Unknown term: …`.
+  Scanning continues, and the lexicon name is not used.
+  An authored name is kept, and so is an `entityLists` `<title>`.
+  A known term that has no plural in the site language still stops generation (`No plural for term …`).
+
 ## [0.9.0] - 2026-10-22
 
 - Fenced mermaid diagrams render with Pele 1.8.0 and take their colors from the site tokens.
