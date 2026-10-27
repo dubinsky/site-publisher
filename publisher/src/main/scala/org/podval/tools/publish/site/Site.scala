@@ -194,6 +194,13 @@ final class Site(options: SiteOptions) extends JSLibrary:
     // Load all pages
     pages.load()
 
+    // After load, before backlinks. The soft reference can still miss during the scan.
+    pages.pages.foreach: page =>
+      page.source.foreach(_.pin())
+      page match
+        case markup: MarkupPage => markup.inlineListProse.foreach(_.pin())
+        case _ =>
+
     // After throwIfErrors: a missing category hub is an unresolved link, not a failed build.
     categories.resolve(this)
 

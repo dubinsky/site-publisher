@@ -42,7 +42,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
   final override def source: Option[PageSource] = sourceVar
 
-  // One-list prose. `EntityListsContent` is rebuilt when its soft cache misses, so the file cannot live there.
+  // One-list prose. A soft miss during load replaces `EntityListsContent`, so the file cannot live there.
   private var inlineListProseVar: Option[PageSource] = None
   final def inlineListProse: Option[PageSource] = inlineListProseVar
   final def setInlineListProse(source: PageSource): Unit = inlineListProseVar = Some(source)

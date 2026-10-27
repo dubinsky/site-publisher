@@ -58,6 +58,7 @@ final class PageSource(
     documentCode.filter(_ != page.interfaceCode).map(_ => (page.interfaceCode, page.interfaceDir))
 
   private var contentVar: Option[SoftReference[PageContent]] = None
+  private var pinned: Option[PageContent] = None
 
   def cache(
     frontMatter: FrontMatter,
@@ -71,8 +72,12 @@ final class PageSource(
   def content: PageContent =
     val quiet: Boolean = !recordParseErrors
     if quiet then quietDepth += 1
-    try loadContent()
+    try pinned.getOrElse(loadContent())
     finally if quiet then quietDepth -= 1
+
+  // `content`, not `loadContent`: a quiet miss must stay inside the bracket.
+  def pin(): Unit =
+    pinned = Some(content)
 
   private def loadContent(): PageContent =
     def readParseAndCache(message: String, firstReading: Boolean): PageContent =
