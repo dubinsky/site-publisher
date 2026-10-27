@@ -191,7 +191,9 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         Some(js.FontAwesome),
         Option.when(languages.contains("mermaid"))(js.Pele),
         site.googleAnalytics.map(js.GoogleAnalytics(_))
-      ).flatten ++ extraLibraries :+ site
+      ).flatten ++ extraLibraries
+
+    val headContributions: List[js.HeadContribution] = libraries :+ site
 
     val apparatusKinds: List[String] = site.readerFeatures.apparatus
     html(
@@ -208,8 +210,8 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
         Feed.feedMeta(site),
         pagerPrev.map(p => link(rel := "prev", href := p.path.toString)),
         pagerNext.map(p => link(rel := "next", href := p.path.toString)),
-        libraries.flatMap(_.styleLinks),
-        libraries.flatMap(_.headScripts)
+        headContributions.flatMap(_.styleLinks),
+        headContributions.flatMap(_.headScripts)
       ),
       body(
         site.siteHeader(this),

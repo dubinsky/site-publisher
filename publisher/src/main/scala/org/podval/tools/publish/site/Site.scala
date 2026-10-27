@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Term, TermCatalog}
-import org.podval.tools.publish.js.JSLibrary
+import org.podval.tools.publish.js.HeadContribution
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
 import org.podval.tools.publish.prose.ProseOptions
 import org.podval.tools.publish.page.{DocumentContent, EmbeddedAsset, FullMarkupPage, LocalFeatures, MarkupPage,
@@ -17,13 +17,13 @@ import java.net.{URI, URISyntaxException}
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import scala.util.Try
 
-final class Site(options: SiteOptions) extends JSLibrary:
-  // Site itself is a JavaScript library too
-  override def cdn: String = ""
-  override def stylesheet: Some[String] = Some(EmbeddedAsset.mainStyleSheet)
+final class Site(options: SiteOptions) extends HeadContribution:
+  override def styleLinks: List[Xml.Element] =
+    List(link(rel := "stylesheet", href := EmbeddedAsset.mainStyleSheet))
 
   // In <head> so it runs even when later markup is ill-formed and swallows body scripts.
-  override def headInlineJs: Some[String] = Some(Site.siteSettingsJs)
+  override def headScripts: List[Xml.Element] =
+    List(script().inlineJs(Site.siteSettingsJs))
   
   // Directories
   val proseOptions: ProseOptions = ProseOptions(options.width, options.sentencePerLine)

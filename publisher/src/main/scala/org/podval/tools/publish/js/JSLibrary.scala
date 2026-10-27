@@ -3,7 +3,12 @@ package org.podval.tools.publish.js
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
-abstract class JSLibrary:
+trait HeadContribution:
+  def styleLinks: List[Xml.Element]
+
+  def headScripts: List[Xml.Element]
+
+abstract class JSLibrary extends HeadContribution:
   def cdn: String
 
   final protected def cdn(forCloudFlare: => String, forJsDelivr: => String): String =

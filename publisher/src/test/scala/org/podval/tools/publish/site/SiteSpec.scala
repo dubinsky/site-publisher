@@ -245,6 +245,20 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(graph.contains("site-color-scheme"), graph)
   }
 
+  test("main sheet is the last head stylesheet and the settings script is not a body script") {
+    val home: String = html("index.html")
+    val split: Int = home.indexOf("</head>")
+    val head: String = home.substring(0, split)
+    val body: String = home.substring(split)
+    val lastSheet: Int = head.lastIndexOf("""rel="stylesheet"""")
+    assert(lastSheet >= 0, head)
+    assert(
+      head.substring(lastSheet, head.indexOf(">", lastSheet)).contains("""href="/assets/css/style.css""""),
+      head
+    )
+    assert(!body.contains("localStorage"), body)
+  }
+
   test("fixture home has no apparatus menu and no data-apparatus attribute") {
     val home: String = html("index.html")
     assert(!home.contains("""name="apparatus-add""""), home)
