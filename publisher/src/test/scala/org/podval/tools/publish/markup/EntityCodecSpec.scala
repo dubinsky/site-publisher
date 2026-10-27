@@ -13,10 +13,10 @@ final class EntityCodecSpec extends AnyFunSuite:
         |  <listPerson n="jews" role="jew"><title>Жиды</title></listPerson>
         |  <listPlace n="places"><title>Места</title></listPlace>
         |</entityLists>""".stripMargin
-    val index: EntityLists.Index = EntityLists.harvest(parse(xml)).get
+    val index: EntityListSpec.Index = EntityListSpec.harvest(parse(xml)).get
     assert(index.title.contains("Имена"))
     assert(index.lists.map(_.kind) == Seq(EntityKind.Person, EntityKind.Place))
-    val encoded: Xml.Element = EntityLists.Index.codec.encode(index)
+    val encoded: Xml.Element = EntityListSpec.Index.codec.encode(index)
     assert(encoded.childElements.map(_.getName.qName) ==
       Seq("title", "listPerson", "listPlace"))
   }
@@ -26,8 +26,8 @@ final class EntityCodecSpec extends AnyFunSuite:
       """<entityLists xmlns="http://www.tei-c.org/ns/1.0">
         |  <listPerson n="jews" role="jew"><head>Жиды</head></listPerson>
         |</entityLists>""".stripMargin
-    val index: EntityLists.Index = EntityLists.harvest(parse(xml)).get
+    val index: EntityListSpec.Index = EntityListSpec.harvest(parse(xml)).get
     assert(index.lists.map(_.title) == Seq("Жиды"))
-    val encoded: Xml.Element = EntityLists.Index.codec.encode(index)
+    val encoded: Xml.Element = EntityListSpec.Index.codec.encode(index)
     assert(encoded.childElements.flatMap(_.childElements).map(_.getName.qName) == Seq("head"))
   }

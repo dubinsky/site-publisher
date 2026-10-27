@@ -7,7 +7,7 @@ import zio.blocks.schema.{Modifier, Schema}
   * Harvested from the raw tree; member lists are generated in `page.EntityLists`.
   * List subpages are direct store children of the catalog; each list page is `By` of `name`,
   * resolved on `site.terms`. */
-object EntityLists:
+object EntityListSpec:
   final case class Index(
     ref: Option[String] = None,
     plural: Boolean = false,

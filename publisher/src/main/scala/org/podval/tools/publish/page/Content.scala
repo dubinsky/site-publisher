@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name}
 import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
-  TeiMarkup, Toc, WikiBlocks, EntityLists as EntityListSpecs}
+  TeiMarkup, Toc, WikiBlocks, EntityListSpec}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
@@ -65,10 +65,10 @@ object Content:
       (store.title, store)
     else xml.getName.localName match
       case "entityLists" =>
-        val harvested: EntityListSpecs.Index = EntityListSpecs.harvest(xml).get
+        val harvested: EntityListSpec.Index = EntityListSpec.harvest(xml).get
         val accepted: Boolean =
           checkLabelRef(source, harvested.ref, harvested.plural, harvested.title.exists(_.trim.nonEmpty))
-        val index: EntityListSpecs.Index =
+        val index: EntityListSpec.Index =
           if accepted then harvested else harvested.copy(ref = None, plural = false)
         val fromRef: Option[String] = index.ref.map: id =>
           given Language.Spec = source.languageSpec
@@ -286,7 +286,7 @@ object StoreContent:
 
 final class EntityListsContent(
   val title: Option[Xml.Element],
-  val index: EntityListSpecs.Index
+  val index: EntityListSpec.Index
 ) extends Content:
   override def xml: Xml.Element = Xml.element("entityLists")
   override def suppressDirectoryListing: Boolean = true

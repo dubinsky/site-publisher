@@ -381,7 +381,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(people.exists(el => el.childElements.exists(h =>
       h.isNamed("tei-head") && h.getText.contains("Жиды")
     )), dumped)
-    val index = EntityLists.harvest(parse(
+    val index = EntityListSpec.harvest(parse(
       """<entityLists>
         |  <listPerson n="jews" role="jew"><title>Жиды</title></listPerson>
         |</entityLists>""".stripMargin
@@ -400,7 +400,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     )
     val dumped: String = render(xml)
     assert(xml.gather(el => Option.when(el.isNamed("tei-head") && el.getText.contains("Жиды"))(el)).nonEmpty, dumped)
-    val index = EntityLists.harvest(parse(
+    val index = EntityListSpec.harvest(parse(
       """<entityLists xmlns="http://www.tei-c.org/ns/1.0">
         |  <listPerson n="jews"><head>Жиды</head></listPerson>
         |</entityLists>""".stripMargin

@@ -1,6 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityLists as EntityListSpecs}
+import org.podval.tools.publish.markup.{EntityKind, EntityList, EntityListSpec}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlElement}
 import java.text.Collator
@@ -42,13 +42,13 @@ object EntityLists:
   private def fileId(page: Page): String =
     page.sourcePath.map(_.fileName).getOrElse(page.path.fileName)
 
-  def kept(index: EntityListSpecs.Index, pages: Seq[Page]): Seq[(EntityList, Seq[Page])] =
+  def kept(index: EntityListSpec.Index, pages: Seq[Page]): Seq[(EntityList, Seq[Page])] =
     index.lists.flatMap: spec =>
       val mem: Seq[Page] = members(spec, pages)
       Option.when(mem.nonEmpty)(spec -> mem)
 
   /** Overall catalog: one non-empty list is that list; two or more is TOC only. */
-  def generate(page: Page, index: EntityListSpecs.Index): Xml.Element =
+  def generate(page: Page, index: EntityListSpec.Index): Xml.Element =
     val keptLists: Seq[(EntityList, Seq[Page])] = kept(index, page.site.pages.pages)
     keptLists match
       case Seq((spec, mem)) =>
@@ -61,7 +61,7 @@ object EntityLists:
 
   def listPages(
     catalog: Page,
-    index: EntityListSpecs.Index,
+    index: EntityListSpec.Index,
     existing: Path => Option[Page]
   ): List[EntityListPage] =
     val keptLists: Seq[(EntityList, Seq[Page])] = kept(index, catalog.site.pages.pages)
