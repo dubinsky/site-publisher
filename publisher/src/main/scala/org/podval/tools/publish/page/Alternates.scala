@@ -38,8 +38,14 @@ object Alternates:
   def suffixCode(source: Path): Option[String] =
     CollectionIndex.splitLang(source.fileName)._2.flatMap(code => MarkupPage.languageCode(Some(code)))
 
-  /** First segment, and only when it is a catalog code (`en`, not `English`, not `zz`). */
-  def directoryCode(source: Path): Option[String] =
+  /** First segment, and only when it is a catalog code (`en`, not `English`, not `zz`).
+    * A later door guard belongs here: if the first segment is a door, return `None` before
+    * `forDefaultName`. A door must not call `alternateDirectoryCode`, `isDirectorySibling`, or
+    * `suffixCode` on the prefix; add another `orElse` in the `PageContent` cascade or a signal
+    * in `reportLanguageAgreement`; enter `Alternates.build`; feed the prefix to
+    * `CollectionIndex.splitLang`; or reuse the name `directoryCode`.
+    */
+  def alternateDirectoryCode(source: Path): Option[String] =
     source.path match
       case first +: rest if rest.nonEmpty && Language.forDefaultName(first).isDefined => Some(first)
       case _ => None
@@ -53,7 +59,7 @@ object Alternates:
 
     val clusters: Seq[Cluster] = authored.flatMap: original =>
       val source: Path = original.sourcePath.get
-      if suffixCode(source).isDefined || directoryCode(source).isDefined then None
+      if suffixCode(source).isDefined || alternateDirectoryCode(source).isDefined then None
       else
         val suffixes: Seq[MarkupPage] = authored.filter: page =>
           page.sourcePath.exists(other => isSuffixSibling(source, other))
@@ -61,7 +67,7 @@ object Alternates:
           page.sourcePath.exists(other => isDirectorySibling(source, other))
         val tagged: Seq[(MarkupPage, String)] =
           suffixes.flatMap(page => suffixCode(page.sourcePath.get).map(page -> _)) ++
-            directories.flatMap(page => directoryCode(page.sourcePath.get).map(page -> _))
+            directories.flatMap(page => alternateDirectoryCode(page.sourcePath.get).map(page -> _))
         val collapsed: Seq[Member] = dedupe(site, tagged.distinctBy(_._1))
         val (clashes: Seq[Member], kept: Seq[Member]) = collapsed.partition(_.code == original.lang)
         reportCodeClash(site, original, clashes)
@@ -80,7 +86,7 @@ object Alternates:
   /** `en/notes/about.md` matches `notes/about.md`. `col/en/001.xml` does not: the code is not the first segment. */
   private def isDirectorySibling(original: Path, other: Path): Boolean =
     other.extension == original.extension &&
-      directoryCode(other).isDefined &&
+      alternateDirectoryCode(other).isDefined &&
       other.path.drop(1) == original.path
 
   /** Same code twice: error on each file. Keep the suffix sibling, else the first published path. */

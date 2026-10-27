@@ -17,7 +17,7 @@ object PageContent:
   ): PageContent =
     val xmlLang: Option[String] = MarkupPage.languageCode(DocumentHeader.textXmlLang(xml))
     val suffix: Option[String] = Alternates.suffixCode(source.sourcePath)
-    val directory: Option[String] = Alternates.directoryCode(source.sourcePath)
+    val directory: Option[String] = Alternates.alternateDirectoryCode(source.sourcePath)
     // One cascade: TEI `text/@xml:lang`, else the filename suffix, else a site-root language
     // directory, else front matter, else the site language, else `en`. `lang` returns this stored code.
     val fileCode: Option[String] =
