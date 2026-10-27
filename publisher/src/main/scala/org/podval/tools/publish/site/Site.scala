@@ -2,9 +2,10 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.JSLibrary
-import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Glossary, Link, LinkKind, TeiDate, Transclusion, WikiLink}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
 import org.podval.tools.publish.prose.ProseOptions
-import org.podval.tools.publish.page.{EmbeddedAsset, FullMarkupPage, MarkupPage, NamedWindows, PageContent, PdfPage}
+import org.podval.tools.publish.page.{DocumentContent, EmbeddedAsset, FullMarkupPage, LocalFeatures, MarkupPage,
+  NamedWindows, NodeFeatures, PageContent, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Xml, XmlElement, XmlParser}
 import org.podval.xml.dsl.{*, given}
@@ -282,87 +283,101 @@ final class Site(options: SiteOptions) extends JSLibrary:
     httpServerVar.foreach(_.stop(0))
 
   private def detectReaderFeatures(): ReaderFeatures =
-    var glossary: Boolean = false
-    var citation: Boolean = false
-    var choice: Boolean = false
+    var detected: ReaderFeatures = ReaderFeatures.empty
     var transclusion: Boolean = transclusions.all.exists(_.toPage.isDefined)
     var facsimile: Boolean = false
-    var apparatusAdd: Boolean = false
-    var apparatusDel: Boolean = false
-    var apparatusSee: Boolean = false
 
-    def visitTree(
-      xml: Xml.Element,
-      from: MarkupPage,
-      host: Option[PageContent],
-      transclusionsToo: Boolean,
-      dropHeader: Boolean
-    ): Unit =
-      // Same drop as DocumentContent.selectedXml: a collection document does not publish teiHeader.
-      val dropDirectHeader: Boolean =
-        dropHeader && from.parent.exists(_.store.exists(_.isCollection)) && xml.isNamed("TEI")
-      def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
-        if !element.isNamed(XmlElement.Code.localName) then
-          if element.isNamed("choice") then choice = true
-          if element.isElement(XmlElement.Span) then element.get("data-apparatus") match
-            case Some("add") => apparatusAdd = true
-            case Some("del") => apparatusDel = true
-            case Some("see") => apparatusSee = true
-            case _ =>
-          if !citation && host.nonEmpty && Link.isInternal(element) && !WikiLink.isTranscluded(element) then
-            element.getHref.foreach: href =>
-              pages.resolve(href, LinkKind.of(element), from).foreach: link =>
-                val contentOf: Option[PageContent] =
-                  if link.isIntrapage then host else link.page.content
-                val gloss: Boolean = link.fragment.exists: fragment =>
-                  contentOf.exists(_.glossaryDefinitions.contains(fragment.id))
-                val bibl: Boolean = link.fragment.exists: fragment =>
-                  contentOf.exists(_.bibliographyDefinitions.contains(fragment.id))
-                if !gloss && bibl then citation = true
-          if transclusionsToo && !transclusion && WikiLink.isTranscluded(element) then
-            element.getHref.filterNot(Transclusion.isObsidianBase).foreach: href =>
-              pages.resolve(href, LinkKind.of(element), from).foreach: link =>
-                Transclusion.authoredSource(link, href) match
-                  case Transclusion.Source.Ok(_, _, _) => transclusion = true
-                  case _ =>
-          element.childElements.foreach: child =>
-            if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
-      visit(xml, dropDirectHeader)
+    def absorb(content: PageContent): Unit =
+      val local: LocalFeatures = content.localFeatures
+      val page: MarkupPage = content.source.page
+      // A collection document publishes the cells instead of teiHeader. Anything else keeps the header.
+      val collectionDocument: Boolean = page.parent.exists(_.store.exists(_.isCollection))
+      val tree: NodeFeatures =
+        if collectionDocument then local.published else local.published.union(local.teiHeaderOnly)
+      val nodes: NodeFeatures =
+        if !collectionDocument then tree
+        else content.doc match
+          case document: DocumentContent => tree.union(document.headerFeatures)
+          case _ => tree
+      val citation: Boolean = nodes.citations.exists: candidate =>
+        pages.resolve(candidate.href, candidate.kind, page).exists: link =>
+          val hostContent: Option[PageContent] =
+            if link.isIntrapage then Some(content) else link.page.content
+          val gloss: Boolean = link.fragment.exists: fragment =>
+            hostContent.exists(_.glossaryDefinitions.contains(fragment.id))
+          val bibl: Boolean = link.fragment.exists: fragment =>
+            hostContent.exists(_.bibliographyDefinitions.contains(fragment.id))
+          !gloss && bibl
+      detected = detected.union(ReaderFeatures(
+        glossary = local.glossary,
+        citation = citation,
+        choice = nodes.choice,
+        transclusion = false,
+        facsimile = false,
+        apparatusAdd = nodes.apparatusAdd,
+        apparatusDel = nodes.apparatusDel,
+        apparatusSee = nodes.apparatusSee
+      ))
 
-    // Harvest strips footnote bodies from the tree; render appends them.
-    // A collection document drops teiHeader and publishes these cells instead.
-    def scanPrepared(content: PageContent, from: MarkupPage, transclusionsToo: Boolean): Unit =
-      if content.glossaryDefinitions.nonEmpty then glossary = true
-      visitTree(content.xml, from, Some(content), transclusionsToo, dropHeader = true)
+    def transclusionIn(xml: Xml.Element, from: MarkupPage, transclusionsToo: Boolean): Boolean =
+      if !transclusionsToo then false
+      else
+        var found: Boolean = false
+        def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
+          if !found && !element.isNamed(XmlElement.Code.localName) then
+            if WikiLink.isTranscluded(element) then
+              element.getHref.filterNot(Transclusion.isObsidianBase).foreach: href =>
+                pages.resolve(href, LinkKind.of(element), from).foreach: link =>
+                  Transclusion.authoredSource(link, href) match
+                    case Transclusion.Source.Ok(_, _, _) => found = true
+                    case _ =>
+            if !found then element.childElements.foreach: child =>
+              if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
+        // Same drop as DocumentContent.selectedXml: a collection document does not publish teiHeader.
+        val dropDirectHeader: Boolean =
+          from.parent.exists(_.store.exists(_.isCollection)) && xml.isNamed("TEI")
+        visit(xml, dropDirectHeader)
+        found
+
+    /** `transclusionsToo` is false for full-page content and for every footnote body, and true for every
+      * other markup page and for inline-list prose. Footnote bodies stay false even when the tree is true:
+      * one flag for the tree and its notes would count a transclusion that exists only in a footnote.
+      */
+    def noteTransclusions(content: PageContent, transclusionsToo: Boolean): Unit =
+      val from: MarkupPage = content.source.page
+      if transclusionIn(content.xml, from, transclusionsToo) then transclusion = true
       content.footnotes.values.foreach: footnote =>
         footnote.nodes.foreach: node =>
           node.asElement.foreach: element =>
-            if Glossary.definitions(element).nonEmpty then glossary = true
-            visitTree(element, from, Some(content), transclusionsToo = false, dropHeader = false)
-      if from.parent.exists(_.store.exists(_.isCollection)) then
-        content.doc.documentHeader.foreach: header =>
-          (header.description.toSeq ++ header.authors ++ header.addressee.toSeq ++
-            header.transcribers ++ header.translators).foreach: element =>
-            visitTree(element, from, None, transclusionsToo = false, dropHeader = false)
+            if transclusionIn(element, from, transclusionsToo = false) then transclusion = true
 
-    def scanPage(page: MarkupPage, transclusionsToo: Boolean): Unit =
+    def absorbMarkup(page: MarkupPage, transclusionsToo: Boolean): Unit =
       page.content.foreach: content =>
-        scanPrepared(content, page, transclusionsToo)
+        absorb(content)
+        noteTransclusions(content, transclusionsToo)
       page.inlineListProse.foreach: source =>
-        scanPrepared(source.content, source.page, transclusionsToo = true)
-      page.store.foreach: store =>
-        (store.title.toSeq ++ store.description.toSeq ++ store.body.toSeq).foreach: fragment =>
-          visitTree(fragment, page, None, transclusionsToo = false, dropHeader = false)
+        val prose: PageContent = source.content
+        absorb(prose)
+        noteTransclusions(prose, transclusionsToo = true)
 
     pages.pages.foreach:
       case page: FullMarkupPage =>
         if Facsimile.needed(page) then facsimile = true
-        scanPage(page, transclusionsToo = false)
+        absorbMarkup(page, transclusionsToo = false)
       case page: MarkupPage =>
-        scanPage(page, transclusionsToo = true)
+        absorbMarkup(page, transclusionsToo = true)
       case _ =>
 
-    ReaderFeatures(glossary, citation, choice, transclusion, facsimile, apparatusAdd, apparatusDel, apparatusSee)
+    detected.union(ReaderFeatures(
+      glossary = false,
+      citation = false,
+      choice = false,
+      transclusion = transclusion,
+      facsimile = facsimile,
+      apparatusAdd = false,
+      apparatusDel = false,
+      apparatusSee = false
+    ))
 
   def siteHeader(page: MarkupPage): Xml.Element =
     given Language.Spec = languageSpec
@@ -653,6 +668,17 @@ private[publish] final class ReaderFeatures(
   val apparatusDel: Boolean,
   val apparatusSee: Boolean
 ):
+  def union(other: ReaderFeatures): ReaderFeatures = ReaderFeatures(
+    glossary || other.glossary,
+    citation || other.citation,
+    choice || other.choice,
+    transclusion || other.transclusion,
+    facsimile || other.facsimile,
+    apparatusAdd || other.apparatusAdd,
+    apparatusDel || other.apparatusDel,
+    apparatusSee || other.apparatusSee
+  )
+
   def terms: Boolean = glossary || citation
   def inText: Boolean = terms || choice
   def layout: Boolean = transclusion || facsimile

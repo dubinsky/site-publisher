@@ -93,14 +93,42 @@ object PageContent:
       catch case e: IllegalStateException =>
         throw IllegalStateException(s"${source.sourcePath}: ${e.getMessage}", e)
 
+    val glossaryDefinitions: Map[String, Xml.Nodes] = Glossary.definitions(result)
+    // Stores are not bound yet, so a TEI root keeps the direct teiHeader apart.
+    // Footnote bodies are on `published`, so the with-header fold sees them too.
+    var fromNotes: NodeFeatures = NodeFeatures.empty
+    var footnoteGlossary: Boolean = false
+    footnotes.values.foreach: footnote =>
+      footnote.nodes.foreach: node =>
+        node.asElement.foreach: element =>
+          if Glossary.definitions(element).nonEmpty then footnoteGlossary = true
+          fromNotes = fromNotes.union(NodeFeatures.scan(
+            element,
+            skipDirectHeader = false,
+            recordCitations = true
+          ))
+    val published: NodeFeatures =
+      NodeFeatures.scan(result, skipDirectHeader = true, recordCitations = true).union(fromNotes)
+    val teiHeaderOnly: NodeFeatures =
+      if !result.isNamed("TEI") then NodeFeatures.empty
+      else NodeFeatures.fromElements(
+        result.childElements.filter(_.isNamed("teiHeader")).toSeq,
+        recordCitations = true
+      )
+
     new Content.Prepared(
       xml = result,
       toc = Toc(result, source),
       ids = Ids(result),
       blocks = WikiBlocks(result, source),
       footnotes = footnotes,
-      glossaryDefinitions = Glossary.definitions(result),
-      bibliographyDefinitions = BibliographyItem.definitions(result)
+      glossaryDefinitions = glossaryDefinitions,
+      bibliographyDefinitions = BibliographyItem.definitions(result),
+      localFeatures = LocalFeatures(
+        glossary = glossaryDefinitions.nonEmpty || footnoteGlossary,
+        published = published,
+        teiHeaderOnly = teiHeaderOnly
+      )
     )
 
   /** Section ids (before TOC), bare-anchor ids and internal-link marks (before backlinks), wiki embed. */
@@ -143,6 +171,7 @@ final class PageContent private(
   def footnotes: Map[String, Footnote] = doc.footnotes
   def glossaryDefinitions: Map[String, Xml.Nodes] = doc.glossaryDefinitions
   def bibliographyDefinitions: Map[String, Xml.Nodes] = doc.bibliographyDefinitions
+  def localFeatures: LocalFeatures = doc.localFeatures
 
   private val tips: Seq[Tip] = Seq(Glossary.tip, Footnote.tip, BibliographyItem.tip)
 

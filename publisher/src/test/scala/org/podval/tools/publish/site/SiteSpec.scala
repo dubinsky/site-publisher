@@ -1363,3 +1363,126 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
       assert(!tagAt(home, """id="setting-glossary-expand"""").contains("checked"), home)
       assertNoExpansions(home)
   }
+
+  test("a translator, author, addressee, or transcriber cell sets choice and apparatus") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "col.xml" ->
+        """<collection n="1" alias="col">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "col/000.xml" ->
+        """<TEI>
+          |  <teiHeader>
+          |    <fileDesc><titleStmt>
+          |      <title>t</title>
+          |      <author><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></author>
+          |      <editor role="transcriber"><span data-apparatus="del">gone</span></editor>
+          |      <editor role="translator"><span data-apparatus="add">added</span></editor>
+          |    </titleStmt></fileDesc>
+          |    <profileDesc>
+          |      <correspDesc><correspAction type="received">
+          |        <persName><span data-apparatus="see">src</span></persName>
+          |      </correspAction></correspDesc>
+          |    </profileDesc>
+          |  </teiHeader>
+          |  <text><body><p>hello</p></body></text>
+          |</TEI>
+          |""".stripMargin
+    )): target =>
+      val doc: String = readerHtml(target, "col/000.html")
+      assert(doc.contains("hello"), doc)
+      val home: String = readerHtml(target, "index.html")
+      assertExpansions(home)
+      assert(home.contains("""name="apparatus-add""""), home)
+      assert(home.contains("""name="apparatus-del""""), home)
+      assert(home.contains("""name="apparatus-see""""), home)
+  }
+
+  test("a choice in a store title or body sets choice and apparatus") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "shelf.xml" ->
+        """<store n="shelf">
+          |  <title><choice><abbr>W</abbr><expan>ChoiceMarker</expan></choice></title>
+          |  <body><p><span data-apparatus="add">added words</span></p></body>
+          |</store>
+          |""".stripMargin
+    )): target =>
+      val home: String = readerHtml(target, "index.html")
+      assertExpansions(home)
+      assert(home.contains("""name="apparatus-add""""), home)
+      assert(!home.contains("""name="apparatus-del""""), home)
+      assert(!home.contains("""name="apparatus-see""""), home)
+  }
+
+  test("a fragment that is both a gloss id and a bibliography id does not count as a citation") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "both.html" ->
+        """<p><a href="#shared">shared</a></p>
+          |<div class="glossary-item" id="shared"><dt>shared</dt><dd>gloss text</dd></div>
+          |<div class="bibliography-item" id="shared"><p>Book text.</p></div>
+          |""".stripMargin
+    )): target =>
+      val page: String = readerHtml(target, "both.html")
+      assert(page.contains("gloss text"), page)
+      assert(page.contains("Book text."), page)
+      assert(page.contains("glossary-ref"), page)
+      assert(!page.contains("citation-ref"), page)
+      assert(page.contains("""id="setting-glossary-expand""""), page)
+      val home: String = readerHtml(target, "index.html")
+      assert(home.contains("""id="setting-glossary-expand""""), home)
+      assertNoExpansions(home)
+  }
+
+  test("a transclusion that exists only in a footnote does not turn transclusions on") {
+    withReaderSite(rootStore(Map(
+      "archive-years.html" ->
+        """<p>See<span class="footnote-link" footnote-correlation-id="only"></span>.</p>
+          |<span class="footnote" footnote-correlation-id="only"><a class="wiki-link transclude" href="archive/rgada/900">![[archive/rgada/900]]</a></span>
+          |""".stripMargin
+    ))): target =>
+      val years: String = readerHtml(target, "archive-years.html")
+      assert(years.contains("""class="year-index""""), years)
+      assert(years.contains("transclude"), years)
+      assert(years.contains("archive/rgada/900"), years)
+      assert(!years.contains("""id="setting-transclusion-clean""""), years)
+      val home: String = readerHtml(target, "index.html")
+      assert(!home.contains("""id="setting-transclusion-clean""""), home)
+  }
+
+  test("a relative link off inline-list prose resolves from the catalog") {
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "lists.xml" ->
+        """<entityLists>
+          |  <title>Catalog</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "lists/Riga.xml" ->
+        """<place>
+          |  <placeName>Riga</placeName>
+          |</place>
+          |""".stripMargin,
+      "lists/cities.html" ->
+        """<p><a href="index.html#knuth">Knuth</a></p>
+          |<div class="bibliography-item" id="knuth"><p>The Art of Computer Programming.</p></div>
+          |""".stripMargin
+    )): target =>
+      assert(!File(target, "lists/cities.html").exists)
+      val page: String = readerHtml(target, "lists/index.html")
+      assert(page.contains("Riga"), page)
+      assert(page.contains("The Art of Computer Programming."), page)
+      assert(page.contains("citation-ref"), page)
+      assert(!page.contains("glossary-ref"), page)
+      assert(page.contains("""id="setting-glossary-expand""""), page)
+      val home: String = readerHtml(target, "index.html")
+      assert(home.contains("""id="setting-glossary-expand""""), home)
+  }

@@ -1,10 +1,72 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name}
-import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, Markup, PageType,
-  StoreIndex, TeiMarkup, Toc, WikiBlocks, EntityListSpec}
+import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, Link, LinkKind,
+  Markup, PageType, StoreIndex, TeiMarkup, Toc, WikiBlocks, WikiLink, EntityListSpec}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
+
+/** Choice, apparatus, and unresolved citation hrefs on one tree. Not glossary. */
+private[publish] final class NodeFeatures(
+  val choice: Boolean,
+  val apparatusAdd: Boolean,
+  val apparatusDel: Boolean,
+  val apparatusSee: Boolean,
+  val citations: Seq[NodeFeatures.Citation]
+):
+  def union(other: NodeFeatures): NodeFeatures = NodeFeatures(
+    choice || other.choice,
+    apparatusAdd || other.apparatusAdd,
+    apparatusDel || other.apparatusDel,
+    apparatusSee || other.apparatusSee,
+    citations ++ other.citations
+  )
+
+private[publish] object NodeFeatures:
+  final class Citation(val href: String, val kind: Option[LinkKind])
+
+  val empty: NodeFeatures = NodeFeatures(false, false, false, false, Nil)
+
+  /** Same node tests as the old site walk. Stop at `code` and do not enter it.
+    * A direct `teiHeader` is skipped only when `skipDirectHeader` and the root is `TEI`.
+    */
+  def scan(root: Xml.Element, skipDirectHeader: Boolean, recordCitations: Boolean): NodeFeatures =
+    var choice: Boolean = false
+    var apparatusAdd: Boolean = false
+    var apparatusDel: Boolean = false
+    var apparatusSee: Boolean = false
+    var citations: List[Citation] = Nil
+    def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
+      if !element.isNamed(XmlElement.Code.localName) then
+        if element.isNamed("choice") then choice = true
+        if element.isElement(XmlElement.Span) then element.get("data-apparatus") match
+          case Some("add") => apparatusAdd = true
+          case Some("del") => apparatusDel = true
+          case Some("see") => apparatusSee = true
+          case _ =>
+        if recordCitations && Link.isInternal(element) && !WikiLink.isTranscluded(element) then
+          element.getHref.foreach: href =>
+            citations = Citation(href, LinkKind.of(element)) :: citations
+        element.childElements.foreach: child =>
+          if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
+    val dropDirectHeader: Boolean = skipDirectHeader && root.isNamed("TEI")
+    visit(root, dropDirectHeader)
+    NodeFeatures(choice, apparatusAdd, apparatusDel, apparatusSee, citations.reverse)
+
+  def fromElements(elements: Seq[Xml.Element], recordCitations: Boolean): NodeFeatures =
+    elements.foldLeft(empty)((acc, element) =>
+      acc.union(scan(element, skipDirectHeader = false, recordCitations))
+    )
+
+/** Prepared-tree features. `teiHeaderOnly` is used only when the document still publishes that header. */
+private[publish] final class LocalFeatures(
+  val glossary: Boolean,
+  val published: NodeFeatures,
+  val teiHeaderOnly: NodeFeatures
+)
+
+private[publish] object LocalFeatures:
+  val empty: LocalFeatures = LocalFeatures(false, NodeFeatures.empty, NodeFeatures.empty)
 
 /** Kind of a source page. At most one of store / entity-lists / TEI document / entity / markup. */
 sealed abstract class Content:
@@ -15,6 +77,7 @@ sealed abstract class Content:
   def footnotes: Map[String, Footnote] = Map.empty
   def glossaryDefinitions: Map[String, Xml.Nodes] = Map.empty
   def bibliographyDefinitions: Map[String, Xml.Nodes] = Map.empty
+  def localFeatures: LocalFeatures = LocalFeatures.empty
 
   def wide: Boolean = false
   def listTitle: Option[String] = None
@@ -45,7 +108,8 @@ object Content:
     val blocks: WikiBlocks,
     val footnotes: Map[String, Footnote],
     val glossaryDefinitions: Map[String, Xml.Nodes],
-    val bibliographyDefinitions: Map[String, Xml.Nodes]
+    val bibliographyDefinitions: Map[String, Xml.Nodes],
+    val localFeatures: LocalFeatures
   )
 
   def parse(
@@ -151,6 +215,7 @@ sealed abstract class AuthoredContent(
   final override def footnotes: Map[String, Footnote] = prepared.footnotes
   final override def glossaryDefinitions: Map[String, Xml.Nodes] = prepared.glossaryDefinitions
   final override def bibliographyDefinitions: Map[String, Xml.Nodes] = prepared.bibliographyDefinitions
+  final override def localFeatures: LocalFeatures = prepared.localFeatures
 
   def selectedXml(selected: Xml.Element, page: Page): Xml.Element = selected
 
@@ -168,6 +233,13 @@ final class DocumentContent(
   override def documentHeader: Option[DocumentHeader] = Some(header)
   override def asDocument: Option[DocumentContent] = Some(this)
   override def publishesTei: Boolean = documentHeader.isDefined
+
+  /** Raw cells the collector table publishes when this document sits in a collection. No citation hrefs. */
+  private[publish] val headerFeatures: NodeFeatures = NodeFeatures.fromElements(
+    header.description.toSeq ++ header.authors ++ header.addressee.toSeq ++
+      header.transcribers ++ header.translators,
+    recordCitations = false
+  )
 
   override def selectedXml(selected: Xml.Element, page: Page): Xml.Element =
     if !page.parent.exists(_.store.exists(_.isCollection)) then selected
@@ -208,6 +280,14 @@ final class StoreContent(
   def parts: Seq[CollectionPart] = index.parts
   def pageType: PageType = index.pageType
   def pageTypeName: Option[String] = index.pageTypeName
+
+  /** Title, description, and body as stored. No `convertFragment`, no citation hrefs. */
+  override val localFeatures: LocalFeatures =
+    val marks: NodeFeatures = NodeFeatures.fromElements(
+      index.title.toSeq ++ index.description.toSeq ++ index.body.toSeq,
+      recordCitations = false
+    )
+    LocalFeatures(glossary = false, published = marks, teiHeaderOnly = NodeFeatures.empty)
 
   private var boundChildrenVar: List[Page] = Nil
   def setBoundChildren(children: List[Page]): Unit = boundChildrenVar = children
