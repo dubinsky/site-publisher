@@ -1,8 +1,8 @@
 package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name}
-import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, PageType, StoreIndex,
-  TeiMarkup, Toc, WikiBlocks, EntityListSpec}
+import org.podval.tools.publish.markup.{CollectionPart, DocumentHeader, EntityKind, Footnote, Ids, Markup, PageType,
+  StoreIndex, TeiMarkup, Toc, WikiBlocks, EntityListSpec}
 import org.podval.tools.publish.site.{PageError, Path}
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
 
@@ -83,8 +83,8 @@ object Content:
         val header: DocumentHeader = DocumentHeader.harvest(xml).get
         if firstReading then
           TeiMarkup.reportSourceErrors(xml, source, namesWithoutRef = true)
-        val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
-        (title, DocumentContent(header, PageContent.prepareAuthored(source, processed)))
+        val processed: Markup.Processed = source.markup.process(xml, source)
+        (processed.title, DocumentContent(header, PageContent.prepareAuthored(source, processed.body)))
       case name =>
         EntityKind.forElement(name) match
           case Some(kind) =>
@@ -98,11 +98,11 @@ object Content:
                 // `@stable="true"` keeps a published id when the heading differs.
                 if expected != id && !isStableEntity(xml) then
                   source.error(PageError.MisnamedEntity, s"should be named '$expected'")
-            val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
-            (title, EntityContent(kind, role, displayName, PageContent.prepareAuthored(source, processed)))
+            val processed: Markup.Processed = source.markup.process(xml, source)
+            (processed.title, EntityContent(kind, role, displayName, PageContent.prepareAuthored(source, processed.body)))
           case None =>
-            val (processed: Xml.Element, title: Option[Xml.Element]) = source.markup.process(xml, source)
-            (title, MarkupContent(PageContent.prepareAuthored(source, processed)))
+            val processed: Markup.Processed = source.markup.process(xml, source)
+            (processed.title, MarkupContent(PageContent.prepareAuthored(source, processed.body)))
 
   /** `ref` and `plural` are a pair. Decode has no source path, so the page error carries it. */
   private def checkLabelRef(

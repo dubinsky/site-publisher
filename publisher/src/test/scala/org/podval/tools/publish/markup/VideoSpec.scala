@@ -20,16 +20,16 @@ final class VideoSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromMarkdown(source: String): Xml.Element =
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def videos(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Video.is(element))(element)).toSeq

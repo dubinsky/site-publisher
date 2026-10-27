@@ -20,13 +20,13 @@ final class TaskListSpec extends AnyFunSuite:
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromAsciiDoc(source: String): Xml.Element =
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def assertTaskList(xml: Xml.Element, dumped: String): Unit =
     assert(dumped.contains("""class="task-list""""), dumped)
@@ -110,7 +110,7 @@ final class TaskListSpec extends AnyFunSuite:
     val ir: Xml.Element = parse(
       """<div><ul class="task-list"><li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked"/>done</li></ul></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent).body
     val dumped: String = render(processed)
     assert(dumped.contains("""class="task-list""""), dumped)
     assert(dumped.contains("""class="task-list-item""""), dumped)

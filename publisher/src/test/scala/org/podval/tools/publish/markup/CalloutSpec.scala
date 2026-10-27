@@ -20,10 +20,10 @@ final class CalloutSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def marks(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Callout.isMark(element))(element), stopAtCode = false).toSeq
@@ -121,7 +121,7 @@ final class CalloutSpec extends AnyFunSuite:
       """<div><pre>line <span class="callout" data-value="1">1</span></pre>
         |<ol class="callout-list"><li>note</li></ol></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent).body
     val dumped: String = render(processed)
     assert(dumped.contains("""class="callout""""), dumped)
     assert(dumped.contains("""class="callout-list""""), dumped)

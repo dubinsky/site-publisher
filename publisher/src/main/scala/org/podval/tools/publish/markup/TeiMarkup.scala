@@ -52,7 +52,7 @@ object TeiMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
+  ): Markup.Processed =
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     // Title while the root is still `store` / `collection`. The returned title is
     // the renamed tree; the body is emptied of store chrome before the walk.
@@ -85,7 +85,7 @@ object TeiMarkup extends Markup(
         ),
       stopAtCode = false
     )
-    (markHeadedDivs(withIr), title)
+    Markup.Processed(markHeadedDivs(withIr), title)
 
   private def convertNames(element: Xml.Element, errorReporter: PageErrorReporter): Xml.Element =
     DialectWalk.transform(element)(el =>

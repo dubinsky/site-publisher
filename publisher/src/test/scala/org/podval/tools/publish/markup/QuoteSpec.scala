@@ -20,13 +20,13 @@ final class QuoteSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromMarkdown(source: String): Xml.Element =
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def quotes(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Quote.is(element))(element)).toSeq
@@ -129,7 +129,7 @@ final class QuoteSpec extends AnyFunSuite:
     val xml: Xml.Element = HtmlMarkup.process(
       parse("""<div><blockquote><p>raw quote</p></blockquote></div>"""),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     assert(quotes(xml).size == 1, dumped)
     assert(dumped.contains("""class="quote""""), dumped)
@@ -143,7 +143,7 @@ final class QuoteSpec extends AnyFunSuite:
           |<footer>— Author, <cite>Work</cite></footer></blockquote></div>"""
       ),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = quotes(xml)
     assert(found.size == 1, dumped)
@@ -158,7 +158,7 @@ final class QuoteSpec extends AnyFunSuite:
         |<p>already</p>
         |<footer class="quote-attribution">— Author</footer></blockquote></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent).body
     val dumped: String = render(processed)
     assert(quotes(processed).size == 1, dumped)
     assert(dumped.contains("""class="quote-title""""), dumped)
@@ -242,10 +242,10 @@ final class QuoteSpec extends AnyFunSuite:
   }
 
   private def fromTei(source: String): Xml.Element =
-    TeiMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    TeiMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   test("TEI quote becomes quote IR") {
     val xml: Xml.Element = fromTei(

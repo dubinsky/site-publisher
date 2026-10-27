@@ -16,5 +16,5 @@ object XmlMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
-    (xml, None)
+  ): Markup.Processed =
+    Markup.Processed(xml, None)

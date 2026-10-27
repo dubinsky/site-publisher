@@ -20,19 +20,19 @@ final class StrikeSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromMarkdown(source: String): Xml.Element =
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromTei(source: String): Xml.Element =
-    TeiMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    TeiMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def strikes(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Strike.is(element))(element)).toSeq
@@ -62,7 +62,7 @@ final class StrikeSpec extends AnyFunSuite:
     val xml: Xml.Element = HtmlMarkup.process(
       parse("""<div><p>See <s>old name</s>.</p></div>"""),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     assert(strikes(xml).size == 1, dumped)
     assert(dumped.contains("<del"), dumped)
@@ -74,7 +74,7 @@ final class StrikeSpec extends AnyFunSuite:
     val xml: Xml.Element = HtmlMarkup.process(
       parse("""<div><p>See <span class="line-through">legacy span</span>.</p></div>"""),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     assert(strikes(xml).size == 1, dumped)
     assert(dumped.contains("legacy span"), dumped)
@@ -83,7 +83,7 @@ final class StrikeSpec extends AnyFunSuite:
 
   test("HTML that is already del is unchanged") {
     val ir: Xml.Element = parse("""<div><p>See <del>HTML struck</del>.</p></div>""")
-    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent).body
     val dumped: String = render(processed)
     assert(strikes(processed).size == 1, dumped)
     assert(dumped.contains("HTML struck"), dumped)

@@ -79,7 +79,7 @@ object AsciiDocMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
+  ): Markup.Processed =
     given Language.Spec = errorReporter.languageSpec
     HtmlMarkup.process(
       cleanup(xml),

@@ -31,7 +31,7 @@ abstract class Markup(
   // - nest HTML sections
   // - convert footnotes into common format
   // - extract title
-  def process(xml: Xml.Element, errorReporter: PageErrorReporter): (Xml.Element, Option[Xml.Element])
+  def process(xml: Xml.Element, errorReporter: PageErrorReporter): Markup.Processed
 
   final def readAndParse(
     site: Site,
@@ -98,6 +98,8 @@ abstract class Markup(
     (frontMatter, xml)
 
 object Markup:
+  final case class Processed(body: Xml.Element, title: Option[Xml.Element])
+
   // Known markup languages.
   // Note: some XmlLike markups can have extensions other than `.xml`.
   lazy val all: Seq[Markup] = Seq(

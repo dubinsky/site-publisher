@@ -44,7 +44,7 @@ object DocBookMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
+  ): Markup.Processed =
     given Language.Spec = errorReporter.languageSpec
     val footnoteCorrelationIds: IdGenerator = IdGenerator("")
     val coNumbers: IdGenerator = IdGenerator("")
@@ -68,7 +68,7 @@ object DocBookMarkup extends Markup(
         ),
       stopAtCode = false
     )
-    (markHeadedDivs(withIr), title)
+    Markup.Processed(markHeadedDivs(withIr), title)
 
   private def walk(
     element: Xml.Element,

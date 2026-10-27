@@ -10,7 +10,7 @@ final class MarkdownSpec extends AnyFunSuite:
     XmlParser.parseXml(MarkdownMarkup.xmlContent(input, File("t.md"))).toOption.get
 
   private def process(source: String): Xml.Element =
-    MarkdownMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    MarkdownMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def render(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element)

@@ -64,7 +64,7 @@ object MarkdownMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
+  ): Markup.Processed =
     given Language.Spec = errorReporter.languageSpec
     val result: Xml.Element = xml.transform((element: Xml.Element) =>
       var result: Xml.Element = element

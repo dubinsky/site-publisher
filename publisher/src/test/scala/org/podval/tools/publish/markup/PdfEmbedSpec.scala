@@ -14,7 +14,7 @@ final class PdfEmbedSpec extends AnyFunSuite:
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def embeds(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(PdfEmbed.is(element))(element)).toSeq

@@ -8,11 +8,11 @@ final class DocBookMarkupSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
     XmlParser.parseXml(input).toOption.get
 
-  private def processResult(input: String): (Xml.Element, Option[Xml.Element]) =
+  private def processResult(input: String): Markup.Processed =
     DocBookMarkup.process(parse(input), PageErrorReporter.Silent)
 
   private def process(input: String): Xml.Element =
-    processResult(input)._1
+    processResult(input).body
 
   private def render(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element)
@@ -34,7 +34,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
   }
 
   test("para and simpara become p; document title is extracted") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<article>
         |  <title>Doc title</title>
         |  <para>Hello</para>
@@ -150,7 +150,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
   }
 
   test("info title is the document title; empty info is dropped") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<article>
         |  <info><title>From info</title></info>
         |  <para>Hello</para>
@@ -163,7 +163,7 @@ final class DocBookMarkupSpec extends AnyFunSuite:
   }
 
   test("root chapter is not renamed to div; nested section is marked") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<chapter>
         |  <title>Chapter</title>
         |  <section><title>Nested</title><para>p</para></section>

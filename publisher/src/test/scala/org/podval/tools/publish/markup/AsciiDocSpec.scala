@@ -20,7 +20,7 @@ final class AsciiDocSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       XmlParser.parseXml(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)).toOption.get,
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def render(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element)

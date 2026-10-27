@@ -20,16 +20,16 @@ final class AsideSpec extends AnyFunSuite:
     AsciiDocMarkup.process(
       parse(AsciiDocMarkup.convert(source, File("t.adoc").getAbsoluteFile, asciidoctor)),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromMarkdown(source: String): Xml.Element =
     MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       PageErrorReporter.Silent
-    )._1
+    ).body
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def asides(xml: Xml.Element): Seq[Xml.Element] =
     xml.gather(element => Option.when(Aside.is(element))(element)).toSeq
@@ -70,7 +70,7 @@ final class AsideSpec extends AnyFunSuite:
     val xml: Xml.Element = HtmlMarkup.process(
       parse("""<div><aside><p>raw aside</p></aside></div>"""),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     assert(asides(xml).size == 1, dumped)
     assert(dumped.contains("""class="aside""""), dumped)
@@ -82,7 +82,7 @@ final class AsideSpec extends AnyFunSuite:
       """<div><aside class="aside"><div class="aside-title">Title</div>
         |<p>already</p></aside></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(ir, PageErrorReporter.Silent).body
     val dumped: String = render(processed)
     assert(asides(processed).size == 1, dumped)
     assert(dumped.contains("""class="aside-title""""), dumped)
@@ -131,7 +131,7 @@ final class AsideSpec extends AnyFunSuite:
     val xml: Xml.Element = HtmlMarkup.process(
       parse("""<div><aside><h2>Not a title</h2><p>body</p></aside></div>"""),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     val found: Seq[Xml.Element] = asides(xml)
     assert(found.size == 1, dumped)

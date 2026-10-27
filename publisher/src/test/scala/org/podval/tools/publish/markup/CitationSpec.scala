@@ -239,7 +239,7 @@ final class CitationSpec extends AnyFunSuite:
           |</article>""".stripMargin
       ),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(xml)
     val dumped: String = render(xml)
     assert(items.exists((_, item) => item.key == "knuth79" && item.locator.isEmpty), dumped)
@@ -262,7 +262,7 @@ final class CitationSpec extends AnyFunSuite:
           |</article>""".stripMargin
       ),
       PageErrorReporter.Silent
-    )._1
+    ).body
     val dumped: String = render(xml)
     val items: Seq[Xml.Element] =
       xml.gather(el => Option.when(BibliographyItem.isItem(el))(el)).toSeq
@@ -277,7 +277,7 @@ final class CitationSpec extends AnyFunSuite:
       "See [@knuth79] and [-@lamport94].",
       File("t.md")
     ))
-    val processed: Xml.Element = MarkdownMarkup.process(xml, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = MarkdownMarkup.process(xml, PageErrorReporter.Silent).body
     val items: Seq[(Citation.Mode, Citation.Item)] = citeItems(processed)
     val dumped: String = render(processed)
     assert(items.exists((mode, item) => mode == Citation.Mode.Parenthetical && item.key == "knuth79"), dumped)

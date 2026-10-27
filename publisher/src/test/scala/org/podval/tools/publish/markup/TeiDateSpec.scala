@@ -584,7 +584,7 @@ final class TeiDateSpec extends AnyFunSuite:
     val xml: Xml.Element = MarkdownMarkup.process(
       parse(MarkdownMarkup.xmlContent(source, File("t.md"))),
       reporter
-    )._1
+    ).body
     (xml, reporter)
 
   test("visible skips notes and tip tokens when asked") {

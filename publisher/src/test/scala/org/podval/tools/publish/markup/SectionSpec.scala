@@ -156,7 +156,7 @@ final class SectionSpec extends AnyFunSuite:
     val xml: Xml.Element = parse(
       """<div><h1>Book</h1><p>intro</p><h2 id="chapter">Chapter</h2><p>chap</p><h3 id="notes">Notes</h3><p>sec</p></div>"""
     )
-    val processed: Xml.Element = HtmlMarkup.process(xml, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(xml, PageErrorReporter.Silent).body
     val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "chapter", "Chapter")
@@ -178,7 +178,7 @@ final class SectionSpec extends AnyFunSuite:
         |""".stripMargin,
       File("t.md")
     ))
-    val processed: Xml.Element = HtmlMarkup.process(MarkdownMarkup.convert(xml), PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(MarkdownMarkup.convert(xml), PageErrorReporter.Silent).body
     val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
@@ -203,7 +203,7 @@ final class SectionSpec extends AnyFunSuite:
       File("t.adoc").getAbsoluteFile,
       asciidoctor
     ))
-    val processed: Xml.Element = HtmlMarkup.process(AsciiDocMarkup.cleanup(xml), PageErrorReporter.Silent)._1
+    val processed: Xml.Element = HtmlMarkup.process(AsciiDocMarkup.cleanup(xml), PageErrorReporter.Silent).body
     val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "Chapter", "Chapter")
@@ -221,7 +221,7 @@ final class SectionSpec extends AnyFunSuite:
         |</div>
         |</body></text></TEI>"""
     )
-    val processed: Xml.Element = TeiMarkup.process(xml, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = TeiMarkup.process(xml, PageErrorReporter.Silent).body
     val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "meth", "Methodology")
@@ -240,7 +240,7 @@ final class SectionSpec extends AnyFunSuite:
         |  </section>
         |</article>"""
     )
-    val processed: Xml.Element = DocBookMarkup.process(xml, PageErrorReporter.Silent)._1
+    val processed: Xml.Element = DocBookMarkup.process(xml, PageErrorReporter.Silent).body
     val normalized: Xml.Element = ir(processed)
     val rendered: String = render(normalized)
     assertPermalink(rendered, "meth", "Methodology")

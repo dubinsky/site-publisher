@@ -34,7 +34,7 @@ object HtmlMarkup extends Markup(
   override def process(
     xml: Xml.Element,
     errorReporter: PageErrorReporter
-  ): (Xml.Element, Option[Xml.Element]) =
+  ): Markup.Processed =
     val (result: Xml.Element, title: Option[Xml.Element]) = xml.childElements
       .find(element => headerLevel(element).contains(1))
       .fold((xml, None)): h1 =>
@@ -42,7 +42,7 @@ object HtmlMarkup extends Markup(
 
     // Nest HTML sections once the title ('h1') is removed.
     val nested: Xml.Element = result.setChildren(nestSections(result.getChildren))
-    (HtmlIr.normalize(nested), title)
+    Markup.Processed(HtmlIr.normalize(nested), title)
 
   // Wrap each HTML section at the top level in a 'div' with class 'section'.
   // Stamp `heading` on the title node. Transplant id from the header to the section.

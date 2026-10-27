@@ -22,7 +22,7 @@ final class GlossarySpec extends AnyFunSuite:
     MarkdownMarkup.convert(parse(MarkdownMarkup.xmlContent(source, File("t.md"))))
 
   private def fromDocBook(source: String): Xml.Element =
-    DocBookMarkup.process(parse(source), PageErrorReporter.Silent)._1
+    DocBookMarkup.process(parse(source), PageErrorReporter.Silent).body
 
   private def render(element: Xml.Element): String =
     HtmlXmlWriterConfig.render(element)

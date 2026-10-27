@@ -9,11 +9,11 @@ final class TeiMarkupSpec extends AnyFunSuite:
   private def parse(input: String): Xml.Element =
     XmlParser.parseXml(input).toOption.get
 
-  private def processResult(input: String): (Xml.Element, Option[Xml.Element]) =
+  private def processResult(input: String): Markup.Processed =
     TeiMarkup.process(parse(input), PageErrorReporter.Silent)
 
   private def process(input: String): Xml.Element =
-    processResult(input)._1
+    processResult(input).body
 
   private final class Reporter extends PageErrorReporter:
     var errors: Seq[(PageError.Kind, String)] = Seq.empty
@@ -26,7 +26,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
 
   private def processReporting(input: String): (Xml.Element, Reporter) =
     val reporter: Reporter = Reporter()
-    (TeiMarkup.process(parse(input), reporter)._1, reporter)
+    (TeiMarkup.process(parse(input), reporter).body, reporter)
 
   private def withHands(body: String): String =
     s"""<TEI><teiHeader><fileDesc><titleStmt/></fileDesc>
@@ -41,7 +41,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
     HtmlXmlWriterConfig.render(element).replaceAll("\\s+", " ").replace("= ", "=")
 
   test("titleStmt title is extracted as tei-title; teiHeader stays") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<TEI>
         |  <teiHeader><fileDesc><titleStmt>
         |    <title>Doc title</title>
@@ -61,7 +61,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("title type=main wins over a sibling title") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<TEI>
         |  <teiHeader><fileDesc><titleStmt>
         |    <title>Alt</title>
@@ -74,7 +74,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("empty titleStmt yields no document title") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<TEI>
         |  <teiHeader><fileDesc><titleStmt><author>?</author></titleStmt></fileDesc></teiHeader>
         |  <text><body><p>x</p></body></text>
@@ -84,7 +84,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("bibl title and body head are not the document title") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<TEI>
         |  <teiHeader><fileDesc><titleStmt><author>?</author></titleStmt></fileDesc></teiHeader>
         |  <text><body>
@@ -100,7 +100,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("title text does not insert a space before a comma after an inline name") {
-    val (_, title) = processResult(
+    val Markup.Processed(_, title) = processResult(
       """<collection>
         |  <title>О <orgName>секте</orgName> и <persName>Зальмане Боруховиче</persName>, и о</title>
         |</collection>""".stripMargin
@@ -112,10 +112,10 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("store and collection child title is extracted and stripped") {
-    val (store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
+    val Markup.Processed(store, storeTitle) = processResult("""<store><title>Fund 109</title><p>x</p></store>""")
     assert(storeTitle.exists(_.getText.contains("Fund 109")), render(store))
     assert(store.gather(el => Option.when(el.isNamed("tei-title") || el.isElement(XmlElement.Title))(el)).isEmpty, render(store))
-    val (collection, collectionTitle) = processResult("""<collection><title>Case 29</title><p>y</p></collection>""")
+    val Markup.Processed(collection, collectionTitle) = processResult("""<collection><title>Case 29</title><p>y</p></collection>""")
     assert(collectionTitle.exists(_.getText.contains("Case 29")), render(collection))
   }
 
@@ -353,7 +353,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("person has no document title") {
-    val (xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
+    val Markup.Processed(xml, title) = processResult("""<person><persName>Zalman</persName></person>""")
     assert(title.isEmpty, render(xml))
   }
 
@@ -366,7 +366,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("entityLists document title is the direct child; list title becomes tei-head") {
-    val (xml, title) = processResult(
+    val Markup.Processed(xml, title) = processResult(
       """<entityLists>
         |  <title>Имена</title>
         |  <listPerson n="jews" role="jew"><title>Жиды</title></listPerson>
@@ -393,7 +393,7 @@ final class TeiMarkupSpec extends AnyFunSuite:
   }
 
   test("entity list head is the list title and renders as tei-head") {
-    val (xml, _) = processResult(
+    val Markup.Processed(xml, _) = processResult(
       """<entityLists>
         |  <listPerson n="jews" role="jew"><head>Жиды</head></listPerson>
         |</entityLists>""".stripMargin
