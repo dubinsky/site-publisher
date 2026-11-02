@@ -61,8 +61,10 @@ object AsciiDocProse extends ProseFormatter:
     context(node) match
       case "dlist" =>
         node.asInstanceOf[DescriptionList].getItems.asScala.toList.flatMap: entry =>
-          val description: ListItem = entry.getDescription
-          reflow(description, body, options).toList ++ childNodes(description).flatMap(walk(_, body, options))
+          entry.getDescription match
+            case null => Nil
+            case description =>
+              reflow(description, body, options).toList ++ childNodes(description).flatMap(walk(_, body, options))
       case "ulist" | "olist" | "colist" =>
         childNodes(node).flatMap: item =>
           reflow(item, body, options).toList ++ childNodes(item).flatMap(walk(_, body, options))

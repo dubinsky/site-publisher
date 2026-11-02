@@ -119,6 +119,77 @@ final class AsciiDocProseSpec extends AnyFunSuite:
     assert(format(format(macros)) == macroOut)
   }
 
+  test("an empty description is left alone and a real one reflows") {
+    // Three trailing spaces on Spaced::. stripMargin keeps them.
+    val source: String =
+      """= Terms
+        |
+        |[glossary]
+        |[[Aba-Chonon]]Aba Chonon::
+        |[[ach]][.hebrew]#אַךְ#:: but, only. Next sentence.
+        |[[Achashverosh]]Achashverosh::
+        |Bare::
+        |Plain:: Hello world. Next sentence.
+        |Role:: See [.hebrew]#אַךְ בְּ# today. Next sentence.
+        |Term:: See note. NOTE: stay here.
+        |Spaced::   
+        |""".stripMargin
+    val once: String = format(source)
+    val expected: String =
+      "= Terms\n\n[glossary]\n" +
+        "[[Aba-Chonon]]Aba Chonon::\n" +
+        "[[ach]][.hebrew]#אַךְ#:: but, only.\n" +
+        (" " * 25) + "Next sentence.\n" +
+        "[[Achashverosh]]Achashverosh::\n" +
+        "Bare::\n" +
+        "Plain:: Hello world.\n" +
+        (" " * 8) + "Next sentence.\n" +
+        "Role:: See [.hebrew]#אַךְ בְּ# today.\n" +
+        (" " * 7) + "Next sentence.\n" +
+        "Term:: See note. NOTE: stay here.\n" +
+        "Spaced::   \n"
+    assert(once == expected)
+    assert(format(once) == once)
+    assert(structure(source) == structure(once))
+
+    val anchored: String = "[[ach]][.hebrew]#אַךְ#::\n"
+    assert(format(anchored) == anchored)
+    val named: String = "[[Aba]]Aba::\n"
+    assert(format(named) == named)
+    assert(format("Term:::\n") == "Term:::\n")
+    assert(format("Term::::\n") == "Term::::\n")
+    assert(format("Term;;\n") == "Term;;\n")
+    val nbsp: String = "Term::\n\u00a0\n"
+    assert(format(nbsp) == nbsp)
+
+    val narrowOptions: ProseOptions = ProseOptions(width = 20, sentencePerLine = false)
+    val narrowSource: String = "Plain:: Hello world next words here.\n"
+    val narrow: String = AsciiDocProse.format(narrowSource, narrowOptions) match
+      case Right(text) => text
+      case Left(failure) => fail(failure.reason)
+    val wrapped: String =
+      "Plain:: Hello world\n" +
+        (" " * 8) + "next words\n" +
+        (" " * 8) + "here.\n"
+    assert(narrow == wrapped)
+    assert(AsciiDocProse.format(narrow, narrowOptions) == Right(narrow))
+
+    val nested: String =
+      """Outer:: intro. More.
+        |+
+        |--
+        |Inner::
+        |--
+        |""".stripMargin
+    val nestedOnce: String = format(nested)
+    val nestedExpected: String =
+      "Outer:: intro.\n" +
+        (" " * 8) + "More.\n" +
+        "+\n--\nInner::\n--\n"
+    assert(nestedOnce == nestedExpected)
+    assert(format(nestedOnce) == nestedOnce)
+  }
+
   test("hebrew role text is kept when the span is broken") {
     val word = "[.hebrew]#בְּהַצְלָחָה#\n"
     val splitWord: String = format("[.hebrew]#בְּהַצְלָ\nחָה#\n")

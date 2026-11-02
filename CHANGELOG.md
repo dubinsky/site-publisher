@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Scanning continues, and the lexicon name is not used.
   An authored name is kept, and so is an `entityLists` `<title>`.
   A known term that has no plural in the site language still stops generation (`No plural for term …`).
+- fix: crash is a null description in AsciiDoc description list during pretty-printing.
 
 ## [0.9.0] - 2026-10-22
 
