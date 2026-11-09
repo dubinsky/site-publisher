@@ -413,8 +413,17 @@ object PageHeader:
   private def whoCell(page: MarkupPage, authors: Seq[Xml.Element]): Xml.Element =
     val value: Xml.Nodes = dirWhereKept(convertedNodes(page, joinedInner(authors)))
     val cell: Xml.Element = valueTd(value)
-    val names: Seq[Xml.Element] = value.flatMap(_.asElement)
-    val langs: Seq[Option[String]] = names.map(htmlLang)
+    // A text-only author is not an element. Groups are the `", "` joins, not the element list.
+    def groups(nodes: Xml.Nodes): Seq[Xml.Nodes] =
+      if nodes.isEmpty then Seq.empty
+      else
+        val (group, rest) = nodes.span(node => !node.asText.contains(nameJoin))
+        group +: (if rest.isEmpty then Seq.empty else groups(rest.drop(1)))
+    val langs: Seq[Option[String]] = groups(value).map: group =>
+      val found: Seq[Option[String]] = group.flatMap(_.asElement).map(htmlLang)
+      found.flatten.distinct match
+        case Seq(code) if found.forall(_.isDefined) => Some(code)
+        case _ => None
     if !containsLang(value) then page.withDocumentLang(cell)
     else langs.flatten.distinct match
       case Seq(code) if langs.forall(_.isDefined) => cell.set(XmlAttribute.Lang, code)
@@ -484,12 +493,14 @@ object PageHeader:
           Seq(el)
         case None => discardedChildren(el)
 
+  private val nameJoin: String = ", "
+
   private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
     val inners: Seq[Xml.Nodes] = elements.map(discardedChildren)
     inners match
       case Seq() => Seq.empty
       case Seq(one) => one
-      case many => many.reduce((left, right) => left ++ Seq(Xml.text(", ")) ++ right)
+      case many => many.reduce((left, right) => left ++ Seq(Xml.text(nameJoin)) ++ right)
 
   private def convertedNodes(page: Page, nodes: Xml.Nodes): Xml.Nodes =
     if nodes.isEmpty then Seq.empty

@@ -136,6 +136,11 @@ final class PageLanguageSpec extends AnyFunSuite:
       "he",
       body = "<p>mix</p>",
       authors = """<author xml:lang="sv"><persName>Sven</persName></author><author><persName>יעקב</persName></author>"""
+    ),
+    "col/who-text.xml" -> tei(
+      "he",
+      body = "<p>text names</p>",
+      authors = """<author xml:lang="he">יעקב</author><author>Шнеур</author>"""
     )
   )
 
@@ -298,7 +303,12 @@ final class PageLanguageSpec extends AnyFunSuite:
       val spanClose: Int = mixBody.indexOf("</span>", svenAt)
       assert(!mixBody.substring(spanAt, spanClose).contains("יעקב"), mixBody)
       assert(mixBody.contains("יעקב"), mixBody)
-      Seq(who, to, toSv, absSv, absP, mix).foreach: page =>
+      val textNames: String = html(target, "col/who-text.html")
+      val (textTag, textBody) = valueByHeading(textNames, "Кто")
+      assert(!textTag.contains("lang="), textTag)
+      assert(textBody.contains("יעקב"), textBody)
+      assert(textBody.contains("Шнеур"), textBody)
+      Seq(who, to, toSv, absSv, absP, mix, textNames).foreach: page =>
         openTags(page, """class="heading"""").foreach: tag =>
           assert(!tag.contains("""lang="he""""), tag)
       refuteLang(openTag(doc, """class="store-current""""))
