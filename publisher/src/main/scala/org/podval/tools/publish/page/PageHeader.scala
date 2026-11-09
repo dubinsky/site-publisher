@@ -424,7 +424,7 @@ object PageHeader:
       found.flatten.distinct match
         case Seq(code) if found.forall(_.isDefined) => Some(code)
         case _ => None
-    if !containsLang(value) then page.withDocumentLang(cell)
+    if !containsLang(value) then withUnmarkedDocumentLang(page, cell, value)
     else langs.flatten.distinct match
       case Seq(code) if langs.forall(_.isDefined) => cell.set(XmlAttribute.Lang, code)
       case _ => cell.setChildren(value.map: node =>
@@ -438,11 +438,46 @@ object PageHeader:
     val cell: Xml.Element = valueTd(value)
     value.flatMap(_.asElement) match
       case Seq(el) =>
-        htmlLang(el).fold(page.withDocumentLang(cell)): _ =>
+        htmlLang(el).fold(withUnmarkedDocumentLang(page, cell, value)): _ =>
           val directed: Xml.Node = withContentDir(el)
           cell.setChildren(value.map(node => if node.asElement.exists(_ eq el) then directed else node))
       case _ =>
-        if containsLang(value) then cell else page.withDocumentLang(cell)
+        if containsLang(value) then cell else withUnmarkedDocumentLang(page, cell, value)
+
+  /** An unmarked name in another script inherits the store header. Hebrew letters still take the document language. */
+  private def withUnmarkedDocumentLang(page: MarkupPage, cell: Xml.Element, nodes: Xml.Nodes): Xml.Element =
+    if Footnote.contentDir(page.lang) == "ltr" || hasDocumentScript(page.lang, visibleText(nodes)) then
+      page.withDocumentLang(cell)
+    else cell
+
+  private def visibleText(nodes: Xml.Nodes): String =
+    nodes.map(visibleTextNode).mkString
+
+  private def visibleTextNode(node: Xml.Node): String =
+    node.asText.orElse(node.asElement.map(el => visibleText(el.getChildren))).getOrElse("")
+
+  private def hasDocumentScript(code: String, text: String): Boolean =
+    val hit: Character.UnicodeBlock => Boolean = scriptOf(code)
+    def rest(text: String): Boolean =
+      if text.isEmpty then false
+      else
+        val cp: Int = text.codePointAt(0)
+        val block: Character.UnicodeBlock = Character.UnicodeBlock.of(cp)
+        (block != null && hit(block)) || rest(text.substring(Character.charCount(cp)))
+    rest(text)
+
+  private def scriptOf(code: String): Character.UnicodeBlock => Boolean =
+    val primary: String = code.takeWhile(_ != '-').toLowerCase
+    if primary == "he" || primary == "yi" then _.eq(Character.UnicodeBlock.HEBREW)
+    else if Set("ar", "ota", "fa").contains(primary) || code.contains("-Arab-AR") then arabicBlock
+    else _ => true
+
+  private def arabicBlock(block: Character.UnicodeBlock): Boolean =
+    block.eq(Character.UnicodeBlock.ARABIC) ||
+      block.eq(Character.UnicodeBlock.ARABIC_SUPPLEMENT) ||
+      block.eq(Character.UnicodeBlock.ARABIC_EXTENDED_A) ||
+      block.eq(Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_A) ||
+      block.eq(Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_B)
 
   /** Same string `copyContentLang` copies. Not `MarkupPage.languageCode`. */
   private def xmlLang(element: Xml.Element): Option[String] =

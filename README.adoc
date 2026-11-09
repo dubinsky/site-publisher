@@ -738,7 +738,8 @@ facsimile aside, backlinks, embedded-in, category members, page breaks, and the 
 direction; a note with `xml:lang` keeps that language and direction on its body.
 A note's `h1.page-title` carries the document language.
 On a collection document, Описание, Дата, Расшифровка, and Перевод do not carry the document language.
-Кто and Кому do, when the names have no `xml:lang`.
+Кто and Кому do, when the names have no `xml:lang` and are written in the document script.
+A name in another script inherits the header.
 A header element that has `xml:lang` still does.
 `l.store-current` still does not.
 Page breaks that sit together with no transcription between them, including a handwritten `fw` in that same gap, are one

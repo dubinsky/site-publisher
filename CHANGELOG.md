@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Page breaks with no transcription between them, including a gap `fw`, are one interface-direction block.
   A break inside a line stays in the line.
 - Editorial document-header rows inherit the store header.
-  Unmarked Кто and Кому keep the document language.
+  Unmarked Кто and Кому keep the document language when the name is in that script.
+  A name in another script inherits the store header.
   A discarded wrapper keeps its own `lang` and `dir`.
 - Document language stays on `text`, not on `div.page-body`.
   TEI footnote lists use the interface language.

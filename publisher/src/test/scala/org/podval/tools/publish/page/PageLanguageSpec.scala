@@ -141,6 +141,16 @@ final class PageLanguageSpec extends AnyFunSuite:
       "he",
       body = "<p>text names</p>",
       authors = """<author xml:lang="he">יעקב</author><author>Шнеур</author>"""
+    ),
+    "col/who-ru.xml" -> tei(
+      "he",
+      body = "<p>ru name</p>",
+      authors = """<author><persName ref="alter-rebbe">Шнеур Залман</persName></author>"""
+    ),
+    "col/to-ru.xml" -> tei(
+      "he",
+      body = "<p>ru to</p>",
+      profileExtra = """<correspAction type="received"><persName ref="Lopukhin">Лопухин</persName></correspAction>"""
     )
   )
 
@@ -308,7 +318,17 @@ final class PageLanguageSpec extends AnyFunSuite:
       assert(!textTag.contains("lang="), textTag)
       assert(textBody.contains("יעקב"), textBody)
       assert(textBody.contains("Шнеур"), textBody)
-      Seq(who, to, toSv, absSv, absP, mix, textNames).foreach: page =>
+      val whoRu: String = html(target, "col/who-ru.html")
+      val (whoRuTag, whoRuBody) = valueByHeading(whoRu, "Кто")
+      assert(!whoRuTag.contains("lang="), whoRuTag)
+      assert(whoRuBody.contains("Шнеур Залман"), whoRuBody)
+      assert(whoRuBody.contains("alter-rebbe"), whoRuBody)
+      val toRu: String = html(target, "col/to-ru.html")
+      val (toRuTag, toRuBody) = valueByHeading(toRu, "Кому")
+      assert(!toRuTag.contains("lang="), toRuTag)
+      assert(toRuBody.contains("Лопухин"), toRuBody)
+      assert(toRuBody.contains("href="), toRuBody)
+      Seq(who, to, toSv, absSv, absP, mix, textNames, whoRu, toRu).foreach: page =>
         openTags(page, """class="heading"""").foreach: tag =>
           assert(!tag.contains("""lang="he""""), tag)
       refuteLang(openTag(doc, """class="store-current""""))
