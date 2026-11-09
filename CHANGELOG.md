@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Editorial document-header rows inherit the store header.
+  Unmarked Кто and Кому keep the document language.
+  A discarded wrapper keeps its own `lang` and `dir`.
 - Document language stays on `text`, not on `div.page-body`.
   TEI footnote lists use the interface language.
   A note with `xml:lang` keeps `lang` and `dir` on its body.

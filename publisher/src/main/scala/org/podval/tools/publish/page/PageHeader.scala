@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.metadata.{Language, Name, Term, TermCatalog}
 import org.podval.store.Selector
-import org.podval.tools.publish.markup.{DocumentHeader, TeiMarkup}
+import org.podval.tools.publish.markup.{DocumentHeader, Footnote, TeiMarkup}
 import org.podval.tools.publish.site.{Messages, PageErrorReporter, Seo}
 import org.podval.tools.publish.util.Date
 import org.podval.xml.{Xml, XmlAttribute, XmlElement}
@@ -375,13 +375,16 @@ object PageHeader:
   private def documentHeaderTable(page: MarkupPage): Option[Xml.Element] =
     given Language.Spec = page.site.languageSpec
     page.doc.flatMap(_.documentHeader).filter(meta => !meta.isEmpty && isCollectionDocument(page)).flatMap: meta =>
+      val description: Xml.Element =
+        val cell: Xml.Element = valueTd(convertedNodes(page, meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)))
+        meta.description.flatMap(xmlLang).fold(cell)(cell.set(XmlAttribute.Lang, _))
       val rows: Seq[Xml.Element] = Seq(
-        headerRow(page, Messages.text("doc.description"), meta.description.fold(Seq.empty[Xml.Node])(_.getChildren)),
-        headerRow(page, Messages.text("doc.date"), dateCell(meta.date)),
-        headerRow(page, Messages.text("doc.who"), joinedInner(meta.authors)),
-        headerRow(page, Messages.text("doc.to"), meta.addressee.toSeq.map(el => el: Xml.Node)),
-        headerRow(page, Messages.text("doc.transcriber"), joinedInner(meta.transcribers)),
-        headerRow(page, Messages.text("doc.translation"), joinedInner(meta.translators))
+        headerRow(Messages.text("doc.description"), description),
+        headerRow(Messages.text("doc.date"), keptCell(page, dateCell(meta.date))),
+        headerRow(Messages.text("doc.who"), whoCell(page, meta.authors)),
+        headerRow(Messages.text("doc.to"), addresseeCell(page, meta.addressee)),
+        headerRow(Messages.text("doc.transcriber"), keptCell(page, joinedInner(meta.transcribers))),
+        headerRow(Messages.text("doc.translation"), keptCell(page, joinedInner(meta.translators)))
       ).flatten
       Option.when(rows.nonEmpty)(
         Xml.element(XmlElement.Table).addClass("document-header").setChildren(rows)
@@ -392,14 +395,76 @@ object PageHeader:
       collectorAncestors(page).exists(_.store.exists(_.isCollection))
 
   /** A line whose converted value has no text is omitted. `?` and other authored text stay. */
-  private def headerRow(page: MarkupPage, heading: String, nodes: Xml.Nodes): Option[Xml.Element] =
-    val value: Xml.Nodes = convertedNodes(page, nodes)
-    Option.when(hasVisibleContent(value))(
+  private def headerRow(heading: String, cell: Xml.Element): Option[Xml.Element] =
+    Option.when(hasVisibleContent(cell.getChildren))(
       Xml.element(XmlElement.Tr).setChildren(Seq(
         Xml.element(XmlElement.Td).addClass("heading").setText(heading),
-        page.withDocumentLang(Xml.element(XmlElement.Td).addClass("value").setChildren(value))
+        cell
       ))
     )
+
+  private def valueTd(nodes: Xml.Nodes): Xml.Element =
+    Xml.element(XmlElement.Td).addClass("value").setChildren(nodes)
+
+  /** Editorial cell. A kept `date`, or a span that replaced a discarded wrapper, is inline, so it needs `dir`. */
+  private def keptCell(page: Page, nodes: Xml.Nodes): Xml.Element =
+    valueTd(dirWhereKept(convertedNodes(page, nodes)))
+
+  private def whoCell(page: MarkupPage, authors: Seq[Xml.Element]): Xml.Element =
+    val value: Xml.Nodes = dirWhereKept(convertedNodes(page, joinedInner(authors)))
+    val cell: Xml.Element = valueTd(value)
+    val names: Seq[Xml.Element] = value.flatMap(_.asElement)
+    val langs: Seq[Option[String]] = names.map(htmlLang)
+    if !containsLang(value) then page.withDocumentLang(cell)
+    else langs.flatten.distinct match
+      case Seq(code) if langs.forall(_.isDefined) => cell.set(XmlAttribute.Lang, code)
+      case _ => cell.setChildren(value.map: node =>
+        node.asElement match
+          case Some(el) if !el.isNamed("span") => withContentDir(el)
+          case _ => node
+      )
+
+  private def addresseeCell(page: MarkupPage, addressee: Option[Xml.Element]): Xml.Element =
+    val value: Xml.Nodes = convertedNodes(page, addressee.toSeq.map(el => el: Xml.Node))
+    val cell: Xml.Element = valueTd(value)
+    value.flatMap(_.asElement) match
+      case Seq(el) =>
+        htmlLang(el).fold(page.withDocumentLang(cell)): _ =>
+          val directed: Xml.Node = withContentDir(el)
+          cell.setChildren(value.map(node => if node.asElement.exists(_ eq el) then directed else node))
+      case _ =>
+        if containsLang(value) then cell else page.withDocumentLang(cell)
+
+  /** Same string `copyContentLang` copies. Not `MarkupPage.languageCode`. */
+  private def xmlLang(element: Xml.Element): Option[String] =
+    element.get(XmlAttribute.XmlLang).map(_.trim).filter(_.nonEmpty)
+
+  private def htmlLang(element: Xml.Element): Option[String] =
+    element.get(XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty)
+
+  private def containsLang(nodes: Xml.Nodes): Boolean =
+    nodes.exists(node => node.asElement.exists(el => htmlLang(el).isDefined || containsLang(el.getChildren)))
+
+  /** Inline `lang` does not isolate. Direction is `Footnote.contentDir`. */
+  private def withContentDir(element: Xml.Element): Xml.Element =
+    htmlLang(element).fold(element)(code => element.set("dir", Footnote.contentDir(code)))
+
+  /** A discarded `author`, `editor`, or dateless `date` keeps its `xml:lang` on a span. */
+  private def discardedChildren(element: Xml.Element): Xml.Nodes =
+    xmlLang(element).fold(element.getChildren): code =>
+      Seq(Xml.element(XmlElement.Span).set(XmlAttribute.XmlLang, code).setChildren(element.getChildren))
+
+  private def dirWhereKept(nodes: Xml.Nodes): Xml.Nodes =
+    def walk(nodes: Xml.Nodes): Xml.Nodes =
+      nodes.map(node => node.asElement.fold(node) { el =>
+        val walked: Xml.Element = el.setChildren(walk(el.getChildren))
+        xmlLang(walked) match
+          case Some(code) if walked.isNamed("span") =>
+            walked.set(XmlAttribute.Lang, code).set("dir", Footnote.contentDir(code))
+          case _ if walked.isNamed("date") => withContentDir(walked)
+          case _ => walked
+      })
+    walk(nodes)
 
   private def hasVisibleContent(nodes: Xml.Nodes): Boolean =
     nodes.exists(hasVisibleNode)
@@ -417,10 +482,10 @@ object PageHeader:
         case Some(when) => Seq(el.setChildren(Seq(Xml.text(when)) ++ notes))
         case None if Seq("from", "to", "notBefore", "notAfter").exists(name => present(name).isDefined) =>
           Seq(el)
-        case None => el.getChildren
+        case None => discardedChildren(el)
 
   private[page] def joinedInner(elements: Seq[Xml.Element]): Xml.Nodes =
-    val inners: Seq[Xml.Nodes] = elements.map(_.getChildren)
+    val inners: Seq[Xml.Nodes] = elements.map(discardedChildren)
     inners match
       case Seq() => Seq.empty
       case Seq(one) => one

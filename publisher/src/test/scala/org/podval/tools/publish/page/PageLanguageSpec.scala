@@ -26,17 +26,21 @@ final class PageLanguageSpec extends AnyFunSuite:
         |<pb n="000-2" missing="true"/>
         |<p>hebrew <foreign xml:lang="sv">svensk</foreign> <code lang="scala">map</code></p>
         |<p><date when="1798-08-11">11 августа 1798</date></p>
-        |""".stripMargin
+        |""".stripMargin,
+    abstractXml: String = "<abstract>A leaf</abstract>",
+    authors: String = "",
+    profileExtra: String = ""
   ): String =
     val fence: String =
       if frontMatter.isEmpty then ""
       else s"---\n$frontMatter---\n"
+    val extra: String = if profileExtra.isEmpty then "" else s"\n      $profileExtra"
     s"""$fence<TEI>
        |  <teiHeader>
-       |    <fileDesc><titleStmt><title>Leaf</title></titleStmt></fileDesc>
+       |    <fileDesc><titleStmt><title>Leaf</title>$authors</titleStmt></fileDesc>
        |    <profileDesc>
-       |      <abstract>A leaf</abstract>
-       |      <creation><date when="1798-08-11">11 августа 1798</date></creation>
+       |      $abstractXml
+       |      <creation><date when="1798-08-11">11 августа 1798</date></creation>$extra
        |    </profileDesc>
        |  </teiHeader>
        |  <text xml:lang="$lang"$extraTextAttrs><body>
@@ -102,7 +106,37 @@ final class PageLanguageSpec extends AnyFunSuite:
     ),
     "col/disagree.xml" -> tei("ru", frontMatter = "lang: en\n"),
     "col/agree.xml" -> tei("ru", frontMatter = "lang: ru\n", body = "<p>agreed</p>"),
-    "col/attrs.xml" -> tei("ru", extraTextAttrs = """ lang="he"""", body = "<p>both</p>")
+    "col/attrs.xml" -> tei("ru", extraTextAttrs = """ lang="he"""", body = "<p>both</p>"),
+    "col/who.xml" -> tei(
+      "he",
+      body = "<p>names</p>",
+      authors = "<author><persName>יעקב</persName></author><author><persName>שמואל</persName></author>"
+    ),
+    "col/to.xml" -> tei(
+      "he",
+      body = "<p>to</p>",
+      profileExtra = """<correspAction type="received"><persName ref="Нохим_Ицкович">נחום</persName></correspAction>"""
+    ),
+    "col/to-sv.xml" -> tei(
+      "he",
+      body = "<p>to sv</p>",
+      profileExtra = """<correspAction type="received"><persName xml:lang="sv" ref="Sven_ref">Sven</persName></correspAction>"""
+    ),
+    "col/abs-sv.xml" -> tei(
+      "he",
+      body = "<p>abs</p>",
+      abstractXml = """<abstract xml:lang="sv">Ett blad</abstract>"""
+    ),
+    "col/abs-p.xml" -> tei(
+      "he",
+      body = "<p>abs p</p>",
+      abstractXml = """<abstract><p xml:lang="sv">Svensk mening</p></abstract>"""
+    ),
+    "col/who-mix.xml" -> tei(
+      "he",
+      body = "<p>mix</p>",
+      authors = """<author xml:lang="sv"><persName>Sven</persName></author><author><persName>יעקב</persName></author>"""
+    )
   )
 
   private def withFiles(sources: Map[String, String])(body: (Site, File) => Unit): Unit =
@@ -157,6 +191,19 @@ final class PageLanguageSpec extends AnyFunSuite:
     val end: Int = page.indexOf(">", start)
     page.substring(start, end + 1)
 
+  private def valueByHeading(page: String, heading: String): (String, String) =
+    val at: Int = page.indexOf(s">$heading<")
+    assert(at >= 0, s"missing heading $heading")
+    val valueAt: Int = page.indexOf("""class="value"""", at)
+    assert(valueAt > at, heading)
+    val start: Int = page.lastIndexOf("<", valueAt)
+    val tagEnd: Int = page.indexOf(">", valueAt)
+    val tag: String = page.substring(start, tagEnd + 1)
+    val nextHeading: Int = page.indexOf("""class="heading"""", tagEnd)
+    val tableEnd: Int = page.indexOf("</table>", tagEnd)
+    val end: Int = Seq(nextHeading, tableEnd).filter(_ >= 0).min
+    (tag, page.substring(tagEnd + 1, end))
+
   private def assertWrapped(page: String, text: String): Unit =
     val header: Int = page.indexOf("""class="store-header"""")
     val at: Int = page.indexOf(text, header)
@@ -203,10 +250,57 @@ final class PageLanguageSpec extends AnyFunSuite:
       val marked: String = tagBefore(doc, "עברית", listAt)
       assert(marked.contains("""lang="he""""), marked)
       assert(marked.contains("""dir="rtl""""), marked)
-      openTags(doc, """class="value"""").foreach: tag =>
-        assert(tag.contains("""lang="he""""), tag)
+      Seq("Описание", "Дата").foreach: heading =>
+        val (tag, body) = valueByHeading(doc, heading)
+        assert(heading != "Описание" || body.contains("A leaf"), body)
+        assert(!tag.contains("""lang="he""""), tag)
+        assert(!body.contains("""lang="he""""), s"$heading $body")
       openTags(doc, """class="heading"""").foreach: tag =>
         assert(!tag.contains("""lang="he""""), tag)
+      val who: String = html(target, "col/who.html")
+      val (whoTag, whoBody) = valueByHeading(who, "Кто")
+      assert(whoTag.contains("""lang="he""""), whoTag)
+      assert(whoBody.contains("יעקב</persName>, <persName>שמואל"), whoBody)
+      assert(!whoBody.contains("<span"), whoBody)
+      val to: String = html(target, "col/to.html")
+      val (toTag, toBody) = valueByHeading(to, "Кому")
+      assert(toTag.contains("""lang="he""""), toTag)
+      assert(toBody.contains("<a"), toBody)
+      assert(toBody.contains("Нохим_Ицкович"), toBody)
+      assert(!toBody.contains("<span"), toBody)
+      val toSv: String = html(target, "col/to-sv.html")
+      val (toSvTag, toSvBody) = valueByHeading(toSv, "Кому")
+      assert(!toSvTag.contains("""lang="he""""), toSvTag)
+      val toSvName: String = openTag(toSvBody, "Sven")
+      assert(toSvName.startsWith("<a"), toSvName)
+      assert(toSvName.contains("""dir="ltr""""), toSvName)
+      assert(!toSvBody.contains("<span"), toSvBody)
+      val absSv: String = html(target, "col/abs-sv.html")
+      val (absTag, _) = valueByHeading(absSv, "Описание")
+      assert(absTag.contains("""lang="sv""""), absTag)
+      assert(!absTag.contains("""lang="he""""), absTag)
+      val absP: String = html(target, "col/abs-p.html")
+      val (absPTag, absPBody) = valueByHeading(absP, "Описание")
+      assert(!absPTag.contains("""lang="he""""), absPTag)
+      val pTag: String = openTag(absPBody, "Svensk")
+      assert(pTag.startsWith("<tei-p"), pTag)
+      assert(pTag.contains("""lang="sv""""), pTag)
+      val mix: String = html(target, "col/who-mix.html")
+      val (mixTag, mixBody) = valueByHeading(mix, "Кто")
+      assert(!mixTag.contains("""lang="he""""), mixTag)
+      val svenAt: Int = mixBody.indexOf("Sven")
+      assert(svenAt >= 0, mixBody)
+      val spanAt: Int = mixBody.lastIndexOf("<span", svenAt)
+      assert(spanAt >= 0, mixBody)
+      val spanTag: String = mixBody.substring(spanAt, mixBody.indexOf(">", spanAt) + 1)
+      assert(spanTag.contains("""lang="sv""""), spanTag)
+      assert(spanTag.contains("""dir="ltr""""), spanTag)
+      val spanClose: Int = mixBody.indexOf("</span>", svenAt)
+      assert(!mixBody.substring(spanAt, spanClose).contains("יעקב"), mixBody)
+      assert(mixBody.contains("יעקב"), mixBody)
+      Seq(who, to, toSv, absSv, absP, mix).foreach: page =>
+        openTags(page, """class="heading"""").foreach: tag =>
+          assert(!tag.contains("""lang="he""""), tag)
       refuteLang(openTag(doc, """class="store-current""""))
       assert(!doc.contains("""class="page-title""""), doc)
       val breaks: Seq[String] = openTags(doc, """class="pb"""")

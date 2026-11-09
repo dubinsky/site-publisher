@@ -737,7 +737,10 @@ facsimile aside, backlinks, embedded-in, category members, page breaks, and the 
 `div.page-body` does not carry the document language; `text` does; TEI footnote lists carry the interface language and
 direction; a note with `xml:lang` keeps that language and direction on its body.
 A note's `h1.page-title` carries the document language.
-On a collection document the value cells do, and `l.store-current` does not.
+On a collection document, Описание, Дата, Расшифровка, and Перевод do not carry the document language.
+Кто and Кому do, when the names have no `xml:lang`.
+A header element that has `xml:lang` still does.
+`l.store-current` still does not.
 A store title and a store body are wrapped so the selector word stays in the interface language.
 `span.store-name` keeps the language of the name.
 The page header (`.store-header`) holds one ancestor path (`nav.store-path`) and this node's selector + name + title as
