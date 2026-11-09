@@ -146,3 +146,42 @@ object Pb:
     value.exists: v =>
       val t: String = v.trim
       t == "true" || t == "1"
+
+  /** After harvest. Children are walked first, so the new `div` is not grouped again. */
+  private[publish] def groupRuns(xml: Xml.Element, chrome: Option[(String, String)]): Xml.Element =
+    val structural: Set[String] = Set(
+      "TEI", "text", "tei-body", "div", "lg", "opener", "closer", "postscript",
+      "argument", "epigraph", "trailer", "ab", "sp"
+    )
+
+    def walk(element: Xml.Element): Xml.Element =
+      val children: Seq[Xml.Node] = element.getChildren.map: node =>
+        node.asElement.fold(node)(walk)
+      if element.getName.localNameIn(structural) then element.setChildren(pack(children))
+      else element.setChildren(children)
+
+    def pack(nodes: Seq[Xml.Node]): Seq[Xml.Node] =
+      val (packed, pending) =
+        nodes.foldLeft((Vector.empty[Xml.Node], Vector.empty[Xml.Node])): (state, node) =>
+          val (acc, gap) = state
+          if isGap(node) then (acc, gap :+ node)
+          else (acc ++ close(gap) :+ node, Vector.empty)
+      packed ++ close(pending)
+
+    def close(gap: Seq[Xml.Node]): Seq[Xml.Node] =
+      if gap.exists(_.asElement.exists(isBreak)) then
+        Seq(withChrome(Xml.element(XmlElement.Div).addClass("pb-run").setChildren(gap), chrome))
+      else gap
+
+    def isGap(node: Xml.Node): Boolean = node.asElement match
+      case None => node.isWhitespace
+      case Some(element) =>
+        isBreak(element) ||
+          element.isNamed("fw") ||
+          element.hasClass("footnote-link") ||
+          (element.isElement(XmlElement.Span) && element.hasClass("hand-ref") &&
+            (element.childElements.filterNot(_.hasClass("hand-tip")) match
+              case Seq(only) => only.isNamed("fw")
+              case _ => false))
+
+    walk(xml)

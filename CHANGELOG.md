@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Page breaks with no transcription between them, including a gap `fw`, are one interface-direction block.
+  A break inside a line stays in the line.
 - Editorial document-header rows inherit the store header.
   Unmarked Кто and Кому keep the document language.
   A discarded wrapper keeps its own `lang` and `dir`.

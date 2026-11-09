@@ -294,6 +294,10 @@ a.pb {
     white-space: nowrap;
 }
 
+div.pb-run {
+    margin: 0.75em 0;
+}
+
 a.pb:hover {
     text-decoration: none;
 }

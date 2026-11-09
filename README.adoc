@@ -741,6 +741,10 @@ On a collection document, Описание, Дата, Расшифровка, an
 Кто and Кому do, when the names have no `xml:lang`.
 A header element that has `xml:lang` still does.
 `l.store-current` still does not.
+Page breaks that sit together with no transcription between them, including a handwritten `fw` in that same gap, are one
+block in the interface direction.
+A page break inside a line of the transcription stays in that line.
+The icon and the folio label stay one unit, and the in-line mark stays left-to-right.
 A store title and a store body are wrapped so the selector word stays in the interface language.
 `span.store-name` keeps the language of the name.
 The page header (`.store-header`) holds one ancestor path (`nav.store-path`) and this node's selector + name + title as

@@ -1,7 +1,7 @@
 package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{Bibliography, BibliographyItem, Citation, DocumentHeader, Facsimile,
-  Footnote, Glossary, Ids, Link, LinkKind, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
+  Footnote, Glossary, Ids, Link, LinkKind, Pb, Section, Tip, Toc, Transclusion, WikiBlocks, WikiLink}
 import org.podval.tools.publish.site.{PageError, PageErrorReporter}
 import org.podval.tools.publish.util.IdGenerator
 import org.podval.xml.Xml
@@ -88,12 +88,13 @@ object PageContent:
     // Footnote *links* stay in the tree; bodies are harvested then stripped.
     val ids: IdGenerator = IdGenerator("_generated_id")
     val prepared: Xml.Element = xmlProcessed.transform(prepareElement(_, source, ids))
-    val (footnotes: Map[String, Footnote], result: Xml.Element) =
+    val (footnotes: Map[String, Footnote], stripped: Xml.Element) =
       try Footnote.harvest(prepared)
       catch case e: IllegalStateException =>
         throw IllegalStateException(s"${source.sourcePath}: ${e.getMessage}", e)
+    val grouped: Xml.Element = Pb.groupRuns(stripped, source.interfaceChrome)
 
-    val glossaryDefinitions: Map[String, Xml.Nodes] = Glossary.definitions(result)
+    val glossaryDefinitions: Map[String, Xml.Nodes] = Glossary.definitions(grouped)
     // Stores are not bound yet, so a TEI root keeps the direct teiHeader apart.
     // Footnote bodies are on `published`, so the with-header fold sees them too.
     var fromNotes: NodeFeatures = NodeFeatures.empty
@@ -108,22 +109,22 @@ object PageContent:
             recordCitations = true
           ))
     val published: NodeFeatures =
-      NodeFeatures.scan(result, skipDirectHeader = true, recordCitations = true).union(fromNotes)
+      NodeFeatures.scan(grouped, skipDirectHeader = true, recordCitations = true).union(fromNotes)
     val teiHeaderOnly: NodeFeatures =
-      if !result.isNamed("TEI") then NodeFeatures.empty
+      if !grouped.isNamed("TEI") then NodeFeatures.empty
       else NodeFeatures.fromElements(
-        result.childElements.filter(_.isNamed("teiHeader")).toSeq,
+        grouped.childElements.filter(_.isNamed("teiHeader")).toSeq,
         recordCitations = true
       )
 
     new Content.Prepared(
-      xml = result,
-      toc = Toc(result, source),
-      ids = Ids(result),
-      blocks = WikiBlocks(result, source),
+      xml = grouped,
+      toc = Toc(grouped, source),
+      ids = Ids(grouped),
+      blocks = WikiBlocks(grouped, source),
       footnotes = footnotes,
       glossaryDefinitions = glossaryDefinitions,
-      bibliographyDefinitions = BibliographyItem.definitions(result),
+      bibliographyDefinitions = BibliographyItem.definitions(grouped),
       localFeatures = LocalFeatures(
         glossary = glossaryDefinitions.nonEmpty || footnoteGlossary,
         published = published,

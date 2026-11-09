@@ -15,6 +15,13 @@ final class TeiMarkupSpec extends AnyFunSuite:
   private def process(input: String): Xml.Element =
     processResult(input).body
 
+  private def grouped(input: String): Xml.Element =
+    val (_, stripped) = Footnote.harvest(process(input))
+    Pb.groupRuns(stripped, None)
+
+  private def pbRuns(xml: Xml.Element): Seq[Xml.Element] =
+    xml.gather(el => Option.when(el.hasClass("pb-run"))(el)).toSeq
+
   private final class Reporter extends PageErrorReporter:
     var errors: Seq[(PageError.Kind, String)] = Seq.empty
     override def error(
@@ -280,6 +287,112 @@ final class TeiMarkupSpec extends AnyFunSuite:
     assert(!blankAttr(dumped, "p4"), dumped)
     assert(dumped.contains("""id="pheader""""), dumped)
     assert(!blankAttr(dumped, "pheader"), dumped)
+  }
+
+  test("body-level page breaks with a gap fw are one pb-run, and a break in a line is not") {
+    val xml: Xml.Element = grouped(
+      """<TEI><text><body>
+        |<pb n="1"/><pb n="2"/>
+        |<p>between</p>
+        |<pb n="3"/><fw type="pageNum">3</fw><pb n="4"/>
+        |</body></text></TEI>""".stripMargin
+    )
+    val dumped: String = render(xml)
+    val runs: Seq[Xml.Element] = pbRuns(xml)
+    assert(runs.size == 2, dumped)
+    assert(runs.forall(run => run.isElement(XmlElement.Div) && run.getClasses == Seq("pb-run")), dumped)
+    assert(!runs.head.childElements.exists(_.isNamed("fw")), dumped)
+    assert(runs(1).childElements.exists(el => el.isNamed("fw") && el.getText.contains("3")), dumped)
+    assert(runs.forall(_.childElements.count(Pb.isBreak) == 2), dumped)
+
+    val one: Xml.Element = grouped(
+      """<TEI><text><body><p>before</p><pb n="9"/></body></text></TEI>"""
+    )
+    val oneRuns: Seq[Xml.Element] = pbRuns(one)
+    assert(oneRuns.size == 1, render(one))
+    assert(oneRuns.head.childElements.count(Pb.isBreak) == 1, render(one))
+
+    val line: Xml.Element = grouped(
+      """<TEI><text><body>
+        |<l><pb n="150-1"/> <fw type="pageNum">150</fw> words</l>
+        |<p><pb n="5"/> <fw type="docNum">x</fw> more words</p>
+        |</body></text></TEI>""".stripMargin
+    )
+    val lineDumped: String = render(line)
+    assert(!lineDumped.contains("pb-run"), lineDumped)
+    val verse: Xml.Element = line.gather(el => Option.when(el.isNamed("l"))(el)).head
+    assert(verse.childElements.exists(Pb.isBreak), lineDumped)
+    assert(verse.childElements.exists(_.isNamed("fw")), lineDumped)
+    assert(verse.getText.contains("words"), lineDumped)
+    val para: Xml.Element = line.gather(el => Option.when(el.isNamed("tei-p"))(el)).head
+    assert(para.childElements.exists(Pb.isBreak), lineDumped)
+    assert(para.childElements.exists(_.isNamed("fw")), lineDumped)
+    assert(para.getText.contains("more words"), lineDumped)
+
+    val handed: Xml.Element = grouped(withHands(
+      """<pb n="1"/><fw type="pageNum" hand="#pencilHand">150</fw><pb n="2"/>"""
+    ))
+    val handDumped: String = render(handed)
+    val handRuns: Seq[Xml.Element] = pbRuns(handed)
+    assert(handRuns.size == 1, handDumped)
+    assert(handRuns.head.childElements.exists(_.hasClass("hand-ref")), handDumped)
+    val fw: Xml.Element = handRuns.head.gather(el => Option.when(el.isNamed("fw"))(el)).head
+    assert(fw.getText.contains("150"), handDumped)
+    assert(fw.get("lang").isEmpty, handDumped)
+    assert(fw.get("dir").isEmpty, handDumped)
+  }
+
+  test("a footnote body between breaks is two pb-runs before harvest and one after") {
+    val xml: Xml.Element = process(
+      """<TEI><text><body>
+        |<pb n="1"/>
+        |<note place="end">note</note>
+        |<pb n="2"/>
+        |</body></text></TEI>""".stripMargin
+    )
+    val before: Seq[Xml.Element] = pbRuns(Pb.groupRuns(xml, None))
+    assert(before.size == 2, render(xml))
+    val (_, stripped) = Footnote.harvest(xml)
+    val after: Seq[Xml.Element] = pbRuns(Pb.groupRuns(stripped, None))
+    assert(after.size == 1, render(stripped))
+    assert(after.head.childElements.count(Pb.isBreak) == 2, render(stripped))
+    assert(after.head.childElements.exists(_.hasClass("footnote-link")), render(stripped))
+  }
+
+  test("pb-run takes interface chrome, and each break keeps its own") {
+    val reporter: PageErrorReporter = new PageErrorReporter:
+      override def error(
+        kind: PageError.Kind,
+        message: String,
+        cause: Option[Throwable] = None
+      ): Unit = ()
+      override def interfaceChrome: Option[(String, String)] = Some(("ru", "ltr"))
+    val processed: Xml.Element = TeiMarkup.process(parse(
+      """<TEI><text xml:lang="he"><body><pb n="1"/><fw type="pageNum">1</fw><pb n="2"/></body></text></TEI>"""
+    ), reporter).body
+    val (_, stripped) = Footnote.harvest(processed)
+    val xml: Xml.Element = Pb.groupRuns(stripped, reporter.interfaceChrome)
+    val dumped: String = render(xml)
+    val run: Xml.Element = pbRuns(xml).head
+    assert(run.isElement(XmlElement.Div) && run.getClasses == Seq("pb-run"), dumped)
+    assert(run.get("lang").contains("ru"), dumped)
+    assert(run.get("dir").contains("ltr"), dumped)
+    val breaks: Seq[Xml.Element] = run.childElements.filter(Pb.isBreak)
+    assert(breaks.size == 2, dumped)
+    breaks.foreach: element =>
+      assert(element.get("lang").contains("ru"), dumped)
+      assert(element.get("dir").contains("ltr"), dumped)
+    val fw: Xml.Element = run.childElements.find(_.isNamed("fw")).get
+    assert(fw.get("lang").isEmpty, dumped)
+    assert(fw.get("dir").isEmpty, dumped)
+
+    val same: Xml.Element = grouped(
+      """<TEI><text xml:lang="ru"><body><pb n="1"/></body></text></TEI>"""
+    )
+    val plain: Xml.Element = pbRuns(same).head
+    assert(plain.isElement(XmlElement.Div), render(same))
+    assert(plain.get("lang").isEmpty, render(same))
+    assert(plain.get("dir").isEmpty, render(same))
   }
 
   private def blankAttr(page: String, id: String): Boolean =
