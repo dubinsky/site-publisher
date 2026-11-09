@@ -39,6 +39,8 @@ final class ChunkedMarkupPage(
   override protected def extraLibraries: List[js.JSLibrary] =
     Option.when(markupPage.doc.exists(_.publishesTei))(js.CitationCopy).toList
 
+  override protected def proseOwner: MarkupPage = markupPage
+
   override protected def formatSourcePage: Option[FullMarkupPage] = Some(markupPage)
   override protected def formatIsChunked: Boolean = true
 

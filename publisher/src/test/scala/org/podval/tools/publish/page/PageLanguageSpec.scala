@@ -53,7 +53,9 @@ final class PageLanguageSpec extends AnyFunSuite:
         |title: A note
         |lang: he
         |---
-        |See [leaf](/col/000.html).
+        |See [leaf](/col/000.html).[^he]
+        |
+        |[^he]: הערה
         |""".stripMargin,
     "col.xml" ->
       """---
@@ -66,7 +68,31 @@ final class PageLanguageSpec extends AnyFunSuite:
         |  <body><p>Shelf body</p></body>
         |</collection>
         |""".stripMargin,
-    "col/000.xml" -> tei("he"),
+    "col/000.xml" -> tei(
+      "he",
+      body =
+        """<pb n="000-1"/>
+          |<pb n="000-2" missing="true"/>
+          |<p>hebrew <foreign xml:lang="sv">svensk</foreign> <code lang="scala">map</code></p>
+          |<p><date when="1798-08-11">11 августа 1798</date></p>
+          |<note place="end">plain note</note>
+          |<note place="end" xml:lang="he">עברית</note>
+          |""".stripMargin
+    ),
+    "letter.xml" ->
+      """---
+        |chunk: true
+        |---
+        |<TEI>
+        |  <teiHeader>
+        |    <fileDesc><titleStmt><title>Letter</title></titleStmt></fileDesc>
+        |  </teiHeader>
+        |  <text xml:lang="he"><body>
+        |    <div xml:lang="fr"><head>French</head><p>bonjour</p></div>
+        |    <div><head>Bare</head><p>words</p></div>
+        |  </body></text>
+        |</TEI>
+        |""".stripMargin,
     "col/equal.xml" -> tei(
       "ru",
       body =
@@ -124,6 +150,13 @@ final class PageLanguageSpec extends AnyFunSuite:
   private def refuteLang(tag: String): Unit =
     assert(!tag.contains("lang="), tag)
 
+  private def tagBefore(page: String, text: String, from: Int): String =
+    val at: Int = page.indexOf(text, from)
+    assert(at >= 0, text)
+    val start: Int = page.lastIndexOf("<span", at)
+    val end: Int = page.indexOf(">", start)
+    page.substring(start, end + 1)
+
   private def assertWrapped(page: String, text: String): Unit =
     val header: Int = page.indexOf("""class="store-header"""")
     val at: Int = page.indexOf(text, header)
@@ -157,7 +190,19 @@ final class PageLanguageSpec extends AnyFunSuite:
       assertInterface(openTag(doc, """class="facsimile-aside""""))
       assert(doc.contains("""class="backlinks""""), doc)
       assertInterface(openTag(doc, """class="backlinks""""))
-      assert(openTag(doc, """class="page-body"""").contains("""lang="he""""), doc)
+      refuteLang(openTag(doc, """class="page-body""""))
+      assert(openTag(doc, "<text").contains("""lang="he""""), doc)
+      val notes: String = openTag(doc, """class="footnotes"""")
+      assert(notes.contains("""lang="ru""""), notes)
+      assert(notes.contains("""dir="ltr""""), notes)
+      val listAt: Int = doc.indexOf("""class="footnotes"""")
+      val plain: String = tagBefore(doc, "plain note", listAt)
+      assert(plain.contains("""class="footnote""""), plain)
+      assert(!plain.contains("lang="), plain)
+      assert(!plain.contains("dir="), plain)
+      val marked: String = tagBefore(doc, "עברית", listAt)
+      assert(marked.contains("""lang="he""""), marked)
+      assert(marked.contains("""dir="rtl""""), marked)
       openTags(doc, """class="value"""").foreach: tag =>
         assert(tag.contains("""lang="he""""), tag)
       openTags(doc, """class="heading"""").foreach: tag =>
@@ -186,6 +231,26 @@ final class PageLanguageSpec extends AnyFunSuite:
       assertInterface(openTag(note, """class="page-header""""))
       assert(openTag(note, """class="page-title"""").contains("""lang="he""""), note)
       assert(!note.contains("""class="store-header""""), note)
+      refuteLang(openTag(note, """class="page-body""""))
+      val noteBodyEnd: Int = note.indexOf(">", note.indexOf("""class="page-body""""))
+      val contentStart: Int = note.indexOf("<", noteBodyEnd + 1)
+      val contentRoot: String = note.substring(contentStart, note.indexOf(">", contentStart) + 1)
+      assert(contentRoot.contains("""lang="he""""), contentRoot)
+      val mdNotes: String = openTag(note, """class="footnotes"""")
+      assert(!mdNotes.contains("""lang="ru""""), mdNotes)
+      assert(!mdNotes.contains("dir="), mdNotes)
+
+      val french: String = html(target, "letter/French.html")
+      assert(openTag(french, "<html").contains("""<html lang="ru""""), french)
+      val frenchSection: String = openTag(french, """class="section"""")
+      assert(frenchSection.contains(""" lang="fr""""), frenchSection)
+      assert(!frenchSection.contains(""" lang="he""""), frenchSection)
+      val bare: String = html(target, "letter/Bare.html")
+      val bareHtml: String = openTag(bare, "<html")
+      assert(bareHtml.contains("""<html lang="ru""""), bareHtml)
+      assert(!bareHtml.contains("""lang="he""""), bareHtml)
+      val bareSection: String = openTag(bare, """class="section"""")
+      assert(bareSection.contains(""" lang="he""""), bareSection)
 
       val store: String = html(target, "col/index.html")
       assert(openTag(store, "<html").contains("""lang="he""""), store)

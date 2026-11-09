@@ -733,7 +733,9 @@ An `xml:lang` on a content element is also an HTML `lang` on that element.
 `<code lang>` is the highlight language (`tei-lang`), not HTML `lang`.
 When the document language and the interface language differ, the site header and footer, the page or store header, the
 facsimile aside, backlinks, embedded-in, category members, page breaks, and the date tip carry the interface `lang` and
-`dir`, and `div.page-body` carries the document `lang`.
+`dir`.
+`div.page-body` does not carry the document language; `text` does; TEI footnote lists carry the interface language and
+direction; a note with `xml:lang` keeps that language and direction on its body.
 A note's `h1.page-title` carries the document language.
 On a collection document the value cells do, and `l.store-current` does not.
 A store title and a store body are wrapped so the selector word stays in the interface language.

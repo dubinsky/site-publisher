@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Document language stays on `text`, not on `div.page-body`.
+  TEI footnote lists use the interface language.
+  A note with `xml:lang` keeps `lang` and `dir` on its body.
 - A bad `ref` and `plural="yes"` on a store or an `entityLists` catalog is a `bad label` error (`/errors.html#bad-label`).
   The messages are `plural without ref`, `ref without plural`, `ref with names`, and `Unknown term: …`.
   Scanning continues, and the lexicon name is not used.

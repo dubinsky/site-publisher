@@ -935,7 +935,8 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(listing.contains("store-name"), listing)
     assert(listing.contains("Stores Fixture"), listing)
     assert(!htmlOpen(listing).contains("""class="wide""""), htmlOpen(listing))
-    val postContent: String = listing.substring(listing.indexOf("page-body"))
+    // The class, not the substring: a branch name in the GitHub link can contain "page-body".
+    val postContent: String = listing.substring(listing.indexOf("""class="page-body""""))
     assert(!postContent.contains("Stores Fixture"), postContent)
     assert(!postContent.contains("store-name"), postContent)
     assert(!postContent.contains("store-by"), postContent)

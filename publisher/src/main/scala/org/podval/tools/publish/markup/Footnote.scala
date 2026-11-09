@@ -67,7 +67,16 @@ object Footnote:
     nodes: Xml.Nodes,
     parentBodyId: Option[String] = None
   ): Footnote =
-    Footnote(correlationId, number, nodes, scope, parentBodyId, footnote.authoredMarker, footnote.series)
+    Footnote(
+      correlationId,
+      number,
+      nodes,
+      scope,
+      parentBodyId,
+      footnote.authoredMarker,
+      footnote.series,
+      footnote.contentLang
+    )
 
   def letterLabel(index0: Int): String =
     val q: Int = index0 / 26
@@ -96,18 +105,27 @@ object Footnote:
     correlationId: String,
     content: Xml.Nodes,
     marker: Option[String] = None,
-    series: FootnoteSeries = FootnoteSeries.End
-  ): Xml.Element = putMarker(
-    markSeries(
-      Xml
-        .element(XmlElement.Span)
-        .add(BodyClass)
-        .set(CorrelationId, correlationId)
-        .setChildren(content),
-      series
-    ),
-    marker
-  )
+    series: FootnoteSeries = FootnoteSeries.End,
+    contentLang: Option[String] = None
+  ): Xml.Element =
+    val span: Xml.Element = Xml
+      .element(XmlElement.Span)
+      .add(BodyClass)
+      .set(CorrelationId, correlationId)
+      .setChildren(content)
+    val coded: Option[String] = contentLang.map(_.trim).filter(_.nonEmpty)
+    putMarker(
+      markSeries(coded.fold(span)(span.set(XmlAttribute.Lang, _)), series),
+      marker
+    )
+
+  /** Same split as `base.css` `[lang]`, including the Latin exceptions. Not `MarkupPage.interfaceDir`. */
+  private[publish] def contentDir(lang: String): String =
+    if lang.contains("ar-Latn-") || lang.contains("ota-Latn-") then "ltr"
+    else
+      val primary: String = lang.takeWhile(_ != '-').toLowerCase
+      if Set("ar", "ota", "fa", "he", "yi").contains(primary) || lang.contains("-Arab-AR") then "rtl"
+      else "ltr"
 
   private def markSeries(element: Xml.Element, series: FootnoteSeries): Xml.Element =
     series match
@@ -122,6 +140,9 @@ object Footnote:
 
   private def readMarker(element: Xml.Element): Option[String] =
     element.get(Marker).map(_.trim).filter(_.nonEmpty)
+
+  private def readContentLang(element: Xml.Element): Option[String] =
+    element.get(XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty)
 
   def linkIds(xml: Xml.Element): Seq[String] = xml.gather(element =>
     Option.when(isLink(element))(getCorrelationId(element))
@@ -151,7 +172,7 @@ object Footnote:
     else
       reportOrphans(combined, stripped, report)
       val emitted: Map[String, Footnote] = numbered(stripped, combined, report, localTables)
-      val withBodies: Xml.Element = appendReferenced(stripped, emitted)
+      val withBodies: Xml.Element = appendReferenced(stripped, emitted, chrome = report.interfaceChrome)
       resolveTree(withBodies, combined, emitted, attachTip = true, report)
 
   /** Number footnotes in document-link order; strip bodies from the tree and from parent nodes. */
@@ -169,7 +190,8 @@ object Footnote:
             number = numbers.get(correlationId).fold(0)(_ + 1),
             nodes = stripInnerBodies(element.getChildren),
             marker = readMarker(element),
-            series = readSeries(element)
+            series = readSeries(element),
+            contentLang = readContentLang(element)
           )
       )
       .toMap
@@ -222,7 +244,8 @@ object Footnote:
   def appendReferenced(
     xml: Xml.Element,
     footnotes: Map[String, Footnote],
-    emitLeftovers: Boolean = true
+    emitLeftovers: Boolean = true,
+    chrome: Option[(String, String)] = None
   ): Xml.Element =
     val wrapped: Xml.Element =
       if footnotes.values.exists(isTableScope) then wrapTables(xml, footnotes)
@@ -242,8 +265,13 @@ object Footnote:
           .toSeq
           .sortBy(_.number)
     val toAdd: Seq[Footnote] = treeDocs ++ leftoverDocs
-    if toAdd.isEmpty then wrapped
-    else wrapped.setChildren(wrapped.getChildren ++ seriesDivs(toAdd, footnotes, table = false))
+    val listed: Xml.Element =
+      if toAdd.isEmpty then wrapped
+      else wrapped.setChildren(wrapped.getChildren ++ seriesDivs(toAdd, footnotes, table = false))
+    chrome.fold(listed): (code, dir) =>
+      listed.transform: element =>
+        if element.hasClass("footnotes") then element.set(XmlAttribute.Lang, code).set("dir", dir)
+        else element
 
   def resolveLink(
     element: Xml.Element,
@@ -622,7 +650,8 @@ final class Footnote(
   val scope: FootnoteScope = FootnoteScope.Document,
   parentBodyId: Option[String] = None,
   marker: Option[String] = None,
-  val series: FootnoteSeries = FootnoteSeries.End
+  val series: FootnoteSeries = FootnoteSeries.End,
+  val contentLang: Option[String] = None
 ):
   // Blank is absent. `remapped` copies this so chunks and transclusion keep it.
   private val authoredMarker: Option[String] = marker.map(_.trim).filter(_.nonEmpty)
@@ -688,7 +717,9 @@ final class Footnote(
       .setId(bodyId)
       .setChildren(kids)
     val withScope: Xml.Element = scopeName.fold(result)(result.set(Footnote.ScopeAttr, _))
-    Footnote.markSeries(withScope, series)
+    val marked: Xml.Element = Footnote.markSeries(withScope, series)
+    contentLang.map(_.trim).filter(_.nonEmpty).fold(marked): code =>
+      marked.set(XmlAttribute.Lang, code).set("dir", Footnote.contentDir(code))
 
   private def backLink: Xml.Element = Footnote.markSeries(
     Xml

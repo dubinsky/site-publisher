@@ -548,7 +548,9 @@ object TeiMarkup extends Markup(
     series.map: which =>
       val correlationId: String = correlationIds.generate()
       val marker: Option[String] = element.get("n")
+      // `copyContentLang` has already turned `xml:lang` into HTML `lang`. The `note` element is dropped.
+      val contentLang: Option[String] = element.get(XmlAttribute.Lang).map(_.trim).filter(_.nonEmpty)
       Seq(
         Footnote.link(correlationId, marker, which),
-        Footnote.body(correlationId, element.getChildren, marker, which)
+        Footnote.body(correlationId, element.getChildren, marker, which, contentLang)
       )

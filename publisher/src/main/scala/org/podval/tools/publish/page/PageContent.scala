@@ -219,11 +219,15 @@ final class PageContent private(
     )
     if !isChunked then Footnote.reportOrphans(combined, expanded, source)
 
-    // Add bodies of the footnotes referenced in the selected XML
+    // Add bodies of the footnotes referenced in the selected XML.
+    // Only a TEI document stamps the list. A chunk renders on this page, so `source.page` is the owner.
+    val footnoteChrome: Option[(String, String)] =
+      if source.page.doc.exists(_.publishesTei) then source.interfaceChrome else None
     val withFootnotes: Xml.Element = Footnote.appendReferenced(
       expanded,
       emitted,
-      emitLeftovers = emitLeftovers
+      emitLeftovers = emitLeftovers,
+      chrome = footnoteChrome
     )
 
     // Resolve citations
@@ -285,11 +289,11 @@ final class PageContent private(
   ): Xml.Element =
     var tocAdded: Boolean = false
     val fullPage: Option[FullMarkupPage] = source.page.asFullMarkupPage
-    def tocHtml: Xml.Element = toc.html(
+    def tocHtml: Xml.Element = source.page.withDocumentLang(toc.html(
       sectionId = sectionId,
       tocDepth = fullPage.map(_.tocDepth).getOrElse(2),
       chunkDepth = Option.when(isChunked)(fullPage.map(_.chunkDepth).getOrElse(2))
-    )
+    ))
     val withPlaceholder: Xml.Element = root.transform(element =>
       if tocAdded || !element.has(Toc.PlaceholderClass) then element else
         tocAdded = true

@@ -38,6 +38,25 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     if !languagesDiffer then element
     else element.set(XmlAttribute.Lang, lang)
 
+  /** Owning full page for a chunk. Every other page, including the facsimile viewer, is `this`. */
+  protected def proseOwner: MarkupPage = this
+
+  private def stampProse(root: Xml.Element): Xml.Element =
+    val owner: MarkupPage = proseOwner
+    if !owner.languagesDiffer then root
+    else if root.isNamed("TEI") then stampBareText(root, owner)
+    else if root.get(XmlAttribute.Lang).forall(_.trim.isEmpty) then owner.withDocumentLang(root)
+    else root
+
+  /** `lang` on `text` only. Footnote lists are siblings of `text` and must not inherit it. */
+  private def stampBareText(tei: Xml.Element, owner: MarkupPage): Xml.Element =
+    tei.setChildren(tei.getChildren.map: node =>
+      node.asElement match
+        case Some(text) if text.isNamed("text") && text.get(XmlAttribute.Lang).forall(_.trim.isEmpty) =>
+          owner.withDocumentLang(text)
+        case _ => node
+    )
+
   private var sourceVar: Option[PageSource] = None
   final def setSource(source: PageSource): Unit = this.sourceVar = Some(source)
   final override def source: Option[PageSource] = sourceVar
@@ -175,7 +194,7 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
     val languages: Set[String] = markupContent.fold(Set.empty)(getLanguages(_).toSet)
     val languagesToHighlight: Set[String] = languages - "mermaid"
 
-    val articleBody: Seq[Xml.Element] = Seq(markupContent, syntheticContent).flatten
+    val articleBody: Seq[Xml.Element] = Seq(markupContent, syntheticContent).flatten.map(stampProse)
     val companion: Option[Xml.Element] = facsimileAside
     // `className :=` replaces, so wide and facsimile share one string with the aside.
     val htmlClass: String = Seq(
@@ -219,9 +238,9 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
           div(className := "wrapper",
             article(className := "page",
               pageHeader,
-              withDocumentLang(div(className := "page-body",
+              div(className := "page-body",
                 articleBody ++ site.categories.html(this).toSeq
-              ))
+              )
             ),
             site.backLinks.html(this),
             site.transclusions.html(this)
