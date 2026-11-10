@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Pin xml 0.8.0.
 - Page breaks with no transcription between them, including a gap `fw`, are one interface-direction block.
   A break inside a line stays in the line.
 - Editorial document-header rows inherit the store header.
