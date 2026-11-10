@@ -49,7 +49,7 @@ object WikiLink:
         )
       case Some(extension) if Media.isAudio(extension) =>
         Some(Xml
-          .element("audio")
+          .element(XmlElement.Audio)
           .set(XmlAttribute.Src, path)
           .set("controls", true.toString)
         )

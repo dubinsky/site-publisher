@@ -398,13 +398,14 @@ final class Site(options: SiteOptions) extends HeadContribution:
           config.title
         ),
         Option.when(config.search.enabled)(headerSearch),
-        Xml.element("button")
-          .addClass("nav-toggle")
-          .set("type", "button")
-          .set("aria-expanded", "false")
-          .set("aria-controls", "site-nav")
-          .set("aria-label", Messages.text("nav.menu"))
-          .setChildren(Seq(span(className := "nav-toggle-icon"))),
+        button(
+          className := "nav-toggle",
+          `type` := "button",
+          aria("expanded") := "false",
+          aria("controls") := "site-nav",
+          aria("label") := Messages.text("nav.menu"),
+          span(className := "nav-toggle-icon")
+        ),
         nav(id := "site-nav", className := "site-nav",
           navGroup("nav-pages", pages.headerPages.map(_.ref())),
           navGroup("nav-browse", browse),
@@ -497,8 +498,7 @@ final class Site(options: SiteOptions) extends HeadContribution:
       attr("action") := "/search",
       attr("method") := "get",
       role := "search",
-      element(
-        "button",
+      button(
         `type` := "submit",
         aria("label") := accessible,
         Icon("magnifying-glass", Icon.Solid).html

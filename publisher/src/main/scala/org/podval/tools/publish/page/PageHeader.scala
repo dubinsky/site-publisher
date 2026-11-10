@@ -323,10 +323,13 @@ object PageHeader:
   private def copyButton(page: MarkupPage): Option[Xml.Element] =
     given Language.Spec = page.site.languageSpec
     Option.when(page.doc.exists(_.publishesTei))(
-      Xml.element("button").addClass("citation-copy").set("type", "button")
-        .set(XmlAttribute.Title, Messages.text("meta.citeTip"))
-        .set("data-citation", clipboardCitation(page))
-        .setText(Messages.text("meta.cite"))
+      button(
+        className := "citation-copy",
+        `type` := "button",
+        titleAttr := Messages.text("meta.citeTip"),
+        attr("data-citation") := clipboardCitation(page),
+        Messages.text("meta.cite")
+      )
     )
 
   /** Clipboard text. Not rendered. No access date.

@@ -51,6 +51,6 @@ final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("searc
       element(
         "select",
         attr("name") := name,
-        element("option", Messages.text("search.all"))
+        option(Messages.text("search.all"))
       )
     )
