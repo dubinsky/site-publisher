@@ -8,12 +8,11 @@ final case class PageParticipation(
 ) derives CanEqual
 
 object PageParticipation:
+  /** `AnyMarkup` and `MarkupProse` are handled by `Pages.absorbAtPath`. */
   enum Absorption derives CanEqual:
     /** Scan-created, or a synthetic page that does not consume a file. */
     case None
-    /** `takeAuthored`. */
     case AnyMarkup
-    /** `takeProse`. */
     case MarkupProse
 
   val default: PageParticipation = PageParticipation()
