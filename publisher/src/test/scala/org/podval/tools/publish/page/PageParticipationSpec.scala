@@ -1,7 +1,6 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.{Errors, Feed, GraphJson, GraphPage, Posts, Robots, SearchJson, SearchPage,
-  Site, Sitemap, Tags}
+import org.podval.tools.publish.site.Site
 import org.podval.tools.publish.util.{Files, SiteOptions}
 import org.scalatest.funsuite.AnyFunSuite
 import java.io.File

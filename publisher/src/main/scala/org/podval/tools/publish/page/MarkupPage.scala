@@ -3,7 +3,7 @@ package org.podval.tools.publish.page
 import org.podval.metadata.Language
 import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
-import org.podval.tools.publish.site.{Feed, Messages, Path, Seo, Site, Sitemap}
+import org.podval.tools.publish.site.{Messages, Path, Seo, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlXmlWriterConfig, Xml, XmlAttribute, XmlElement}
 import org.podval.xml.dsl.{*, given}

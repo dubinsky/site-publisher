@@ -1,8 +1,7 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.page
 
 import org.podval.tools.publish.markup.{PlainText, TeiDate}
-import org.podval.tools.publish.page.{CollectionIndex, FullMarkupPage, GraphOwner, NamedWindows, Page,
-  StoreContent, StoreIndexes, SyntheticAsset}
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Files, Icon, Json}
 import org.podval.xml.{Xml, XmlParser}
 import java.nio.charset.StandardCharsets

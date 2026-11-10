@@ -1,6 +1,5 @@
 package org.podval.tools.publish.page
 
-import org.podval.tools.publish.site.Posts
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 

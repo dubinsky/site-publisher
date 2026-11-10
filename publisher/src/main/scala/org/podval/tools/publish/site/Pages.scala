@@ -5,9 +5,10 @@ import org.podval.store.{Store, Stores}
 import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMarkup, Link, LinkKind, Markup, TeiMarkup,
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, Alternates, AssetWithSourcePath, CollectionIndex, DirectoryPage,
-  EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, FrontMatter, MapPage,
-  MarkupPage, Page, PageContent, PageParticipation, PageSource, PdfPage, PlaceMap, SimpleMarkupPage,
-  StoreContent, StoreIndexPage, StoreIndexes, StoreTree, TeiDocumentPage, YearIndexPage}
+  EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, Feed, FrontMatter, GraphJson,
+  GraphPage, MapPage, MarkupPage, Page, PageContent, PageParticipation, PageSource, PdfPage, PlaceMap, Robots,
+  SearchJson, SearchPage, SimpleMarkupPage, Sitemap, StoreContent, StoreIndexPage, StoreIndexes, StoreTree,
+  TeiDocumentPage, YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File

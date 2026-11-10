@@ -1,8 +1,8 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.js
-import org.podval.tools.publish.page.{PageParticipation, SyntheticMarkupPage}
+import org.podval.tools.publish.site.{Messages, Path, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}

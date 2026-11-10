@@ -1,7 +1,7 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.page
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{MarkupPage, Page, SyntheticXmlAsset}
+import org.podval.tools.publish.site.{Messages, Path, Seo, Site}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.{HtmlXmlWriterConfig, Xml}
 import org.podval.xml.dsl.{*, given}

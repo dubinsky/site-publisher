@@ -1,6 +1,6 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.SyntheticAsset
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.Icon
 
 object Robots:

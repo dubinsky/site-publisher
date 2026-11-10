@@ -4,7 +4,8 @@ import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.HeadContribution
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.prose.ProseOptions
-import org.podval.tools.publish.page.{AuthoredHarvest, EmbeddedAsset, MarkupPage, PdfPage, SiteChrome}
+import org.podval.tools.publish.page.{AuthoredHarvest, EmbeddedAsset, Errors, MarkupPage, PdfPage, Posts, SiteChrome,
+  Tags}
 import org.podval.tools.publish.util.{Files, Git, Http, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Xml, XmlParser}
 import org.podval.xml.dsl.{*, given}

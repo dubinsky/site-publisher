@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.metadata.Names
 import org.podval.tools.publish.markup.{EntityKind, Link}
-import org.podval.tools.publish.site.{Path, Posts, Site}
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Date, Http, Icon}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}

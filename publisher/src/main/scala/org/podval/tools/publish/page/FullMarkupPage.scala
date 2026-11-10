@@ -2,7 +2,7 @@ package org.podval.tools.publish.page
 
 import org.podval.tools.publish.js
 import org.podval.tools.publish.markup.Facsimile
-import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
+import org.podval.tools.publish.site.{PageError, Path, Site}
 import org.podval.xml.Xml
 
 abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):

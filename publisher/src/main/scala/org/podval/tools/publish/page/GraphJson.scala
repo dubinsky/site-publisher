@@ -1,6 +1,6 @@
-package org.podval.tools.publish.site
+package org.podval.tools.publish.page
 
-import org.podval.tools.publish.page.{FullMarkupPage, GraphOwner, NamedWindows, Page, SyntheticAsset}
+import org.podval.tools.publish.site.{Path, Site}
 import org.podval.tools.publish.util.{Icon, Json}
 
 final class GraphJson(site: Site) extends SyntheticAsset(site, GraphJson.path):
