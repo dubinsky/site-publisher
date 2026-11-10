@@ -79,21 +79,50 @@ sealed abstract class Content:
   def bibliographyDefinitions: Map[String, Xml.Nodes] = Map.empty
   def localFeatures: LocalFeatures = LocalFeatures.empty
 
-  def wide: Boolean = false
+  /** Collection index layout (`html.wide`). True only for `StoreContent.isCollection`. */
+  final def wide: Boolean = this match
+    case store: StoreContent => store.isCollection
+    case _ => false
+
   def listTitle: Option[String] = None
-  def suppressDirectoryListing: Boolean = false
-  def documentHeader: Option[DocumentHeader] = None
+
+  /** No `ul.page-list`. Collection or entity-lists. */
+  final def suppressDirectoryListing: Boolean = this match
+    case store: StoreContent => store.isCollection
+    case _: EntityListsContent => true
+    case _ => false
+
+  /** This is a TEI document (`DocumentContent`). */
+  final def publishesTei: Boolean = this match
+    case _: DocumentContent => true
+    case _ => false
+
+  /** See `publishesTei`. */
+  final def documentHeader: Option[DocumentHeader] = this match
+    case document: DocumentContent => Some(document.header)
+    case _ => None
+
   def entityKind: Option[EntityKind] = None
   def entityRole: Option[String] = None
   def entityDisplayName: Option[String] = None
 
-  def asStore: Option[StoreContent] = None
-  def asEntityLists: Option[EntityListsContent] = None
-  def asDocument: Option[DocumentContent] = None
-  def asEntity: Option[EntityContent] = None
-  def asMarkup: Option[MarkupContent] = None
-  def publishesTei: Boolean = false
+  final def asStore: Option[StoreContent] = this match
+    case store: StoreContent => Some(store)
+    case _ => None
 
+  final def asEntityLists: Option[EntityListsContent] = this match
+    case lists: EntityListsContent => Some(lists)
+    case _ => None
+
+  final def asMarkup: Option[MarkupContent] = this match
+    case markup: MarkupContent => Some(markup)
+    case _ => None
+
+  /** The only per-kind render.
+    * Store non-collection is `None` (directory listing).
+    * Collection is `CollectionIndex.generate`.
+    * Entity-lists is `EntityLists.generate` plus optional `inlineListProse`.
+    */
   def markupBody(
     pageContent: PageContent,
     sectionId: Option[String],
@@ -230,10 +259,6 @@ final class DocumentContent(
   val header: DocumentHeader,
   prepared: Content.Prepared
 ) extends AuthoredContent(prepared):
-  override def documentHeader: Option[DocumentHeader] = Some(header)
-  override def asDocument: Option[DocumentContent] = Some(this)
-  override def publishesTei: Boolean = documentHeader.isDefined
-
   /** Raw cells the collector table publishes when this document sits in a collection. No citation hrefs. */
   private[publish] val headerFeatures: NodeFeatures = NodeFeatures.fromElements(
     header.description.toSeq ++ header.authors ++ header.addressee.toSeq ++
@@ -257,12 +282,10 @@ final class EntityContent(
   override def entityKind: Option[EntityKind] = Some(kind)
   override def entityRole: Option[String] = role
   override def entityDisplayName: Option[String] = displayName
-  override def asEntity: Option[EntityContent] = Some(this)
 
 final class MarkupContent(
   prepared: Content.Prepared
-) extends AuthoredContent(prepared):
-  override def asMarkup: Option[MarkupContent] = Some(this)
+) extends AuthoredContent(prepared)
 
 final class StoreContent(
   val index: StoreIndex
@@ -295,10 +318,6 @@ final class StoreContent(
 
   override def xml: Xml.Element =
     Xml.element(if isCollection then "collection" else "store")
-
-  override def wide: Boolean = isCollection
-  override def asStore: Option[StoreContent] = Some(this)
-  override def suppressDirectoryListing: Boolean = isCollection
 
   override def markupBody(
     pageContent: PageContent,
@@ -369,8 +388,6 @@ final class EntityListsContent(
   val index: EntityListSpec.Index
 ) extends Content:
   override def xml: Xml.Element = Xml.element("entityLists")
-  override def suppressDirectoryListing: Boolean = true
-  override def asEntityLists: Option[EntityListsContent] = Some(this)
 
   override def markupBody(
     pageContent: PageContent,
