@@ -4,18 +4,17 @@ pluginManagement {
     gradlePluginPortal()
   }
   // String path: a File would call Settings.includeBuild (not a plugin build).
-  // A parent build has already included this directory and Gradle rejects a second include.
-  if (gradle.parent == null) {
-    final String conventionsDir =
-      providers.gradleProperty('podvalGradleDir').getOrElse('../podval-gradle')
-    if (file(conventionsDir).isDirectory() && file("${conventionsDir}/settings.gradle").isFile()) {
-      includeBuild conventionsDir
-    }
+  // A parent's includeBuild is not on this settings classpath. 0.4.0 is unpublished,
+  // so this script includes the checkout even when a parent already included it.
+  final String conventionsDir =
+    providers.gradleProperty('podvalGradleDir').getOrElse('../podval-gradle')
+  if (file(conventionsDir).isDirectory() && file("${conventionsDir}/settings.gradle").isFile()) {
+    includeBuild conventionsDir
   }
 }
 
 plugins {
-  id 'org.podval.conventions.settings' version '0.3.0'
+  id 'org.podval.conventions.settings' version '0.4.0'
 }
 
 rootProject.name = 'site-publisher'

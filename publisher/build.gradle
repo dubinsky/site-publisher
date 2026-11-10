@@ -50,14 +50,10 @@ dependencies {
 }
 
 // AsciidoctorJ → JRuby → jffi calls System.load. Old lazy-val bytecode uses sun.misc.Unsafe.
-podval.allowJdk25RestrictedAccess()
+podval.allowJdkRestrictedAccess()
 
 application {
   mainClass = 'org.podval.tools.publish.site.Site'
-  applicationDefaultJvmArgs = [
-    '--enable-native-access=ALL-UNNAMED',
-    '--sun-misc-unsafe-memory-access=allow',
-  ]
 }
 
 tasks.withType(JavaExec).configureEach {
