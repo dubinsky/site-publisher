@@ -22,7 +22,14 @@ Pass that directory as the only positional argument:
 ./gradlew run --args="/path/to/source-directory"
 ----
 
-`--serve` generates and leaves the HTTP server running (same as IntelliJ `@main def generate()`).
+`generateSite` and `serveSite` inside this repo collide with Maven publication tasks and do not generate a site.
+Run them from a site checkout.
+`./gradlew run` from this repo remains the way to generate without a site-side plugin.
+
+`--serve` generates and leaves the HTTP server running.
+The entry point is `Site.main`, which reads arguments with `SiteOptions.forArgs`.
+There is no `@main`.
+
 `--pretty-print` rewrites authored TEI, DocBook, Markdown, and AsciiDoc in place and does not generate a site.
 It skips a file whose bytes would not change.
 It does not reformat HTML.
@@ -84,6 +91,12 @@ OpenTorah `:docs` keeps `tasks.named('generateSite') { dependsOn generateTables 
 | `production` | `false` | `--production` |
 | `prettyPrintWidth` | `120` | `--width=N` (`prettyPrintSite` only) |
 | `prettyPrintSentencePerLine` | `true` | `--sentence-per-line` (`prettyPrintSite` only) |
+
+Gradle `site { }` is process flags: `treatErrorsAsWarnings`, `includeDrafts`, `logLevel`, `production`, and pretty-print
+width and sentence-per-line.
+`_site_config.yml` is the site (`Config.decode`).
+YAML `google-analytics` is the measurement id.
+`Site.googleAnalytics` emits the snippet only when Gradle `production` is true.
 
 The three tasks set `--enable-native-access=ALL-UNNAMED`, `--sun-misc-unsafe-memory-access=allow`,
 `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`, and `PLAYWRIGHT_BROWSERS_PATH=$GRADLE_USER_HOME/ms-playwright`.

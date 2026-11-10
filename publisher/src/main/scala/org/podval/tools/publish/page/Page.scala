@@ -12,6 +12,19 @@ import java.time.{Instant, LocalDate, OffsetDateTime}
 
 abstract class Page(
   val site: Site,
+  /** Four paths. There is no fifth URL type.
+    * - `path` — file written under the target directory (`targetFile`).
+    * - `sourcePath` — authored file, when there is one. Absent on a pure synthetic.
+    *   `Posts.path` can make it differ from `path`: the written path changes during the scan.
+    * - `publishedPath` — public href (`Pages.publishedPath`): unwrap `real`, then the longest
+    *   `aliasDirectory` prefix (directory, store, or entity-lists), else `path`.
+    *   A permalink is an `Alias` whose own `path` is the public file. `publishedPath` does not apply that alias again
+    *   (`aliasDirectory` is `None` on the note).
+    * - `real` — alias target. `Alias.real` unwraps. Every other page is `this`.
+    * `Pages.rewriteRequest` is the inverse for the local server and the Worker: inbound URL to the written `path`
+    * (alias prefix, then `/alias/facsimile/P`, then store-tree resolve).
+    * Archive-path text (`PageHeader` crumb labels, Cite, backlink group headings) is not any of these URLs.
+    */
   val path: Path
 ) derives CanEqual:
   lazy val names: Names = StoreTree.namesOf(this)
@@ -46,7 +59,7 @@ abstract class Page(
   
   final def targetFile: File = path.file(site.targetDirectory)
 
-  /** Public href: directory/store XML `alias` or permalink prefix, else `path`. */
+  /** Public href. The four path names are on `path`. */
   final def publishedPath: Path = site.pages.publishedPath(this)
 
   def up: Option[Page] = parent

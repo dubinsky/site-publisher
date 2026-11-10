@@ -26,11 +26,16 @@ abstract class Markup(
 
   def xmlContent(content: String, sourceFile: File): String
 
-  // Process raw parsed XML:
-  // - clean it up (AsciiDoc div soup etc.)
-  // - nest HTML sections
-  // - convert footnotes into common format
-  // - extract title
+  /** Process raw parsed XML:
+    * - clean it up (AsciiDoc div soup etc.)
+    * - nest HTML sections
+    * - convert footnotes into common format
+    * - extract title
+    *
+    * IR: TEI and DocBook emit the shared IR in their converters.
+    * Markdown, AsciiDoc, and HTML finish in `HtmlIr.normalize` (`HtmlMarkup.process`).
+    * `Strike.normalize` must not see a TEI tree. TEI `s` is a sentence, and that pass would rename it to `del`.
+    */
   def process(xml: Xml.Element, errorReporter: PageErrorReporter): Markup.Processed
 
   final def readAndParse(
