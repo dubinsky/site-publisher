@@ -11,7 +11,7 @@ final class Alias(
   site,
   path
 ) with PageWithContent:
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def isAlias: Boolean = true
 

@@ -13,7 +13,7 @@ final class PagedMarkupPage(
   postsPage.site,
   postsPage.path.add(name).html
 ):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def markupContent: Option[Xml.Element] = postsPage.markupContent
 

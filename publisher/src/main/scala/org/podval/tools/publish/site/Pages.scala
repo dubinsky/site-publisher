@@ -6,8 +6,8 @@ import org.podval.tools.publish.markup.{AssetRef, EntityKind, Facsimile, HtmlMar
   XmlMarkup}
 import org.podval.tools.publish.page.{Alias, Alternates, AssetWithSourcePath, CollectionIndex, DirectoryPage,
   EmbeddedAsset, EntityListPage, EntityLists, EntityListsContent, FacsimilePage, FrontMatter, MapPage,
-  MarkupPage, Page, PageContent, PageSource, PdfPage, PlaceMap, SimpleMarkupPage, StoreContent, StoreIndexPage,
-  StoreIndexes, StoreTree, TeiDocumentPage, YearIndexPage}
+  MarkupPage, Page, PageContent, PageParticipation, PageSource, PdfPage, PlaceMap, SimpleMarkupPage,
+  StoreContent, StoreIndexPage, StoreIndexes, StoreTree, TeiDocumentPage, YearIndexPage}
 import org.podval.tools.publish.util.{Files, Media, Strings}
 import org.podval.xml.Xml
 import java.io.File
@@ -547,8 +547,7 @@ final class Pages(site: Site):
       if docs.nonEmpty then addIndex(YearIndexPage(site, root, docs))
 
   private def addIndex(page: MarkupPage): Unit =
-    takeAuthored(page)
-    add(page)
+    if absorbAtPath(page) then add(page)
 
   // After the scan, before aliases. `located` is the emit check; case counts wait until write.
   private def addMapPage(): Unit =
@@ -556,47 +555,51 @@ final class Pages(site: Site):
     if located.nonEmpty then
       val places: Seq[Page] = pages.filter(_.entityKind.contains(EntityKind.Place))
       val page: MapPage = MapPage(site, places)
-      if takeProse(page) then
+      if absorbAtPath(page) then
         add(page)
-        installLeafAlias("map", page)
+        if page.participation.leafAlias then installLeafAlias("map", page)
 
-  // The scan already created a page for `{root}-collections`, `{root}-index`, or `{root}-years`.
-  // That file is the text above the list.
-  private def takeAuthored(page: MarkupPage): Unit =
-    get(page.path) match
-      case Some(existing: MarkupPage) =>
-        existing.source.foreach: source =>
-          page.setSource(PageSource(
-            page = page,
-            markup = source.markup,
-            sourcePath = source.sourcePath,
-            frontMatterStandAlone = source.frontMatterStandAlone
-          ))
-        removeWhere(_ eq existing)
-      case _ =>
-        ()
-
-  /** Markup at this path is prose above the generated page. An entity file stays, and the page is not added. */
-  private def takeProse(page: MarkupPage): Boolean =
-    get(page.path) match
-      case None =>
+  private def absorbAtPath(page: MarkupPage): Boolean =
+    page.participation.absorption match
+      case PageParticipation.Absorption.None =>
         true
-      case Some(existing: MarkupPage) if isMarkupProse(existing) =>
-        existing.source.foreach: source =>
-          page.setSource(proseSource(page, source))
-        removeWhere(_ eq existing)
+      case PageParticipation.Absorption.AnyMarkup =>
+        // The scan already created a page for `{root}-collections`, `{root}-index`, or `{root}-years`.
+        // That file is the text above the list.
+        get(page.path) match
+          case Some(existing: MarkupPage) =>
+            existing.source.foreach: source =>
+              page.setSource(PageSource(
+                page = page,
+                markup = source.markup,
+                sourcePath = source.sourcePath,
+                frontMatterStandAlone = source.frontMatterStandAlone
+              ))
+            removeWhere(_ eq existing)
+          case _ =>
+            ()
         true
-      case Some(existing) =>
-        val what: String = page match
-          case _: MapPage => "map"
-          case list: EntityListPage => s"entity list '${list.spec.id}'"
-          case _ => page.path.toString
-        site.error(
-          existing.sourcePath.getOrElse(page.path),
-          PageError.Duplicate,
-          s"$what collides with $existing"
-        )
-        false
+      case PageParticipation.Absorption.MarkupProse =>
+        // Markup at this path is prose above the generated page. An entity file stays, and the page is not added.
+        get(page.path) match
+          case None =>
+            true
+          case Some(existing: MarkupPage) if isMarkupProse(existing) =>
+            existing.source.foreach: source =>
+              page.setSource(proseSource(page, source))
+            removeWhere(_ eq existing)
+            true
+          case Some(existing) =>
+            val what: String = page match
+              case _: MapPage => "map"
+              case list: EntityListPage => s"entity list '${list.spec.id}'"
+              case _ => page.path.toString
+            site.error(
+              existing.sourcePath.getOrElse(page.path),
+              PageError.Duplicate,
+              s"$what collides with $existing"
+            )
+            false
 
   private def isMarkupProse(page: MarkupPage): Boolean =
     page.doc.exists(_.asMarkup.isDefined)
@@ -612,7 +615,8 @@ final class Pages(site: Site):
 
   private def installSearchAlias(): Unit =
     if site.config.search.enabled then
-      get(Path("search").html).foreach(page => installLeafAlias("search", page))
+      get(Path("search").html).foreach: page =>
+        if page.participation.leafAlias then installLeafAlias("search", page)
 
   private def installLeafAlias(name: String, target: Page): Unit =
     installPrefixAlias(name, target, "store index alias")
@@ -794,10 +798,7 @@ final class Pages(site: Site):
         // The year index, a name-list page, and a catalog that inlines one list keep
         // the generated ids even when a file is rendered above that list.
         val generated: Boolean =
-          content.isEmpty ||
-            to.real.isInstanceOf[YearIndexPage] ||
-            to.real.isInstanceOf[EntityListPage] ||
-            inlinesOneList(to.real)
+          content.isEmpty || to.real.keepUnauthoredFragment
         resolved.orElse(Option.when(generated)(Link.ToId(fragment)))
 
       Link(
@@ -850,16 +851,12 @@ final class Pages(site: Site):
           case Seq(one) => Some(one)
           case _ => None
 
-  private def inlinesOneList(page: Page): Boolean =
-    page.doc.flatMap(_.asEntityLists).exists: lists =>
-      EntityLists.kept(lists.index, page.site.pages.pages).length == 1
-
   private def resolveEntityLists(): Unit =
     pages.foreach: page =>
       page.doc.flatMap(_.asEntityLists).foreach: lists =>
         absorbInlineList(page, lists)
         val built: List[EntityListPage] = EntityLists.listPages(page, lists.index, get)
-        val keptPages: List[EntityListPage] = built.filter(takeProse)
+        val keptPages: List[EntityListPage] = built.filter(absorbAtPath)
         keptPages.foreach(add)
         keptPages.foreach(_.setSiblings(keptPages))
 

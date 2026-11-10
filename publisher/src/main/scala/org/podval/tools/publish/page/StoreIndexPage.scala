@@ -13,7 +13,10 @@ final class StoreIndexPage(
   val root: Page,
   val kind: StoreIndexPage.Kind
 ) extends SyntheticMarkupPage(site, path):
-  override def leafIndex: Boolean = true
+  override def participation: PageParticipation = PageParticipation(
+    leafIndex = true,
+    absorption = PageParticipation.Absorption.AnyMarkup
+  )
 
   override def titleDefault: String = StoreIndexes.pageTitle(root, kind)
 

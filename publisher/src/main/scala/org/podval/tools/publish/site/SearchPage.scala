@@ -2,13 +2,16 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.js
-import org.podval.tools.publish.page.SyntheticMarkupPage
+import org.podval.tools.publish.page.{PageParticipation, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class SearchPage(site: Site) extends SyntheticMarkupPage(site, Path("search").html):
-  override def leafIndex: Boolean = true
+  override def participation: PageParticipation = PageParticipation(
+    leafIndex = true,
+    leafAlias = true
+  )
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec

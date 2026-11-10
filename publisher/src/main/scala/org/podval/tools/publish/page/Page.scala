@@ -89,9 +89,19 @@ abstract class Page(
 
   def real: Page = this
 
-  def listedInDirectory: Boolean = false
+  def participation: PageParticipation = PageParticipation.default
 
-  def leafIndex: Boolean = false
+  final def listedInDirectory: Boolean = participation.listedInDirectory
+
+  final def leafIndex: Boolean = participation.leafIndex
+
+  /** `#fragment` survives when this page's generated ids are not in the file.
+    * Empty content is a separate clause in `Pages.resolve` and stays there.
+    * One-list catalogs are ordinary full pages, so the check lives here, not on a subclass.
+    */
+  def keepUnauthoredFragment: Boolean =
+    doc.flatMap(_.asEntityLists).exists: lists =>
+      EntityLists.kept(lists.index, site.pages.pages).length == 1
 
   final def asFullMarkupPage: Option[FullMarkupPage] = this match
     case page: FullMarkupPage => Some(page)

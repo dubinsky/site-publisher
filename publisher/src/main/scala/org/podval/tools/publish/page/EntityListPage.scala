@@ -11,7 +11,12 @@ final class EntityListPage(
   val spec: EntityList,
   val members: Seq[Page]
 ) extends SyntheticMarkupPage(site, path):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(
+    listedInDirectory = true,
+    absorption = PageParticipation.Absorption.MarkupProse
+  )
+
+  override def keepUnauthoredFragment: Boolean = true
 
   private var siblingsVar: Seq[EntityListPage] = Seq(this)
 

@@ -6,7 +6,7 @@ import org.podval.tools.publish.site.{PageError, Path, Posts, Site}
 import org.podval.xml.Xml
 
 abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, path):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   final override def prev: Option[Page] = parent.flatMap(_.prev(this))
   override def next: Option[Page] = parent.flatMap(_.next(this))

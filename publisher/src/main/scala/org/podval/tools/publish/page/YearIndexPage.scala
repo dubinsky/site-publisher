@@ -18,7 +18,12 @@ final class YearIndexPage(
   root: Page,
   documents: Seq[Page]
 ) extends SyntheticMarkupPage(site, StoreIndexes.pagePath(root, StoreIndexes.yearsSuffix)):
-  override def leafIndex: Boolean = true
+  override def participation: PageParticipation = PageParticipation(
+    leafIndex = true,
+    absorption = PageParticipation.Absorption.AnyMarkup
+  )
+
+  override def keepUnauthoredFragment: Boolean = true
 
   private val DayHeadingMinimum: Int = 3
 

@@ -1,13 +1,13 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{FullMarkupPage, Page, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{FullMarkupPage, Page, PageParticipation, SyntheticMarkupPage}
 import org.podval.tools.publish.util.{Icon, IdGenerator}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec

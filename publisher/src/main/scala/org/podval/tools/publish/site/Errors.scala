@@ -1,6 +1,6 @@
 package org.podval.tools.publish.site
 
-import org.podval.tools.publish.page.SyntheticMarkupPage
+import org.podval.tools.publish.page.{PageParticipation, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -9,7 +9,7 @@ final class Errors(
   site: Site,
   treatErrorsAsWarnings: Boolean
 ) extends SyntheticMarkupPage(site, Path("errors").html):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def titleDefault: String = "Errors"
   override protected def descriptionDefault: Option[String] = Some("Site errors by kind")

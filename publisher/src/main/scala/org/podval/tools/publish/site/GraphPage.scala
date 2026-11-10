@@ -2,7 +2,7 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Name, PluralCategory}
 import org.podval.tools.publish.js
-import org.podval.tools.publish.page.SyntheticMarkupPage
+import org.podval.tools.publish.page.{PageParticipation, SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -10,7 +10,7 @@ import org.podval.xml.dsl.{*, given}
 import java.util.Locale
 
 final class GraphPage(site: Site) extends SyntheticMarkupPage(site, Path("graph").html):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec

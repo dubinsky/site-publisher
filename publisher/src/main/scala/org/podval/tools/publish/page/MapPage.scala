@@ -12,7 +12,11 @@ final class MapPage(
   site: Site,
   places: Seq[Page]
 ) extends SyntheticMarkupPage(site, Path("map").html):
-  override def leafIndex: Boolean = true
+  override def participation: PageParticipation = PageParticipation(
+    leafIndex = true,
+    leafAlias = true,
+    absorption = PageParticipation.Absorption.MarkupProse
+  )
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec

@@ -531,6 +531,56 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(site.pages.pages.exists(page => page.path.toString == "/search.html" && !page.listedInDirectory && page.leafIndex))
       assert(site.pages.pages.exists(page => page.path.toString == "/map.html" && !page.listedInDirectory && page.leafIndex))
       assert(site.pages.pages.exists(page => page.path.toString == "/photo.png" && page.listedInDirectory))
+      assert(!root.participation.leafAlias)
+      assert(root.participation.absorption == PageParticipation.Absorption.None)
+      assert(!root.keepUnauthoredFragment)
+      assert(chunks.forall(chunk =>
+        !chunk.participation.leafAlias &&
+          chunk.participation.absorption == PageParticipation.Absorption.None &&
+          !chunk.keepUnauthoredFragment
+      ))
+      assert(!facsimile.participation.leafAlias)
+      assert(facsimile.participation.absorption == PageParticipation.Absorption.None)
+      assert(!facsimile.keepUnauthoredFragment)
+      val yearPage: YearIndexPage = site.pages.pages.collectFirst { case page: YearIndexPage => page }.get
+      assert(!yearPage.participation.leafAlias)
+      assert(yearPage.participation.absorption == PageParticipation.Absorption.AnyMarkup)
+      assert(yearPage.keepUnauthoredFragment)
+      val mapPage: MapPage = site.pages.pages.collectFirst { case page: MapPage => page }.get
+      assert(mapPage.participation.leafAlias)
+      assert(mapPage.participation.absorption == PageParticipation.Absorption.MarkupProse)
+      assert(!mapPage.keepUnauthoredFragment)
+      val searchPage: Page = site.pages.pages.find(_.path.toString == "/search.html").get
+      assert(searchPage.participation.leafAlias)
+      assert(searchPage.participation.absorption == PageParticipation.Absorption.None)
+      assert(!searchPage.keepUnauthoredFragment)
+      val indexes: List[StoreIndexPage] = site.pages.pages.collect { case page: StoreIndexPage => page }
+      assert(indexes.length == 2, indexes.map(_.path))
+      assert(indexes.exists(_.kind == StoreIndexPage.Kind.Tree))
+      assert(indexes.exists(_.kind == StoreIndexPage.Kind.Flat))
+      assert(indexes.forall(page =>
+        page.leafIndex && !page.participation.leafAlias &&
+          page.participation.absorption == PageParticipation.Absorption.AnyMarkup &&
+          !page.keepUnauthoredFragment
+      ))
+      val pdfs: List[PdfPage] = site.pages.pages.collect { case page: PdfPage => page }
+      assert(pdfs.exists(_.path.toString == "/note.pdf"), pdfs.map(_.path))
+      assert(pdfs.forall(page =>
+        !page.listedInDirectory && !page.leafIndex && !page.participation.leafAlias &&
+          page.participation.absorption == PageParticipation.Absorption.None &&
+          !page.keepUnauthoredFragment
+      ))
+      val stamped: List[TeiDocumentPage] = site.pages.pages.collect { case page: TeiDocumentPage => page }
+      assert(stamped.exists(_.path.toString == "/scan.xml"), stamped.map(_.path))
+      assert(stamped.forall(page =>
+        !page.listedInDirectory && !page.leafIndex && !page.participation.leafAlias &&
+          page.participation.absorption == PageParticipation.Absorption.None &&
+          !page.keepUnauthoredFragment
+      ))
+      val photo: Page = site.pages.pages.find(_.path.toString == "/photo.png").get
+      assert(!photo.participation.leafAlias)
+      assert(photo.participation.absorption == PageParticipation.Absorption.None)
+      assert(!photo.keepUnauthoredFragment)
 
     val rootCollection: Map[String, String] = Map(
       "_site_config.yml" ->
@@ -578,6 +628,11 @@ final class YearIndexSpec extends AnyFunSuite:
       .get
       val originals: List[Page] = CollectionIndex.originalsUnder(root)
       assert(originals.exists(_.isInstanceOf[YearIndexPage]), originals.map(_.path))
+      val yearPage: YearIndexPage = originals.collectFirst { case page: YearIndexPage => page }.get
+      assert(yearPage.leafIndex && !yearPage.participation.leafAlias)
+      val storeIndexes: List[StoreIndexPage] = originals.collect { case page: StoreIndexPage => page }
+      assert(storeIndexes.length == 2, originals.map(_.path))
+      assert(storeIndexes.forall(page => page.leafIndex && !page.participation.leafAlias))
       assert(site.pages.pages.exists(_.path.toString == "/doc-ru.html"))
       assert(site.pages.pages.exists(_.path.toString == "/doc+reg.html"))
       assert(!originals.exists(_.path.toString == "/doc-ru.html"), originals.map(_.path))

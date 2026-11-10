@@ -1,7 +1,8 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{DirectoryPage, Page, PagedList, PagedMarkupPage, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{DirectoryPage, Page, PageParticipation, PagedList, PagedMarkupPage,
+  SyntheticMarkupPage}
 import org.podval.tools.publish.util.Icon
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -22,7 +23,7 @@ object Posts:
     catch case e: DateTimeParseException => None
 
 final class Posts(site: Site) extends SyntheticMarkupPage(site, Path("posts").html):
-  override def listedInDirectory: Boolean = true
+  override def participation: PageParticipation = PageParticipation(listedInDirectory = true)
 
   override def titleDefault: String =
     given Language.Spec = site.languageSpec
