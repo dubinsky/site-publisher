@@ -1,7 +1,7 @@
 package org.podval.tools.publish.markup
 
-import org.podval.tools.publish.page.{AuthoredContent, ChunkedMarkupPage, FullMarkupPage, NamedWindows, Page,
-  PageContent}
+import org.podval.tools.publish.page.{AuthoredContent, ChunkedMarkupPage, FullMarkupPage, MarkupPage, NamedWindows,
+  Page, PageContent}
 import org.podval.tools.publish.site.PageError
 import org.podval.tools.publish.util.{Files, Strings}
 import org.podval.xml.{CssClass, Xml, XmlAttribute, XmlElement}
@@ -128,6 +128,26 @@ object Transclusion:
                 match
                   case None => Source.UnresolvedFragment
                   case Some(region) => Source.Ok(page, region, content)
+
+  private[publish] def hasInlined(xml: Xml.Element, from: MarkupPage, transclusionsToo: Boolean): Boolean =
+    if !transclusionsToo then false
+    else
+      var found: Boolean = false
+      def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
+        if !found && !element.isNamed(XmlElement.Code.localName) then
+          if WikiLink.isTranscluded(element) then
+            element.getHref.filterNot(Transclusion.isObsidianBase).foreach: href =>
+              from.site.pages.resolve(href, LinkKind.of(element), from).foreach: link =>
+                Transclusion.authoredSource(link, href) match
+                  case Transclusion.Source.Ok(_, _, _) => found = true
+                  case _ =>
+          if !found then element.childElements.foreach: child =>
+            if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
+      // Same drop as DocumentContent.selectedXml: a collection document does not publish teiHeader.
+      val dropDirectHeader: Boolean =
+        from.parent.exists(_.store.exists(_.isCollection)) && xml.isNamed("TEI")
+      visit(xml, dropDirectHeader)
+      found
 
   def expand(
     selected: Xml.Element,

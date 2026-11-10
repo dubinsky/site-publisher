@@ -2,12 +2,11 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.HeadContribution
-import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
+import org.podval.tools.publish.markup.{AsciiDocMarkup, Link, TeiDate}
 import org.podval.tools.publish.prose.ProseOptions
-import org.podval.tools.publish.page.{AuthoredHarvest, DocumentContent, EmbeddedAsset, FullMarkupPage, LocalFeatures,
-  MarkupPage, NamedWindows, NodeFeatures, PageContent, PdfPage}
-import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
-import org.podval.xml.{Xml, XmlElement, XmlParser}
+import org.podval.tools.publish.page.{AuthoredHarvest, EmbeddedAsset, MarkupPage, PdfPage, SiteChrome}
+import org.podval.tools.publish.util.{Files, Git, Http, Logging, Media, ObsidianConfig, SiteOptions}
+import org.podval.xml.{Xml, XmlParser}
 import org.podval.xml.dsl.{*, given}
 import com.sun.net.httpserver.HttpServer
 import com.microsoft.playwright.{Browser, Playwright}
@@ -142,7 +141,7 @@ final class Site(options: SiteOptions) extends HeadContribution:
       link(rel:="icon", href:=s"/$favicon", `type`:=s"image/$extension")
 
   // Social links
-  private val socialLinks: Seq[SocialLink] = Seq(
+  private[publish] val socialLinks: Seq[SocialLink] = Seq(
     config.social.github.map(SocialLink.GitHub(_)),
     config.social.twitter.map(SocialLink.Twitter(_)),
     config.social.linkedin.map(SocialLink.LinkedIn(_))
@@ -238,7 +237,7 @@ final class Site(options: SiteOptions) extends HeadContribution:
     do
       transclusions.add(transclusions.harvest(markup, content))
 
-    val detected: ReaderFeatures = detectReaderFeatures()
+    val detected: ReaderFeatures = ReaderFeatures.detect(this)
     readerFeaturesVar = detected
     log.debug(
       s"reader features: glossary=${detected.glossary} citation=${detected.citation} " +
@@ -285,348 +284,11 @@ final class Site(options: SiteOptions) extends HeadContribution:
   private def stopHttpServer(): Unit =
     httpServerVar.foreach(_.stop(0))
 
-  private def detectReaderFeatures(): ReaderFeatures =
-    var detected: ReaderFeatures = ReaderFeatures.empty
-    var transclusion: Boolean = transclusions.all.exists(_.toPage.isDefined)
-    var facsimile: Boolean = false
+  def siteHeader(page: MarkupPage): Xml.Element = SiteChrome.header(this, page)
 
-    def absorb(content: PageContent): Unit =
-      val local: LocalFeatures = content.localFeatures
-      val page: MarkupPage = content.source.page
-      // A collection document publishes the cells instead of teiHeader. Anything else keeps the header.
-      val collectionDocument: Boolean = page.parent.exists(_.store.exists(_.isCollection))
-      val tree: NodeFeatures =
-        if collectionDocument then local.published else local.published.union(local.teiHeaderOnly)
-      val nodes: NodeFeatures =
-        if !collectionDocument then tree
-        else content.doc match
-          case document: DocumentContent => tree.union(document.headerFeatures)
-          case _ => tree
-      val citation: Boolean = nodes.citations.exists: candidate =>
-        pages.resolve(candidate.href, candidate.kind, page).exists: link =>
-          val hostContent: Option[PageContent] =
-            if link.isIntrapage then Some(content) else link.page.content
-          val gloss: Boolean = link.fragment.exists: fragment =>
-            hostContent.exists(_.glossaryDefinitions.contains(fragment.id))
-          val bibl: Boolean = link.fragment.exists: fragment =>
-            hostContent.exists(_.bibliographyDefinitions.contains(fragment.id))
-          !gloss && bibl
-      detected = detected.union(ReaderFeatures(
-        glossary = local.glossary,
-        citation = citation,
-        choice = nodes.choice,
-        transclusion = false,
-        facsimile = false,
-        apparatusAdd = nodes.apparatusAdd,
-        apparatusDel = nodes.apparatusDel,
-        apparatusSee = nodes.apparatusSee
-      ))
+  def siteFooter: Xml.Element = SiteChrome.footer(this)
 
-    def transclusionIn(xml: Xml.Element, from: MarkupPage, transclusionsToo: Boolean): Boolean =
-      if !transclusionsToo then false
-      else
-        var found: Boolean = false
-        def visit(element: Xml.Element, dropChildHeader: Boolean): Unit =
-          if !found && !element.isNamed(XmlElement.Code.localName) then
-            if WikiLink.isTranscluded(element) then
-              element.getHref.filterNot(Transclusion.isObsidianBase).foreach: href =>
-                pages.resolve(href, LinkKind.of(element), from).foreach: link =>
-                  Transclusion.authoredSource(link, href) match
-                    case Transclusion.Source.Ok(_, _, _) => found = true
-                    case _ =>
-            if !found then element.childElements.foreach: child =>
-              if !(dropChildHeader && child.isNamed("teiHeader")) then visit(child, dropChildHeader = false)
-        // Same drop as DocumentContent.selectedXml: a collection document does not publish teiHeader.
-        val dropDirectHeader: Boolean =
-          from.parent.exists(_.store.exists(_.isCollection)) && xml.isNamed("TEI")
-        visit(xml, dropDirectHeader)
-        found
-
-    /** `transclusionsToo` is false for full-page content and for every footnote body, and true for every
-      * other markup page and for inline-list prose. Footnote bodies stay false even when the tree is true:
-      * one flag for the tree and its notes would count a transclusion that exists only in a footnote.
-      */
-    def noteTransclusions(content: PageContent, transclusionsToo: Boolean): Unit =
-      val from: MarkupPage = content.source.page
-      if transclusionIn(content.xml, from, transclusionsToo) then transclusion = true
-      content.footnotes.values.foreach: footnote =>
-        footnote.nodes.foreach: node =>
-          node.asElement.foreach: element =>
-            if transclusionIn(element, from, transclusionsToo = false) then transclusion = true
-
-    def absorbMarkup(page: MarkupPage, transclusionsToo: Boolean): Unit =
-      page.content.foreach: content =>
-        absorb(content)
-        noteTransclusions(content, transclusionsToo)
-      page.inlineListProse.foreach: source =>
-        val prose: PageContent = source.content
-        absorb(prose)
-        noteTransclusions(prose, transclusionsToo = true)
-
-    pages.pages.foreach:
-      case page: FullMarkupPage =>
-        if Facsimile.needed(page) then facsimile = true
-        absorbMarkup(page, transclusionsToo = false)
-      case page: MarkupPage =>
-        absorbMarkup(page, transclusionsToo = true)
-      case _ =>
-
-    detected.union(ReaderFeatures(
-      glossary = false,
-      citation = false,
-      choice = false,
-      transclusion = transclusion,
-      facsimile = facsimile,
-      apparatusAdd = false,
-      apparatusDel = false,
-      apparatusSee = false
-    ))
-
-  def siteHeader(page: MarkupPage): Xml.Element =
-    given Language.Spec = languageSpec
-    val features: ReaderFeatures = readerFeatures
-    val browse: Seq[Xml.Element] = Seq(
-      page.up.flatMap(up => Option.when(up.up.isDefined)(up.navRef(Icon.arrowUp))),
-      page.prev.map(_.navRef(Icon.arrowLeft)),
-      page.next.map(_.navRef(Icon.arrowRight))
-    ).flatten
-    val views: Seq[Xml.Element] = page.formatLinks ++ page.translationLinks ++ page.readingLinks
-    page.withInterfaceLang(header(className := "site-header",
-      div(className := "wrapper",
-        a(
-          className := "site-title",
-          href := "/",
-          rel := "author",
-          NamedWindows.hierarchyTarget(config).map(name => target := name),
-          config.title
-        ),
-        Option.when(config.search.enabled)(headerSearch),
-        button(
-          className := "nav-toggle",
-          `type` := "button",
-          aria("expanded") := "false",
-          aria("controls") := "site-nav",
-          aria("label") := Messages.text("nav.menu"),
-          span(className := "nav-toggle-icon")
-        ),
-        nav(id := "site-nav", className := "site-nav",
-          navGroup("nav-pages", pages.headerPages.map(_.ref())),
-          navGroup("nav-browse", browse),
-          navGroup("nav-views", views)
-        ),
-        details(className := "site-settings",
-          summary(
-            className := "site-settings-toggle",
-            titleAttr := Messages.text("nav.settings"),
-            aria("label") := Messages.text("nav.settings"),
-            Icon.gear.html
-          ),
-          div(className := "site-settings-menu", role := "group", aria("label") := Messages.text("nav.settings"),
-            div(className := "site-settings-section", colorSchemeSetting),
-            Option.when(features.inText)(
-              div(
-                className := "site-settings-section",
-                role := "group",
-                aria("labelledby") := "setting-in-text-label",
-                div(
-                  className := "site-settings-heading",
-                  id := "setting-in-text-label",
-                  Messages.text("settings.in-text")
-                ),
-                Option.when(features.terms)(
-                  label(className := "site-settings-item",
-                    input(
-                      `type` := "checkbox",
-                      id := "setting-glossary-expand",
-                      attr("data-setting") := "glossary-expand"
-                    ),
-                    Messages.text("settings.glossary")
-                  )
-                ),
-                Option.when(features.choice)(
-                  label(className := "site-settings-item",
-                    input(
-                      `type` := "checkbox",
-                      id := "setting-abbr-expand",
-                      attr("data-setting") := "abbr-expand",
-                      attr("checked") := "checked"
-                    ),
-                    Messages.text("settings.editorial")
-                  )
-                )
-              )
-            ),
-            Option.when(features.layout)(
-              div(className := "site-settings-section",
-                Option.when(features.transclusion)(
-                  label(className := "site-settings-item",
-                    input(
-                      `type` := "checkbox",
-                      id := "setting-transclusion-clean",
-                      attr("data-setting") := "transclusion-clean"
-                    ),
-                    Messages.text("settings.transclusion")
-                  )
-                ),
-                Option.when(features.facsimile)(
-                  label(className := "site-settings-item",
-                    input(
-                      `type` := "checkbox",
-                      id := "setting-facsimile-aside",
-                      attr("data-setting") := "facsimile-aside",
-                      attr("checked") := "checked"
-                    ),
-                    Messages.text("settings.facsimile")
-                  )
-                )
-              )
-            ),
-            Option.when(features.apparatus.nonEmpty)(
-              div(
-                className := "site-settings-section",
-                features.apparatus.map(kind => apparatusSetting(kind, Messages.text(s"settings.$kind")))
-              )
-            )
-          )
-        )
-      )
-    ))
-
-  private def headerSearch: Xml.Element =
-    given Language.Spec = languageSpec
-    val accessible: String = Messages.text("nav.search")
-    element(
-      "form",
-      className := "header-search",
-      attr("action") := "/search",
-      attr("method") := "get",
-      role := "search",
-      button(
-        `type` := "submit",
-        aria("label") := accessible,
-        Icon("magnifying-glass", Icon.Solid).html
-      ),
-      input(
-        `type` := "search",
-        attr("name") := "q",
-        aria("label") := accessible
-      )
-    )
-
-  private def colorSchemeSetting: Xml.Element =
-    given Language.Spec = languageSpec
-    div(
-      className := "site-settings-choice",
-      role := "radiogroup",
-      aria("labelledby") := "setting-color-scheme-label",
-      span(id := "setting-color-scheme-label", className := "site-settings-choice-label", Messages.text("settings.color")),
-      div(
-        className := "site-settings-radios",
-        colorChoice("system", Messages.text("settings.system"), selected = true),
-        colorChoice("light", Messages.text("settings.light"), selected = false),
-        colorChoice("dark", Messages.text("settings.dark"), selected = false)
-      )
-    )
-
-  private def colorChoice(value: String, text: String, selected: Boolean): Xml.Element =
-    label(
-      input(
-        `type` := "radio",
-        attr("name") := "color-scheme",
-        attr("value") := value
-      ).when(selected)(attr("checked") := "checked"),
-      text
-    )
-
-  private def apparatusSetting(kind: String, groupLabel: String): Xml.Element =
-    val setting: String = s"apparatus-$kind"
-    div(
-      className := "site-settings-choice",
-      role := "radiogroup",
-      // Not `data-apparatus`: that attribute is the prose mark, and those rules would wrap this group.
-      attr("data-apparatus-kind") := kind,
-      aria("labelledby") := s"setting-$setting-label",
-      span(id := s"setting-$setting-label", className := "site-settings-choice-label", groupLabel),
-      div(
-        className := "site-settings-radios",
-        Seq("distinct", "plain", "hidden").map: value =>
-          label(
-            input(
-              `type` := "radio",
-              attr("name") := setting,
-              attr("value") := value
-            ).when(value == "distinct")(attr("checked") := "checked"),
-            apparatusLabel(kind, value)
-          )
-      )
-    )
-
-  /** Distinct shows the marks the text uses. Additions `[ ]`, deletions struck through, sources `< >`. */
-  private def apparatusLabel(kind: String, value: String): String =
-    given Language.Spec = languageSpec
-    value match
-      case "plain" => Messages.text("settings.plain")
-      case "hidden" => Messages.text("settings.hidden")
-      case "distinct" => kind match
-        case "add" => Messages.text("settings.distinct.add")
-        case "del" => Messages.text("settings.distinct.del")
-        case "see" => Messages.text("settings.distinct.see")
-        case _ => "Distinct"
-      case other => other.capitalize
-
-  private def navGroup(cls: String, items: Seq[Xml.Element]): Option[Xml.Element] =
-    Option.when(items.nonEmpty)(div(className := s"nav-group $cls", items))
-
-  private def footerLicense(license: Config.License): Xml.Element =
-    div(
-      className := "footer-license",
-      license.holder.map(holder =>
-        license.holderLink match
-          case Some(url) => a(href := url.trim, holder.trim)
-          case None => span(holder.trim)
-      ),
-      license.link match
-        case Some(url) => a(rel := "license", href := url.trim, license.name.trim)
-        case None => span(license.name.trim)
-    )
-
-  def siteFooter: Xml.Element =
-    given Language.Spec = languageSpec
-    footer(className := "site-footer",
-      div(className := "wrapper",
-        div(className := "footer-col-wrapper",
-          div(className := "footer-col",
-            ul(className := "contact-list",
-              li(config.author),
-              li(a(href := s"mailto:${config.email}", config.email))
-            )
-          ),
-          div(className := "footer-col",
-            div(className := "social-links",
-              ul(className := "social-media-list", socialLinks.map(social =>
-                li(a(
-                  rel := "me",
-                  href := social.href,
-                  target := "_blank",
-                  titleAttr := social.title,
-                  Icon.brand(social.icon).html,
-                  span(className := "username", social.userName)
-                ))
-              ))
-            )
-          ),
-          div(className := "footer-col",
-            div(className := "footer-about",
-              div(className := "footer-description", config.description),
-              Feed.feedFooter,
-              config.license.map(footerLicense)
-            )
-          )
-        )
-      )
-    )
-
-  def siteFooter(page: MarkupPage): Xml.Element = page.withInterfaceLang(siteFooter)
+  def siteFooter(page: MarkupPage): Xml.Element = SiteChrome.footer(this, page)
 
 object Site:
   /** Built-in catalog, plus `{source}/_terms.xml` when that file exists. A bad file throws. */
@@ -660,40 +322,3 @@ object Site:
   def rejectPrettyPrintWithServe(options: SiteOptions): Unit =
     if options.prettyPrint && options.serve then
       throw IllegalArgumentException("--pretty-print does not generate or serve")
-
-private[publish] final class ReaderFeatures(
-  val glossary: Boolean,
-  val citation: Boolean,
-  val choice: Boolean,
-  val transclusion: Boolean,
-  val facsimile: Boolean,
-  val apparatusAdd: Boolean,
-  val apparatusDel: Boolean,
-  val apparatusSee: Boolean
-):
-  def union(other: ReaderFeatures): ReaderFeatures = ReaderFeatures(
-    glossary || other.glossary,
-    citation || other.citation,
-    choice || other.choice,
-    transclusion || other.transclusion,
-    facsimile || other.facsimile,
-    apparatusAdd || other.apparatusAdd,
-    apparatusDel || other.apparatusDel,
-    apparatusSee || other.apparatusSee
-  )
-
-  def terms: Boolean = glossary || citation
-  def inText: Boolean = terms || choice
-  def layout: Boolean = transclusion || facsimile
-  /** Menu order. Also the data-apparatus-kinds token list. Not data-apparatus. */
-  def apparatus: List[String] =
-    List(
-      Option.when(apparatusAdd)("add"),
-      Option.when(apparatusDel)("del"),
-      Option.when(apparatusSee)("see")
-    ).flatten
-
-private[publish] object ReaderFeatures:
-  val empty: ReaderFeatures =
-    ReaderFeatures(false, false, false, false, false, false, false, false)
-
