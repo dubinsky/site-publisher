@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
+import org.podval.tools.publish.page.{MarkupPage, NamedWindows, Page, StoreIndexes}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
@@ -13,7 +13,7 @@ final class BackLinks:
   def all: Seq[BackLink] = backLinks
 
   def html(page: MarkupPage): Option[Xml.Element] =
-    val pageBackLinks: Seq[(FullMarkupPage, List[BackLink])] = backLinks
+    val pageBackLinks: Seq[(MarkupPage, List[BackLink])] = backLinks
       .filter(_.to.page == page)
       .filterNot(_.from == page)
       .groupBy(_.from)
@@ -29,9 +29,9 @@ final class BackLinks:
 
   private def groupedItems(
     page: MarkupPage,
-    pageBackLinks: Seq[(FullMarkupPage, List[BackLink])]
+    pageBackLinks: Seq[(MarkupPage, List[BackLink])]
   ): Seq[Xml.Element] =
-    val grouped: Map[Option[Page], Seq[(FullMarkupPage, List[BackLink])]] =
+    val grouped: Map[Option[Page], Seq[(MarkupPage, List[BackLink])]] =
       pageBackLinks.groupBy((from, _) => StoreIndexes.collectionOf(from))
     val collectionKeys: Seq[Page] = grouped.keys.flatten.toSeq
     val fromTree: Seq[Page] =
@@ -50,7 +50,7 @@ final class BackLinks:
 
   private def collectionGroup(
     collection: Page,
-    members: Seq[(FullMarkupPage, List[BackLink])]
+    members: Seq[(MarkupPage, List[BackLink])]
   ): Xml.Element =
     li(className := "backlinks-collection",
       a(
@@ -62,7 +62,7 @@ final class BackLinks:
       ul(members.map((from, links) => fromItem(from, links)))
     )
 
-  private def fromItem(from: FullMarkupPage, links: List[BackLink]): Xml.Element =
+  private def fromItem(from: MarkupPage, links: List[BackLink]): Xml.Element =
     // First mention that remains on the page. Header-only mentions stay on the document.
     val summaryLink: Xml.Element = links
       .find(!_.inTeiHeader)

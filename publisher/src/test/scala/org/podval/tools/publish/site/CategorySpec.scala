@@ -184,3 +184,70 @@ final class CategorySpec extends AnyFunSuite:
       assert(graph.contains(""""source":"/Mention.html","target":"/Books.html","kind":"link""""), graph)
       assert(!graph.contains(""""source":"/Books.html","target":"/Books.html""""), graph)
   }
+
+  test("categories and tags on the year file list the year page and do not chip its header") {
+    withSite(Map(
+      "_site_config.yml" ->
+        """title: Category Fixture
+          |description: category tests
+          |url: http://categories.test
+          |author: Test
+          |email: test@categories.test
+          |lang: en
+          |""".stripMargin,
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/case.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/case.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/case/doc.xml" ->
+        """<TEI>
+          |  <teiHeader><fileDesc><titleStmt><title>Doc</title></titleStmt></fileDesc></teiHeader>
+          |  <text><body><p>doc</p></body></text>
+          |</TEI>
+          |""".stripMargin,
+      "archive-years.md" ->
+        """---
+          |categories:
+          |  - "[[Hub]]"
+          |tags:
+          |  - year-tag
+          |---
+          |Year prose.
+          |""".stripMargin,
+      "Hub.md" ->
+        """---
+          |title: Hub
+          |---
+          |Hub.
+          |""".stripMargin
+    )): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      val h1At: Int = year.indexOf("<h1")
+      assert(h1At >= 0, year)
+      val h1: String = year.substring(h1At, year.indexOf("</h1>", h1At))
+      assert(!h1.contains("page-category"), h1)
+      assert(!year.contains("page-category"), year)
+      assert(!year.contains("page-tag"), year)
+      assert(!year.contains("page-meta"), year)
+      val members: String = between(html(target, "Hub.html"), "category-members", "</article>")
+      assert(members.split("/archive-years.html").length - 1 == 1, members)
+      val tags: String = html(target, "tags.html")
+      assert(tags.contains("year-tag"), tags)
+      assert(tags.contains("/archive-years.html"), tags)
+  }

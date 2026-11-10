@@ -437,3 +437,26 @@ final class StoreIndexesSpec extends AnyFunSuite:
     assert(caught.getMessage.contains("/shelf.xml"), caught.getMessage)
     assert(!caught.getMessage.contains("Archives"), caught.getMessage)
   }
+
+  test("prose on the tree and flat indexes is a backlink and a generated href is not") {
+    withSite(Map(
+      "archive-collections.md" -> "Смотри [имена](/names.html).\n",
+      "archive-index.md" -> "Смотри [о сайте](/about.html).\n"
+    )): (site, target) =>
+      val names: String = html(target, "names.html")
+      val namesBack: Int = names.indexOf("class=\"backlinks\"")
+      assert(namesBack >= 0, names)
+      assert(names.substring(namesBack).contains("/archive-collections.html"), names)
+      val about: String = html(target, "about.html")
+      val aboutBack: Int = about.indexOf("class=\"backlinks\"")
+      assert(aboutBack >= 0, about)
+      assert(about.substring(aboutBack).contains("/archive-index.html"), about)
+      assert(!html(target, "archive-collections.html").contains("class=\"backlinks\""))
+      assert(!html(target, "archive-index.html").contains("class=\"backlinks\""))
+      val fromIndexes: Seq[org.podval.tools.publish.site.BackLink] = site.backLinks.all.filter: link =>
+        val from: String = link.from.publishedPath.toString
+        from == "/archive-collections.html" || from == "/archive-index.html"
+      assert(fromIndexes.exists(_.to.page.publishedPath.toString == "/names.html"))
+      assert(fromIndexes.exists(_.to.page.publishedPath.toString == "/about.html"))
+      assert(!fromIndexes.exists(_.to.page.title.contains("Переписка")))
+  }

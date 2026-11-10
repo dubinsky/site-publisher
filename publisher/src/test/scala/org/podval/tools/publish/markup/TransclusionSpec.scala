@@ -326,3 +326,94 @@ final class TransclusionSpec extends AnyFunSuite:
       assert(hostChunk.contains("Host inner only"), hostChunk)
       assert(!hostChunk.contains("deep inner"), hostChunk)
   }
+
+  test("absorbed year prose transcludes; a footnote does not; the year page is not authored") {
+    withSite(Map(
+      "_site_config.yml" ->
+        """title: Transclusion Fixture
+          |description: transclusion tests
+          |url: http://transclusion.test
+          |author: Test
+          |email: test@transclusion.test
+          |graph:
+          |  enabled: true
+          |""".stripMargin,
+      "index.md" -> "Home.\n",
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/case.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/case.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/case/doc.xml" ->
+        """<TEI>
+          |  <teiHeader><fileDesc><titleStmt><title>Doc</title></titleStmt></fileDesc></teiHeader>
+          |  <text><body><p>doc</p></body></text>
+          |</TEI>
+          |""".stripMargin,
+      "leaf.md" ->
+        """---
+          |title: Leaf
+          |---
+          |Leaf body.
+          |""".stripMargin,
+      "solo.md" ->
+        """---
+          |title: Solo
+          |---
+          |Solo body.
+          |""".stripMargin,
+      "archive-years.md" ->
+        """![[leaf]]
+          |
+          |See [^n].
+          |
+          |[^n]: ![[solo]]
+          |""".stripMargin,
+      "host.md" ->
+        """---
+          |title: Host
+          |---
+          |![[archive-years]]
+          |""".stripMargin
+    )): (site, target) =>
+      val leaf: String = html(target, "leaf.html")
+      val embeddedAt: Int = leaf.indexOf("class=\"embedded-in\"")
+      assert(embeddedAt >= 0, leaf)
+      assert(leaf.contains("Embedded in"), leaf)
+      assert(leaf.substring(embeddedAt).contains("/archive-years.html"), leaf)
+      val year: String = html(target, "archive-years.html")
+      assert(!year.contains("class=\"embedded-in\""), year)
+      assert(!year.contains("Embedded in"), year)
+      val edges = site.transclusions.all
+      assert(edges.exists(edge =>
+        edge.fromPage.publishedPath.toString == "/archive-years.html" &&
+          edge.toPage.exists(_.publishedPath.toString == "/leaf.html") &&
+          !edge.nonAuthoredTarget
+      ), edges.map(edge => (edge.fromPage.publishedPath, edge.href, edge.nonAuthoredTarget)))
+      assert(!edges.exists(edge =>
+        edge.href.contains("solo") || edge.toPage.exists(_.publishedPath.toString == "/solo.html")
+      ))
+      assert(edges.exists(edge =>
+        edge.fromPage.publishedPath.toString == "/host.html" &&
+          edge.nonAuthoredTarget &&
+          edge.toPage.isEmpty
+      ))
+      val graph: String = Files.read(File(target, "graph.json"))
+      assert(!graph.contains("archive-years"), graph)
+      assert(!graph.contains(""""kind":"transclude""""), graph)
+  }

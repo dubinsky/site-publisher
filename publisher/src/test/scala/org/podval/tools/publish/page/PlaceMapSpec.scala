@@ -153,6 +153,34 @@ final class PlaceMapSpec extends AnyFunSuite:
       assert(page.substring(svgAt, svgEnd).contains("Места, названные в делах"), page)
   }
 
+  test("a link in map.md is a backlink and an SVG href is not") {
+    val prose: Map[String, String] = files + (
+      "map.md" -> "Смотри [заметку](/note.html).\n",
+      "note.md" ->
+        """---
+          |title: Note
+          |---
+          |Заметка.
+          |""".stripMargin
+    )
+    withSite(source = prose): (site, target) =>
+      val note: String = html(target, "note.html")
+      val back: Int = note.indexOf("class=\"backlinks\"")
+      assert(back >= 0, note)
+      assert(note.substring(back).contains("/map.html"), note)
+      val map: String = html(target, "map.html")
+      assert(map.contains("""href="/name/Вильна.html""""), map)
+      assert(!map.contains("class=\"backlinks\""), map)
+      val vilna: String = html(target, "name/Вильна.html")
+      val vilnaBack: Int = vilna.indexOf("class=\"backlinks\"")
+      val section: String = if vilnaBack < 0 then "" else vilna.substring(vilnaBack)
+      assert(!section.contains("/map.html"), section)
+      assert(!site.backLinks.all.exists(link =>
+        link.from.publishedPath.toString == "/map.html" &&
+          link.to.page.publishedPath.toString == "/name/Вильна.html"
+      ))
+  }
+
   private def withSite(
     includeBase: Boolean = true,
     source: Map[String, String] = Map.empty

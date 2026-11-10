@@ -639,3 +639,131 @@ final class YearIndexSpec extends AnyFunSuite:
       assert(!originals.exists(_.path.toString == "/doc+reg.html"), originals.map(_.path))
       assert(!originals.exists(_.path == root.path), originals.map(_.path))
   }
+
+  test("prose in archive-years.md is a backlink and a generated year row is not") {
+    val files: Map[String, String] = tree(Map(
+      "282.xml" -> tei("Показания", """<date when="1798-12-20">20 декабря 1798</date>""")
+    )) + (
+      "archive-years.md" -> "Смотри [заметку](/note.html).\n",
+      "note.md" ->
+        """---
+          |title: Note
+          |---
+          |Заметка.
+          |""".stripMargin
+    )
+    withSite(files): (site, target) =>
+      val note: String = html(target, "note.html")
+      val back: Int = note.indexOf("class=\"backlinks\"")
+      assert(back >= 0, note)
+      assert(note.substring(back).contains("/archive-years.html"), note)
+      val year: String = html(target, "archive-years.html")
+      assert(!year.contains("class=\"backlinks\""), year)
+      assert(year.contains("/archive/rgada/282.html"), year)
+      val doc: String = html(target, "archive/rgada/282.html")
+      val docBack: Int = doc.indexOf("class=\"backlinks\"")
+      if docBack >= 0 then assert(!doc.substring(docBack).contains("archive-years"), doc)
+      val fromYear: Seq[org.podval.tools.publish.site.BackLink] =
+        site.backLinks.all.filter(_.from.publishedPath.toString == "/archive-years.html")
+      assert(fromYear.exists(_.to.page.publishedPath.toString == "/note.html"), fromYear.map(_.to.page.publishedPath))
+      assert(!fromYear.exists(_.to.page.publishedPath.toString == "/archive/rgada/282.html"))
+  }
+
+  test("an authored year file author is that page's meta author") {
+    val files: Map[String, String] = tree(Map(
+      "282.xml" -> tei("Год", """<date when="1798-12-20">20 декабря 1798</date>""")
+    )) + (
+      "archive-years.md" ->
+        """---
+          |author: Year Writer
+          |---
+          |Проза.
+          |""".stripMargin
+    )
+    withSite(files): (_, target) =>
+      val year: String = html(target, "archive-years.html")
+      assert(year.contains("""name="author" content="Year Writer""""), year)
+      assert(!year.contains("page-meta"), year)
+      assert(!year.contains("page-category"), year)
+  }
+
+  test("a takeAuthored store file does not count front matter") {
+    val withGraph: String = siteConfig +
+      """graph:
+        |  enabled: true
+        |""".stripMargin
+    val files: Map[String, String] = tree(Map(
+      "282.xml" -> tei("Год", """<date when="1798-12-20">20 декабря 1798</date>""")
+    ), withGraph) + (
+      "archive-years.xml" ->
+        """---
+          |author: Store Writer
+          |tags:
+          |  - store-tag
+          |categories:
+          |  - "[[Hub]]"
+          |---
+          |<store ref="nope" plural="yes"/>
+          |""".stripMargin,
+      "Hub.md" ->
+        """---
+          |title: Hub
+          |---
+          |Hub.
+          |""".stripMargin
+    )
+    withSite(files): (site, target) =>
+      val year: YearIndexPage = site.pages.pages.collectFirst { case page: YearIndexPage => page }.get
+      assert(year.sourcePath.exists(_.toString.contains("archive-years")), year.sourcePath)
+      assert(year.store.isDefined)
+      assert(year.frontMatter.author.contains("Store Writer"))
+      assert(year.frontMatter.tags.contains("store-tag"))
+      assert(year.frontMatter.categories.nonEmpty)
+      assert(year.author.isEmpty)
+      assert(year.tags.isEmpty)
+      assert(year.categories.isEmpty)
+      assert(site.categories.chips(year).isEmpty)
+      assert(!site.categories.membership.exists(_.from.path == year.path))
+      val yearHtml: String = html(target, "archive-years.html")
+      assert(yearHtml.contains("""name="author" content="Test""""), yearHtml)
+      assert(!yearHtml.contains("Store Writer"), yearHtml)
+      assert(!yearHtml.contains("page-category"), yearHtml)
+      assert(!yearHtml.contains("store-tag"), yearHtml)
+      val tags: String = html(target, "tags.html")
+      assert(!tags.contains("store-tag"), tags)
+      val hub: String = html(target, "Hub.html")
+      assert(!hub.contains("category-members"), hub)
+      val graph: String = Files.read(File(target, "graph.json"))
+      assert(!graph.contains("store-tag"), graph)
+  }
+
+  test("a post file author is the Atom entry author and a plain post keeps the site author") {
+    withSite(tree(Map.empty) ++ Map(
+      "_posts/2020-01-02-hello.md" ->
+        """---
+          |title: Hello
+          |author: Ada
+          |---
+          |Hello.
+          |""".stripMargin,
+      "_posts/2020-01-03-plain.md" ->
+        """---
+          |title: Plain
+          |---
+          |Plain.
+          |""".stripMargin
+    )): (_, target) =>
+      val feed: String = html(target, "feed.xml")
+      def entry(title: String): String =
+        val at: Int = feed.indexOf(s">$title<")
+        assert(at >= 0, feed)
+        val start: Int = feed.lastIndexOf("<entry", at)
+        val end: Int = feed.indexOf("</entry>", at)
+        assert(start >= 0 && end > start, feed)
+        feed.substring(start, end)
+      val hello: String = entry("Hello")
+      val plain: String = entry("Plain")
+      assert(hello.contains("<name>Ada</name>"), hello)
+      assert(plain.contains("<name>Test</name>"), plain)
+      assert(!plain.contains("Ada"), plain)
+  }

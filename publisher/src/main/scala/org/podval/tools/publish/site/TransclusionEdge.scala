@@ -2,13 +2,13 @@ package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
 import org.podval.tools.publish.markup.{LinkKind, Region, Transclusion, WikiLink}
-import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, StoreIndexes}
+import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page, PageContent, StoreIndexes}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 import scala.collection.mutable
 
 final class TransclusionEdge(
-  val fromPage: FullMarkupPage,
+  val fromPage: MarkupPage,
   val fromRegion: Region,
   val toPage: Option[FullMarkupPage],
   val toRegion: Option[Region],
@@ -28,65 +28,64 @@ final class TransclusionEdges:
   def cached(key: (Page, Region))(compute: => Option[Xml.Element]): Option[Xml.Element] =
     cache.getOrElseUpdate(key, compute)
 
-  def harvest(from: FullMarkupPage): Seq[TransclusionEdge] =
-    from.content.toSeq.flatMap: content =>
-      content.xml.gather: element =>
-        if !WikiLink.isTranscluded(element) then None
-        else element.getHref.filterNot(Transclusion.isObsidianBase).map: href =>
-          val fromRegion: Region = Region.hostOf(element, content)
-          val kind: Option[LinkKind] = LinkKind.of(element)
-          from.site.pages.resolve(href, kind, from) match
-            case None =>
-              TransclusionEdge(
-                fromPage = from,
-                fromRegion = fromRegion,
-                toPage = None,
-                toRegion = None,
-                href = href,
-                unresolvedFragment = false,
-                nonAuthoredTarget = false
-              )
-            case Some(link) =>
-              Transclusion.authoredSource(link, href) match
-                case Transclusion.Source.Ok(page, region, _) =>
-                  TransclusionEdge(
-                    fromPage = from,
-                    fromRegion = fromRegion,
-                    toPage = Some(page),
-                    toRegion = Some(region),
-                    href = href,
-                    unresolvedFragment = false,
-                    nonAuthoredTarget = false
-                  )
-                case Transclusion.Source.UnresolvedFragment =>
-                  TransclusionEdge(
-                    fromPage = from,
-                    fromRegion = fromRegion,
-                    toPage = None,
-                    toRegion = None,
-                    href = href,
-                    unresolvedFragment = true,
-                    nonAuthoredTarget = false
-                  )
-                case Transclusion.Source.NonAuthored | Transclusion.Source.MissingPage =>
-                  TransclusionEdge(
-                    fromPage = from,
-                    fromRegion = fromRegion,
-                    toPage = None,
-                    toRegion = None,
-                    href = href,
-                    unresolvedFragment = false,
-                    nonAuthoredTarget = true
-                  )
+  def harvest(from: MarkupPage, content: PageContent): Seq[TransclusionEdge] =
+    content.xml.gather: element =>
+      if !WikiLink.isTranscluded(element) then None
+      else element.getHref.filterNot(Transclusion.isObsidianBase).map: href =>
+        val fromRegion: Region = Region.hostOf(element, content)
+        val kind: Option[LinkKind] = LinkKind.of(element)
+        from.site.pages.resolve(href, kind, from) match
+          case None =>
+            TransclusionEdge(
+              fromPage = from,
+              fromRegion = fromRegion,
+              toPage = None,
+              toRegion = None,
+              href = href,
+              unresolvedFragment = false,
+              nonAuthoredTarget = false
+            )
+          case Some(link) =>
+            Transclusion.authoredSource(link, href) match
+              case Transclusion.Source.Ok(page, region, _) =>
+                TransclusionEdge(
+                  fromPage = from,
+                  fromRegion = fromRegion,
+                  toPage = Some(page),
+                  toRegion = Some(region),
+                  href = href,
+                  unresolvedFragment = false,
+                  nonAuthoredTarget = false
+                )
+              case Transclusion.Source.UnresolvedFragment =>
+                TransclusionEdge(
+                  fromPage = from,
+                  fromRegion = fromRegion,
+                  toPage = None,
+                  toRegion = None,
+                  href = href,
+                  unresolvedFragment = true,
+                  nonAuthoredTarget = false
+                )
+              case Transclusion.Source.NonAuthored | Transclusion.Source.MissingPage =>
+                TransclusionEdge(
+                  fromPage = from,
+                  fromRegion = fromRegion,
+                  toPage = None,
+                  toRegion = None,
+                  href = href,
+                  unresolvedFragment = false,
+                  nonAuthoredTarget = true
+                )
 
   def html(page: MarkupPage): Option[Xml.Element] =
     if page.hasSyntheticContent && !page.isDirectory then None
-    else page.asFullMarkupPage.flatMap: full =>
-      val hosts: Seq[FullMarkupPage] = edges
-        .filter(_.toPage.contains(full))
+    else
+      val hosts: Seq[MarkupPage] = edges
+        .filter(edge => edge.toPage.exists(to => (to: Page) == (page: Page)))
         .filterNot(_.unresolvedFragment)
         .filterNot(_.nonAuthoredTarget)
-        .filterNot(_.fromPage == full)
+        .filterNot(_.fromPage == page)
         .map(_.fromPage)
         .distinct
         .sortBy(_.title)
@@ -98,8 +97,8 @@ final class TransclusionEdges:
           ul(grouped(page, hosts))
         ))
 
-  private def grouped(page: MarkupPage, hosts: Seq[FullMarkupPage]): Seq[Xml.Element] =
-    val byCollection: Map[Option[Page], Seq[FullMarkupPage]] =
+  private def grouped(page: MarkupPage, hosts: Seq[MarkupPage]): Seq[Xml.Element] =
+    val byCollection: Map[Option[Page], Seq[MarkupPage]] =
       hosts.groupBy(from => StoreIndexes.collectionOf(from))
     val collectionKeys: Seq[Page] = byCollection.keys.flatten.toSeq
     val fromTree: Seq[Page] =

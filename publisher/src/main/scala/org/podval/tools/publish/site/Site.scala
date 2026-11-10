@@ -4,8 +4,8 @@ import org.podval.metadata.{Language, Term, TermCatalog}
 import org.podval.tools.publish.js.HeadContribution
 import org.podval.tools.publish.markup.{AsciiDocMarkup, Facsimile, Link, LinkKind, TeiDate, Transclusion, WikiLink}
 import org.podval.tools.publish.prose.ProseOptions
-import org.podval.tools.publish.page.{DocumentContent, EmbeddedAsset, FullMarkupPage, LocalFeatures, MarkupPage,
-  NamedWindows, NodeFeatures, PageContent, PdfPage}
+import org.podval.tools.publish.page.{AuthoredHarvest, DocumentContent, EmbeddedAsset, FullMarkupPage, LocalFeatures,
+  MarkupPage, NamedWindows, NodeFeatures, PageContent, PdfPage}
 import org.podval.tools.publish.util.{Files, Git, Http, Icon, Logging, Media, ObsidianConfig, SiteOptions}
 import org.podval.xml.{Xml, XmlElement, XmlParser}
 import org.podval.xml.dsl.{*, given}
@@ -207,9 +207,11 @@ final class Site(options: SiteOptions) extends HeadContribution:
 
     // Gather back-links from authored trees. Store / entity-lists `xml` is an empty
     // root, so generated index → entity hrefs are not backlinks.
+    // Absorbed authored prose and inlineListProse are harvested; the empty store /
+    // entity-lists root is why generated index hrefs are not.
     for
-      page <- pages.pages.flatMap(_.asFullMarkupPage)
-      content <- page.content
+      case markup: MarkupPage <- pages.pages
+      content <- AuthoredHarvest.linkContents(markup)
     do
       // Ids inside teiHeader are absent from the published page: the document-header
       // table is built again from the raw header and does not keep them.
@@ -223,7 +225,7 @@ final class Site(options: SiteOptions) extends HeadContribution:
             if !Link.isInternal(element) then None else BackLink(
               element,
               parent = parent.get,
-              from = page,
+              from = markup,
               ids = content.ids,
               inTeiHeader = element.getId.exists(headerIds.contains)
             )
@@ -231,9 +233,10 @@ final class Site(options: SiteOptions) extends HeadContribution:
       )
 
     for
-      page <- pages.pages.flatMap(_.asFullMarkupPage)
+      case markup: MarkupPage <- pages.pages
+      content <- AuthoredHarvest.linkContents(markup)
     do
-      transclusions.add(transclusions.harvest(page))
+      transclusions.add(transclusions.harvest(markup, content))
 
     val detected: ReaderFeatures = detectReaderFeatures()
     readerFeaturesVar = detected

@@ -215,3 +215,82 @@ final class GraphSpec extends AnyFunSuite:
       val graph: String = json(target)
       assert(graph.contains(""""target":"hierarchyViewer""""), graph)
   }
+
+  test("a year page is not a node and its prose link is not an edge") {
+    withSite(Map(
+      "_site_config.yml" -> config(),
+      "_terms.xml" ->
+        """<?xml version="1.0" encoding="UTF-8"?>
+          |<Terms>
+          |  <term id="archive" selector="yes">
+          |    <name lang="en" n="archive" plural="archives"/>
+          |  </term>
+          |</Terms>
+          |""".stripMargin,
+      "archive.xml" ->
+        """<store xmlns:xi="http://www.w3.org/2001/XInclude">
+          |  <by selector="archive">
+          |    <xi:include href="archive/case.xml"/>
+          |  </by>
+          |</store>
+          |""".stripMargin,
+      "archive/case.xml" ->
+        """<collection n="1">
+          |  <title>Case</title>
+          |</collection>
+          |""".stripMargin,
+      "archive/case/doc.xml" -> tei("Doc."),
+      "note.md" ->
+        """---
+          |title: Note
+          |---
+          |Note.
+          |""".stripMargin,
+      "archive-years.md" -> "See [Note](/note.html).\n"
+    )): (_, target) =>
+      val graph: String = json(target)
+      assert(graph.contains(""""id":"/note.html""""), graph)
+      assert(!graph.contains("/archive-years"), graph)
+      assert(!graph.contains(""""source":"/archive-years.html""""), graph)
+  }
+
+  test("a one-list prose link and inline category are edges and the inline tag is not on the node") {
+    withSite(Map(
+      "_site_config.yml" -> config(),
+      "other.xml" ->
+        """---
+          |categories:
+          |  - "[[Shared]]"
+          |---
+          |<entityLists>
+          |  <title>Other</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |</entityLists>
+          |""".stripMargin,
+      "other/rome.xml" ->
+        """<place>
+          |  <placeName>Rome</placeName>
+          |</place>
+          |""".stripMargin,
+      "other/cities.md" ->
+        """---
+          |categories:
+          |  - "[[Shared]]"
+          |  - "[[InlineOnly]]"
+          |tags:
+          |  - inline-tag
+          |---
+          |[Rome](rome.html)
+          |""".stripMargin,
+      "Shared.md" -> "Shared.\n",
+      "InlineOnly.md" -> "Inline.\n"
+    )): (_, target) =>
+      val graph: String = json(target)
+      assert(graph.contains(""""source":"/other.html","target":"/other/rome.html","kind":"link""""), graph)
+      assert(graph.contains(""""source":"/other.html","target":"/Shared.html","kind":"link""""), graph)
+      assert(graph.contains(""""source":"/other.html","target":"/InlineOnly.html","kind":"link""""), graph)
+      val idAt: Int = graph.indexOf(""""id":"/other.html"""")
+      assert(idAt >= 0, graph)
+      val node: String = graph.substring(graph.lastIndexOf("{", idAt), graph.indexOf("}", idAt) + 1)
+      assert(!node.contains("inline-tag"), node)
+  }

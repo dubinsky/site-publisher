@@ -66,6 +66,15 @@ abstract class MarkupPage(site: Site, path: Path) extends Page(site, path) with 
   final def inlineListProse: Option[PageSource] = inlineListProseVar
   final def setInlineListProse(source: PageSource): Unit = inlineListProseVar = Some(source)
 
+  final def tags: List[String] =
+    AuthoredHarvest.ownFrontMatter(this).toList.flatMap(_.tags)
+
+  final def categories: List[String] =
+    AuthoredHarvest.ownFrontMatter(this).toList.flatMap(_.categories)
+
+  final def author: Option[String] =
+    AuthoredHarvest.ownFrontMatter(this).flatMap(_.author)
+
   def prev: Option[Page]
   def next: Option[Page]
 

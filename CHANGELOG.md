@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Absorbed authored prose (year, store indexes, map, entity lists, one-list catalog prose) now contributes backlinks,
+  transclusion edges, categories, and tags.
+  Generated index links still do not.
+  Inline front matter does not become chips or graph node tags.
+  A `takeAuthored` store or entity-lists file does not newly count front matter.
 - Pin xml 0.8.0.
 - Page breaks with no transcription between them, including a gap `fw`, are one interface-direction block.
   A break inside a line stays in the line.

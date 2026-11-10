@@ -433,3 +433,126 @@ final class EntityListsSpec extends AnyFunSuite:
       assert(section.contains("A document") || section.contains("/doc.html"), section)
       assert(!section.contains("/name/index.html"), section)
   }
+
+  test("prose in name/places.md is a backlink and a member href is not") {
+    withSite(Map(
+      "name/places.md" -> "Смотри [заметку](/note.html).\n",
+      "note.md" ->
+        """---
+          |title: Note
+          |---
+          |Заметка.
+          |""".stripMargin
+    )): (site, target) =>
+      val note: String = html(target, "note.html")
+      val back: Int = note.indexOf("class=\"backlinks\"")
+      assert(back >= 0, note)
+      assert(note.substring(back).contains("/name/places.html"), note)
+      val vilna: String = html(target, "name/Вильна.html")
+      val vilnaBack: Int = vilna.indexOf("class=\"backlinks\"")
+      val section: String = if vilnaBack < 0 then "" else vilna.substring(vilnaBack)
+      assert(!section.contains("/name/places.html"), section)
+      assert(!site.backLinks.all.exists(link =>
+        link.from.publishedPath.toString == "/name/places.html" &&
+          link.to.page.publishedPath.toString == "/name/Вильна.html"
+      ))
+  }
+
+  test("one-list prose backlink is the catalog, and inline front matter is membership and tags only") {
+    val graphConfig: String =
+      """title: Names Fixture
+        |description: Entity list tests
+        |url: http://names.test
+        |author: Test
+        |email: test@names.test
+        |lang: ru
+        |graph:
+        |  enabled: true
+        |""".stripMargin
+    withSite(Map(
+      "_site_config.yml" -> graphConfig,
+      "other.xml" ->
+        """---
+          |categories:
+          |  - "[[Shared]]"
+          |---
+          |<entityLists>
+          |  <title>Other</title>
+          |  <listPlace n="cities"><title>Cities</title></listPlace>
+          |  <listOrg n="empty"><title>Empty</title></listOrg>
+          |</entityLists>
+          |""".stripMargin,
+      "other/rome.xml" ->
+        """<place>
+          |  <placeName>Rome</placeName>
+          |</place>
+          |""".stripMargin,
+      "other/cities.md" ->
+        """---
+          |categories:
+          |  - "[[Shared]]"
+          |  - "[[InlineOnly]]"
+          |tags:
+          |  - inline-tag
+          |---
+          |[Rome](rome.html)
+          |""".stripMargin,
+      "Shared.md" ->
+        """---
+          |title: Shared
+          |---
+          |Shared hub.
+          |""".stripMargin,
+      "InlineOnly.md" ->
+        """---
+          |title: InlineOnly
+          |---
+          |Inline hub.
+          |""".stripMargin
+    )): (site, target) =>
+      assert(File(target, "other/index.html").isFile)
+      assert(!File(target, "other/cities.html").exists)
+      val catalog: DirectoryPage = site.pages.pages.collectFirst:
+        case directory: DirectoryPage if directory.sourcePath.exists(_.toString.contains("other.xml")) =>
+          directory
+      .get
+      assert(catalog.hasSyntheticContent)
+      assert(catalog.publishedPath.toString == "/other.html", catalog.publishedPath)
+      val page: String = html(target, "other/index.html")
+      assert(!page.contains("page-meta"), page)
+      val chips: Seq[org.podval.xml.Xml.Element] = site.categories.chips(catalog)
+      assert(chips.length == 1, chips.map(_.getText))
+      assert(chips.head.hasClass("page-category"))
+      assert(chips.head.getHref.contains("/Shared.html"))
+      assert(chips.head.getText.contains("Shared"))
+      assert(!chips.exists(_.getHref.exists(_.contains("InlineOnly"))))
+      val membership = site.categories.membership.filter(_.from.path == catalog.path)
+      assert(membership.length == 2, membership.map(_.to.publishedPath))
+      assert(membership.exists(link => link.to.publishedPath.toString == "/Shared.html" && !link.fromInline))
+      assert(membership.exists(link => link.to.publishedPath.toString == "/InlineOnly.html" && link.fromInline))
+      def members(relative: String): String =
+        val hub: String = html(target, relative)
+        val start: Int = hub.indexOf("category-members")
+        assert(start >= 0, hub)
+        hub.substring(start, hub.indexOf("</article>", start))
+      val sharedMembers: String = members("Shared.html")
+      val inlineMembers: String = members("InlineOnly.html")
+      assert(sharedMembers.split("/other.html").length - 1 == 1, sharedMembers)
+      assert(inlineMembers.split("/other.html").length - 1 == 1, inlineMembers)
+      val tags: String = html(target, "tags.html")
+      assert(tags.contains("inline-tag"), tags)
+      assert(tags.contains("/other.html"), tags)
+      val romeLinks = site.backLinks.all.filter(_.to.page.publishedPath.toString == "/other/rome.html")
+      assert(romeLinks.length == 1, romeLinks.map(_.from.publishedPath))
+      assert(romeLinks.head.from.path == catalog.path)
+      val graph: String = Files.read(File(target, "graph.json"))
+      def once(edge: String): Unit =
+        assert(graph.split(java.util.regex.Pattern.quote(edge), -1).length - 1 == 1, graph)
+      once(""""source":"/other.html","target":"/other/rome.html","kind":"link"""")
+      once(""""source":"/other.html","target":"/Shared.html","kind":"link"""")
+      once(""""source":"/other.html","target":"/InlineOnly.html","kind":"link"""")
+      val idAt: Int = graph.indexOf(""""id":"/other.html"""")
+      assert(idAt >= 0, graph)
+      val node: String = graph.substring(graph.lastIndexOf("{", idAt), graph.indexOf("}", idAt) + 1)
+      assert(!node.contains("inline-tag"), node)
+  }

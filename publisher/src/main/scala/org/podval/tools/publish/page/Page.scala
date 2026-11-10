@@ -119,7 +119,7 @@ abstract class Page(
   final def doc: Option[Content] = content.map(_.doc)
   final def store: Option[StoreContent] = doc.flatMap(_.asStore)
   
-  protected def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
+  private[publish] def frontMatter: FrontMatter = content.fold(FrontMatter.absent)(_.frontMatter)
 
   final lazy val postDate: Option[LocalDate] = Posts.date(path)
 

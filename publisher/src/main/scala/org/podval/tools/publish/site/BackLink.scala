@@ -1,12 +1,12 @@
 package org.podval.tools.publish.site
 
 import org.podval.tools.publish.markup.{Ids, Link, LinkKind, WikiLink}
-import org.podval.tools.publish.page.FullMarkupPage
+import org.podval.tools.publish.page.MarkupPage
 import org.podval.xml.Xml
 
 final class BackLink private(
   val to: Link,
-  val from: FullMarkupPage,
+  val from: MarkupPage,
   val kind: Option[LinkKind],
   val context: LinkContext,
   val inTeiHeader: Boolean
@@ -16,7 +16,7 @@ object BackLink:
   def apply(
     element: Xml.Element, 
     parent: Xml.Element,
-    from: FullMarkupPage,
+    from: MarkupPage,
     ids: Ids,
     inTeiHeader: Boolean
   ): Option[BackLink] =

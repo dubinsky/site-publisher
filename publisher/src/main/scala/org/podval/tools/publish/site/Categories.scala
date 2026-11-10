@@ -1,14 +1,15 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{FullMarkupPage, MarkupPage, NamedWindows, Page}
+import org.podval.tools.publish.page.{AuthoredHarvest, FullMarkupPage, MarkupPage, NamedWindows, Page}
 import org.podval.tools.publish.util.Strings
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
 
 final class CategoryLink(
-  val from: FullMarkupPage,
-  val to: Page
+  val from: MarkupPage,
+  val to: Page,
+  val fromInline: Boolean
 )
 
 /** Membership from a page's `categories` property to an authored hub.
@@ -22,20 +23,31 @@ final class Categories:
   // Called from `Site.load` after `Pages.load` has already run `throwIfErrors`.
   // A missing hub is an unresolved link and must not abort generation.
   def resolve(site: Site): Unit =
-    membershipVar = site.pages.pages.flatMap(_.asFullMarkupPage).flatMap: from =>
-      val (acc, _) = from.categories.foldLeft((List.empty[CategoryLink], Set.empty[Page])):
-        case ((acc, seen), raw) =>
-          Categories.accept(site, from, raw, acc, seen)
-      acc
+    membershipVar = site.pages.pages.flatMap:
+      case from: MarkupPage =>
+        val own: List[String] =
+          AuthoredHarvest.ownFrontMatter(from).toList.flatMap(_.categories)
+        val inline: List[String] =
+          AuthoredHarvest.inlineFrontMatter(from).toList.flatMap(_.categories)
+        val (afterOwn, seen) = own.foldLeft((List.empty[CategoryLink], Set.empty[Page])):
+          case ((acc, seen), raw) =>
+            Categories.accept(site, from, raw, fromInline = false, acc, seen)
+        val (afterInline, _) = inline.foldLeft((afterOwn, seen)):
+          case ((acc, seen), raw) =>
+            Categories.accept(site, from, raw, fromInline = true, acc, seen)
+        afterInline
+      case _ =>
+        Nil
 
-  def chips(from: FullMarkupPage): Seq[Xml.Element] =
-    membershipVar.filter(_.from == from).map(link => Categories.chip(link.to))
+  def chips(from: MarkupPage): Seq[Xml.Element] =
+    membershipVar.filter(link => link.from == from && !link.fromInline).map(link => Categories.chip(link.to))
 
   def html(page: MarkupPage): Option[Xml.Element] =
     page.asFullMarkupPage.flatMap: full =>
-      val members: Seq[FullMarkupPage] = membershipVar
+      val members: Seq[MarkupPage] = membershipVar
         .filter(_.to == full)
         .map(_.from)
+        .distinct
         .sortBy(member => (member.title, member.publishedPath.toString))
       Option.when(members.nonEmpty):
         given Language.Spec = page.site.languageSpec
@@ -54,8 +66,9 @@ object Categories:
 
   private def accept(
     site: Site,
-    from: FullMarkupPage,
+    from: MarkupPage,
     raw: String,
+    fromInline: Boolean,
     acc: List[CategoryLink],
     seen: Set[Page]
   ): (List[CategoryLink], Set[Page]) =
@@ -71,9 +84,9 @@ object Categories:
           case Some(link) =>
             val to: Page = link.page.real
             if to == from || seen.contains(to) then (acc, seen)
-            else (acc :+ CategoryLink(from, to), seen + to)
+            else (acc :+ CategoryLink(from, to, fromInline), seen + to)
 
-  private def unresolved(site: Site, from: FullMarkupPage, raw: String): Unit =
+  private def unresolved(site: Site, from: MarkupPage, raw: String): Unit =
     site.error(
       from.sourcePath.getOrElse(from.path),
       PageError.Unresolved,

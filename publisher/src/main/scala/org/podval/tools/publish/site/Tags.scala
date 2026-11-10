@@ -1,7 +1,7 @@
 package org.podval.tools.publish.site
 
 import org.podval.metadata.Language
-import org.podval.tools.publish.page.{FullMarkupPage, Page, PageParticipation, SyntheticMarkupPage}
+import org.podval.tools.publish.page.{AuthoredHarvest, MarkupPage, Page, PageParticipation, SyntheticMarkupPage}
 import org.podval.tools.publish.util.{Icon, IdGenerator}
 import org.podval.xml.Xml
 import org.podval.xml.dsl.{*, given}
@@ -18,18 +18,21 @@ final class Tags(site: Site) extends SyntheticMarkupPage(site, Path("tags").html
     Some(Messages.text("pages.byTag"))
   override protected def iconDefault: Icon = Icon.tags
 
-  private def fullMarkupPages: List[FullMarkupPage] = site
-    .pages
-    .pages
-    .flatMap(_.asFullMarkupPage)
+  private def markupPages: List[MarkupPage] = site.pages.pages.collect:
+    case markup: MarkupPage => markup
 
-  private def tagsAll: List[String] = fullMarkupPages
-    .flatMap(_.tags)
+  // Own tags and inline-list tags. `.tags` is own front matter only.
+  private def indexedTags(markup: MarkupPage): List[String] =
+    AuthoredHarvest.ownFrontMatter(markup).toList.flatMap(_.tags) ++
+      AuthoredHarvest.inlineFrontMatter(markup).toList.flatMap(_.tags)
+
+  private def tagsAll: List[String] = markupPages
+    .flatMap(indexedTags)
     .distinct
     .sorted
 
-  private def withTag(tag: String): List[Page] = fullMarkupPages
-    .filter(_.tags.contains(tag))
+  private def withTag(tag: String): List[Page] = markupPages
+    .filter(indexedTags(_).contains(tag))
     .sortBy(_.title)
 
   def tagRef(tag: String): Xml.Element = a(

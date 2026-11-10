@@ -75,7 +75,7 @@ object Seo:
     page.description.getOrElse(page.site.config.description)
 
   private def author(page: MarkupPage): String =
-    page.asFullMarkupPage.flatMap(_.author).getOrElse(page.site.config.author)
+    page.author.getOrElse(page.site.config.author)
 
   def canonical(page: Page): String = s"${page.site.uri}${page.publishedPath}"
 

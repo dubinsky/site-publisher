@@ -48,7 +48,7 @@ object PageHeader:
                 timeHtml(Some(Messages.text("meta.updated")), page.dateModified, "page-modified")
               ),
               "•",
-              page.asFullMarkupPage.flatMap(_.author).fold(Seq.empty): author =>
+              page.author.fold(Seq.empty): author =>
                 Seq(
                   span(className := "page-authors",
                     span(className := "page-author", author)
@@ -56,10 +56,10 @@ object PageHeader:
                 )
             ),
             "|",
-            page.asFullMarkupPage.toSeq.flatMap(_.tags).map(page.site.tags.tagRef)
+            page.tags.map(page.site.tags.tagRef)
           ),
           "|",
-          page.asFullMarkupPage.toSeq.flatMap(full => page.site.categories.chips(full))
+          page.site.categories.chips(page)
         ),
         "|",
         metaSourceLink(page)

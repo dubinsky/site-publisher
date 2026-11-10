@@ -110,11 +110,13 @@ final class Feed(site: Site) extends SyntheticXmlAsset(site, Feed.path):
         ).toSeq
     )
   
-  private def author(page: Page): String =
-    page.asFullMarkupPage.flatMap(_.author).getOrElse(site.config.author)
+  private def author(page: Page): String = page match
+    case markup: MarkupPage => markup.author.getOrElse(site.config.author)
+    case _ => site.config.author
 
-  private def tags(page: Page): List[String] =
-    page.asFullMarkupPage.map(_.tags).getOrElse(List.empty)
+  private def tags(page: Page): List[String] = page match
+    case markup: MarkupPage => markup.tags
+    case _ => List.empty
 
   // Latest entry `updatedAt`, or now when no entry has one.
   private def updated(posts: List[Page]): String =

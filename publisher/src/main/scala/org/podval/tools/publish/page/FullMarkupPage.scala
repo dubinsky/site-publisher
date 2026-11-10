@@ -44,11 +44,6 @@ abstract class FullMarkupPage(site: Site, path: Path) extends MarkupPage(site, p
       val title: String = frontMatter.postTitle.getOrElse(path.fileName)
       Some(Posts.path(date.localDate, title).html.withoutHtml.toString)
 
-  final def tags: List[String] = frontMatter.tags
-  final def categories: List[String] = frontMatter.categories
-
-  final def author: Option[String] = content(_.frontMatter.author)
-
   final def tocDepth: Int = frontMatter.tocDepth.getOrElse(2)
   final def hasToc: Boolean = chunk || frontMatter.tocDepth.isDefined
   final def chunk: Boolean = frontMatter.chunk

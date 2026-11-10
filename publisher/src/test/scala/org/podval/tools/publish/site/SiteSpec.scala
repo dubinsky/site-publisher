@@ -864,6 +864,7 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     val feed: String = html("feed.xml")
     assert(feed.contains("hello"), feed)
     assert(feed.contains("Greeting from the newest fixture post"), feed)
+    assert(feed.contains("<name>Test Author</name>"), feed)
   }
 
   test("pages advertise the Atom feed") {
