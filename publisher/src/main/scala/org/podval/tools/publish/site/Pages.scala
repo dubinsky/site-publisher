@@ -35,7 +35,6 @@ final class Pages(site: Site):
 
   private def get(path: Path): Option[Page] = byPath.get(path)
 
-  /** True when this published path has a page. First occupant, same as `byPath`. */
   def contains(path: Path): Boolean = byPath.contains(path)
 
   private def track(page: Page): Unit =
