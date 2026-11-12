@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- A site file `assets/css/theme.css` is linked after `style.css` when the scan published it; a missing file is not
+  requested.
 - Absorbed authored prose (year, store indexes, map, entity lists, one-list catalog prose) now contributes backlinks,
   transclusion edges, categories, and tags.
   Generated index links still do not.

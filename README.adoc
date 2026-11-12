@@ -1154,6 +1154,24 @@ When the scheme resolves to dark, code blocks use the highlight.js dark theme an
 as the page.
 The page graph uses the same colors.
 
+Drop `assets/css/theme.css` at the site root.
+It is copied and linked after `/assets/css/style.css`.
+There is no config key.
+Do not ship `assets/css/tokens.css` or another embedded sheet name.
+That path is a duplicate.
+Selectors are `:root` for the light palette and `@media screen { html.color-scheme-dark { … } }` for the dark palette.
+Rules outside `@media screen` are in the printed page.
+Print and PDF use `:root`.
+Set `--text-color` on `:root` and inside the dark block.
+On `:root` the publisher value is `var(--brand-color-dark)`, so omitting it recolors light body copy when the brand
+changes.
+The publisher dark block already sets `--text-color: #d4d1cb`.
+Omitting it there keeps that gray, not a mix of the new brand.
+If the light `--brand-color` changes, set `--brand-color` again inside the dark block.
+The publisher dark block does not reset it.
+Leave dark `--code-background-color` unset so code stays on `#303030`.
+A missing file adds no link.
+
 **In the text** is the heading for term definitions and expansions.
 The heading is omitted when the site has neither.
 

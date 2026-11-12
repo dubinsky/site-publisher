@@ -18,8 +18,18 @@ import java.time.{Instant, OffsetDateTime, ZoneId}
 import scala.util.Try
 
 final class Site(options: SiteOptions) extends HeadContribution:
+  private val themeStylesheetPath: Path =
+    Path("assets", "css", "theme").withExtension("css")
+
   override def styleLinks: List[Xml.Element] =
-    List(link(rel := "stylesheet", href := EmbeddedAsset.mainStyleSheet))
+    val main: Xml.Element =
+      link(rel := "stylesheet", href := EmbeddedAsset.mainStyleSheet)
+    val theme: List[Xml.Element] =
+      if pages.contains(themeStylesheetPath) then
+        List(link(rel := "stylesheet", href := themeStylesheetPath.toString))
+      else
+        Nil
+    main :: theme
 
   // In <head> so it runs even when later markup is ill-formed and swallows body scripts.
   override def headScripts: List[Xml.Element] =

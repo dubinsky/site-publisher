@@ -259,6 +259,49 @@ final class SiteSpec extends AnyFunSuite, BeforeAndAfterAll:
     assert(!body.contains("localStorage"), body)
   }
 
+  test("theme.css is linked after style.css only when the scan published it") {
+    val styleHref: String = """href="/assets/css/style.css""""
+    val themeHref: String = """href="/assets/css/theme.css""""
+    val marker: String = "--background-color: #f6f1e6"
+    val theme: String = s":root { $marker; }\n"
+
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n"
+    )): target =>
+      val page: String = readerHtml(target, "index.html")
+      val inHead: String = page.substring(0, page.indexOf("</head>"))
+      assert(inHead.contains(styleHref), inHead)
+      assert(!inHead.contains(themeHref), inHead)
+      assert(!File(target, "assets/css/theme.css").exists, target)
+
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "assets/css/theme.css" -> theme
+    )): target =>
+      val published: String = readerHtml(target, "assets/css/theme.css")
+      assert(published.contains(marker), published)
+      val page: String = readerHtml(target, "index.html")
+      val inHead: String = page.substring(0, page.indexOf("</head>"))
+      val styleAt: Int = inHead.indexOf(styleHref)
+      val themeAt: Int = inHead.indexOf(themeHref)
+      assert(styleAt >= 0 && themeAt > styleAt, inHead)
+      val errors: String = readerHtml(target, "errors.html")
+      assert(!errors.contains("Duplicates for the path /assets/css/theme.css"), errors)
+
+    withReaderSite(Map(
+      "_site_config.yml" -> readerConfig,
+      "index.md" -> "Home.\n",
+      "_site_ignore" -> "/assets/css/theme.css\n",
+      "assets/css/theme.css" -> theme
+    )): target =>
+      val page: String = readerHtml(target, "index.html")
+      val inHead: String = page.substring(0, page.indexOf("</head>"))
+      assert(!inHead.contains(themeHref), inHead)
+      assert(!File(target, "assets/css/theme.css").exists, target)
+  }
+
   test("fixture home has no apparatus menu and no data-apparatus attribute") {
     val home: String = html("index.html")
     assert(!home.contains("""name="apparatus-add""""), home)
