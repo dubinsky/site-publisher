@@ -16,7 +16,6 @@ description = 'Generate, serve and publish websites'
 group = 'org.podval.tools'
 
 podvalPublish {
-  gitHubRepository = 'dubinsky/site-publisher'
   name = 'Podval Site Publisher'
   inceptionYear = '2026'
 }

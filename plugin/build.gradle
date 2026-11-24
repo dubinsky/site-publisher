@@ -9,7 +9,6 @@ description = 'Gradle plugin that runs org.podval.tools.publisher via JavaExec'
 group = 'org.podval.tools'
 
 podvalPublish {
-  gitHubRepository = 'dubinsky/site-publisher'
   name = 'Podval Site Publisher Gradle Plugin'
   inceptionYear = '2026'
 }
